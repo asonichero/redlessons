@@ -1,6 +1,6 @@
-# Little Red Riding Hood: a blocky adventure engine
+# Red: a blocky adventure engine
 
-A small third-person adventure engine in the blocky, Minecraft-style look (three.js r128, no build step, procedural pixel textures, synthesised sound, no asset files), with Little Red Riding Hood as its hero, drawn from the character sheet: a green tunic, tan trousers and boots, two auburn plaits with red ribbons, a basket, and the red hooded **Starweave Mantle**, a waist-length cloak with glowing gold stars. It installs as a mobile web app.
+A small third-person adventure engine in the blocky, Minecraft-style look (three.js r128, no build step, procedural pixel textures, synthesised sound, no asset files), with Red as its hero, drawn from the character sheet: a green tunic, tan trousers and boots, two auburn plaits with red ribbons, a basket, and the red hooded **Starweave Mantle**, a waist-length cloak with glowing gold stars. It installs as a mobile web app.
 
 This started as a clone of another game's engine; the story, scenes, cast and all adult content were removed, and the hero was rebuilt from scratch. What is left is the engine and a small sandbox to try it in.
 

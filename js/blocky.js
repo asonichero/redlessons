@@ -1,7 +1,7 @@
 // Blocky characters: Minecraft-style figures made of a head, a torso, two arms and two legs, each a plain box textured from a 64x64 skin laid out like a Minecraft skin
 // (base layer plus outer layer), except that the arms are 3x3 pixels, a little thinner than Minecraft's. Each leg is cut at the knee, and each arm at the elbow, so a
 // limb reads as one straight block when it hangs and shows a bend when it is posed. The skins are painted here, pixel by pixel, rather than loaded.
-// The hero is Little Red Riding Hood (makeRed): a green tunic, tan trousers and boots, an auburn plait over each shoulder, and the red "Starweave Mantle", a
+// The hero is Red, an adult woman styled after Red Riding Hood (makeRed): a green tunic, tan trousers and boots, an auburn plait over each shoulder, and the red "Starweave Mantle", a
 // waist-length hooded cloak whose gold stars glow (setCloak, setHood, the sparkle burst when it goes on). blocky.html shows her.
 // Rig API:  rig.root (add it to a scene; 1 unit = 1 skin pixel, a standing figure is 32 tall)   B.setPose(rig, 'stand' | 'sit')   B.step(rig, dt) once a frame
 //   rig.motion = { t, phase, speed, air, look, carry }   drives the walk cycle (see locomotion); rig.setExpr('smile' | 'wink' | 'pout' | 'gasp' | 'neutral')

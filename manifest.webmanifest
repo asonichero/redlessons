@@ -1,7 +1,7 @@
 {
-  "name": "Little Red Riding Hood",
+  "name": "Red",
   "short_name": "Red",
-  "description": "A blocky third-person adventure engine, with Little Red Riding Hood and a meadow to walk in.",
+  "description": "A blocky third-person adventure engine, with Red and a meadow to walk in.",
   "start_url": "index.html",
   "scope": "./",
   "display": "fullscreen",
