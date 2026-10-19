@@ -2,13 +2,108 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="refresh" content="0; url=game.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Climbing Toward Consequence</title>
-<style>body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #131820; color: #ece8df; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; } a { color: #e6c46a; }</style>
+<meta name="theme-color" content="#1b2418">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Red">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Little Red Riding Hood</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d120b; color: #f1ebdd; font-family: Georgia, 'Times New Roman', serif; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #stage { position: fixed; inset: 0; } #stage canvas { display: block; }
+  #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; }
+  .screen { position: fixed; inset: 0; display: none; z-index: 30; }
+  .screen.on { display: flex; }
+  .card { max-width: 560px; width: min(560px, 92vw); padding: 22px 26px; background: rgba(20,26,18,0.93); border: 1px solid #3f4c38; border-radius: 10px; font-size: 15px; line-height: 1.55; }
+  .card h2 { margin: 0 0 8px; font-size: 20px; color: #f0c850; font-weight: normal; letter-spacing: .04em; }
+  button, .btn { font: inherit; background: #2c3628; color: #f1ebdd; border: 1px solid #5a6a50; border-radius: 6px; padding: 10px 16px; font-size: 16px; cursor: pointer; margin: 8px 8px 0 0; text-decoration: none; display: inline-block; }
+  button:hover, .btn:hover { background: #3a4832; } button.primary { background: #8c2a2a; border-color: #e8b83a; } button.primary:hover { background: #a03232; } button:disabled { opacity: .4; cursor: default; }
+  #title { flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; padding-left: 6vw; background: linear-gradient(90deg, rgba(10,14,8,0.74) 0%, rgba(10,14,8,0.36) 45%, rgba(10,14,8,0) 75%); }
+  #title h1 { margin: 0; font-size: clamp(30px, 5.4vw, 64px); line-height: 1.1; max-width: 8em; font-weight: normal; letter-spacing: .08em; color: #ffd9d0; text-shadow: 0 3px 0 #7a1a1a, 0 0 40px rgba(0,0,0,.7); text-transform: uppercase; }
+  #title .sub { margin: 6px 0 28px; font-size: clamp(14px, 2.4vw, 20px); color: #ece4cc; text-shadow: 0 1px 6px #000; font-style: italic; }
+  #menu { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  #menu button { min-width: 230px; margin: 0; padding: 12px 20px; font-size: 18px; background: rgba(24,30,20,0.84); } #menu button.primary { background: rgba(140,42,42,0.92); }
+  #settings, #pmenu { background: rgba(8,12,6,0.78); align-items: center; justify-content: center; } #pmenu { z-index: 50; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 9px 0; font-size: 15px; }
+  .row.stack { flex-direction: column; align-items: stretch; gap: 2px; margin: 12px 0; } .row.stack input[type=range] { width: 100%; margin: 0; }
+  .card.narrow { max-width: 340px; width: min(340px, 90vw); max-height: 92vh; overflow-y: auto; }
+  #pmenu .card button { display: block; width: 100%; margin: 10px 0 0; }
+  #subs { position: fixed; left: 50%; bottom: 5vh; transform: translateX(-50%); width: min(780px, 92vw); display: none; z-index: 41; background: rgba(10,10,8,0.8); border: 1px solid #55604a; border-radius: 8px; padding: 12px 18px 14px; font-size: clamp(15px, 2.2vw, 20px); line-height: 1.5; }
+  @media (pointer: coarse) { body:not(.cutscene) #subs { left: 170px; right: 200px; width: auto; transform: none; bottom: 3vh; pointer-events: none; } }
+  #subWho { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; } #subText { min-height: 1.5em; }
+  #subChoices { display: none; margin-top: 8px; } #subChoices .choice { display: block; width: 100%; text-align: left; margin: 6px 0 0; padding: 10px 14px; font-size: clamp(14px, 1.9vw, 17px); background: rgba(44,54,40,0.92); }
+  #subGate { display: none; margin: 10px 0 0; float: right; font-size: 18px; padding: 10px 30px; }
+  #skip { position: fixed; right: 12px; top: 72px; z-index: 42; display: none; margin: 0; padding: 0; width: 56px; height: 56px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.85); background: rgba(20,26,18,0.72); color: #fff; flex-direction: column; align-items: center; justify-content: center; font: 600 10.5px/1 Georgia, serif; -webkit-tap-highlight-color: transparent; } body.cutscene #skip { display: flex; }
+  #skip svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 2.1; stroke-linejoin: round; stroke-linecap: round; } #skip span { margin-top: 2px; text-shadow: 0 1px 3px #000; } #skip:hover { background: rgba(70,86,60,0.95); }
+  body.cutscene #tui { display: none !important; }
+  #menuBtn { position: fixed; right: 12px; top: 10px; z-index: 37; margin: 0; padding: 0; width: 56px; height: 56px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.85); background: rgba(20,26,18,0.72); display: none; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; } #menuBtn svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; } #menuBtn:hover { background: rgba(70,86,60,0.95); } body.inplay #menuBtn { display: flex; } body.pm #menuBtn { display: none; }
+  @media (max-height: 420px) { #menuBtn { width: 48px; height: 48px; top: 8px; } #skip { width: 48px; height: 48px; top: 66px; } }
+  #tapHint { position: fixed; left: 50%; bottom: 1.6vh; transform: translateX(-50%); font-size: 12px; opacity: .55; z-index: 19; display: none; } body.cutscene #tapHint { display: block; }
+  /* The play HUD (js/hud.js) */
+  .hud { position: fixed; inset: 0; pointer-events: none; z-index: 12; }
+  .hobj { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(12,16,10,0.78); border: 1px solid #55604a; border-radius: 8px; padding: 8px 16px; font-size: clamp(13px, 1.9vw, 17px); max-width: 60vw; text-align: center; display: none; }
+  .hhint { position: absolute; left: 50%; bottom: 18vh; transform: translateX(-50%); background: rgba(12,16,10,0.86); border: 1px solid #e8b83a; color: #ffe39a; padding: 6px 14px; border-radius: 6px; font-size: 15px; display: none; }
+  .htoast { position: absolute; left: 50%; bottom: 7vh; transform: translateX(-50%); background: rgba(12,16,10,0.86); border: 1px solid #55604a; padding: 8px 16px; border-radius: 8px; font-size: 14px; max-width: 86vw; text-align: center; opacity: 0; transition: opacity .4s; }
+  @media (pointer: coarse) { .hobj { max-width: 46vw; font-size: 13px; } }
+</style>
 </head>
 <body>
-<p>Loading <a href="game.html">Climbing Toward Consequence</a>…</p>
+<div id="stage"></div>
+<div id="fade"></div>
+
+<div id="title" class="screen">
+  <h1>Little Red Riding Hood</h1>
+  <div class="sub">a blocky adventure engine, and a meadow to walk in</div>
+  <div id="menu">
+    <button id="bNew" class="primary">New Game</button>
+    <button id="bContinue">Continue</button>
+    <button id="bSettings">Settings</button>
+    <a class="btn" href="blocky.html" style="min-width:196px;text-align:center;background:rgba(24,30,20,0.84)">Model viewer</a>
+  </div>
+</div>
+
+<div id="settings" class="screen">
+  <div class="card narrow">
+    <h2>Settings</h2>
+    <div class="row stack"><span>Master volume</span><input type="range" id="vMaster" min="0" max="100"></div>
+    <div class="row stack"><span>Music</span><input type="range" id="vMusic" min="0" max="100"></div>
+    <div class="row stack"><span>Sound effects</span><input type="range" id="vSfx" min="0" max="100"></div>
+    <div class="row stack"><span>Voices</span><input type="range" id="vVoice" min="0" max="100"></div>
+    <div class="row stack"><span>Dialogue speed</span><input type="range" id="vSpeed" min="50" max="200"></div>
+    <div class="row"><span>Advance dialogue automatically</span><input type="checkbox" id="cAuto"></div>
+    <div class="row"><span>Subtitles</span><input type="checkbox" id="cSubs"></div>
+    <button id="bReset">Delete saved game</button><button class="primary" id="bBack">Back</button>
+  </div>
+</div>
+
+<div id="pmenu" class="screen">
+  <div class="card narrow">
+    <h2>Paused</h2>
+    <button class="primary" id="pmResume">Resume</button>
+    <button id="pmSettings">Settings</button>
+    <button id="pmTitle">Return to title</button>
+  </div>
+</div>
+
+<div id="subs"><div id="subWho"></div><div id="subText"></div><button id="subGate" class="primary">Continue</button><div id="subChoices"></div></div>
+<div id="tapHint">tap or press space to move on</div>
+<button id="skip" title="Skip scene"><svg viewBox="0 0 24 24"><path d="M5 5l9 7-9 7z"/><path d="M16 5v14"/><path d="M19 5v14"/></svg><span>Skip</span></button>
+<button id="menuBtn" title="Menu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/voxel.js"></script>
+<script src="js/blocky.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/touchui.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/world.js"></script>
+<script src="js/player.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

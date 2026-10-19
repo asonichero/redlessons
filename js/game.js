@@ -1,5 +1,5 @@
-// Climbing Toward Consequence — the game shell: the content notice and 18+ confirmation, the title screen (over the drone view of the homestead), settings, saves, and the cutscene
-// toolkit the story scenes are written with. A cutscene is an async function that awaits these: G.say(who, text), G.shot(name, secs), G.fade(black, secs), G.wait(secs).
+// The game shell and the cutscene toolkit. G = Game.create({ stage, fade, subs, subWho, subText }) owns the renderer, the camera and the frame loop. A cutscene is an async function
+// that awaits G.say(who, text), G.shot(name, secs), G.fade(black, secs), G.wait(secs); G.setScene(world) shows a world ({ scene, update(dt, t) }); G.updaters run every frame.
 // Skipping sets a flag that makes every wait, line and move finish at once, so a scene can be skipped and still land on the right frame.
 (function (root) {
 'use strict';
@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const ease = { linear: t => t, inOut: t => t * t * (3 - 2 * t), out: t => 1 - (1 - t) * (1 - t), in: t => t * t, soft: t => t * t * t * (t * (6 * t - 15) + 10) };
 
-const SAVE_KEY = 'castle-consequence:save:v1', NOTICE_KEY = 'castle-consequence:notice:v1', SET_KEY = 'castle-consequence:settings:v1';
+const SAVE_KEY = 'redlessons:save:v1', SET_KEY = 'redlessons:settings:v1';
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* no storage */ } },
@@ -19,13 +19,13 @@ function create(els) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.outputEncoding = THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(2, root.devicePixelRatio || 1)); els.stage.appendChild(renderer.domElement);
   const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 4000);
-  const G = { renderer, camera, scene: null, t: 0, skipping: false, settings: Object.assign({ speed: 1, auto: true, subtitles: true }, store.get(SET_KEY, {})), mode: 'notice', shots: {}, updaters: [], drone: null, maxDt: 0.05 };
+  const G = { renderer, camera, scene: null, t: 0, skipping: false, settings: Object.assign({ speed: 1, auto: true, subtitles: true }, store.get(SET_KEY, {})), mode: 'title', shots: {}, updaters: [], drone: null, maxDt: 0.05 };
   const cam = { pos: new V3(), look: new V3(), fov: 50 }, move = { active: null };
 
   function resize() { const w = els.stage.clientWidth || root.innerWidth, h = els.stage.clientHeight || root.innerHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
   root.addEventListener('resize', resize); resize();
 
-  // ── Camera: named shots {pos, look, fov}; G.shot(name | spec, secs, easing) moves there (secs 0 cuts); G.drone is a function(t) that drives the camera while set. ──
+  // ── Camera: named shots {pos, look, fov}; G.shot(name | spec, secs, easing) moves there (secs 0 cuts); G.drone is a function(t) that drives the camera while set (a slow aerial view for a title screen). ──
   const specOf = s => typeof s === 'string' ? G.shots[s] : s;
   const cutNow = s => { s = specOf(s); cam.pos.copy(s.pos); cam.look.copy(s.look); cam.fov = s.fov || cam.fov; move.active = null; };
   G.cut = cutNow;
@@ -52,8 +52,9 @@ function create(els) {
   root.addEventListener('keydown', e => { if (G.manual || typing_(e)) return; if (e.key === ' ' || e.key === 'Enter') { if (G.mode === 'cutscene') { e.preventDefault(); tap(); } } });
   els.stage.addEventListener('pointerdown', () => { if (G.mode === 'cutscene' && !G.manual) tap(); });
   subs.addEventListener('pointerdown', e => { e.stopPropagation(); if (G.mode === 'cutscene') tap(); });
-  const WHO = { mother: ['Mother', '#e6b8a0'], jack: ['Jack', '#a8d8a0'], gerda: ['Gerda', '#e6a0c0'], peddler: ['Peddler', '#c8c090'], merchant: ['Merchant', '#a0c8f0'], narrator: ['', '#e6c46a'] };
-  const whoOf = who => { const w = WHO[who] || [who, '#e6c46a']; return who === 'gerda' && !G.gerdaNamed ? ['The Giantess', w[1]] : w; };       // (Jack does not know her name until she gives it)
+  // Speakers: name and colour for the subtitle box. Add your own: G.cast.wolf = ['Wolf', '#b0b0c0'] (and a pitch in GameAudio.pitch for the babble).
+  G.cast = { red: ['Red', '#ff9f90'], narrator: ['', '#e6c46a'] };
+  const whoOf = who => G.cast[who] || [who, '#e6c46a'];
   let capTok = 0; const caps = new Set(), supersede = () => { capTok++; for (const f of [...caps]) f(); }, live = { say: 0 };      // (a spoken line ends any caption still up, and no caption is drawn over a line while it is up: the two used to overwrite, and hide, each other)
   G.say = (who, text, opts) => new Promise(resolve => {
     const ep = G.epoch;
@@ -181,26 +182,11 @@ function create(els) {
     if (e.key === 'p' || e.key === 'P') G.pause(); else if (e.key === ',' || e.key === '[') G.rewind(); else if (e.key === '.' || e.key === ']') G.forward(); else return; e.preventDefault();
   });
 
-  G.store = store; G.SAVE_KEY = SAVE_KEY; G.NOTICE_KEY = NOTICE_KEY; G.saveSettings = () => store.set(SET_KEY, G.settings);
+  G.store = store; G.SAVE_KEY = SAVE_KEY; G.saveSettings = () => store.set(SET_KEY, G.settings);
   G.save = data => G.noSave || store.set(SAVE_KEY, Object.assign(store.get(SAVE_KEY, {}), data, { savedAt: Date.now() }));
-  const SHOT_KEY = 'castle-consequence:titleshot:v1';
-  G.loadSave = () => store.get(SAVE_KEY, null); G.clearSave = () => { store.del(SAVE_KEY); store.del(SHOT_KEY); };
-  // The wide view of the farm, as it stands now, kept for the title screen (rendered once from the drone's first position, then shrunk to a JPEG).
-  G.titleShot = () => G.memShot || store.get(SHOT_KEY, null);
-  G.snapshotFarm = (world, drone) => {
-    if (!world || !world.scene || !drone) return;
-    try {
-      const s = drone(0), old = { fov: camera.fov, p: camera.position.clone() };
-      camera.position.copy(s.pos); camera.fov = s.fov; camera.updateProjectionMatrix(); camera.lookAt(s.look);
-      renderer.render(world.scene, camera);
-      const c = document.createElement('canvas'); c.width = 1280; c.height = Math.round(1280 * renderer.domElement.height / renderer.domElement.width);
-      c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height);
-      const url = c.toDataURL('image/jpeg', 0.78); if (G.noSave) G.memShot = url; else { G.memShot = null; store.set(SHOT_KEY, url); }
-      camera.position.copy(old.p); camera.fov = old.fov; camera.updateProjectionMatrix();
-    } catch (e) { console.warn('snapshotFarm', e && e.message); }
-  };
+  G.loadSave = () => store.get(SAVE_KEY, null); G.clearSave = () => store.del(SAVE_KEY);
   return G;
 }
 
-root.Game = { create, ease, store, SAVE_KEY, NOTICE_KEY };
+root.Game = { create, ease, store, SAVE_KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
