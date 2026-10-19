@@ -24,8 +24,10 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 //   trust    where their trust in her starts (0–100);
 //   implements what they may use, mildest first (the correction scene's own implement ids: hand, paddle, birch).
 // Grandmother gave the cloak and is the one who explains the terms; the woodcutter keeps the forest path.
+//   kin      family: they keep a book and settle it in words, but never give a correction (the over-the-knee scene refuses them). Grandmother is
+//            the heroine's own grandmother unless the story decides otherwise.
 const GIVERS = {
-  grandmother: { name: 'Grandmother', strict: 1.0, patience: 6, trust: 70, implements: ['hand', 'paddle'], where: 'cottage' },
+  grandmother: { name: 'Grandmother', strict: 1.0, patience: 6, trust: 70, implements: ['hand', 'paddle'], where: 'cottage', kin: true },
   woodcutter:  { name: 'The Woodcutter', strict: 1.2, patience: 4, trust: 50, implements: ['hand', 'paddle'], where: 'forest edge' },
   miller:      { name: 'The Miller', strict: 1.1, patience: 5, trust: 50, implements: ['hand', 'paddle'], where: 'mill' },
   innkeeper:   { name: 'The Innkeeper', strict: 0.9, patience: 6, trust: 55, implements: ['hand'], where: 'inn' },
@@ -108,7 +110,8 @@ function create(saved) {
   return L;
 }
 
-const api = { TERMS, GIVERS, ANCHORS, TIERS, create, tierOf };
+const correctors = () => Object.keys(GIVERS).filter(g => !GIVERS[g].kin);       // the givers who may give a correction
+const api = { TERMS, GIVERS, ANCHORS, TIERS, create, tierOf, correctors };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.Ledger = api;
 })(typeof window !== 'undefined' ? window : globalThis);

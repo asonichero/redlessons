@@ -64,3 +64,11 @@ test('the state survives a save and a load', () => {
   const L2 = create(JSON.parse(JSON.stringify(L.state)));
   assert.equal(L2.owed('innkeeper'), L.owed('innkeeper')); assert.equal(L2.wearing, true);
 });
+
+test('family keep a book but never correct', () => {
+  const { correctors, GIVERS } = require('../js/ledger.js');
+  assert.equal(GIVERS.grandmother.kin, true);
+  assert.ok(!correctors().includes('grandmother'));
+  assert.ok(!correctors().includes('mother'));
+  assert.deepEqual(correctors().sort(), ['innkeeper', 'miller', 'woodcutter']);
+});

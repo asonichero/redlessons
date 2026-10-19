@@ -71,7 +71,9 @@ const SPECS = {
 // Paint one person into a Blocky.Skin (3-pixel arms) from a spec, with an expression.
 function paintPerson(k, spec, st) {
   const C = Object.assign({ white: '#f2f0ea', brow: spec.hairDk || '#3a2418', mouth: '#6a2a2a', teeth: '#f6f2ea', lid: spec.skinSh, line: spec.skinSh }, spec);
-  st = Object.assign({ expr: 'calm' }, st);
+  st = Object.assign({ expr: 'calm', skirt: 'down', drawers: 'up' }, st);
+  const lifted = spec.lower === 'skirt' && st.skirt === 'up', bareSeat = lifted && st.drawers === 'down';
+  C.drawersCol = '#eee6d2'; C.drawersSh = '#d4cab0';
   k.ctx.clearRect(0, 0, 64, 64);
   const pal = { H: C.hair, h: C.hairHi, d: C.hairDk, g: C.grey || C.hairHi, S: C.skin, s: C.skinSh, b: C.brow, W: C.white, E: C.iris, l: C.lid, M: C.lip, T: C.teeth, m: C.mouth, n: C.skinSh, k: C.skin,
     F: spec.freckles ? '#d29a78' : C.skin };
@@ -116,10 +118,12 @@ function paintPerson(k, spec, st) {
       k.fill('jacket', 'front', C.shawl, 2, 5, 4, 2); k.px('jacket', 'front', 3, 7, C.shawlDk); k.px('jacket', 'front', 4, 7, C.shawlDk);    // knotted at the breastbone
       k.fill('jacket', 'front', C.skin, 3, 0, 2, 1);
     }
-    // The skirt flaring from the hip (the outer layer of the torso's lowest rows; the rest is on the legs' overlays).
-    for (const f of B.SIDES) { k.fill('jacket', f, C.skirt, 0, 9, undefined, 3); k.fill('jacket', f, C.skirtDk, 0, 11, undefined, 1); }
+    // The skirt flaring from the hip (the outer layer of the torso's lowest rows; the rest is on the legs' overlays). Lifted, it is gathered at the small of the back
+    // (a separate roll, see makeSeat) and none of it is painted here.
+    if (!lifted) for (const f of B.SIDES) { k.fill('jacket', f, C.skirt, 0, 9, undefined, 3); k.fill('jacket', f, C.skirtDk, 0, 11, undefined, 1); }
+    else for (const f of B.SIDES) k.fill('body', f, C.drawersCol, 0, 10, undefined, 2);      // (the drawers' waistband shows below the bodice)
   }
-  if (spec.apron) {
+  if (spec.apron && !lifted) {
     for (const f of B.SIDES) k.fill('jacket', f, C.apronCol, 0, 8, undefined, 1);
     k.fill('jacket', 'front', C.apronCol, 1, 8, 6, 4);
     if (spec.flour) { k.px('jacket', 'front', 2, 10, '#ffffff'); k.px('jacket', 'front', 5, 9, '#ffffff'); k.px('jacket', 'front', 4, 11, '#ffffff'); }
@@ -140,10 +144,17 @@ function paintPerson(k, spec, st) {
     if (spec.lower === 'trousers') {
       k.all(leg, C.trousers); k.band(leg, C.trousersDk, 6, 1); k.fill(leg, 'top', C.trousers);
     } else {
-      k.all(leg, C.skin); k.fill(leg, 'top', C.skirtDk);
-      const o = B.sideOuter(leg);
-      for (const f of B.SIDES) { k.fill(o, f, C.skirt, 0, 0, undefined, 10); k.fill(o, f, C.skirtDk, 0, 9, undefined, 1); k.px(o, f, 1, 3, C.skirtDk); k.px(o, f, 2, 7, C.skirtDk); }
-      if (spec.apron) { const ax = leg === 'rLeg' ? 1 : 0; k.fill(o, 'front', C.apronCol, ax, 0, 3, 6); }
+      k.all(leg, C.skin); k.fill(leg, 'top', lifted ? (bareSeat ? C.skin : C.drawersCol) : C.skirtDk);
+      k.band(leg, C.skinSh, 6, 1);
+      if (lifted) {
+        // Her drawers: to mid-thigh (rows 0 to 2), a little lace at the hem. Down, they are gathered just above the knee (rows 4 and 5) and the thigh above is bare.
+        if (!bareSeat) { k.band(leg, C.drawersCol, 0, 3); k.band(leg, C.drawersSh, 2, 1); }
+        else { k.band(leg, C.drawersCol, 4, 2); k.band(leg, C.drawersSh, 5, 1); }
+      } else {
+        const o = B.sideOuter(leg);
+        for (const f of B.SIDES) { k.fill(o, f, C.skirt, 0, 0, undefined, 10); k.fill(o, f, C.skirtDk, 0, 9, undefined, 1); k.px(o, f, 1, 3, C.skirtDk); k.px(o, f, 2, 7, C.skirtDk); }
+        if (spec.apron) { const ax = leg === 'rLeg' ? 1 : 0; k.fill(o, 'front', C.apronCol, ax, 0, 3, 6); }
+      }
     }
     if (spec.boots) { k.band(leg, C.boot, 9, 3); k.band(leg, '#22160c', 11, 1); k.fill(leg, 'bottom', '#22160c'); }
   }
@@ -157,8 +168,55 @@ function make(id, st) {
   const k = paintPerson(new B.Skin(3, 3), spec, st);
   const rig = B.buildCharacter(k, { armWidth: 3, bun: !!spec.bun, bunCols: spec.bunCols, skirt: spec.lower === 'skirt', bust: !!spec.female });
   rig.id = id; rig.spec = spec;
-  rig.setExpr = (expr, extra) => { paintPerson(k, spec, Object.assign({ expr }, extra || {})); rig.tex.needsUpdate = true; };
+  // rig.dress: what she has on and how (skirt, drawers) and her face; setExpr and setDress repaint from it.
+  rig.dress = Object.assign({ expr: 'calm' }, st || {});
+  rig.setDress = d => { Object.assign(rig.dress, d); paintPerson(k, spec, rig.dress); rig.tex.needsUpdate = true; };
+  rig.setExpr = (expr, extra) => rig.setDress(Object.assign({ expr }, extra || {}));
   return rig;
+}
+
+// ── The seat block (for the over-the-knee scene) ──
+// A block that bridges the gap at the hips when the legs fold forward across a lap (the same 8x4x4 box as the Jack game's glutes block, its own 24x8 skin),
+// painted with whatever covers her there: the skirt, her drawers, or bare skin with the marks (each cheek on its own half of the back face).
+const SEAT = { u: 0, v: 0, w: 8, h: 4, d: 4 };
+function markRect(k, part, face, x, y, w, h, cheek, marks) {
+  const m = marks && marks[cheek] || 0; if (m <= 0.01) return;
+  const r = B.faceRect(k.A[part], face);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const hsh = (((x + i) * 73856093) ^ ((y + j) * 19349663) ^ (cheek === 'L' ? 83492791 : 0)) >>> 0, jit = 0.6 + 0.8 * ((hsh % 1000) / 1000);
+    k.ctx.fillStyle = `rgba(226,112,104,${Math.min(0.5, 0.5 * Math.sqrt(m) * jit)})`; k.ctx.fillRect(r.x + x + i, r.y + y + j, 1, 1);
+    k.ctx.fillStyle = `rgba(150,26,30,${Math.min(0.75, 0.75 * m * m * jit)})`; k.ctx.fillRect(r.x + x + i, r.y + y + j, 1, 1);
+  }
+}
+function paintSeatInto(g, spec, st) {
+  st = Object.assign({ skirt: 'down', drawers: 'up', marks: { L: 0, R: 0 } }, st);
+  const what = st.skirt === 'down' ? 'skirt' : st.drawers === 'up' ? 'drawers' : 'skin';
+  const base = { skirt: spec.skirt, drawers: '#eee6d2', skin: spec.skin }[what], seam = { skirt: spec.skirtDk, drawers: '#d4cab0', skin: spec.skinSh }[what];
+  g.ctx.clearRect(0, 0, 24, 8);
+  g.all('seat', base);
+  if (what !== 'skin') { g.fill('seat', 'back', seam, 3, 0, 2, 4); g.fill('seat', 'bottom', seam, 3, 0, 2, 4); }
+  else { g.fill('seat', 'back', seam, 4, 0, 1, 3); g.fill('seat', 'bottom', seam, 4, 0, 1, 4); }      // (a faint line down the middle)
+  g.grain(6113, 4);
+  if (what === 'skin') {
+    markRect(g, 'seat', 'back', 0, 0, 4, 4, 'L', st.marks); markRect(g, 'seat', 'back', 4, 0, 4, 4, 'R', st.marks);
+    markRect(g, 'seat', 'left', 3, 0, 1, 4, 'L', st.marks); markRect(g, 'seat', 'right', 0, 0, 1, 4, 'R', st.marks);
+  }
+  return g;
+}
+function makeSeat(spec) {
+  const g = new B.Skin(3, 3, { W: 24, H: 8, A: { seat: SEAT } }), tex = g.texture();
+  const mesh = new THREE.Mesh(B.boxGeo(SEAT, 0.15, 0, 4, 24, 8), new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5 }));
+  const api = { mesh, skin: g, tex, paint(st) { paintSeatInto(g, spec, st); tex.needsUpdate = true; } };
+  api.paint({}); return api;
+}
+// The skirt, lifted: gathered in a roll at the small of her back (a box on the torso's back, at the waist), in the skirt's own colours.
+function makeSkirtRoll(rig) {
+  const spec = rig.spec, c = document.createElement('canvas'); c.width = c.height = 8; const x = c.getContext('2d');
+  for (let j = 0; j < 8; j++) { x.fillStyle = j % 3 === 2 ? spec.skirtDk : spec.skirt; x.fillRect(0, j, 8, 1); }
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.encoding = THREE.sRGBEncoding;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(9, 3.2, 3), new THREE.MeshLambertMaterial({ map: t }));
+  m.position.set(0, 2.6, -2.6); m.visible = false; rig.torso.add(m);
+  return m;
 }
 
 // The cloak: waist-length, scarlet, hooded. A cape hung from the shoulders down the back to the waist, a collar, and a hood that lies back
@@ -186,5 +244,5 @@ function makeCloak(rig) {
   return api;
 }
 
-root.Cast = { HEROINE_NAME, WHO, PITCH, SPECS, FACES, EXPR, paintPerson, make, makeCloak };
+root.Cast = { HEROINE_NAME, WHO, PITCH, SPECS, FACES, EXPR, paintPerson, make, makeCloak, makeSeat, paintSeatInto, makeSkirtRoll };
 })(typeof window !== 'undefined' ? window : globalThis);

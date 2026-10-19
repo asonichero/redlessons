@@ -27,24 +27,32 @@ async function newGame() {
   await hub(L);
 }
 async function hub(L, saved) {
-  hideAll(); wake(); G.mode = 'play'; G.drone = null;
+  hideAll(); wake(); G.mode = 'play'; G.drone = null; G.setScene(W);
   $('fade').style.transition = 'opacity .8s ease'; $('fade').style.opacity = 0;
   const r = await V.play(G, W, L, saved);
   if (r.quit) { location.reload(); return; }
   if (r.call) {
     const res = await V.reckoning(G, W, L, r.call);
     G.save({ step: 'village', ledger: L.state });
-    await card(res, r.call);
+    // A book with something in it, settled with a giver who corrects, is settled over their knee (at whatever size she is now).
+    let out = null;
+    if (res.tier !== 'none' && root.Ledger.correctors().includes(r.call)) {
+      out = await root.Correction.run(G, { giver: r.call, tier: res.tier, size: L.wearing ? V.CLOAK_SCALE : 1 });
+    }
+    await card(res, r.call, out);
     const sv = (G.loadSave() || {}).hub || null;
     await hub(L, sv ? { pos: new root.THREE.Vector3(sv.pos.x, 0, sv.pos.z), errand: sv.errand === 'sack' ? null : sv.errand } : null);
   }
 }
-// The settlement card: where the correction scene will play once the lap rig is refitted for her.
-function card(res, g) {
+// The settlement card, after the reckoning (and the correction, if there was one).
+function card(res, g, out) {
   return new Promise(resolve => {
-    const name = root.Ledger.GIVERS[g].name, T = { none: 'Nothing owed', token: 'Token', light: 'Light', firm: 'Firm', severe: 'Severe' }[res.tier];
+    const G_ = root.Ledger.GIVERS[g], name = G_.name, T = { none: 'Nothing owed', token: 'Token', light: 'Light', firm: 'Firm', severe: 'Severe' }[res.tier];
     $('setTitle').textContent = 'Settled with ' + name;
-    $('setText').textContent = `${T}${res.tier === 'none' ? '' : ', with the ' + res.implement}. ` + (res.lied ? 'She lied about it, which lifted it a tier and went in Grandmother’s book.' : 'She owned up, which mends a little trust.');
+    const how = res.lied ? 'She lied about it, which lifted it a tier and went in Grandmother’s book.' : 'She owned up, which mends a little trust.';
+    const what = res.tier === 'none' ? 'Nothing was owed.' : G_.kin ? `${T}, settled in words: family keep a book, but they don’t correct.`
+      : out ? (out.red ? `${T}. Stopped with Red after ${out.hits}; nothing more was asked of her.` : `${T}: ${out.hits} across ${name.replace(/^The /, 'the ')}’s knee.`) : T + '.';
+    $('setText').textContent = what + ' ' + how;
     show('settle'); G.mode = 'end'; $('fade').style.transition = 'none'; $('fade').style.opacity = 0;
     $('setBack').onclick = () => { hideAll(); resolve(); };
   });

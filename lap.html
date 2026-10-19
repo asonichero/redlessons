@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Over the Knee</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; }
+  #view { position: fixed; inset: 0 300px 0 0; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
+  h1 { font-size: 15px; margin: 0 0 4px; } .sub { color: #9a8a8e; font-size: 11px; line-height: 1.5; }
+  h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #a8969a; margin: 14px 0 6px; border-bottom: 1px solid #3a2c30; padding-bottom: 3px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  button { background: #33282c; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  button:hover:not(:disabled) { background: #43343a; } button:disabled { opacity: .4; cursor: default; }
+  button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
+  button.big { font-size: 14px; padding: 9px 16px; background: #4a3a1c; border-color: #c9a84c; }
+  button.red { background: #8a1a22; border-color: #f08080; font-weight: bold; }
+  input[type=range] { width: 100%; }
+  #meter { position: relative; height: 14px; background: #1c1418; border: 1px solid #554449; border-radius: 4px; overflow: hidden; }
+  #meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #4a7a4a, #c9a84c 60%, #c24850); }
+  #meter b { position: absolute; top: 0; bottom: 0; left: 66.7%; width: 2px; background: #fff; opacity: .7; }
+  #band { margin-top: 5px; } #info { margin-top: 6px; font-size: 12px; color: #b9a9ae; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="panel">
+  <h1>Over the knee</h1>
+  <div class="sub">The heroine across a giver's lap, at any size from full height down to the cloak's. Drag to orbit; the wheel zooms. Space smacks.</div>
+  <h3>Giver</h3><div class="btns" id="givers"></div>
+  <h3>Her size: <span id="sizeV">100%</span></h3>
+  <input type="range" id="size" min="50" max="100" value="100">
+  <div class="btns" style="margin-top:4px"><button data-size="100">Full</button><button data-size="55">In the cloak</button></div>
+  <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="paddle">Paddle</button></div>
+  <h3>Clothes</h3>
+  <div class="btns"><button id="skirt">Skirt: down</button><button id="drawers">Drawers: up</button></div>
+  <h3>Smacks</h3>
+  <div class="btns"><button class="big" id="one">Smack</button><button class="big" id="ten">Run of 10</button></div>
+  <div class="btns" style="margin-top:6px"><span>Pace</span><button data-pace="0.7">Slow</button><button data-pace="1" class="on">Steady</button><button data-pace="1.5">Brisk</button></div>
+  <div class="btns" style="margin-top:6px"><span>Strength</span><button data-str="0.6">Light</button><button data-str="1" class="on">Firm</button><button data-str="1.3">Hard</button></div>
+  <h3>Her distress</h3>
+  <div id="meter"><i></i><b title="the edge of resistance"></b></div>
+  <div id="band">composed</div>
+  <div id="info"></div>
+  <div class="btns" style="margin-top:10px"><button class="red" id="red">Red</button><button id="reset">Start again</button></div>
+  <h3>Camera</h3><div class="btns"><button data-view="side">Side</button><button data-view="behind">Behind</button><button data-view="giver">Giver's view</button><button data-view="top">Above</button><button data-view="face">Her face</button></div>
+</div>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="js/blocky.js"></script>
+<script src="js/cast.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/pain.js"></script>
+<script src="js/ledger.js"></script>
+<script src="js/lap.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id), A = window.GameAudio;
+  let lap = null, giver = (new URLSearchParams(location.search)).get('giver') || 'innkeeper';
+  const st = { size: 100, implement: 'hand', skirt: 'down', drawers: 'up', pace: 1, strength: 1 };
+  function build() {
+    $('view').innerHTML = ''; lap = Lap.create($('view'), { giver, size: st.size / 100 });
+    lap.set({ implement: st.implement, skirt: st.skirt, drawers: st.drawers, pace: st.pace, strength: st.strength }); lap.view('side'); lap.start();
+    lap.on((type, d) => { if (type === 'tooHarsh') $('info').textContent = 'Too harsh: nothing more is struck.'; if (type === 'red') $('info').textContent = 'Red. Everything stopped at once.'; });
+  }
+  for (const g of Ledger.correctors()) { const b = document.createElement('button'); b.textContent = Ledger.GIVERS[g].name.replace(/^The /, ''); b.dataset.g = g; if (g === giver) b.classList.add('on'); b.onclick = () => { giver = g; document.querySelectorAll('[data-g]').forEach(x => x.classList.toggle('on', x === b)); build(); }; $('givers').appendChild(b); }
+  const setSize = v => { st.size = +v; $('size').value = v; $('sizeV').textContent = v + '%'; lap.set({ size: v / 100 }); };
+  $('size').oninput = () => setSize($('size').value);
+  document.querySelectorAll('[data-size]').forEach(b => b.onclick = () => setSize(b.dataset.size));
+  document.querySelectorAll('[data-impl]').forEach(b => b.onclick = () => { st.implement = b.dataset.impl; document.querySelectorAll('[data-impl]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ implement: st.implement }); });
+  document.querySelectorAll('[data-pace]').forEach(b => b.onclick = () => { st.pace = +b.dataset.pace; document.querySelectorAll('[data-pace]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ pace: st.pace }); });
+  document.querySelectorAll('[data-str]').forEach(b => b.onclick = () => { st.strength = +b.dataset.str; document.querySelectorAll('[data-str]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ strength: st.strength }); });
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => lap.view(b.dataset.view));
+  $('skirt').onclick = () => { st.skirt = st.skirt === 'down' ? 'up' : 'down'; if (st.skirt === 'down') st.drawers = 'up'; lap.set({ skirt: st.skirt, drawers: st.drawers }); label(); };
+  $('drawers').onclick = () => { if (st.skirt === 'down') return; st.drawers = st.drawers === 'up' ? 'down' : 'up'; lap.set({ drawers: st.drawers }); label(); };
+  const label = () => { $('skirt').textContent = 'Skirt: ' + (st.skirt === 'down' ? 'down' : 'lifted'); $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = st.skirt === 'down'; };
+  const wake = () => { if (A) A.init(); };
+  $('one').onclick = () => { wake(); lap.smack(); }; $('ten').onclick = () => { wake(); lap.run(10); };
+  $('red').onclick = () => lap.red(); $('reset').onclick = () => { $('info').textContent = ''; build(); };
+  addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); wake(); lap.smack(); } });
+  setInterval(() => { if (!lap) return; const d = lap.pain.distress(); $('meter').firstElementChild.style.width = Math.min(100, d / 1.5 * 100) + '%'; $('band').textContent = lap.band(); if (!$('info').textContent.startsWith('Red') && !$('info').textContent.startsWith('Too')) $('info').textContent = lap.st.hits + ' smacks'; }, 120);
+  build(); label(); window.__lap = () => lap;
+})();
+</script>
+</body>
+</html>

@@ -6,16 +6,25 @@ The heroine is a grown woman who lives with her mother, the village baker, and h
 
 She has never heard the tale of Red Riding Hood. The Wolf, when he comes, will offer the one thing the village won't: to wipe the books clean.
 
-## Status: milestone 1, the shell and the village hub
+## Status: milestone 2, over the knee
 
-Built: the title screen over a drone view of the village, the content notice, settings, saves and the pause menu (all ported from the Jack game); the cast on the blocky rig; the opening cutscene (Grandmother gives the cloak and the village names its terms); the free-roam village with the ledger running; and the reckoning, where a giver calls her in and she owns up or lies.
+Built: the title screen over a drone view of the village, the content notice, settings, saves and the pause menu (all ported from the Jack game); the cast on the blocky rig; the opening cutscene (Grandmother gives the cloak and the village names its terms); the free-roam village with the ledger running; the reckoning, where a giver calls her in and she owns up or lies; and the correction that follows it, over the giver's knee.
 
-Not yet: the correction scene itself. The lap scene in the Jack game is fitted to Jack's rig, with two hand-tuned pose sets; it needs refitting for the heroine before it can be ported. Until then a reckoning ends on a card that shows the tier and implement the engine chose.
+## Over the knee (`js/lap.js`, `js/correction.js`, `lap.html`)
+
+One position only: the giver seated on a plain chair, the heroine face down across their lap, hips over the right knee. It is the Jack game's lap scene cut down to that position and refitted for her:
+
+- **Procedural, at any size.** The Jack game needed two hand-edited pose sets (Jack at 100% and 50%) blended by his size. Here the giver's arm is solved every frame (shoulder, elbow and wrist) so the hand lands on the middle of the cheek struck, and the paddle's blade lies flat on it, from full height down to the cloak's 55% (and to 50%, the position's limit). The giver sits nearly upright, turning a little into a strike on the far cheek: those are the Jack game's tuned values, baked in. Measured at contact, the hand lands exactly and the blade's middle within 0.6 units, for every giver, cheek and size.
+- **Her clothes.** Skirt down, or lifted and gathered at the small of her back; her drawers up, or down to just above the knee. The seat block carries the skirt, the drawers or bare skin, and the marks, cheek by cheek. Cloth takes the edge off the sting (the pain model's cushions, with a skirt and drawers added).
+- **The pain model** is the Jack game's, unchanged: distress bands drive her face (calm, wincing, gritted, crying), her kicks and her voice, and at "too harsh" nothing more is struck.
+- **The scripts** (`js/correction.js`): Token is a few over the skirt; Light adds the skirt lifted; Firm adds her drawers down; Severe ends with the paddle. Each giver has their own lines for the start, the stages, the strokes and afterwards.
+- **Red** (the button at top left, or R) stops everything at once, the giver lets her up, and the card says so. Nothing is held against her: the book was already settled.
+- **`lap.html`** previews it: pick the giver, her size, the implement and clothes, smack or run ten, and look from the front, behind, the giver's view, above or at her face.
 
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens the game
+npm run serve        # http://localhost:8123/ opens the game; /lap.html previews the over-the-knee scene
 npm test             # the ledger and the pain model
 ```
 
@@ -43,6 +52,7 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 
 - **The cloak changes her scale, not her age.** She is an adult woman in mind, voice, body and clothes at every size. Shrinking scales the model and nothing else.
 - **Her mother is never a giver.** She is the story's emotional anchor. `Ledger.ANCHORS` lists her, and the ledger refuses to write in her book or let her settle one, even if a save is edited; the tests check this.
+- **Family never correct.** Grandmother is marked `kin`: she keeps a book and settles it in words, but the lap scene refuses her, and so does the correction. Only the Woodcutter, the Miller and the Innkeeper give corrections (`Ledger.correctors()`).
 - **The heroine can't be called "Red".** That is the safe word. Her name is a placeholder (`HEROINE_NAME` in `js/cast.js`) until one is chosen.
 
 ## Files
@@ -53,16 +63,18 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 | `js/game.js` | The cutscene toolkit: shots, fades, waits, typed dialogue, choices, skipping | Ported (speaker names now come from the cast) |
 | `js/audio.js` | Music, ambience, smacks, voices and the speech babble, all synthesised | Ported (voice pitches now come from the cast) |
 | `js/touchui.js` | The touch controls | Ported unchanged |
-| `js/pain.js` | The pain model behind the correction | Ported unchanged |
+| `js/pain.js` | The pain model behind the correction | Ported (cushions for a skirt and drawers added) |
 | `js/blocky.js` | The box-built character rig and skin painter | Ported unchanged (Jack's and Gerda's painters are still in it, unused) |
 | `js/cast.js` | The heroine, her mother, Grandmother, the Woodcutter, the Miller, the Innkeeper; one painter driven by data; the cloak | New |
 | `js/ledger.js` | The bargain: terms, givers, books, trust, tiers | New |
 | `js/village.js` | The village hub, the opening, free roam, the talks and the reckoning | New |
-| `tests/` | `node --test` checks for the ledger and the pain model | Ledger new; pain ported |
+| `js/lap.js`, `lap.html` | Over the knee: the giver's arm solve, her frame and seat block, the session, the cameras; its preview page | Refitted from the Jack game's lap scene (one position, procedural) |
+| `js/correction.js` | The correction after a reckoning: the room, the tier scripts, the givers' lines, Red | New |
+| `tests/` | `node --test` checks for the ledger (including who may correct) and the pain model | Ledger new; pain ported |
 
 ## Next
 
-1. A female subject rig for the lap scene: refit the contact sites and the two pose sets (full size and cloak size) for the heroine, then port `lap.js` and plug it in where the settlement card is now.
+1. An aftermath beat after a correction (the Jack game stands Jack facing the wall), and the walk from the reckoning to the giver's house.
 2. A day clock, so the evening bell (curfew) can be broken and kept.
 3. The forest path out to Grandmother's cottage, and the Wolf.
 4. Trust unlocks: the routes and rides each villager opens.
