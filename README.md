@@ -72,9 +72,15 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 | `js/correction.js` | The correction after a reckoning: the room, the tier scripts, the givers' lines, Red | New |
 | `tests/` | `node --test` checks for the ledger (including who may correct) and the pain model | Ledger new; pain ported |
 
-## The new look (style test: `style.html`, `js/toon.js`)
+## The look (`js/toon.js`, `style.html`)
 
-A move from the blocky Minecraft look to something closer to *Mika and the Witch's Mountain*: smooth rounded characters, hard two-band cel shading, a warm ink outline and an adult anime face (almond eyes with a heavy lash line, a nose that is little more than a shadow, a small mouth, a long jaw, chunky hair locks with a band of shine). `style.html` shows the heroine at full height, with the cloak on, and in the cloak at 55% beside the Innkeeper. Her proportions are an adult's in every state (about seven heads tall, an adult face); the cloak changes her scale and nothing else. `js/toon.js` builds characters on the same joints as the blocky rig, so the village and the over-the-knee scene can switch over without their posing code changing. Not wired into the game yet.
+The village and its whole cast are in the toon style now, after the concept art: smooth rounded characters, soft three-band cel shading and a warm brown ink outline; flat cel-shaded buildings with outlined edges; rounded trees. The heroine wears the concept art's green tunic with belt and pouches, laced bracers, tan trousers and tall laced boots, with chestnut braids tied in red ribbon and the red cloak edged in gold and stitched with stars. She is about six and a half heads tall with a woman's face and figure, identical at every size. The men have broader builds; the woodcutter has a beard and a checked shirt, the miller a floury apron, Grandmother a shawl.
+
+The rigs use the same joints as the blocky ones, so the village poses them with the same code, now with knees that bend as they walk and a breath at rest. Characters are kept light (about 15,000 triangles each, her 27,000) so the village runs on a phone.
+
+`style.html` shows her at full height, cloaked, and cloaked at 55% beside the Innkeeper; `style.html?cast` lines up the whole cast.
+
+**Still blocky:** the over-the-knee scene. It needs refitting to the toon rig, and to her new clothes (trousers rather than a skirt), next.
 
 ## Movement
 
@@ -82,7 +88,7 @@ In the cloak her pace barely drops (speed scales by 0.85 + 0.15 × her size, abo
 
 ## Next
 
-0. Convert the cast, the village and the lap scene to the new look.
+0. Convert the over-the-knee scene to the toon rig and her trousers.
 1. An aftermath beat after a correction (the Jack game stands Jack facing the wall), and the walk from the reckoning to the giver's house.
 2. A day clock, so the evening bell (curfew) can be broken and kept.
 3. The forest path out to Grandmother's cottage, and the Wolf.

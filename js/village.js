@@ -35,27 +35,36 @@ function pix(key, cols, opts) {
   const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.encoding = THREE.sRGBEncoding;
   t.wrapS = t.wrapT = THREE.RepeatWrapping; texCache[key] = t; return t;
 }
+// The look: flat cel-shaded colours (js/toon.js), each surface one soft colour (the average of its old palette, a touch brighter), and an ink outline
+// round every box. Painted details (the signs) keep their little textures, cel-shaded too.
 const MATS = {};
+const avg = cols => { const c = new THREE.Color(0, 0, 0); for (const h of cols) c.add(new THREE.Color(h)); c.multiplyScalar(1 / cols.length); c.offsetHSL(0, 0.06, 0.04); return '#' + c.getHexString(); };
 function mat(key, cols, rep, opts) {
   const k = key + ':' + (rep || 1);
-  if (!MATS[k]) { const t = pix(key, cols, opts).clone(); t.needsUpdate = true; t.repeat.set(rep || 1, rep || 1); MATS[k] = new THREE.MeshLambertMaterial({ map: t }); }
+  if (!MATS[k]) {
+    if (opts && opts.draw) { const t = pix(key, cols, opts).clone(); t.needsUpdate = true; t.repeat.set(rep || 1, rep || 1); MATS[k] = root.Toon.toon('#ffffff', { map: t }); }
+    else MATS[k] = root.Toon.toon(avg(cols));
+  }
   return MATS[k];
 }
-const col = hex => new THREE.MeshLambertMaterial({ color: new THREE.Color(hex).convertSRGBToLinear() });
+const col = hex => root.Toon.toon(hex);
 const WOOD = ['#7a5232', '#6a4628', '#86603a', '#5e3e22'], PLASTER = ['#efe4cc', '#e6d9bc', '#f4ead6', '#ddd0b2'], THATCH = ['#c9a45a', '#b8934a', '#d6b46a', '#a8843e'];
 const STONE = ['#8f8a80', '#7d786e', '#a19c90', '#6e6a62'], COBBLE = ['#9a9488', '#8a8478', '#aaa498', '#7a7468', '#6a665e'], GRASS = ['#6a9a4a', '#5e8e40', '#76a656', '#548436'];
 const LEAF = ['#3e6e34', '#34602c', '#4a7c3e', '#2c5426'], PATH = ['#9a7a52', '#8a6c46', '#a6865c', '#7c603e'], SLATE = ['#5a5e6a', '#4e525e', '#666a76'];
 
 function box(w, h, d, m, x, y, z, parent) {
-  const g = new THREE.BoxGeometry(w, h, d), mesh = new THREE.Mesh(g, m); mesh.position.set(x, y + h / 2, z); if (parent) parent.add(mesh); return mesh;
+  const g = new THREE.BoxGeometry(w, h, d), mesh = new THREE.Mesh(g, m); mesh.position.set(x, y + h / 2, z); if (parent) parent.add(mesh);
+  // The ink outline: the same box a fixed half-unit larger all round, drawn from the inside.
+  const ink = new THREE.Mesh(g, root.Toon.INK); ink.scale.set((w + 0.9) / w, (h + 0.9) / h, (d + 0.9) / d); mesh.add(ink);
+  return mesh;
 }
 
 // ── The world ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Solid things, as rectangles on the ground (x0..x1, z0..z1). Nothing here is climbable yet.
 function build(G) {
-  const scene = new THREE.Scene(); scene.background = new THREE.Color('#9ec8e8'); scene.fog = new THREE.Fog('#b8d4e8', 420, 900);
-  scene.add(new THREE.HemisphereLight(0xfff4e0, 0x5a6a4a, 0.75));
-  const sun = new THREE.DirectionalLight(0xfff0d8, 0.75); sun.position.set(-200, 400, 260); scene.add(sun);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color('#a8d4ee').convertSRGBToLinear(); scene.fog = new THREE.Fog(new THREE.Color('#cfe4f0').convertSRGBToLinear(), 380, 900);
+  scene.add(new THREE.HemisphereLight(0xfff6e8, 0x8aa070, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff0d8, 0.95); sun.position.set(-200, 400, 260); scene.add(sun);
   const solids = [];
   const solid = (x0, x1, z0, z1, tag) => { solids.push({ x0, x1, z0, z1, tag }); };
 
@@ -72,7 +81,7 @@ function build(G) {
   box(110, 52, 70, mat('plaster', PLASTER, 4), 0, 0, 0, bakery);
   for (const x of [-55, -18, 18, 55]) box(4, 52, 72, mat('wood', WOOD, 2), x, 0, 0, bakery);
   box(114, 4, 74, mat('wood', WOOD, 4), 0, 24, 0, bakery);
-  const roof = box(124, 30, 84, mat('thatch', THATCH, 6), 0, 52, 0, bakery); roof.scale.set(1, 1, 1); roof.geometry = new THREE.CylinderGeometry(0.01, 62, 30, 4, 1); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.7); roof.position.y = 67;
+  const roof = box(124, 30, 84, mat('thatch', THATCH, 6), 0, 52, 0, bakery); roof.scale.set(1, 1, 1); roof.geometry = new THREE.CylinderGeometry(0.01, 62, 30, 4, 1); roof.children[0].geometry = roof.geometry; roof.children[0].scale.setScalar(1.025); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.7); roof.position.y = 67;
   box(12, 30, 12, mat('stone', STONE, 2), 34, 62, -14, bakery);
   box(22, 34, 2, mat('wood', ['#4a2e18', '#3e2614', '#56361e'], 2), 0, 0, 35.5, bakery);               // the door
   box(18, 14, 2, col('#ffd890'), -34, 22, 35.5, bakery); box(18, 14, 2, col('#ffd890'), 34, 22, 35.5, bakery);   // warm windows
@@ -128,10 +137,15 @@ function build(G) {
 
   // The forest edge (south): a wall of trees with the path through it, the woodcutter's log pile and his marker post where the path enters.
   const trees = [];
+  // (One shared low-poly sphere per size, so a hundred and fifty trees stay cheap to draw, on a phone too.)
+  const TREE_GEO = [new THREE.IcosahedronGeometry(1, 1), new THREE.IcosahedronGeometry(1, 1), new THREE.IcosahedronGeometry(1, 1)];
   const tree = (x, z, h) => {
     const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g); trees.push(g);
-    box(8, h, 8, mat('bark', ['#5a3e26', '#4e3420', '#664830'], 2), 0, 0, 0, g);
-    box(36, 30, 36, mat('leaf', LEAF, 3), 0, h - 6, 0, g); box(24, 16, 24, mat('leaf', LEAF, 2), 0, h + 22, 0, g);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 4.4, h, 10), mat('bark', ['#6a4a30', '#5e4028', '#745236'])); trunk.position.y = h / 2; g.add(trunk);
+    const leaf = [mat('leaf', LEAF), col('#5a9a4a'), col('#3e7a3a')];
+    for (const [ox, oy, oz, r, li] of [[0, h + 4, 0, 19, 0], [-11, h - 3, 5, 12, 2], [10, h - 1, -6, 13, 1], [3, h + 17, 2, 12, 1]]) {
+      const ball = root.Toon.inked(TREE_GEO[Math.min(2, Math.round(r / 8))], leaf[li], 0.03); ball.scale.setScalar(r); ball.position.set(ox, oy, oz); g.add(ball);
+    }
     solid(x - 5, x + 5, z - 5, z + 5, 'tree');
   };
   let ts = 5; const trnd = () => { ts = (ts * 16807) % 2147483647; return ts / 2147483647; };
@@ -145,7 +159,7 @@ function build(G) {
   // ── The cast ──
   const cast = {}, anim = {};
   const place = (id, x, z, ry) => {
-    const r = C.make(id); r.root.position.set(x, 0, z); r.root.rotation.y = ry; r.root.scale.setScalar(ADULT); scene.add(r.root);
+    const r = root.Toon.make(id); r.root.position.set(x, 0, z); r.root.rotation.y = ry; r.root.scale.setScalar(ADULT); scene.add(r.root);
     const a = anim[id] = { t: Math.random() * 10, phase: 0, speed: 0, look: 0, gesture: 0, air: false };
     r.after = q => {
       const s = Math.sin(a.phase) * clamp(a.speed / 20, 0, 1) * 0.7, idle = 0.02 * Math.sin(a.t * 1.1);
@@ -153,14 +167,17 @@ function build(G) {
       if (q.elbow) q.elbow.rotation.x = -0.6 * a.gesture;
       if (a.carry) { q.armL.rotation.x = q.armR.rotation.x = -1.2; }
       if (a.air) { q.armL.rotation.x = q.armR.rotation.x = -2.4; q.legL.thigh.rotation.x = -0.5; q.legR.thigh.rotation.x = 0.25; }
-      q.neck.rotation.y = a.look; q.torso.rotation.z = 0.012 * Math.sin(a.t * 0.9);
-      q.hips.position.y = 12 + Math.abs(Math.sin(a.phase)) * 0.5 * clamp(a.speed / 20, 0, 1);
+      const mv = clamp(a.speed / 20, 0, 1);
+      q.legL.knee.rotation.x = Math.max(0, -Math.sin(a.phase)) * 0.9 * mv + (a.air ? 0.6 : 0); q.legR.knee.rotation.x = Math.max(0, Math.sin(a.phase)) * 0.9 * mv + (a.air ? 0.6 : 0);
+      if (!a.carry && !a.gesture) { q.elbow.rotation.x = -0.22 - 0.35 * mv; q.elbowL.rotation.x = -0.18 - 0.35 * mv; }
+      q.neck.rotation.y = a.look; q.torso.rotation.z = 0.012 * Math.sin(a.t * 0.9); q.torso.rotation.x = 0.06 * mv;
+      q.torso.scale.set(1, 1 + 0.008 * Math.sin(a.t * 1.6), 1);                      // (a breath)
+      q.hips.position.y = (q.baseHip || 12) + Math.abs(Math.sin(a.phase)) * 0.6 * mv;
     };
     B.setPose(r, 'stand'); for (let i = 0; i < 20; i++) B.step(r, 0.1);
     cast[id] = r; return r;
   };
   const heroine = place('heroine', 0, 40, Math.PI);
-  C.makeCloak(heroine);
   place('mother', 14, -128, 0);
   place('grandmother', 28, 26, -0.6);
   place('miller', -168, -48, Math.PI / 2);

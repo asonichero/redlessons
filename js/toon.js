@@ -31,11 +31,12 @@ function inked(geo, mat, w) {
   g.userData.mesh = m; return g;
 }
 // A body part turned from a profile: [[radius, height], …], squashed front to back by depth.
+// (Segments are trimmed to about 60% of what is asked: smooth enough under cel shading, and cheap on a phone.)
 function lathe(profile, depth, seg, phi0, phiLen) {
   if (profile[0][1] > profile[profile.length - 1][1]) profile = profile.slice().reverse();     // (bottom to top, so the faces point outward)
-  const g = new THREE.LatheGeometry(profile.map(([r, y]) => new V2(r, y)), seg || 24, phi0 || 0, phiLen || Math.PI * 2); g.scale(1, 1, depth == null ? 0.72 : depth); g.computeVertexNormals(); return g;
+  const g = new THREE.LatheGeometry(profile.map(([r, y]) => new V2(r, y)), Math.max(10, Math.round((seg || 24) * 0.62)), phi0 || 0, phiLen || Math.PI * 2); g.scale(1, 1, depth == null ? 0.72 : depth); g.computeVertexNormals(); return g;
 }
-const sphere = (r, sx, sy, sz) => { const g = new THREE.SphereGeometry(r, 22, 16); g.scale(sx || 1, sy || 1, sz || 1); return g; };
+const sphere = (r, sx, sy, sz) => { const g = new THREE.SphereGeometry(r, r > 1 ? 16 : 12, r > 1 ? 11 : 8); g.scale(sx || 1, sy || 1, sz || 1); return g; };
 // A limb segment from 0 down to -len, tapering from r0 to r1, with rounded ends.
 const limb = (len, r0, r1) => lathe([[0, 0.15], [r0 * 0.7, 0.05], [r0, -r0 * 0.4], [r1, -len + r1 * 0.4], [r1 * 0.7, -len - 0.05], [0, -len - 0.15]], 1, 16);
 // A five-pointed star, flat, for the cloak's embroidery.
@@ -49,6 +50,14 @@ const SPECS = {
   heroine: { skin: '#f7d6bc', skinSh: '#e6ad8e', blush: '#f0a090', hair: '#8a5030', hairHi: '#b4734a', hairDk: '#5e341c', eyes: '#6a4428', lips: '#c4646a',
     top: 'tunic', tunic: '#3f6b3c', tunicDk: '#2c5030', collar: '#e8dcc0', lower: 'trousers', trousers: '#d2bf98', trousersDk: '#b29e78', belt: '#6a4226', bracer: '#7a4c2a', boots: '#7a4a2a', bootsDk: '#5a3420',
     hairStyle: 'braids', ribbon: '#c42832', cloak: true },
+  mother: { skin: '#f0caa8', skinSh: '#d8a684', blush: '#e0988a', hair: '#9a7a5a', hairHi: '#c4a482', hairDk: '#6e563e', eyes: '#5a6a48', lips: '#b06a6a', grey: true,
+    top: 'bodice', blouse: '#f2ece0', bodice: '#9a5a3a', lower: 'skirt', skirt: '#6a5a7a', skirtDk: '#54466a', belt: '#5a3a22', boots: '#3a2616', hairStyle: 'bun', apron: '#f6f0e4', flour: true },
+  grandmother: { skin: '#eac6a8', skinSh: '#cfa486', blush: '#d8988c', hair: '#e8e4dc', hairHi: '#ffffff', hairDk: '#b8b0a4', eyes: '#5a7a98', lips: '#b07a80', lined: true,
+    top: 'bodice', blouse: '#ece6d6', bodice: '#3a4a5a', lower: 'skirt', skirt: '#3a4a5a', skirtDk: '#2c3846', belt: '#2a1a10', boots: '#2a1a10', hairStyle: 'bun', shawl: '#a83030' },
+  miller: { male: true, skin: '#eabf9c', skinSh: '#cc9c7a', blush: '#d89a88', hair: '#c8b494', hairHi: '#e6d8bc', hairDk: '#9a8868', eyes: '#5a7a8a', lips: '#a8706a',
+    top: 'shirt', shirt: '#ece6d6', shirtDk: '#cfc7b4', lower: 'trousers', trousers: '#8a7a5a', trousersDk: '#6e6046', belt: '#4a3220', boots: '#4a3220', bootsDk: '#3a2618', hairStyle: 'short', apron: '#d8cfb8', flour: true },
+  woodcutter: { male: true, skin: '#dcac86', skinSh: '#bc8a66', blush: '#c88a76', hair: '#4a3020', hairHi: '#6a4a32', hairDk: '#2e1c12', eyes: '#4a6a3a', lips: '#9a5a50', beard: true,
+    top: 'shirt', shirt: '#a8322a', shirtDk: '#7a221c', check: '#3a1c18', lower: 'trousers', trousers: '#4e4a3a', trousersDk: '#3a3628', belt: '#2a1a10', boots: '#3a2616', bootsDk: '#2a1a10', hairStyle: 'short' },
   innkeeper: { skin: '#d6a07a', skinSh: '#b07a58', blush: '#c07a64', hair: '#2e1e18', hairHi: '#5a3c2c', hairDk: '#1a100c', eyes: '#4a3020', lips: '#9a4a4a',
     top: 'bodice', blouse: '#f0e8d8', bodice: '#2a5a5a', lower: 'skirt', skirt: '#5a3a2a', skirtDk: '#462c1e', belt: '#3a2618', boots: '#2a1a10', hairStyle: 'bun', apron: '#ece4d0' },
 };
@@ -72,12 +81,20 @@ function make(id) {
     // The figure under it: the bust, softened by the cloth.
     for (const sx of [-1, 1]) { const b = inked(sphere(1.15, 1, 0.9, 0.78), tm, 0.03); b.position.set(sx * 1.2, 5.55, 1.5); torso.add(b); }
     // A belt with a brass buckle, two pouches at the front of the hips and one at the side.
-    torso.add(new THREE.Mesh(lathe([[2.72, 1.85], [2.66, 2.75]], 0.71, 28), M.belt));
-    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.3), toon('#d8b04a')); buckle.position.set(0, 2.3, 1.95); torso.add(buckle);
+    torso.add(inked(lathe([[2.98, 1.8], [2.93, 2.8]], 0.72, 28), M.belt, 0.02));
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.85, 0.3), toon('#d8b04a')); buckle.position.set(0, 2.3, 2.18); torso.add(buckle);
     for (const [x, z, ry, sc] of [[-1.85, 1.7, -0.45, 1], [1.85, 1.7, 0.45, 0.85], [3.0, 0.2, 1.4, 1.1]]) {
       const p = inked(new THREE.BoxGeometry(1.35 * sc, 1.45 * sc, 0.75), M.belt, 0.06); p.position.set(x, 1.15, z); p.rotation.y = ry; torso.add(p);
       const flap = new THREE.Mesh(new THREE.BoxGeometry(1.38 * sc, 0.5, 0.8), toon('#583420')); flap.position.set(x, 1.6, z); flap.rotation.y = ry; torso.add(flap);
     }
+  } else if (S.top === 'shirt') {
+    // A man's build: broader at the shoulder, straighter at the waist. A loose shirt, checked for the woodcutter, the tail over the hips.
+    const sm = toon(S.shirt, { side: THREE.DoubleSide });
+    torso.add(inked(lathe([[0, 9.3], [1.15, 9.2], [2.95, 8.75], [3.85, 7.7], [3.78, 6.6], [3.45, 5.0], [3.2, 3.4], [3.25, 2.0], [3.45, 0.4], [3.6, -1.1]], 0.7, 28), sm, 0.025));
+    if (S.check) for (let y = -0.6; y < 8.6; y += 1.5) torso.add(new THREE.Mesh(lathe([[3.1 + (y > 5 ? 0.45 : y > 2 ? 0.05 : 0.3), y], [3.1 + (y > 5 ? 0.45 : y > 2 ? 0.05 : 0.3), y + 0.42]], 0.71, 28), toon(S.check)));
+    const v = new THREE.Mesh(new THREE.CircleGeometry(0.85, 3), toon(S.skin)); v.position.set(0, 8.55, 1.95); v.rotation.set(-0.35, 0, -Math.PI / 2); torso.add(v);
+    torso.add(new THREE.Mesh(lathe([[3.28, 1.6], [3.24, 2.4]], 0.72, 28), M.belt));
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.3), toon('#b89a4a')); buckle.position.set(0, 2.0, 2.35); torso.add(buckle);
   } else {
     const bm = toon(S.bodice);
     torso.add(inked(lathe(BODY, 0.68), bm));
@@ -85,7 +102,19 @@ function make(id) {
     for (let i = 0; i < 4; i++) { const x = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 0.2), toon('#e8d8a8')); x.position.set(0, 2.6 + i * 1.0, 2.25 + (i > 1 ? 0.1 : 0)); x.rotation.z = i % 2 ? 0.5 : -0.5; torso.add(x); }
     for (const sx of [-1, 1]) { const b = inked(sphere(1.25, 1, 0.9, 0.8), bm, 0.03); b.position.set(sx * 1.25, 5.6, 1.55); torso.add(b); }
     torso.add(new THREE.Mesh(lathe([[2.62, 2.0], [2.62, 2.7]], 0.69), M.belt));
+    if (S.shawl) {
+      // A shawl round the shoulders, knotted at the breastbone.
+      const sh = toon(S.shawl, { side: THREE.DoubleSide });
+      torso.add(inked(lathe([[1.2, 9.3], [2.8, 8.9], [3.7, 7.6], [3.75, 6.2], [3.5, 5.4]], 0.74, 28), sh, 0.03));
+      const knot = inked(sphere(0.55, 1.2, 0.9, 0.7), sh, 0.06); knot.position.set(0, 6.2, 2.45); torso.add(knot);
+    }
   }
+  if (S.apron && S.lower === 'trousers') {
+    // A work apron over trousers: the front of a cone from the waist to the knee.
+    const ag = new THREE.LatheGeometry([new V2(4.4, -6.5), new V2(3.9, -3), new V2(3.5, 0.2), new V2(3.3, 1.8)], 20, -Math.PI * 0.32, Math.PI * 0.64); ag.scale(1, 1, 0.78); ag.computeVertexNormals();
+    torso.add(inked(ag, toon(S.apron, { side: THREE.DoubleSide }), 0.015));
+  }
+  if (S.flour) for (const [x, y, z] of [[0.6, -1.0, 3.0], [-1.1, -2.6, 3.1], [1.4, 0.4, 2.9], [-0.3, -4.2, 3.4]]) { const d = new THREE.Mesh(sphere(0.32, 1.4, 1, 0.3), flat('#fbf8f0')); d.position.set(x, y, z); torso.add(d); }
   if (S.lower === 'skirt') {
     const skirt = new THREE.Group(); hips.add(skirt); rig.skirt = skirt;
     skirt.add(inked(lathe([[2.7, 2.3], [3.6, 0.6], [4.6, -4], [5.6, -9], [6.2, -12.6], [6.0, -13.2]], 0.78, 28), toon(S.skirt, { side: THREE.DoubleSide }), 0.025));
@@ -98,15 +127,15 @@ function make(id) {
 
   // ── Neck and head. A woman's face, soft and warm: eyes at the middle of the head, a gentle jaw and chin, a small nose, a quiet smile.
   const neck = new THREE.Group(); neck.position.y = 9.0; torso.add(neck); rig.neck = neck;
-  neck.add(inked(lathe([[0.85, -0.6], [0.78, 1.2], [0.82, 1.7]], 1, 14), M.skin, 0.06));
-  const head = new THREE.Group(); head.position.y = 3.85; head.scale.setScalar(0.92); neck.add(head); rig.head = head;
+  neck.add(inked(lathe([[0.88, -0.6], [0.8, 0.7], [0.84, 1.1]], 1, 14), M.skin, 0.06));
+  const head = new THREE.Group(); head.position.y = 3.2; head.scale.setScalar(0.92); neck.add(head); rig.head = head;
   const HS = 1 / 0.92;            // (what is hung from the head, the braids, is laid out in the torso's units)
   head.add(inked(lathe([[0, -2.6], [0.65, -2.5], [1.35, -2.0], [1.82, -1.1], [2.05, -0.1], [2.12, 0.85], [1.96, 1.75], [1.4, 2.42], [0, 2.62]], 0.92, 28), M.skin, 0.035));
   for (const sx of [-1, 1]) { const ear = inked(sphere(0.42, 0.55, 1, 0.8), M.skin, 0.06); ear.position.set(sx * 2.05, -0.1, -0.2); head.add(ear); }
-  const face = new THREE.Group(); head.add(face); rig.face = face;
+  const face = new THREE.Group(); head.add(face); rig.face = face; rig.eyes = [];
   const eyeW = toon('#fdfaf4'), iris = flat(S.eyes), irisDk = new THREE.MeshBasicMaterial({ color: srgb(S.eyes).multiplyScalar(0.55) }), pupil = flat('#1e1210'), lash = flat('#3a2018'), shine = flat('#ffffff');
   for (const sx of [-1, 1]) {
-    const e = new THREE.Group(); e.position.set(sx * 0.8, -0.1, 1.68); e.rotation.y = sx * 0.3; face.add(e);
+    const e = new THREE.Group(); e.position.set(sx * 0.8, -0.1, 1.68); e.rotation.y = sx * 0.3; face.add(e); rig.eyes.push(e);
     e.add(new THREE.Mesh(sphere(0.44, 1.15, 0.72, 0.26), eyeW));
     const ir = new THREE.Mesh(sphere(0.28, 0.95, 1.08, 0.26), iris); ir.position.set(sx * -0.04, -0.03, 0.07); e.add(ir);
     const ird = new THREE.Mesh(sphere(0.26, 0.95, 0.45, 0.26), irisDk); ird.position.set(sx * -0.04, 0.15, 0.09); e.add(ird);
@@ -119,19 +148,42 @@ function make(id) {
   const nose = new THREE.Mesh(sphere(0.2, 1, 0.75, 0.9), toon(S.skinSh)); nose.position.set(0, -0.78, 1.9); face.add(nose);
   // A quiet smile: a short curve of the lip colour, turned up at the ends.
   const smile = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.055, 4, 10, Math.PI * 0.62), flat(S.lips)); smile.position.set(0, -1.32, 1.76); smile.rotation.z = Math.PI + Math.PI * 0.19; face.add(smile); rig.mouth = smile;
+  const frown = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.055, 4, 10, Math.PI * 0.55), flat(S.lips)); frown.position.set(0, -1.52, 1.74); frown.rotation.z = Math.PI * 0.225; frown.visible = false; face.add(frown);
+  const open = new THREE.Mesh(sphere(0.26, 1.25, 0.8, 0.3), flat('#7a2a2e')); open.position.set(0, -1.38, 1.72); open.visible = false; face.add(open);
+  if (S.lined) for (const sx of [-1, 1]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.05), flat(S.skinSh)); l.position.set(sx * 1.45, -0.2, 1.55); l.rotation.set(0, sx * 0.5, sx * -0.4); face.add(l); }
+  if (S.beard) {
+    // A short full beard along the jaw and a moustache.
+    const bg = new THREE.SphereGeometry(1.95, 16, 9, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55); bg.scale(1.02, 1.05, 0.98);
+    const beard = inked(bg, toon(S.hairDk), 0.03); beard.position.set(0, -0.55, 0.12); head.add(beard);
+    const mo = inked(sphere(0.55, 1.6, 0.45, 0.5), toon(S.hairDk), 0.05); mo.position.set(0, -1.05, 1.85); head.add(mo);
+  }
+  // Expressions: the brows' angle, the eyes' openness and the mouth. (The face moves; the head and body do not.)
+  const EXPR = {
+    calm:    { brow: 0, browY: 0, eye: 1, mouth: 'smile' }, smile: { brow: 0.05, browY: 0.04, eye: 0.85, mouth: 'smile' },
+    sulk:    { brow: -0.12, browY: -0.04, eye: 0.85, mouth: 'frown' }, defiant: { brow: -0.3, browY: -0.08, eye: 0.9, mouth: 'frown' },
+    wince:   { brow: 0.25, browY: 0.05, eye: 0.55, mouth: 'frown' }, gritted: { brow: 0.3, browY: 0.02, eye: 0.25, mouth: 'open' },
+    crying:  { brow: 0.4, browY: 0.1, eye: 0.3, mouth: 'open' },
+  };
+  rig.setExpr = name => {
+    const x = EXPR[name] || EXPR.calm; rig.expr = name;
+    for (const [i, b] of [rig.browR, rig.browL].entries()) { const sx = i ? 1 : -1; b.rotation.z = Math.PI * 0.125 + sx * -x.brow; b.position.y = 0.42 + x.browY; }
+    for (const e of rig.eyes) e.scale.y = x.eye;
+    smile.visible = x.mouth === 'smile'; frown.visible = x.mouth === 'frown'; open.visible = x.mouth === 'open';
+  };
+  rig.setDress = d => { if (d && d.expr) rig.setExpr(d.expr); };
   for (const sx of [-1, 1]) { const bl = new THREE.Mesh(sphere(0.4, 1.35, 0.5, 0.2), new THREE.MeshBasicMaterial({ color: srgb(S.blush), transparent: true, opacity: 0.32 })); bl.position.set(sx * 1.18, -0.75, 1.6); bl.rotation.y = sx * 0.55; face.add(bl); }
 
   // ── Hair. A cap of hair tipped back to the hairline, parted a little to one side, soft swoops falling over the temples, and either the braids
   // (from behind each ear, over the front of the shoulders, ribbons near the top) or a bun.
-  const capGeo = new THREE.SphereGeometry(2.34, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.56);
+  const capGeo = new THREE.SphereGeometry(2.34, 18, 11, 0, Math.PI * 2, 0, Math.PI * 0.56);
   const cap = inked(capGeo, M.hair, 0.03); cap.position.set(0, 0.55, -0.12); cap.rotation.x = -0.5; head.add(cap);
   const back = inked(sphere(2.15, 1, 1.1, 0.86), M.hair, 0.03); back.position.set(0, 0.05, -0.7); head.add(back);
   // The swoops of the fringe: two soft wings from the parting, the larger to her left, reaching the tops of the brows.
-  for (const [x, rz, w, len, hi] of [[0.75, -0.55, 1.05, 1.65, false], [-0.85, 0.65, 0.9, 1.45, true]]) {
+  for (const [x, rz, w, len, hi] of (S.hairStyle === 'short' ? [[0.6, -0.9, 1.0, 0.9, false], [-0.75, 0.9, 0.85, 0.8, true]] : [[0.75, -0.55, 1.05, 1.65, false], [-0.85, 0.65, 0.9, 1.45, true]])) {
     const g = new THREE.SphereGeometry(1, 20, 12); g.scale(w, len, 0.42);
     const sw = inked(g, hi ? M.hairHi : M.hair, 0.04); sw.position.set(x, 1.45, 1.55); sw.rotation.set(-0.42, 0, rz); head.add(sw);
   }
-  for (const sx of [-1, 1]) { const side = inked(sphere(0.62, 0.8, 1.9, 0.75), M.hair, 0.05); side.position.set(sx * 1.88, 0.15, 0.55); side.rotation.z = sx * 0.1; head.add(side); }
+  if (S.hairStyle !== 'short') for (const sx of [-1, 1]) { const side = inked(sphere(0.62, 0.8, 1.9, 0.75), M.hair, 0.05); side.position.set(sx * 1.88, 0.15, 0.55); side.rotation.z = sx * 0.1; head.add(side); }
   const shineArc = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.09, 4, 24, Math.PI * 0.6), toon(S.hairHi)); shineArc.position.set(0.1, 1.85, 0.6); shineArc.rotation.set(-1.0, 0, Math.PI * 0.2); head.add(shineArc);
   if (S.hairStyle === 'braids') {
     for (const sx of [-1, 1]) {
@@ -150,8 +202,10 @@ function make(id) {
   // ── Arms: shoulder › elbow › wrist, upper arm 4.6 and forearm 4.2. The tunic's sleeves to the wrist under leather bracers; or a blouse rolled to the elbow.
   for (const [key, sx] of [['armL', 1], ['armR', -1]]) {
     const sh = new THREE.Group(); sh.position.set(sx * 3.15, 8.0, 0); sh.rotation.order = 'ZXY'; torso.add(sh); rig[key] = sh; sh.userData.sign = sx;
-    const tunic = S.top === 'tunic';
-    sh.add(inked(limb(4.6, 1.05, 0.88), tunic ? toon(S.tunic) : toon(S.blouse), 0.05));
+    const tunic = S.top === 'tunic', shirt = S.top === 'shirt', wide = S.male ? 1.15 : 1;
+    sh.position.x = sx * (S.male ? 3.75 : 3.15);
+    sh.add(inked(limb(4.6, 1.05 * wide, 0.88 * wide), tunic ? toon(S.tunic) : shirt ? toon(S.shirt) : toon(S.blouse), 0.05));
+    if (shirt && S.check) for (const y of [-1.2, -2.8]) sh.add(new THREE.Mesh(lathe([[1.06 * wide, y], [1.04 * wide, y - 0.4]], 1, 14), toon(S.check)));
     const elbow = new THREE.Group(); elbow.position.y = -4.6; sh.add(elbow);
     const wrist = new THREE.Group(); elbow.add(wrist);
     if (tunic) {
@@ -159,7 +213,8 @@ function make(id) {
       const br = inked(lathe([[0.78, -1.2], [0.86, -1.5], [0.74, -4.0], [0.66, -4.25]], 1, 14), toon(S.bracer), 0.05); wrist.add(br);       // the bracer, laced
       for (let i = 0; i < 3; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.1), flat('#d8c08a')); l.position.set(0, -1.9 - i * 0.7, 0.78); l.rotation.z = i % 2 ? 0.4 : -0.4; wrist.add(l); }
     } else {
-      wrist.add(inked(limb(4.2, 0.78, 0.55), M.skin, 0.05));
+      wrist.add(inked(limb(4.2, 0.78 * wide, 0.55 * wide), M.skin, 0.05));
+      if (shirt) wrist.add(inked(lathe([[0.95 * wide, 0.1], [1.0 * wide, -0.9], [0.86 * wide, -1.3]], 1, 14), toon(S.shirtDk), 0.05));     // the rolled sleeve
     }
     const hand = inked(sphere(0.68, 0.78, 1.15, 0.52), M.skin, 0.06); hand.position.y = -4.75; wrist.add(hand);
     const thumb = inked(sphere(0.25, 1, 1.6, 1), M.skin, 0.08); thumb.position.set(sx * -0.0, -4.25, 0.45); thumb.rotation.x = 0.4; wrist.add(thumb);
@@ -205,14 +260,18 @@ function make(id) {
     onCloak(0, 3.6, 0.75); onCloak(0.0, 3.6, 0.32, 0.3);
     for (const [phi, y, r] of [[-0.9, 2.6, 0.26], [-0.55, 2.9, 0.18], [-0.25, 2.5, 0.22], [0.3, 2.7, 0.2], [0.62, 2.45, 0.26], [0.95, 2.85, 0.18], [1.35, 2.5, 0.22], [-1.3, 2.75, 0.2], [0.3, 5.2, 0.15], [-0.4, 5.5, 0.14]]) onCloak(phi, y, r);
     // The hood, lying back on her shoulders: a soft rounded fold, red outside and dark inside.
-    const hoodG = new THREE.SphereGeometry(2.3, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.62); hoodG.scale(1.25, 0.8, 0.95);
+    const hoodG = new THREE.SphereGeometry(2.3, 16, 9, 0, Math.PI * 2, 0, Math.PI * 0.62); hoodG.scale(1.25, 0.8, 0.95);
     const hood = inked(hoodG, red, 0.03); hood.position.set(0, 9.25, -2.25); hood.rotation.x = -1.35; g.add(hood);
     const hoodIn = new THREE.Mesh(hoodG, lining); hoodIn.scale.setScalar(0.94); hood.add(hoodIn);
     const clasp = new THREE.Mesh(sphere(0.4, 1, 1, 0.5), toon('#e8b84a')); clasp.position.set(0, 8.9, 1.62); g.add(clasp);
-    rig.cloak = { group: g, show(on) { g.visible = !!on; } }; g.visible = false;
+    rig.cloak = { group: g, show(on) { g.visible = !!on; }, hood() {} }; g.visible = false;
   }
+  // The interface js/blocky.js's setPose() and step() use, so the village can pose these rigs as it posed the blocky ones: the scene's own `after`
+  // does the posing; baseHip is where the hips stand.
+  rig.state = {}; rig.target = {}; rig.baseHip = 15.5; rig.apply = function () { if (this.after) this.after(this); };
+  rig.setExpr('calm');
   return rig;
 }
 
-root.Toon = { make, SPECS, toon, inked };
+root.Toon = { make, SPECS, toon, inked, INK, flat };
 })(typeof window !== 'undefined' ? window : globalThis);
