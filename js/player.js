@@ -4,6 +4,7 @@
 //   The camera is always centred on the character. On a touch screen TouchUI supplies the stick and the buttons.
 // Use:  const P = Player.create(G, { rig, world, scale: 0.95, onAct(P), onTake(P), onTick(dt, P), onToast(text) });
 //       P.start() begins play (input on, camera follows); P.stop() ends it (input off, touch controls away); P.st is the state { pos, y, heading, yaw, pitch, zoom, sneak, grounded, ... }.
+//       P.scaleTo(0.4) eases the figure to a new size (speed, jump, reach and camera distance follow); P.scaleTo(s, true) does it at once.
 //       P.touch.set('act', { label: 'Do', enabled: true }) relabels a touch button; P.place(x, z, heading) puts the character somewhere.
 (function (root) {
 'use strict';
@@ -15,13 +16,15 @@ const ZOOMS = [{ name: 'Close', d: 52 }, { name: 'Medium', d: 92 }, { name: 'Far
 const KM = { w: 'up', W: 'up', ArrowUp: 'up', s: 'down', S: 'down', ArrowDown: 'down', a: 'left', A: 'left', ArrowLeft: 'left', d: 'right', D: 'right', ArrowRight: 'right', Shift: 'run' };
 
 function create(G, o) {
-  const rig = o.rig, world = o.world, SC = o.scale || 0.95, solids = world.solids, B = world.bounds, surfaceAt = world.surfaceAt;
+  const rig = o.rig, world = o.world, FULL = o.scale || 0.95, SC0 = FULL, solids = world.solids, B = world.bounds, surfaceAt = world.surfaceAt;
+  let SC = FULL, target = FULL;                                                       // the figure's size now, and the size it is easing towards (see P.scaleTo)
+  const rad = () => R * SC / 0.95;
   const keys = {}, drags = new Map(), el = G.renderer.domElement, cam = { pos: new V3(), look: new V3(), fov: 48 };
   const st = { pos: new V3(world.spawn.x, 0, world.spawn.z), y: 0, vy: 0, grounded: true, climb: null, jumpReq: false, heading: world.spawn.heading || 0, yaw: (world.spawn.heading || 0) + Math.PI, pitch: 0.5, zoom: 1, sneak: false, speedN: 0, stride: 0, boost: 0, on: 'grass', active: false };
   const P = { st, rig, touch: null, keys, ZOOMS };
   const toast = t => o.onToast && o.onToast(t);
   const inBox = (b, x, z, m) => x > b.x0 - m && x < b.x1 + m && z > b.z0 - m && z < b.z1 + m;
-  const blocked = (x, z, y) => { if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return true; for (const b of solids) if (inBox(b, x, z, R) && (b.top >= INF || y < b.top - 2)) return true; return false; };
+  const blocked = (x, z, y) => { if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return true; for (const b of solids) if (inBox(b, x, z, rad()) && (b.top >= INF || y < b.top - 2)) return true; return false; };
   const findClimb = () => solids.find(b => b.climb && st.y < b.top - 1 && inBox(b, st.pos.x, st.pos.z, 9) && Math.cos(st.heading) * ((b.z0 + b.z1) / 2 - st.pos.z) + Math.sin(st.heading) * ((b.x0 + b.x1) / 2 - st.pos.x) > 0);
 
   const camGoal = () => { const d = ZOOMS[st.zoom].d * SC / 0.95, p = st.pitch, at = cam.look.set(st.pos.x, st.y + 15 * SC, st.pos.z); return new V3(at.x + Math.sin(st.yaw) * Math.cos(p) * d, Math.max(3, at.y + Math.sin(p) * d), at.z + Math.cos(st.yaw) * Math.cos(p) * d); };
@@ -47,6 +50,7 @@ function create(G, o) {
   const wheel = e => { e.preventDefault(); setZoom(e.deltaY > 0 ? 1 : -1); };
 
   const tick = dt => {
+    if (SC !== target) { SC += (target - SC) * Math.min(1, dt * 5); if (Math.abs(SC - target) < 0.002) SC = target; rig.root.scale.setScalar(SC); }
     // WASD relative to the camera; the character turns into the direction and walks along its heading.
     const f = new V3(-Math.sin(st.yaw), 0, -Math.cos(st.yaw)), r = new V3(Math.cos(st.yaw), 0, -Math.sin(st.yaw)), stick = P.touch ? P.touch.stick : { x: 0, y: 0 };
     const dir = new V3().addScaledVector(f, (keys.up ? 1 : 0) - (keys.down ? 1 : 0)).addScaledVector(r, (keys.right ? 1 : 0) - (keys.left ? 1 : 0));
@@ -64,7 +68,7 @@ function create(G, o) {
       if (st.grounded && !st.climb) {
         const c = findClimb();
         if (c) st.climb = { t: 0, dur: 0.6, from: new V3(st.pos.x, st.y, st.pos.z), to: new V3(clamp(st.pos.x, c.x0 + 4, c.x1 - 4), c.top, clamp(st.pos.z, c.z0 + 4, c.z1 - 4)) };
-        else { st.vy = JUMP_V; st.grounded = false; st.boost = 0.5; if (o.onJump) o.onJump(P); }
+        else { st.vy = JUMP_V * Math.sqrt(SC / 0.95); st.grounded = false; st.boost = 0.5; if (o.onJump) o.onJump(P); }
       }
     }
     if (st.climb) {
@@ -74,8 +78,8 @@ function create(G, o) {
       const nx = st.pos.x + vel.x * dt, nz = st.pos.z + vel.z * dt; if (!blocked(nx, st.pos.z, st.y)) st.pos.x = nx; if (!blocked(st.pos.x, nz, st.y)) st.pos.z = nz;
       const was = st.grounded; st.vy -= GRAV * dt; st.y += st.vy * dt; const gnd = surfaceAt(st.pos.x, st.pos.z);
       if (st.y <= gnd.top) { st.y = gnd.top; st.vy = 0; st.grounded = true; st.on = gnd.kind; if (!was && A) A.step(gnd.kind === 'path' ? 'stone' : 'grass', 0.8); } else { st.grounded = false; }
-      for (const b of solids) if (inBox(b, st.pos.x, st.pos.z, R) && (b.top >= INF || st.y < b.top - 2)) {            // (pushed out of anything it is inside)
-        const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, ox = (b.x1 - b.x0) / 2 + R - Math.abs(st.pos.x - cx), oz = (b.z1 - b.z0) / 2 + R - Math.abs(st.pos.z - cz);
+      for (const b of solids) if (inBox(b, st.pos.x, st.pos.z, rad()) && (b.top >= INF || st.y < b.top - 2)) {            // (pushed out of anything it is inside)
+        const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, ox = (b.x1 - b.x0) / 2 + rad() - Math.abs(st.pos.x - cx), oz = (b.z1 - b.z0) / 2 + rad() - Math.abs(st.pos.z - cz);
         if (ox < oz) st.pos.x += Math.sign(st.pos.x - cx || 1) * ox; else st.pos.z += Math.sign(st.pos.z - cz || 1) * oz;
       }
     }
@@ -107,7 +111,7 @@ function create(G, o) {
     G.updaters = G.updaters.filter(u => u !== tick);
   };
   P.place = (x, z, heading) => { st.pos.set(x, 0, z); st.y = surfaceAt(x, z).top; st.vy = 0; st.climb = null; st.heading = heading === undefined ? st.heading : heading; st.yaw = st.heading + Math.PI; rig.root.position.set(x, st.y, z); rig.root.rotation.y = st.heading; cam.pos.copy(camGoal()); };
-  P.zoom = setZoom; P.sneak = setSneak; P.cam = cam;
+  P.scaleTo = (s, now) => { target = s; if (now) { SC = s; rig.root.scale.setScalar(SC); } }; P.size = () => SC; P.zoom = setZoom; P.sneak = setSneak; P.cam = cam;
   P.place(st.pos.x, st.pos.z, st.heading); rig.root.scale.setScalar(SC);
   return P;
 }

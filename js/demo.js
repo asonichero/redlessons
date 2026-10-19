@@ -4,7 +4,7 @@
 // Demo.create(G, world, red, basket, hud) returns { intro(), play(), stop(), reset(save), snapshot() }.
 (function (root) {
 'use strict';
-const THREE = root.THREE, A = root.GameAudio, V3 = THREE.Vector3, v = (x, y, z) => new V3(x, y, z), SC = 0.95;
+const THREE = root.THREE, A = root.GameAudio, V3 = THREE.Vector3, v = (x, y, z) => new V3(x, y, z), SC = 0.95, SMALL = 0.36;   // full size, and the size the cloak shrinks her to
 const FACES = { '1': 'smile', '2': 'wink', '3': 'pout', '4': 'gasp' };
 
 function create(G, world, red, basket, hud) {
@@ -28,8 +28,8 @@ function create(G, world, red, basket, hud) {
   }
   function act() {                                                                // E: knock at the door when beside it, otherwise put the cloak on or take it off
     if (nearDoor(P.st.pos)) { talk(); return; }
-    red.setCloak(!red.cloakOn); A && A.chime(0.6);
-    hud.toast(red.cloakOn ? 'You put on the Starweave Mantle.' : 'You take off the mantle.');
+    red.setCloak(!red.cloakOn); A && A.chime(0.6); P.scaleTo(red.cloakOn ? SMALL : SC);
+    hud.toast(red.cloakOn ? 'You put on the Starweave Mantle, and the meadow grows around you.' : 'You take off the mantle and are your own size again.');
   }
   function key(k) {
     if (FACES[k]) { red.setExpr(FACES[k]); setTimeout(() => { if (red.expr === FACES[k]) red.setExpr('smile'); }, 2600); }
@@ -56,9 +56,9 @@ function create(G, world, red, basket, hud) {
     P = root.Player.create(G, { rig: red, world, scale: SC, onAct: act, onTake: take, onKey: key, onToast: t => hud.toast(t, 2200),
       onTick: () => {
         const p = P.st.pos, door_ = nearDoor(p), bn = basketNear(p), tu = P.touch;
-        hud.objective(st.carrying ? 'Follow the path to the cottage.' : 'Pick up the basket from the stump (Q), then follow the path to the cottage.');
+        hud.objective(red.cloakOn ? 'Small as a flower: everything is huge. Take the mantle off (E) to be your own size.' : st.carrying ? 'Follow the path to the cottage. Put the mantle on (E) to see the meadow from below.' : 'Pick up the basket from the stump (Q), then follow the path to the cottage. The mantle (E) shrinks you.');
         hud.hint(door_ ? 'E: knock at the door' : bn ? 'Q: pick up the basket' : st.carrying ? 'Q: put the basket down' : '');
-        if (tu) { tu.set('act', door_ ? { label: 'Knock', enabled: true } : { label: red.cloakOn ? 'Cloak off' : 'Cloak on', enabled: true }); tu.set('drop', { label: st.carrying ? 'Put down' : 'Take', enabled: st.carrying || bn }); const b = P.st.grounded && !P.st.climb; tu.set('jump', { label: 'Jump', enabled: b }); }
+        if (tu) { tu.set('act', door_ ? { label: 'Knock', enabled: true } : { label: red.cloakOn ? 'Grow' : 'Shrink', enabled: true }); tu.set('drop', { label: st.carrying ? 'Put down' : 'Take', enabled: st.carrying || bn }); const b = P.st.grounded && !P.st.climb; tu.set('jump', { label: 'Jump', enabled: b }); }
         hud.tick();
       } });
     return P;
@@ -66,7 +66,7 @@ function create(G, world, red, basket, hud) {
 
   async function intro() {
     ensure(); G.mode = 'cutscene'; document.body.classList.add('cutscene'); G.setScene(world); G.drone = null; G.skipping = false;
-    red.root.visible = true; red.setCloak(true, false); red.setHood(false); red.setExpr('smile'); red.hold(null); st.carrying = false; world.scene.add(basket); placeBasket(stump.x, stump.y, stump.z);
+    red.root.visible = true; red.setCloak(false, false); red.setHood(false); red.setExpr('smile'); red.hold(null); st.carrying = false; world.scene.add(basket); placeBasket(stump.x, stump.y, stump.z); P.scaleTo(SC, true);
     P.place(world.spawn.x, world.spawn.z, world.spawn.heading); red.motion.speed = 0;
     const face = { pos: v(world.spawn.x + 16, 26, world.spawn.z - 58), look: v(world.spawn.x, 21, world.spawn.z), fov: 36 };
     const wide = { pos: v(world.spawn.x - 60, 60, world.spawn.z - 90), look: v(world.spawn.x, 16, world.spawn.z - 10), fov: 50 };
@@ -79,7 +79,7 @@ function create(G, world, red, basket, hud) {
   function stop() { if (P) P.stop(); hud.show(false); }
   const snapshot = () => ({ x: P.st.pos.x, z: P.st.pos.z, heading: P.st.heading, cloak: red.cloakOn, hood: red.hoodUp, carrying: st.carrying, basket: st.basketAt });
   function restore(s) {
-    ensure(); red.root.visible = true; red.setCloak(s.cloak !== false, false); red.setHood(!!s.hood); red.hold(null); st.carrying = false; world.scene.add(basket);
+    ensure(); red.root.visible = true; red.setCloak(s.cloak !== false, false); red.setHood(!!s.hood); P.scaleTo(red.cloakOn ? SMALL : SC, true); red.hold(null); st.carrying = false; world.scene.add(basket);
     if (s.basket) placeBasket(s.basket.x, s.basket.y, s.basket.z);
     if (s.carrying) { world.scene.remove(basket); red.hold(basket); st.carrying = true; }
     P.place(s.x, s.z, s.heading);
