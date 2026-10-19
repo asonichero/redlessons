@@ -74,7 +74,7 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 
 ## The new look (style test: `style.html`, `js/toon.js`)
 
-A move from the blocky Minecraft look to something closer to *Mika and the Witch's Mountain*: smooth rounded characters, three-band cel shading and an ink outline. `style.html` shows the heroine at full height, with the cloak on, and in the cloak at 55% beside the Innkeeper. Her proportions are an adult's in every state (about six and a half heads tall, an adult face); the cloak changes her scale and nothing else. `js/toon.js` builds characters on the same joints as the blocky rig, so the village and the over-the-knee scene can switch over without their posing code changing. Not wired into the game yet.
+A move from the blocky Minecraft look to something closer to *Mika and the Witch's Mountain*: smooth rounded characters, hard two-band cel shading, a warm ink outline and an adult anime face (almond eyes with a heavy lash line, a nose that is little more than a shadow, a small mouth, a long jaw, chunky hair locks with a band of shine). `style.html` shows the heroine at full height, with the cloak on, and in the cloak at 55% beside the Innkeeper. Her proportions are an adult's in every state (about seven heads tall, an adult face); the cloak changes her scale and nothing else. `js/toon.js` builds characters on the same joints as the blocky rig, so the village and the over-the-knee scene can switch over without their posing code changing. Not wired into the game yet.
 
 ## Movement
 
