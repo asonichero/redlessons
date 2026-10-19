@@ -38,16 +38,16 @@ test('settling honestly clears the book at its own tier', () => {
   assert.equal(r.tier, 'light'); assert.equal(L.owed('miller'), 0); assert.equal(r.lied, false);
 });
 
-test('a lie lifts the tier and is written in Grandmother\'s book', () => {
+test('a lie lifts the tier and goes straight back in that giver\'s book', () => {
   const L = create(); L.wearing = true; L.breach('errand'); L.breach('errand');
   const r = L.settle('miller', { lied: true });
-  assert.equal(r.tier, 'firm'); assert.ok(L.owed('grandmother') > 0);
+  assert.equal(r.tier, 'firm'); assert.ok(L.owed('miller') > 0);
 });
 
 test('a clean book needs nothing, and lying about nothing is not a lie', () => {
   const L = create();
   assert.equal(L.settle('innkeeper', { lied: true }).tier, 'none');
-  assert.equal(L.owed('grandmother'), 0);
+  assert.equal(L.owed('innkeeper'), 0);
 });
 
 test('her mother is never a giver', () => {
@@ -65,9 +65,11 @@ test('the state survives a save and a load', () => {
   assert.equal(L2.owed('innkeeper'), L.owed('innkeeper')); assert.equal(L2.wearing, true);
 });
 
-test('family keep a book but never correct', () => {
+test('family keep no book and never correct', () => {
   const { correctors, GIVERS } = require('../js/ledger.js');
-  assert.equal(GIVERS.grandmother.kin, true);
+  assert.equal(GIVERS.grandmother, undefined);
+  assert.ok(ANCHORS.includes('grandmother'));
+  assert.throws(() => create().settle('grandmother'));
   assert.ok(!correctors().includes('grandmother'));
   assert.ok(!correctors().includes('mother'));
   assert.deepEqual(correctors().sort(), ['innkeeper', 'miller', 'woodcutter']);

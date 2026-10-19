@@ -49,9 +49,8 @@ function card(res, g, out) {
   return new Promise(resolve => {
     const G_ = root.Ledger.GIVERS[g], name = G_.name, T = { none: 'Nothing owed', token: 'Token', light: 'Light', firm: 'Firm', severe: 'Severe' }[res.tier];
     $('setTitle').textContent = 'Settled with ' + name;
-    const how = res.lied ? 'She lied about it, which lifted it a tier and went in Grandmother’s book.' : 'She owned up, which mends a little trust.';
-    const what = res.tier === 'none' ? 'Nothing was owed.' : G_.kin ? `${T}, settled in words: family keep a book, but they don’t correct.`
-      : out ? (out.red ? `${T}. Stopped with Red after ${out.hits}; nothing more was asked of her.` : `${T}: ${out.hits} across ${name.replace(/^The /, 'the ')}’s knee.`) : T + '.';
+    const how = res.lied ? 'She lied about it, which lifted it a tier and went straight back in the book.' : 'She owned up, which mends a little trust.';
+    const what = res.tier === 'none' ? 'Nothing was owed.' : out ? (out.red ? `${T}. Stopped with Red after ${out.hits}; nothing more was asked of her.` : `${T}: ${out.hits} across ${name.replace(/^The /, 'the ')}’s knee.`) : T + '.';
     $('setText').textContent = what + ' ' + how;
     show('settle'); G.mode = 'end'; $('fade').style.transition = 'none'; $('fade').style.opacity = 0;
     $('setBack').onclick = () => { hideAll(); resolve(); };

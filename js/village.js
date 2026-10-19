@@ -18,7 +18,9 @@ const turn = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2) + Math.PI
 
 const ADULT = 0.95;                 // an ordinary adult's scale (as in the Jack game)
 const CLOAK_SCALE = 0.55;           // her scale in the cloak, against her full size. (Scale only: her model, clothes and face do not change.)
-const WALK = 34, RUN = 62, CREEP = 15;       // speeds in units per second at full size (scaled by her size)
+const WALK = 40, RUN = 78, CREEP = 18;       // speeds in units per second at full size
+// In the cloak her pace barely drops: the world is bigger, not slower. (Speed scales by 0.85 + 0.15 × size, so the cloak costs about 7%.)
+const PACE = size => 0.85 + 0.15 * size;
 const ZOOMS = [{ name: 'Close', d: 70 }, { name: 'Medium', d: 120 }, { name: 'Far', d: 200 }];
 const BOUNDS = { x0: -300, x1: 300, z0: -215, z1: 330 };
 
@@ -252,11 +254,11 @@ async function opening(G, W) {
   await G.say('grandmother', 'As you like, yes. Free of responsibility. Not free of consequences.');
   await G.say('grandmother', 'Every villager has their terms. Break one, and it goes in their book. When a book is full, they will call you in to settle it.');
   await G.shot(shots.square, 3);
-  await G.say('grandmother', 'The miller minds his stall and his errands. The innkeeper minds manners and mess. The woodcutter minds the forest path. And I mind the truth, and the evening bell.');
+  await G.say('grandmother', 'The miller minds his stall and his errands. The innkeeper minds manners, mess and the evening bell. The woodcutter minds the forest path. And every one of them minds the truth.');
   G.cut(shots.her); heroine.setExpr('calm');
   await G.say('heroine', 'And Mother?');
   G.cut(shots.gran);
-  await G.say('grandmother', 'Your mother keeps no book. She has done her share of minding you. This is the village’s turn.');
+  await G.say('grandmother', 'Your mother keeps no book, and nor do I. We’ve done our share of minding you. This is the village’s turn.');
   await G.say('grandmother', 'Go on, then. See what you make of it.');
   heroine.setExpr('calm');
   await G.fade(true, 1);
@@ -381,12 +383,12 @@ function play(G, W, L, saved) {
       const vel = new V3(), running = (keys.run || tu.run) && !st.carrying && !st.sneak;
       if (dir.lengthSq() > 0) {
         dir.normalize(); const want = Math.atan2(dir.x, dir.z); st.heading = turn(st.heading, want, Math.min(1, dt * 9));
-        const sp = running ? RUN : st.sneak || st.carrying ? CREEP : WALK; vel.set(Math.sin(st.heading), 0, Math.cos(st.heading)).multiplyScalar(sp * size);
+        const sp = running ? RUN : st.sneak || st.carrying ? CREEP : WALK; vel.set(Math.sin(st.heading), 0, Math.cos(st.heading)).multiplyScalar(sp * PACE(size));
       }
       if (st.jumpReq) { st.jumpReq = false; if (st.grounded && !st.carrying && !st.talking) { st.vy = 70 * Math.sqrt(size); st.grounded = false; } }
       const nx = st.pos.x + vel.x * dt, nz = st.pos.z + vel.z * dt; if (!blocked(nx, st.pos.z)) st.pos.x = nx; if (!blocked(st.pos.x, nz)) st.pos.z = nz;
       st.vy -= 260 * dt; st.y += st.vy * dt; if (st.y <= 0) { st.y = 0; st.vy = 0; st.grounded = true; }
-      st.speedN = vel.length() / Math.max(size, 0.3); ha.speed = st.talking ? 0 : st.speedN * 0.8; ha.phase += dt * st.speedN * 0.42; ha.air = !st.grounded;
+      st.speedN = vel.length() / PACE(size) * (0.6 + 0.4 / Math.max(size, 0.3)); ha.speed = st.talking ? 0 : st.speedN * 0.8; ha.phase += dt * st.speedN * 0.42; ha.air = !st.grounded;
       heroine.root.position.set(st.pos.x, st.y, st.pos.z); if (!st.talking) heroine.root.rotation.y = turn(heroine.root.rotation.y, st.heading, Math.min(1, dt * 12));
       if (st.carrying) { sack.position.set(st.pos.x, st.y + 30 * size * ADULT, st.pos.z); sack.scale.setScalar(1); sack.rotation.y = st.heading; }
 

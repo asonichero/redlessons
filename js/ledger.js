@@ -23,19 +23,18 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 //   patience how much can stand in their book before they call her in (lower: sooner);
 //   trust    where their trust in her starts (0–100);
 //   implements what they may use, mildest first (the correction scene's own implement ids: hand, paddle, birch).
-// Grandmother gave the cloak and is the one who explains the terms; the woodcutter keeps the forest path.
-//   kin      family: they keep a book and settle it in words, but never give a correction (the over-the-knee scene refuses them). Grandmother is
-//            the heroine's own grandmother unless the story decides otherwise.
+// The woodcutter keeps the forest path; the innkeeper minds manners, mess and the evening bell. (Grandmother gave the cloak and explained the
+// terms, then passed her own on: she is family, so she keeps no book; see ANCHORS.)
 const GIVERS = {
-  grandmother: { name: 'Grandmother', strict: 1.0, patience: 6, trust: 70, implements: ['hand', 'paddle'], where: 'cottage', kin: true },
   woodcutter:  { name: 'The Woodcutter', strict: 1.2, patience: 4, trust: 50, implements: ['hand', 'paddle'], where: 'forest edge' },
   miller:      { name: 'The Miller', strict: 1.1, patience: 5, trust: 50, implements: ['hand', 'paddle'], where: 'mill' },
   innkeeper:   { name: 'The Innkeeper', strict: 0.9, patience: 6, trust: 55, implements: ['hand'], where: 'inn' },
 };
 
-// Characters who are never givers. The heroine's mother is the story's emotional anchor: she is outside the ledger entirely, so nothing can be
-// written in her book or settled by her, however the data is edited. (create() and breach() both refuse her.)
-const ANCHORS = ['mother'];
+// Characters who are never givers: her family. Her mother is the story's emotional anchor, and Grandmother, who gave the cloak, passed her terms
+// to the innkeeper. Neither keeps a book, settles one, gives a correction or is present at one, however the data is edited. (create(), breach() and
+// settle() all refuse them, and so do the over-the-knee scene and the correction.)
+const ANCHORS = ['mother', 'grandmother'];
 
 // The terms. weight: how much a breach writes in the book (before the giver's strictness); enforcer: whose term it is by default;
 // keep: trust gained when she keeps it (an errand done well, an honest answer).
@@ -45,8 +44,8 @@ const TERMS = {
   mess:     { text: 'Leave things as you found them.', weight: 1, enforcer: 'innkeeper', keep: 3 },
   manners:  { text: 'Answer civilly when you are spoken to.', weight: 1, enforcer: 'innkeeper', keep: 2 },
   path:     { text: 'Keep to the forest path.', weight: 3, enforcer: 'woodcutter', keep: 4 },
-  curfew:   { text: 'Be home before the evening bell.', weight: 1.5, enforcer: 'grandmother', keep: 3 },
-  lie:      { text: 'Tell the truth about what you have done.', weight: 2.5, enforcer: 'grandmother', keep: 5 },
+  curfew:   { text: 'Be home before the evening bell.', weight: 1.5, enforcer: 'innkeeper', keep: 3 },
+  lie:      { text: 'Tell the truth about what you have done.', weight: 2.5, enforcer: 'innkeeper', keep: 5 },     // (a lie at a reckoning goes in the book of whoever she lied to)
 };
 
 // What a book comes to. The same tiers as the Jack game's correction (js/correction.js there): a total below Token's floor needs nothing at all.
@@ -94,7 +93,7 @@ function create(saved) {
     dueList() { return Object.keys(GIVERS).filter(L.due); },
     trust(g) { return state.trust[g]; },
     // The reckoning. She is asked how it went: an honest account settles the book as it stands; a lie (lied: true, when there was anything to own up to)
-    // lifts it one tier and is written in Grandmother's book as a breach of its own. Returns { tier, owed, implement, entries } and clears the book.
+    // lifts it one tier and is written straight back into that giver's book as a breach of its own. Returns { tier, owed, implement, entries } and clears the book.
     settle(g, opts) {
       if (ANCHORS.includes(g) || !GIVERS[g]) throw new Error('Ledger: ' + g + ' cannot settle');
       const owed = L.owed(g), entries = state.books[g].slice(); let tier = tierOf(owed);
@@ -102,7 +101,7 @@ function create(saved) {
       if (lied) tier = liftTier(tier);
       const imps = GIVERS[g].implements, implement = tier === 'severe' ? imps[imps.length - 1] : imps[0];
       state.books[g] = []; state.history.push({ giver: g, owed, tier, lied, at: (opts && opts.at) || Date.now() });
-      if (lied) { const was = state.wearing; state.wearing = true; L.breach('lie', { giver: 'grandmother' }); state.wearing = was; }
+      if (lied) { const was = state.wearing; state.wearing = true; L.breach('lie', { giver: g }); state.wearing = was; }
       else if (owed > 0) state.trust[g] = clamp(state.trust[g] + 4, 0, 100);       // owning up mends a little
       return { tier, owed, implement, entries, lied };
     },

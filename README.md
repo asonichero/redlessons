@@ -37,9 +37,9 @@ As in the Jack game: **WASD** or the arrows walk relative to the camera; **Shift
 | Place | Who | Their terms |
 |---|---|---|
 | The bakery (north) | Mother | None. She keeps no book (see below). |
-| The well (centre) | Grandmother | The truth; the evening bell |
+| The well (centre) | Grandmother | None. She passed her terms to the Innkeeper. |
 | The mill (west) | The Miller | Errands; taking from the stall |
-| The inn (east) | The Innkeeper | Manners; mess |
+| The inn (east) | The Innkeeper | Manners; mess; the evening bell |
 | The forest edge (south) | The Woodcutter | Keeping to the path |
 
 What she can do in the hub so far: take a bun from the bread stall (taking), run into the apple crate and knock it over (mess; set it right with E), snap at the innkeeper or be civil (manners), take or refuse the miller's flour errand and deliver the sack to the bakery table within two minutes (errand), and leave the forest path past the woodcutter's marker (path). Out of the cloak, her mother asks for help at the bakery.
@@ -52,7 +52,7 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 
 - **The cloak changes her scale, not her age.** She is an adult woman in mind, voice, body and clothes at every size. Shrinking scales the model and nothing else.
 - **Her mother is never a giver.** She is the story's emotional anchor. `Ledger.ANCHORS` lists her, and the ledger refuses to write in her book or let her settle one, even if a save is edited; the tests check this.
-- **Family never correct.** Grandmother is marked `kin`: she keeps a book and settles it in words, but the lap scene refuses her, and so does the correction. Only the Woodcutter, the Miller and the Innkeeper give corrections (`Ledger.correctors()`).
+- **Family stay out of it.** Grandmother gave the cloak and passed her terms on (the evening bell and the truth go to the Innkeeper; a lie at a reckoning goes back in the book of whoever she lied to). She and the heroine's mother are both in `Ledger.ANCHORS`: no book, no reckoning, no part in a correction, and not present at one. Only the Woodcutter, the Miller and the Innkeeper give corrections (`Ledger.correctors()`).
 - **The heroine can't be called "Red".** That is the safe word. Her name is a placeholder (`HEROINE_NAME` in `js/cast.js`) until one is chosen.
 
 ## Files
@@ -72,8 +72,17 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 | `js/correction.js` | The correction after a reckoning: the room, the tier scripts, the givers' lines, Red | New |
 | `tests/` | `node --test` checks for the ledger (including who may correct) and the pain model | Ledger new; pain ported |
 
+## The new look (style test: `style.html`, `js/toon.js`)
+
+A move from the blocky Minecraft look to something closer to *Mika and the Witch's Mountain*: smooth rounded characters, three-band cel shading and an ink outline. `style.html` shows the heroine at full height, with the cloak on, and in the cloak at 55% beside the Innkeeper. Her proportions are an adult's in every state (about six and a half heads tall, an adult face); the cloak changes her scale and nothing else. `js/toon.js` builds characters on the same joints as the blocky rig, so the village and the over-the-knee scene can switch over without their posing code changing. Not wired into the game yet.
+
+## Movement
+
+In the cloak her pace barely drops (speed scales by 0.85 + 0.15 × her size, about 7% slower at 55%), and walking and running are both quicker than before.
+
 ## Next
 
+0. Convert the cast, the village and the lap scene to the new look.
 1. An aftermath beat after a correction (the Jack game stands Jack facing the wall), and the walk from the reckoning to the giver's house.
 2. A day clock, so the evening bell (curfew) can be broken and kept.
 3. The forest path out to Grandmother's cottage, and the Wolf.
