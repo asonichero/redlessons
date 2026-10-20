@@ -1,6 +1,6 @@
 # Red Lessons
 
-Red Riding Hood and Gerda in a soft toon style (after *The Wind Waker HD* and *Mika and the Witch's Mountain*): an over-the-knee discipline scene with a pain model, scripted corrections, and a simple character editor. Red Riding Hood is 21; Gerda is in her late thirties. Both are adults, built with adult proportions (about seven heads tall).
+Red Riding Hood and Gerda in a soft toon style (after *The Wind Waker HD* and *Mika and the Witch's Mountain*): an over-the-knee discipline scene with a pain model, scripted corrections, and a simple character editor. Red Riding Hood is 21; Gerda is in her late thirties. Both are adults: grown-up bodies (waist, hips, bust, long legs) under larger-than-life heads, about 5.6 heads tall in all, so their faces can carry big, exaggerated expressions.
 
 Everything is made in code: three.js, no build step, shapes and textures generated in the browser, synthesised sound, no asset files. It installs as a mobile web app.
 
@@ -16,7 +16,7 @@ npm test             # the pain model, the discipline scripts and the looks
 ## The look (`js/toon.js`, `js/stage.js`)
 
 - **Smooth, rounded characters** built from turned profiles and soft ellipsoids, with two-band cel shading and a thin warm-brown outline (an inverted hull).
-- **Faces built from shapes:** almond eyes with lashes, irises and a highlight, lids that blink, brows, a nose, several mouths, a flush and tears. Nine expressions ease from one to the next: calm, smile, shy, cheeky, pout, stern, wince, gritted, crying.
+- **Faces built from shapes:** almond eyes with lashes, irises and a highlight, lids that blink, brows, a nose, several mouths, a flush and tears. Ten expressions, pushed further than life, ease from one to the next: calm, smile, shy, cheeky, pout, stern, surprised, wince, gritted, crying.
 - **Hair:** a cap with a proper hairline and a fringe. Red Riding Hood's long hair hangs from swinging pivots: two locks by her face and the back of it to her shoulder blades. It hangs with gravity, swings as she moves, and settles. Gerda wears hers in a bun, grey at one temple.
 - **Clothes:**
   - **Red Riding Hood:** a scarlet capelet, longest at the back, edged in cream, with the hood down on her back or up over her hair. Under it, a cream blouse with puffed sleeves, a dark laced bodice, a blue skirt with a white hem, linen drawers, and boots.

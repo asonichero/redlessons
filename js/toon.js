@@ -66,8 +66,9 @@ function surface(fn, nu, nv, outward) {
 }
 
 // ── The figure ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// Joint positions for a figure of scale 1 (about 29.7 tall, the head 4.2 of it). Each character is this figure scaled.
-const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.05, ua: 5.0, fa: 4.4, neckY: 8.6, headY: 0.9, headC: 2.0 };
+// Joint positions for a figure of scale 1 (about 31 tall, the head 5.5 of it). Each character is this figure scaled.
+// headScale: the head (face, hair, hood) is drawn larger than life, for bigger expressions, on a grown-up body: about 5.6 heads tall in all.
+const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.05, ua: 5.0, fa: 4.4, neckY: 8.6, headY: 0.9, headC: 2.0, headScale: 1.32 };
 const SPECS = {
   red: { name: 'Red Riding Hood', age: 21, scale: 0.97, bust: 1, hair: 'long', feet: 'boots', skirtLen: 10.9 },
   gerda: { name: 'Gerda', age: 'late thirties', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'bare', skirtLen: 13.6 },
@@ -249,16 +250,17 @@ function make(id, look, opts) {
   for (const sx of [-1, 1]) piece(ell(0.95, 0.75, 0.8), P.skirt, roll, sx * 2.55, 1.9, -0.6);
 
   // ── Head and face. ──
-  const head = new THREE.Group(); head.position.y = D.headC; rig.head.add(head); rig.headGroup = head;
+  // (scaled about the chin, which stays where it meets the neck)
+  const head = new THREE.Group(); head.position.y = D.headC + 2.1 * (D.headScale - 1); head.scale.setScalar(D.headScale); rig.head.add(head); rig.headGroup = head;
   piece(lathe([[0, -2.1], [0.6, -2.0], [1.15, -1.58], [1.46, -0.8], [1.58, 0.1], [1.6, 0.8], [1.42, 1.5], [1.0, 1.92], [0.45, 2.08], [0, 2.1]], 1.1, 26), P.skin, head, 0, 0, 0, { ink: 0.05 });
   for (const sx of [-1, 1]) piece(ell(0.24, 0.44, 0.34), P.skin, head, sx * 1.56, 0.0, -0.05, { ink: 0.05 });
   const face = new THREE.Group(); head.add(face);
   const eyes = [], brows = [];
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
     const e = new THREE.Group(); e.position.set(sx * 0.62, 0.12, 1.5); e.rotation.y = sx * 0.32; face.add(e);
-    e.add(new THREE.Mesh(ell(0.4, 0.27, 0.16, 16, 10), flat('#fffaf2')));
+    e.add(new THREE.Mesh(ell(0.43, 0.3, 0.16, 16, 10), flat('#fffaf2')));
     const iris = new THREE.Group(); e.add(iris); iris.position.z = 0.12;
-    iris.add(new THREE.Mesh(ell(0.2, 0.24, 0.05, 14, 8), flat(P.eyes)));
+    iris.add(new THREE.Mesh(ell(0.22, 0.27, 0.05, 14, 8), flat(P.eyes)));
     const dk = new THREE.Mesh(ell(0.19, 0.11, 0.05, 14, 8), flat(shade(P.eyes, -0.4))); dk.position.set(0, 0.11, 0.01); iris.add(dk);
     const pu = new THREE.Mesh(ell(0.09, 0.11, 0.04, 10, 6), flat('#1c1210')); pu.position.z = 0.03; iris.add(pu);
     const sh = new THREE.Mesh(ell(0.06, 0.06, 0.03, 8, 6), flat('#ffffff')); sh.position.set(0.07, 0.09, 0.05); iris.add(sh);
@@ -296,9 +298,9 @@ function make(id, look, opts) {
   hair(cap, 0, 0.1, -0.04, [0, 0, 0]);
   hair(ell(1.62, 1.85, 1.3), 0, 0.15, -0.55);
   // A fringe: soft swoops across the forehead, parted a little off centre.
-  for (const [x, y, rz, w, len, hex] of [[0.55, 1.45, -0.85, 1.0, 0.6, P.hair], [-0.55, 1.4, 0.75, 0.9, 0.56, P.hairHi], [-1.28, 0.95, 1.35, 0.62, 0.5, P.hair], [1.3, 0.95, -1.35, 0.62, 0.5, P.hair]])
-    hair(ell(w, len, 0.34), x, y, 1.3 - Math.abs(x) * 0.32, [-0.6, Math.sign(x) * 0.3, rz], hex);
-  { const s = new THREE.Mesh(arc(1.4, 0.08, Math.PI * 0.18, Math.PI * 0.62), mat(P.hairHi)); s.position.set(0.05, 1.05, 0.95); s.rotation.set(-0.9, 0, 0.3); head.add(s); }
+  for (const [x, y, rz, w, len, hex] of [[0.6, 1.2, -0.85, 1.05, 0.62, P.hair], [-0.5, 1.16, 0.75, 0.95, 0.58, P.hairHi], [-1.3, 0.78, 1.3, 0.62, 0.52, P.hair], [1.32, 0.78, -1.3, 0.62, 0.52, P.hair], [0.05, 1.32, 0.1, 0.7, 0.45, P.hair]])
+    hair(ell(w, len, 0.34), x, y, 1.72 - Math.abs(x) * 0.4, [-0.45, Math.sign(x) * 0.35, rz], hex);
+  { const s = new THREE.Mesh(arc(1.4, 0.08, Math.PI * 0.18, Math.PI * 0.62), mat(P.hairHi)); s.position.set(0.1, 1.7, 0.35); s.rotation.set(-1.25, 0, 0.35); head.add(s); }       // (a band of shine across the crown)
   // Long hair falls from swinging pivots: two side locks by the face and the back of it to her shoulder blades. They hang with gravity (see tick).
   rig.dangles = [];
   // A chain of segments [[length, rx, rz], …] from a pivot on the head; each hangs from the end of the one before.
@@ -344,7 +346,7 @@ function make(id, look, opts) {
   }
 
   // ── Expressions: brows, lids, the look of the eyes, the mouth, a flush and tears. Changes ease in (see tick). ──
-  const EX = EXPRS, F = { brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0 };
+  const EX = EXPRS, F = { brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0, ms: 1 };
   let target = Object.assign({}, EX.calm), blinkT = 2 + Math.random() * 3, blink = 0, t = 0;
   rig.setExpr = name => { target = Object.assign({}, EX[name] || EX.calm); rig.expr = EX[name] ? name : 'calm'; for (const k in M) M[k].visible = k === target.mouth; lowerLip.visible = target.mouth === 'smile' || target.mouth === 'flat'; };
   function applyFace() {
@@ -353,6 +355,7 @@ function make(id, look, opts) {
     for (const ey of eyes) { ey.cover.position.y = lerp(0.03, 0.62, open); ey.lash.position.y = lerp(-0.18, 0, open); ey.wing.position.y = lerp(-0.05, 0.13, open); ey.iris.position.x = F.look * 0.06; }
     blush.forEach(b => { b.material.opacity = 0.2 + 0.5 * F.blush; b.visible = F.blush > 0.02; });
     tears.forEach(tr => { tr.visible = F.tears > 0.05; tr.scale.y = F.tears; });
+    for (const key in M) M[key].scale.set(F.ms, F.ms * (key === 'open' ? 1.15 : 1), 1); lowerLip.scale.set(F.ms, 1, 1);
   }
 
   // ── Clothes and marks (her): the skirt down or lifted, the drawers up or down, the colour on each cheek. ──
@@ -388,7 +391,7 @@ function make(id, look, opts) {
   rig.tick = dt => {
     dt = clamp(dt || 1 / 60, 0, 0.1); t += dt;
     const k = 1 - Math.exp(-dt * 10);
-    for (const key of ['brow', 'browY', 'open', 'look', 'blush', 'tears']) F[key] = lerp(F[key], target[key] || 0, k);
+    for (const key of ['brow', 'browY', 'open', 'look', 'blush', 'tears', 'ms']) F[key] = lerp(F[key], target[key] == null ? (key === 'ms' ? 1 : 0) : target[key], k);
     blinkT -= dt; if (blinkT <= 0) { blink = Math.min(1, blink + dt * 14); if (blink >= 1) blinkT = -1; } if (blinkT < 0 && blinkT > -9) { blink = Math.max(0, blink - dt * 9); if (blink <= 0) blinkT = 2.5 + Math.random() * 3.5; }
     applyFace();
     const br = Math.sin(t * 1.6) * (rig.breath == null ? 1 : rig.breath);
@@ -413,16 +416,18 @@ function make(id, look, opts) {
 }
 
 // ── Expressions. brow: inner ends up (+) or down (-); open: how open the eyes are; mouth: which mouth; blush, tears: 0..1. ──
+// Pushed further than life, to read on the bigger heads: ms is the mouth's size.
 const EXPRS = {
-  calm:    { brow: 0, browY: 0, open: 0.92, mouth: 'flat', blush: 0 },
-  smile:   { brow: 0.06, browY: 0.04, open: 0.82, mouth: 'smile', blush: 0.25 },
-  shy:     { brow: 0.18, browY: 0.02, open: 0.6, look: -1, mouth: 'smile', blush: 0.9 },
-  cheeky:  { brow: -0.12, browY: 0.06, open: 0.7, look: 1, mouth: 'smile', blush: 0 },
-  pout:    { brow: 0.1, browY: -0.02, open: 0.8, mouth: 'pout', blush: 0.4 },
-  stern:   { brow: -0.28, browY: -0.06, open: 0.8, mouth: 'flat', blush: 0 },
-  wince:   { brow: 0.3, browY: 0.05, open: 0.45, mouth: 'frown', blush: 0.55 },
-  gritted: { brow: 0.36, browY: 0.02, open: 0.18, mouth: 'gritted', blush: 0.85 },
-  crying:  { brow: 0.45, browY: 0.1, open: 0.25, mouth: 'open', blush: 1, tears: 1 },
+  calm:      { brow: 0, browY: 0, open: 0.95, mouth: 'flat', blush: 0, ms: 1 },
+  smile:     { brow: 0.1, browY: 0.08, open: 0.72, mouth: 'smile', blush: 0.35, ms: 1.3 },
+  shy:       { brow: 0.28, browY: 0.04, open: 0.55, look: -1, mouth: 'smile', blush: 1, ms: 0.85 },
+  cheeky:    { brow: -0.22, browY: 0.12, open: 0.62, look: 1, mouth: 'smile', blush: 0.1, ms: 1.2 },
+  pout:      { brow: 0.2, browY: -0.04, open: 0.8, look: -0.6, mouth: 'pout', blush: 0.5, ms: 1.35 },
+  stern:     { brow: -0.42, browY: -0.1, open: 0.75, mouth: 'flat', blush: 0, ms: 0.9 },
+  surprised: { brow: 0.3, browY: 0.2, open: 1.1, mouth: 'open', blush: 0.3, ms: 0.75 },
+  wince:     { brow: 0.42, browY: 0.08, open: 0.4, mouth: 'frown', blush: 0.65, ms: 1.25 },
+  gritted:   { brow: 0.5, browY: 0.04, open: 0.1, mouth: 'gritted', blush: 0.9, ms: 1.2 },
+  crying:    { brow: 0.6, browY: 0.16, open: 0.2, mouth: 'open', blush: 1, tears: 1, ms: 1.5 },
 };
 
 // ── A standing idle: the weight drifts from foot to foot, the arms hang easy, the head wanders a little. ──
