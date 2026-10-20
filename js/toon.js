@@ -142,7 +142,7 @@ function make(id, look, opts) {
     }
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
-    const m = new THREE.SkinnedMesh(geo, mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
+    const m = new THREE.SkinnedMesh(geo, o.material || mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
     if (o.ink !== 0) { const h = new THREE.SkinnedMesh(hullGeo(geo, o.ink || 0.07), INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h; }
     shadowy.push(m); return m;
   }
@@ -174,21 +174,41 @@ function make(id, look, opts) {
 
   // ── Torso: hips and seat, the waist, the ribcage and shoulders; the bust. The torso's own space starts DIM.torsoY above the hips. ──
   const top = P.blouse;
-  skinnedOn(rig.hips, lathe([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 0.72, 24), P.skin, torsoW);      // the hips
-  // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
-  const CHEEK = { x: 1.42, y: -1.25, z: -1.35, rx: 1.72, ry: 1.85, rz: 1.45 };
-  rig.cheek = {};
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
-    const c = document.createElement('canvas'); c.width = 64; c.height = 32; const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
-    const m = piece(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 24, 16), null, rig.hips, sx * CHEEK.x, CHEEK.y, CHEEK.z, { material: mat(null, { map: tex }), ink: 0.035 });
-    rig.cheek[s] = { mesh: m, canvas: c, tex };
-  }
+  // ── The hips and seat: one surface, the two cheeks of the seat shaped into the back of it with a soft cleft between them. Her drawers follow the
+  // same shape just outside it. The marks are painted onto it, vertex by vertex, around where the smacks land.
+  // The seat's shape: fullest low down, falling away sharply into the fold under it and slowly up into the small of the back, with a cleft down the
+  // middle (crisp on skin, softened in cloth).
+  const seatBump = (x, y, cleftW) => {
+    const ax = Math.abs(x), dy = y + 1.4, fy = Math.exp(-(dy * dy) / (2 * (dy > 0 ? 1.55 : 0.72) ** 2)), fx = Math.exp(-((ax - 1.3) ** 2) / (2 * 1.15 * 1.15));
+    return fx * fy * ss(0, cleftW, ax);
+  };
+  const seatShape = (g, A, cleftW) => {
+    const p = g.attributes.position, q = new V3();
+    for (let i = 0; i < p.count; i++) { q.fromBufferAttribute(p, i); if (q.z >= 0) continue; q.z -= A * seatBump(q.x, q.y, cleftW || 0.5) * ss(-0.1, -1.0, q.z); p.setXYZ(i, q.x, q.y, q.z); }
+    g.computeVertexNormals(); return g;
+  };
+  const HIPS = [[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]];
+  const hipsGeo = seatShape(lathe(dense(HIPS, 44), 0.72, 48), 0.95);
+  const hipsAt = hipsGeo.attributes.position.array.slice();             // (its points in the hips' space, before skinning moves them)
+  const hipsCol = new Float32Array(hipsAt.length); hipsGeo.setAttribute('color', new THREE.BufferAttribute(hipsCol, 3));
+  const hipsMat = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true });
+  skinnedOn(rig.hips, hipsGeo, P.skin, torsoW, { material: hipsMat });
+  // Where smacks land: on each cheek, the point that faces most up and back across a lap (the `seat` frame's +z runs into the skin there); the
+  // small of her back, just above the cleft, is where the hand rests between them.
   const TILT = 0.35;
   rig.seat = new THREE.Object3D(); rig.seat.rotation.x = -TILT; rig.hips.add(rig.seat);
-  const onCheek = (x, dir) => { const d = dir.clone().normalize(), t = 1 / Math.sqrt((d.x / CHEEK.rx) ** 2 + (d.y / CHEEK.ry) ** 2 + (d.z / CHEEK.rz) ** 2); return new V3(x, CHEEK.y, CHEEK.z).addScaledVector(d, t); };
   const outDir = new V3(0, -Math.sin(TILT), -Math.cos(TILT));
   const mk = (p, parent) => { const o = new THREE.Object3D(); o.position.copy(p); parent.add(o); return o; };
-  rig.rear = { L: mk(onCheek(CHEEK.x, outDir), rig.hips), R: mk(onCheek(-CHEEK.x, outDir), rig.hips), C: mk(new V3(0, CHEEK.y + 0.9, CHEEK.z - 1.0), rig.hips) };
+  const pick = score => { let best = null, bs = -1e9; for (let i = 0; i < hipsAt.length; i += 3) { const q = new V3(hipsAt[i], hipsAt[i + 1], hipsAt[i + 2]), v = score(q); if (v > bs) { bs = v; best = q; } } return best; };
+  const cheekAt = sx => pick(q => q.x * sx < 0.4 ? -1e9 : q.dot(outDir) - 0.35 * Math.abs(Math.abs(q.x) - 1.35));
+  rig.rear = { L: mk(cheekAt(1), rig.hips), R: mk(cheekAt(-1), rig.hips), C: mk(pick(q => Math.abs(q.x) > 0.35 || q.y < -0.3 || q.y > 0.4 ? -1e9 : -q.z), rig.hips) };
+  // Drawn lines, as an illustrator would: the cleft, and the fold under each cheek where it meets the thigh. (Hidden under drawers or a skirt.)
+  { const HP = dense(HIPS, 80), rAt = y => { for (let i = 1; i < HP.length; i++) if (HP[i][1] >= y) return lerp(HP[i - 1][0], HP[i][0], (y - HP[i - 1][1]) / (HP[i][1] - HP[i - 1][1] || 1)); return 0; };
+    const surf = (x, y) => { const r = rAt(y), z0 = -0.72 * Math.sqrt(Math.max(0, r * r - x * x)); return new V3(x, y, z0 - 0.95 * seatBump(x, y, 0.5) * ss(-0.1, -1.0, z0) - 0.03); };
+    const line = pts => skinnedOn(rig.hips, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 28, 0.05, 5), INK, torsoW, { material: new THREE.MeshBasicMaterial({ color: srgb(INK), skinning: true }), ink: 0 });
+    rig.seatLines = [line([...Array(9).keys()].map(i => surf(0, lerp(-2.35, -0.55, i / 8))))];
+    for (const sx of [-1, 1]) rig.seatLines.push(line([...Array(11).keys()].map(i => { const ax = lerp(0.3, 2.3, i / 10); return surf(sx * ax, -2.3 + 0.5 * ((ax - 1.2) / 1.1) ** 2); })));
+  }
   rig.upperBack = mk(new V3(0, 6.2, -1.95), rig.torso);
   // The bust is sculpted into the front of the torso (and the bodice under it), not set on it, so the chest is one smooth form.
   const bust = g => {
@@ -272,11 +292,11 @@ function make(id, look, opts) {
   }
   const drawers = [], drawersDown = [];
   if (id === 'red') {
-    drawers.push(skinnedOn(rig.hips, lathe([[2.9, -2.6], [3.32, -0.4], [3.26, 0.6], [2.95, 1.5]], 0.75, 22), P.drawers, torsoW));
+    // The drawers: the hips' own shape a little larger (so they follow the seat), and short close legs ending in a rolled hem.
+    drawers.push(skinnedOn(rig.hips, seatShape(lathe(dense([[0, -2.66], [1.5, -2.5], [2.82, -1.7], [3.33, -0.4], [3.27, 0.6], [2.97, 1.5]], 40), 0.75, 48), 1.0, 1.0), P.drawers, torsoW));
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
-      drawers.push(piece(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), P.drawers, rig.hips, sx * CHEEK.x, CHEEK.y, CHEEK.z));
-      drawers.push(skinnedOn(rig['thigh' + s], lathe([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], 1, 18), P.drawers, legW(s)));
-      drawers.push(skinnedOn(rig['thigh' + s], lathe([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], 1, 18), P.drawersDk, legW(s), { ink: 0.03 }));
+      drawers.push(skinnedOn(rig['thigh' + s], lathe([[1.84, 0.4], [1.86, -1.2], [1.8, -2.4], [1.76, -2.95]], 1, 22), P.drawers, legW(s)));
+      drawers.push(skinnedOn(rig['thigh' + s], new THREE.TorusGeometry(1.76, 0.17, 8, 24).rotateX(Math.PI / 2).translate(0, -2.95, 0), P.drawersDk, legW(s), { ink: 0.035 }));
       drawersDown.push(piece(new THREE.TorusGeometry(1.42, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -5.5, 0));
     }
   }
@@ -398,20 +418,21 @@ function make(id, look, opts) {
 
   // ── Clothes and marks (her): the skirt down or lifted, the drawers up or down, the colour on each cheek. ──
   const marks = { L: -1, R: -1 };
-  function paintCheek(s, m) {
-    const ck = rig.cheek[s], c = ck.canvas, x = c.getContext('2d'), W = c.width, H = c.height;
-    x.fillStyle = P.skin; x.fillRect(0, 0, W, H);
-    x.fillStyle = shade(P.skin, -0.05); x.fillRect(0, H * 0.82, W, H * 0.18);
-    if (m > 0.005) {
-      // The colour sits on the part that faces up across a lap (u ≈ 0.75 runs round to the back, v a little below the middle).
-      const cx = 0.75 * W, cy = (0.5 + TILT / Math.PI) * H, seed = s === 'L' ? 3 : 7;
-      const blot = (rgba, r, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, rgba + a + ')'); g.addColorStop(0.65, rgba + a * 0.7 + ')'); g.addColorStop(1, rgba + '0)');
-        x.save(); x.translate(cx, cy); x.scale(1, 1.6); x.translate(-cx, -cy); x.fillStyle = g; x.fillRect(0, 0, W, H); x.restore(); };
-      blot('rgba(232,112,108,', 7 + 7 * Math.sqrt(m), Math.min(0.7, 0.75 * Math.sqrt(m)));
-      blot('rgba(176,34,40,', 4 + 6 * m, Math.min(0.75, 0.8 * m * m));
-      for (let i = 0; i < 9; i++) { const a = (i * 2.4 + seed), r = 2 + (i % 4); x.fillStyle = `rgba(196,52,56,${0.25 * m})`; x.beginPath(); x.ellipse(cx + Math.cos(a) * 5 * m, cy + Math.sin(a) * 6 * m, r, r * 1.4, 0, 0, 7); x.fill(); }
+  // The marks: each vertex of the hips coloured from the skin toward pink, then (as a mark deepens) a deep red, by how near it is to where that
+  // cheek is struck, a little uneven from point to point.
+  const skinC = srgb(P.skin), pinkC = srgb('#e8706c'), redC = srgb('#a8222a'), tmpC = new THREE.Color();
+  const markL = rig.rear.L.position.clone(), markR = rig.rear.R.position.clone();
+  function paintMarks() {
+    for (let i = 0, k = 0; i < hipsAt.length; i += 3, k++) {
+      const q = new V3(hipsAt[i], hipsAt[i + 1], hipsAt[i + 2]); tmpC.copy(skinC);
+      if (q.z < -0.3) for (const [s, at] of [['L', markL], ['R', markR]]) {
+        const m = marks[s]; if (m <= 0.005 || q.x * (s === 'L' ? 1 : -1) < 0) continue;
+        const dx = Math.abs(q.x) - Math.abs(at.x), dy = q.y - at.y, w = Math.exp(-(dx * dx) / (2 * 1.05 * 1.05) - (dy * dy) / (2 * 0.9 * 0.9)) * (0.8 + 0.2 * Math.sin(q.x * 5.1 + q.y * 3.7)), jit = 0.8 + 0.4 * (((k * 2654435761) >>> 0) % 1000) / 1000;
+        tmpC.lerp(pinkC, Math.min(0.75, 0.8 * Math.sqrt(m) * w * jit)); tmpC.lerp(redC, Math.min(0.8, 0.85 * m * m * w * jit));
+      }
+      hipsCol[i] = tmpC.r; hipsCol[i + 1] = tmpC.g; hipsCol[i + 2] = tmpC.b;
     }
-    ck.tex.needsUpdate = true;
+    hipsGeo.attributes.color.needsUpdate = true;
   }
   rig.setDress = d => {
     d = d || {};
@@ -419,9 +440,11 @@ function make(id, look, opts) {
       const up = d.skirt === 'up', bare = up && d.drawers === 'down';
       show(skirt, !up); show(hemBand, !up); roll.visible = up;
       drawers.forEach(m => show(m, !bare)); drawersDown.forEach(m => show(m, bare));
+      rig.seatLines.forEach(m => m.visible = bare);
     }
     const mk_ = d.marks || { L: 0, R: 0 };
-    for (const s of ['L', 'R']) { const m = Math.round((mk_[s] || 0) * 100) / 100; if (m !== marks[s]) { marks[s] = m; paintCheek(s, m); } }
+    let changed = false; for (const s of ['L', 'R']) { const m = Math.round((mk_[s] || 0) * 100) / 100; if (m !== marks[s]) { marks[s] = m; changed = true; } }
+    if (changed) paintMarks();
   };
 
   // ── Each frame: the face eases toward its expression, she blinks, breathes, and the long hair hangs with gravity and swings as she moves. ──
