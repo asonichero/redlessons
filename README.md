@@ -20,7 +20,7 @@ npm test             # the pain model, the discipline scripts and the looks
 - **Hair:** a cap with a proper hairline and a fringe. Red Riding Hood's long hair hangs from swinging pivots: two locks by her face and the back of it to her shoulder blades. It hangs with gravity, swings as she moves, and settles. Gerda wears hers in a bun, grey at one temple.
 - **Clothes:**
   - **Red Riding Hood:** a scarlet capelet, longest at the back, edged in cream, with the hood down on her back or up over her hair. Under it, a cream blouse with puffed sleeves, a dark laced bodice, a blue skirt with a white hem, linen drawers, and boots.
-  - **Gerda:** a plum bodice, a cream blouse, an apron and a long brown skirt, bare feet. Or her lavender "Fine" gown with gold bracelets and anklets.
+  - **Gerda:** a plum bodice, a cream blouse, an apron and a long brown skirt, bare feet. Or her lavender "Fine" gown with gold bracelets.
   - **How the skirts move:** they are skinned to the legs, so they follow them. Seated, Gerda's skirt is its own drape over her lap and knees.
 - **Motion:** blinking, breathing, a standing idle (weight shifting from foot to foot, the head wandering), and springs on everything that reacts, so movement eases and settles instead of snapping.
 - **The room:** a cottage with plank floors, a round rug, plaster walls with beams, a window full of sky, a shelf of jars, and sunlight casting soft shadows. The walls face inward, so whichever side the camera looks from, the near wall is not drawn.
