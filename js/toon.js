@@ -6,7 +6,7 @@
 // Limbs swing forward for a negative turn about x (arms and thighs), elbows bend forward for a negative turn, knees back for a positive one.
 //
 //   const rig = Toon.make('red', look.red)        // or 'gerda'; look from js/looks.js
-//   rig.setExpr('wince'); rig.setDress({ skirt: 'up', drawers: 'down', marks: { L: 0.3, R: 0.2 } }); rig.tick(dt)  (face, blinks, breath, hair)
+//   rig.setExpr('wince'); rig.setDress({ skirt: 'up', drawers: 'down', marks: { L: 0.3, R: 0.2 } }); rig.tick(dt)   (skirt: 'down', 'up' or 'off')  (face, blinks, breath, hair)
 //   Toon.idle(rig, t)  (a standing idle: weight shift, breathing, arms at rest)
 (function (root) {
 'use strict';
@@ -135,9 +135,9 @@ function palette(id, look) {
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: '#3c5a8c', skirtDk: '#2c4470',
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
   } else if (l.outfit === 'Fine') {
-    Object.assign(P, { blouse: '#b8a6dc', bodice: '#8f7ab8', lace: '#e8c75a', skirt: '#9a86c0', skirtDk: '#7a66a4', hem: '#e8c75a', apron: null, gold: '#e8c75a' });
+    Object.assign(P, { blouse: '#b8a6dc', bodice: '#8f7ab8', lace: '#e8c75a', skirt: '#9a86c0', skirtDk: '#7a66a4', hem: '#e8c75a', apron: null, gold: '#e8c75a', drawers: '#f4eee2', drawersDk: '#ddd3c0' });
   } else {
-    Object.assign(P, { blouse: '#efe8d8', bodice: '#7a2a3a', lace: '#e6d7b0', skirt: '#6b4a3a', skirtDk: '#54382a', hem: '#54382a', apron: '#ebe2cc', apronDk: '#d4c8ae' });
+    Object.assign(P, { blouse: '#efe8d8', bodice: '#7a2a3a', lace: '#e6d7b0', skirt: '#6b4a3a', skirtDk: '#54382a', hem: '#54382a', apron: '#ebe2cc', apronDk: '#d4c8ae', drawers: '#f4eee2', drawersDk: '#ddd3c0' });
   }
   return P;
 }
@@ -292,7 +292,7 @@ function make(id, look, opts) {
   const SW = y => (y > 0.6 ? trunkW(y) : K.hipWidth) * (y < 0 ? lerp(1, K.skirtFull, ss(0, -4, y)) : 1);       // (it widens with the hips, and flares with its fullness)
   const skirtProfile = wide([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]], SW);
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
-  let skirt = null, hemBand = null;
+  let skirt = null, hemBand = null, apron = null;
   const waist = piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 });
   if (opts.seated) seatedDrape();
   else {
@@ -300,7 +300,7 @@ function make(id, look, opts) {
     hemBand = skinned(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28), P.hem, { ink: 0.04 });
     if (P.apron) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
-      skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 });
+      apron = skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 });
     }
   }
   // Seated (Gerda in the lap scene) the skirt is its own drape, in the hips' space with the thighs level along +z: a tube over the lap, turned
@@ -321,7 +321,7 @@ function make(id, look, opts) {
     if (P.apron) piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, rig.hips, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 });
   }
   const drawers = [], drawersDown = [];
-  if (id === 'red') {
+  {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off)
     drawers.push(skinnedOn(rig.hips, lathe(wide([[2.9, -2.6], [3.32, -0.4], [3.26, 0.6], [2.95, 1.5]], trunkW), 0.75 * TD, 22), P.drawers, torsoW));
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
       drawers.push(piece(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), P.drawers, rig.hips, sx * CHEEK.x, CHEEK.y, CHEEK.z));
@@ -470,9 +470,11 @@ function make(id, look, opts) {
   }
   rig.setDress = d => {
     d = d || {};
-    if (id === 'red') {
-      const up = d.skirt === 'up', bare = up && d.drawers === 'down';
-      show(skirt, !up); show(hemBand, !up); roll.visible = up;
+    // skirt: 'down', 'up' (lifted, gathered at the waist) or 'off' (gone, waistband and all: the editor's view for reading proportions).
+    {
+      const sk = d.skirt || 'down', down = sk === 'down', bare = !down && d.drawers === 'down';
+      for (const m of [skirt, hemBand, apron]) if (m) show(m, down);
+      roll.visible = sk === 'up'; waist.visible = sk !== 'off';
       drawers.forEach(m => show(m, !bare)); drawersDown.forEach(m => show(m, bare));
     }
     const mk_ = d.marks || { L: 0, R: 0 };

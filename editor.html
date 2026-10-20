@@ -35,6 +35,7 @@
   <h1>Character editor</h1>
   <div class="sub">Red Riding Hood and Gerda: what they wear, and the colours of their skin, hair, eyes and lips. Changes are kept in this browser and used by <a href="lap.html">the lap scene</a>. Drag to orbit.</div>
   <div class="btns" style="margin-top:8px"><button data-view="front" class="on">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="faces">Faces</button><button id="spin">Turn</button></div>
+  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Skirts</span><button data-skirt="down" class="on">Down</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div>
   <div id="red"></div>
   <h3>Her face</h3>
   <div class="btns" id="faces"></div>
@@ -53,7 +54,7 @@
 <script>
 (function () {
   const $ = id => document.getElementById(id), L = Looks, V3 = THREE.Vector3;
-  let look = L.load(), face = 'calm', spin = false, t = 0;
+  let look = L.load(), face = 'calm', spin = false, t = 0, skirtView = 'down';      // (skirtView: the skirts down, lifted, or off, to see the figures' proportions)
   const st = Stage.create($('view'), { fov: 30 });
   const turn = new THREE.Group(); st.scene.add(turn);
   const rigs = {}, X = { red: -9, gerda: 9 };
@@ -62,6 +63,7 @@
     if (rigs[who]) turn.remove(rigs[who].root);
     const r = rigs[who] = Toon.make(who, look[who]); r.root.position.x = X[who]; r.root.rotation.y = who === 'red' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);
     if (who === 'red') r.setExpr(face); else r.setExpr('calm');
+    r.setDress({ skirt: skirtView });
   }
   const VIEWS = { front: [[0, 20, 88], [0, 15, 0]], side: [[88, 20, 0], [0, 15, 0]], back: [[0, 20, -88], [0, 15, 0]], faces: [[0, 28.5, 34], [0, 28, 0]] };
   const view = (name, ms) => { st.go(new V3(...VIEWS[name][0]), new V3(...VIEWS[name][1]), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
@@ -89,6 +91,7 @@
   const sync = () => syncers.forEach(f => f());
   $('reset').onclick = () => { look = L.reset(); build('red'); build('gerda'); sync(); };
   document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view, 700));
+  document.querySelectorAll('[data-skirt]').forEach(b => b.onclick = () => { skirtView = b.dataset.skirt; document.querySelectorAll('[data-skirt]').forEach(x => x.classList.toggle('on', x === b)); for (const w in rigs) rigs[w].setDress({ skirt: skirtView }); });
   $('spin').onclick = () => { spin = !spin; $('spin').classList.toggle('on', spin); if (!spin) turn.rotation.y = 0; };
 
   // ── Shapes and proportions: a number box (with arrows) for each tuning value, in groups. Changes rebuild both figures, a moment after the last one.
