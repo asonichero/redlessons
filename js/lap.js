@@ -60,7 +60,7 @@ function create(view, opts) {
   const ext = opts.external || null, st_ = ext ? null : root.Stage.create(view, { fov: 34 });
   const scene = ext ? ext.scene : st_.scene;
   const stage = new THREE.Group(); scene.add(stage);
-  const seatY = T.seatFor('gerda'), chair = T.makeChair(seatY); stage.add(chair);
+  const seatY = T.seatFor('gerda'), chair = T.makeChair(seatY), FLOOR = 0; stage.add(chair);
   let looks = L ? L.clean(opts.looks || L.load()) : { red: {}, gerda: {} };
   let gerda = null, red = null, frame = null, paddle = null, base = new V3();
 
@@ -137,13 +137,50 @@ function create(view, opts) {
     const lapTop = lerp(hip.y, knee.y, 0.6) + 2.35 * gerda.scaleW;            // (the top of her thigh, under the drape of her skirt and apron)
     base.set(hip.x - 0.9, lapTop + 2.35 * red.scaleW + 0.2, lerp(hip.z, knee.z, 0.6));
     frame.position.copy(base);
-    for (const k of ['tL', 'tR', 'kL', 'kR', 'nx', 'ny', 'aL', 'aR', 'eL', 'eR', 'tz', 'hop', 'hx']) springs[k] = spring(16, 0.5);
+    for (const k of ['tL', 'tR', 'kL', 'kR', 'nx', 'ny', 'aL', 'aR', 'eL', 'eR', 'zL', 'zR', 'tz', 'hop', 'hx']) springs[k] = spring(16, 0.5);
+    armOff.L = { x: 0, z: 0, e: 0, way: -1 }; armOff.R = { x: 0, z: 0, e: 0, way: -1 };
     if (st_) { st_.cast(gerda); st_.cast(red); }
     red.breath = 0.6; dirty = true; exprShown = null;
     poseRed(0, true);
   }
 
   // ── Red: hanging off the edge of the lap; the last smack (k), her distress (d) and her wriggle (w) work on her through springs. ──
+  // ── Keeping her arms out of things ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+  const armOff = {};
+  // How far an arm, posed at (swing ax, spread az outward, elbow e), would be inside anything: balls along the upper arm, the forearm and the hand.
+  function armPen(s, ax, az, e) {
+    const r = red, arm = r['arm' + s], elbow = r['elbow' + s], hand = r['hand' + s], sx = s === 'L' ? 1 : -1, sc = red.scaleW;
+    const keep = [arm.rotation.x, arm.rotation.z, elbow.rotation.x];
+    arm.rotation.set(ax, 0, sx * (0.25 + az)); elbow.rotation.set(e, 0, 0); arm.updateMatrixWorld(true);
+    const pts = [[elbow, 0, 2.2, 0.85], [elbow, 0, 0, 0.75], [hand, 0, 2.2, 0.6], [hand, 0, 0, 0.55], [hand, 0, -1.3, 0.5]];
+    let pen = 0;
+    for (const [b, x, y, rad] of pts) {
+      const p = b.localToWorld(new V3(x, y, 0)), rr = rad * sc;
+      pen += gerda.penetration(p, rr) + chair.penetration(p, rr) + Math.max(0, rr - (p.y - FLOOR));
+    }
+    arm.rotation.set(keep[0], 0, keep[1]); elbow.rotation.set(keep[2], 0, 0); arm.updateMatrixWorld(true);
+    return pen;
+  }
+  // The offset to lay on an arm's pose so that it's clear: none if it already is (eased back to none), otherwise the nearest clear one, searched
+  // out along each way it can go, keeping to the way it went last time unless another is clearly nearer.
+  const WAYS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, 0, 1], [0.7, 0.7, 0], [-0.7, 0.7, 0]];
+  function armClear(s, ax, e, dt) {
+    const o = armOff[s], k = 1 - Math.exp(-dt * 6);
+    let want = { x: 0, z: 0, e: 0 };
+    if (armPen(s, ax, 0, e) > 0) {
+      let best = null;
+      WAYS.forEach(([wx, wz, we], i) => {
+        for (let a = 0.06; a <= 1.4; a += 0.06) {
+          const x = wx * a, z = wz * a, de = Math.min(-e, we * a);
+          if (armPen(s, ax + x, z, e + de) <= 0) { const cost = a + (i === o.way ? 0 : 0.15); if (!best || cost < best.cost) best = { cost, i, x, z, e: de }; break; }
+        }
+      });
+      if (best) { o.way = best.i; want = best; }
+    } else o.way = -1;
+    o.x = lerp(o.x, want.x, k); o.z = lerp(o.z, want.z, k); o.e = lerp(o.e, want.e, k);
+    return o;
+  }
+
   function poseRed(dt, snap) {
     const k = J.kick, d = clamp(pain.distress(), 0, 1.5), dd = Math.min(1, d), t = J.t, mL = J.kickSide === 'L' ? 1 : 0.4, mR = J.kickSide === 'R' ? 1 : 0.4;
     const w = Math.sin(t * 7) * 0.06 * dd + Math.sin(t * 4.3) * 0.04 * dd;
@@ -154,13 +191,17 @@ function create(view, opts) {
       aL: -1.55 - 0.3 * k + Math.sin(t * 5) * 0.08 * dd, aR: -1.55 - 0.3 * k + Math.sin(t * 5 + 1.7) * 0.08 * dd,
       eL: -0.45 - 0.35 * k, eR: -0.45 - 0.35 * k, tz: 0.06 * dd * Math.sin(t * 5.2), hop: 0.55 * k, hx: 0.05 * k * (J.kickSide === 'L' ? 1 : -1),
     };
+    // Her arms are kept out of whatever is around them (Gerda's skirt, the chair, the floor): if the pose they're going to would put any part of an
+    // arm inside something, it moves to the nearest pose that's clear (swung, spread or straightened), and the springs carry them there smoothly.
+    if (!snap) for (const s of ['L', 'R']) { const o = armClear(s, target['a' + s], target['e' + s], dt); target['a' + s] += o.x; target['z' + s] = o.z; target['e' + s] += o.e; }
+    else { target.zL = target.zR = 0; }
     const v = {}; for (const key in target) v[key] = snap ? (springs[key].x = target[key]) : springs[key].to(target[key], dt);
     const r = red;
     r.thighL.rotation.set(v.tL, 0, 0.1); r.thighR.rotation.set(v.tR, 0, -0.1);
     r.kneeL.rotation.set(v.kL, 0, 0); r.kneeR.rotation.set(v.kR, 0, 0);
     r.ankleL.rotation.set(0.55 + 0.2 * v.kL, 0, 0); r.ankleR.rotation.set(0.55 + 0.2 * v.kR, 0, 0);
     r.neck.rotation.set(v.nx, v.ny, 0); r.head.rotation.set(0, 0, 0);
-    r.armL.rotation.set(v.aL, 0, 0.25); r.armR.rotation.set(v.aR, 0, -0.25);
+    r.armL.rotation.set(v.aL, 0, 0.25 + v.zL); r.armR.rotation.set(v.aR, 0, -0.25 - v.zR);
     r.elbowL.rotation.set(v.eL, 0, 0); r.elbowR.rotation.set(v.eR, 0, 0); r.handL.rotation.set(0.2, 0, 0); r.handR.rotation.set(0.2, 0, 0);
     r.torso.rotation.set(0.04, 0, v.tz); r.hips.rotation.set(0, 0, v.hx);
     r.followThighs();       // (her seat rolls round with her legs before Gerda's hand is aimed at it)
