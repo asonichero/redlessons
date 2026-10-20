@@ -153,6 +153,7 @@ function make(id, look, opts) {
   bone('hips', root_, 0, D.hipY, 0); bone('torso', rig.hips, 0, D.torsoY, 0, 'YXZ'); bone('neck', rig.torso, 0, D.neckY, 0, 'YXZ'); bone('head', rig.neck, 0, D.headY, 0, 'YXZ');
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
     bone('arm' + s, rig.torso, sx * D.shX, D.shY, 0, 'ZXY'); bone('elbow' + s, rig['arm' + s], 0, -D.ua, 0); bone('hand' + s, rig['elbow' + s], 0, -D.fa, 0);
+    bone('seatPivot' + s, rig.hips, sx * D.hipX, 0, 0);      // (each cheek of the seat turns about this with its thigh: see followThighs)
     bone('thigh' + s, rig.hips, sx * D.hipX, 0, 0, 'ZXY'); bone('knee' + s, rig['thigh' + s], 0, -D.thigh, 0); bone('ankle' + s, rig['knee' + s], 0, -D.shin, 0);
   }
   rig.elbow = rig.elbowR; rig.wrist = rig.handR; rig.wristL = rig.handL;      // (the names the lap scene used before)
@@ -190,7 +191,9 @@ function make(id, look, opts) {
       const toHips = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(frame.matrixWorld), at = [], q = new V3();
       for (let i = 0; i < n; i++) at.push(q.fromBufferAttribute(pos, i).clone().applyMatrix4(toHips));
       const col = new Float32Array(n * 3), base = srgb(hex); for (let i = 0; i < n; i++) { col[i * 3] = base.r; col[i * 3 + 1] = base.g; col[i * 3 + 2] = base.b; }
-      geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo, at, col, base, bone: frame === rig.hips ? null : frame });
+      // (o.follow: a bone each point rides on by a share, for points that bend between it and the hips)
+      const follow = o.follow ? at.map(q => { const w = wfn(q).find(e => e[0] === o.follow); return w ? w[1] : 0; }) : null;
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo, at, col, base, bone: o.follow || (frame === rig.hips ? null : frame), follow });
       o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true });
     }
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
@@ -238,6 +241,7 @@ function make(id, look, opts) {
   // Each cheek hangs from a pivot at its own hip joint that turns with that thigh by a share (cheekFollow), so as the legs swing forward (sitting,
   // bending over a lap) the seat rolls round with them rather than staying behind with the hips. The strike points and the drawers ride on it too.
   rig.cheek = {}; rig.seatPivot = {};
+  const seatW = pv => p => { const w = 1 - ss(CHEEK.y - 0.1, CHEEK.y + 1.5, p.y); return [[rig.hips, 1 - w], [pv, w]]; };
   const pivotAt = sx => new V3(sx * D.hipX, 0, 0);
   // A cheek's shading blends into the hip's at its sides and top: there its surface's normals are turned toward the hips' own (outward from the body's
   // middle), so the light falls on the two as one form; only the back of it, and the crease under it, keep their own.
@@ -252,12 +256,11 @@ function make(id, look, opts) {
     nor.needsUpdate = true; return g;
   };
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
-    const pv = new THREE.Object3D(); pv.position.copy(pivotAt(sx)); rig.hips.add(pv); rig.seatPivot[s] = pv;
-    // (coloured per point, by the same rule as the skin around it, so the marks run across the join without a seam)
-    const g = blendIntoHips(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 40, 28), sx, CHEEK.x, CHEEK.y, CHEEK.z), cp = g.attributes.position, at = [], base = srgb(P.skin), col = new Float32Array(cp.count * 3);
-    for (let i = 0; i < cp.count; i++) { at.push(new V3(cp.getX(i) + sx * CHEEK.x, cp.getY(i) + CHEEK.y, cp.getZ(i) + CHEEK.z)); col[i * 3] = base.r; col[i * 3 + 1] = base.g; col[i * 3 + 2] = base.b; }
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo: g, at, col, base, bone: pv });
-    const m = piece(g, null, pv, sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z, { material: new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp() }), ink: 0.035 });
+    const pv = rig['seatPivot' + s]; rig.seatPivot[s] = pv;
+    // Each cheek bends between its thigh and the hips: the lower part goes with the thigh (by cheekFollow), the top stays with the hips and runs on
+    // into the small of the back, so it never tips out of it as the legs swing forward. Coloured per point, by the same rule as the skin around it.
+    const g = blendIntoHips(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 40, 28), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z);
+    const m = skinnedOn(rig.hips, g, P.skin, seatW(pv), { tint: true, follow: pv, ink: 0.035 });
     rig.cheek[s] = { mesh: m }; if (opts.seated) m.visible = false;      // (seated, the seat is under her skirt and on the chair)
   }
   // Turn the pivots (and the frame that says which way is into the skin) after the thighs: called each tick, and by a scene that poses the legs.
@@ -381,7 +384,7 @@ function make(id, look, opts) {
       for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(0.2, 1.0, pp.getY(i)))); }
       g.computeVertexNormals(); drawers.push(skinnedOn(rig.hips, g, P.drawers, torsoW)); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
-      drawers.push(piece(blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z), P.drawers, rig.seatPivot[s], sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z));
+      { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07 })); }
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s)));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03 }));
       drawersDown.push(piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0));
@@ -594,7 +597,7 @@ function make(id, look, opts) {
     for (const s of ['L', 'R']) mNow[s].copy(moved(rig.seatPivot[s], markAt[s]));
     for (const t of tints) {
       for (let i = 0; i < t.at.length; i++) {
-        tc.copy(t.base); const q = t.bone ? moved(t.bone, t.at[i]) : t.at[i];
+        tc.copy(t.base); const q = !t.bone ? t.at[i] : t.follow ? t.at[i].clone().lerp(moved(t.bone, t.at[i]), t.follow[i]) : moved(t.bone, t.at[i]);
         for (const s of ['L', 'R']) { const m = marks[s]; if (m <= 0.005) continue; const w = Math.exp(-q.distanceToSquared(mNow[s]) / (2 * 1.5 * 1.5)); tc.lerp(pinkL, Math.min(0.75, 0.95 * Math.sqrt(m) * w)); tc.lerp(redL, Math.min(0.62, 0.8 * m * m * w * w)); }
         t.col[i * 3] = tc.r; t.col[i * 3 + 1] = tc.g; t.col[i * 3 + 2] = tc.b;
       }
