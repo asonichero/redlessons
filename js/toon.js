@@ -99,8 +99,8 @@ const TUNE = [
   ['cheekX', 'Seat', 'Spacing', 1.1, 0.6, 2, 0.01], ['cheekY', 'Seat', 'Height', -0.7, -3, 0, 0.01], ['cheekZ', 'Seat', 'Depth', -1.25, -2, -0.6, 0.01],
   ['cheekW', 'Seat', 'Width', 1.9, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 2, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.5, 0.9, 2, 0.01],
   ['tilt', 'Seat', 'Where smacks land (lower ↔ higher)', 0.35, 0, 0.9, 0.01], ['cheekFollow', 'Seat', 'Follows the thigh (0 hips ↔ 1 thigh)', 0.5, 0, 1, 0.01],
-  ['eyeX', 'Face', 'Eye spacing', 0.6, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0.04, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 0.95, 0.7, 1.4, 0.01],
-  ['eyeH', 'Face', 'Eye height (size)', 1.12, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['browY', 'Face', 'Brow height', 0.4, 0.2, 0.9, 0.01],
+  ['eyeX', 'Face', 'Eye spacing', 0.66, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 0.95, 0.7, 1.4, 0.01],
+  ['eyeH', 'Face', 'Eye height (size)', 1, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['jaw', 'Face', 'Jaw width', 0.88, 0.7, 1.15, 0.01], ['browY', 'Face', 'Brow height', 0.4, 0.2, 0.9, 0.01],
   ['noseY', 'Face', 'Nose height', -0.4, -0.9, -0.2, 0.01], ['noseSize', 'Face', 'Nose size', 1, 0.5, 1.8, 0.01], ['mouthY', 'Face', 'Mouth height', 0.1, -0.3, 0.3, 0.01],
   ['mouthSize', 'Face', 'Mouth size', 1.25, 0.6, 1.6, 0.01], ['blushSize', 'Face', 'Blush size', 1, 0.5, 1.6, 0.01], ['earSize', 'Face', 'Ear size', 1.12, 0.5, 1.6, 0.01],
   ['hairLen', 'Hair', 'Long hair length', 1.25, 0.5, 1.7, 0.01], ['fringe', 'Hair', 'Fringe size', 0.7, 0, 1.5, 0.01], ['hairVol', 'Hair', 'Hair volume', 1.03, 0.9, 1.2, 0.01],
@@ -126,12 +126,12 @@ function resetTune() { try { root.localStorage && root.localStorage.removeItem(T
 // Palettes: the look's colours (js/looks.js), and each outfit's clothes.
 function palette(id, look) {
   const l = look || {}, P = {};
-  P.skin = l.skin || (id === 'red' ? '#f6d3b8' : '#eec4a2'); P.skinSh = shade(P.skin, -0.12);
-  P.hair = l.hair || (id === 'red' ? '#7a3a22' : '#4b3022'); P.hairHi = shade(P.hair, 0.28); P.hairDk = shade(P.hair, -0.32);
-  P.eyes = l.eyes || (id === 'red' ? '#4f8a62' : '#5f7f95'); P.lips = l.lips || (id === 'red' ? '#c4585e' : '#a8525a');
+  P.skin = l.skin || '#f6d3b8'; P.skinSh = shade(P.skin, -0.12);
+  P.hair = l.hair || (id === 'red' ? '#b0582a' : '#7a3a22'); P.hairHi = shade(P.hair, 0.28); P.hairDk = shade(P.hair, -0.32);
+  P.eyes = l.eyes || (id === 'red' ? '#4f8a62' : '#4f8a62'); P.lips = l.lips || (id === 'red' ? '#d49080' : '#a8525a');
   P.blush = shade(P.lips, 0.35);
   if (id === 'red') {
-    const cloak = l.cloak || '#c8242c';
+    const cloak = l.cloak || '#a01828';
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: '#3c5a8c', skirtDk: '#2c4470',
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
   } else if (l.outfit === 'Fine') {
@@ -264,7 +264,8 @@ function make(id, look, opts) {
   skinnedOn(rig.hips, lathe(wide([[3.16, 0.0], [3.28, 0.28], [3.0, 0.62]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 });      // its bound hem, a neat edge over the join with whatever is below
   // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
   { const BOD = wide(dense([[3.26, 0.3], [3.12, 0.9], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
-    for (let i = 0; i < 4; i++) { const yh = 1.3 + i * 1.0, z = rAt(yh) * 0.74 * TD + 0.06;
+    // (from above the skirt's waistband to just under the bust)
+    for (let i = 0; i < 4; i++) { const yh = 2.95 + i * 0.78, z = rAt(yh) * 0.74 * TD + 0.06;
       for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.95, 0.14, 0.1), P.lace, rig.torso, 0, yh - D.torsoY, z, { rot: [0, 0, sx * 0.55], ink: 0 });
       for (const sx of [-1, 1]) piece(new THREE.SphereGeometry(0.09, 8, 6), shade(P.lace, -0.3), rig.torso, sx * 0.42, yh - D.torsoY, z - 0.02, { ink: 0 }); } }
   // The neck: from inside the shoulders up into the head, bending with both.
@@ -356,10 +357,12 @@ function make(id, look, opts) {
   // ── Head and face. ──
   // (scaled about the chin, which stays where it meets the neck)
   const head = new THREE.Group(); head.position.y = D.headC + 2.1 * (D.headScale - 1); head.scale.setScalar(D.headScale); rig.head.add(head); rig.headGroup = head;
-  piece(lathe([[0, -2.1], [0.6, -2.0], [1.15, -1.58], [1.46, -0.8], [1.58, 0.1], [1.6, 0.8], [1.42, 1.5], [1.0, 1.92], [0.45, 2.08], [0, 2.1]], 1.1, 26), P.skin, head, 0, 0, 0, { ink: 0.05 });
+  // The head's outline (radius by height): full at the cheekbones and temples, tapering below them into a narrower jaw and a small soft chin. Jaw width
+  // narrows everything below the cheekbones. The face's features are painted onto the same surface (faceZ).
+  const HEADP = [[-2.1, 0], [-2.04, 0.36], [-1.82, 0.8], [-1.35, 1.2], [-0.7, 1.46], [0.1, 1.58], [0.8, 1.6], [1.5, 1.42], [1.92, 1.0], [2.08, 0.45], [2.1, 0]].map(([y, r]) => [y, r * (y < 0 ? lerp(1, K.jaw, ss(-0.1, -1.4, y)) : 1)]);
+  piece(lathe(dense(HEADP.map(([y, r]) => [r, y]), 30), 1.1, 26), P.skin, head, 0, 0, 0, { ink: 0.05 });
   for (const sx of [-1, 1]) piece(ell(0.24 * K.earSize, 0.44 * K.earSize, 0.34 * K.earSize), P.skin, head, sx * 1.56, 0.0, -0.05, { ink: 0.05 });
   // Where the face's surface is: features set on it follow it as they move.
-  const HEADP = [[-2.1, 0], [-2.0, 0.6], [-1.58, 1.15], [-0.8, 1.46], [0.1, 1.58], [0.8, 1.6], [1.5, 1.42], [1.92, 1.0], [2.08, 0.45], [2.1, 0]];
   const faceZ = (x, y) => { let r = 0; for (let i = 1; i < HEADP.length; i++) if (y <= HEADP[i][0]) { r = lerp(HEADP[i - 1][1], HEADP[i][1], (y - HEADP[i - 1][0]) / (HEADP[i][0] - HEADP[i - 1][0])); break; } return 1.1 * Math.sqrt(Math.max(0, r * r - x * x)); };
   // The nose: a soft slope out of the face in the face's own colour (the shading shows it). The shadow under it is painted, with everything else.
   { const N = K.noseSize, g = new THREE.SphereGeometry(1, 16, 12); g.scale(0.15 * N, 0.36 * N, 0.17 * N);
@@ -466,12 +469,13 @@ function make(id, look, opts) {
     segs.forEach(([len, rx, rz], i) => {
       const g = new THREE.Group(); if (i === 0) g.position.set(x, y, z); else g.position.y = -segs[i - 1][0]; parent.add(g);
       piece(ell(rx, len * 0.58, rz), P.hair, g, 0, -len * 0.5, 0, { ink: 0.05 });
-      rig.dangles.push(Object.assign({ g, ax: 0, az: 0, vx: 0, vz: 0, len }, o)); parent = g;
+      rig.dangles.push(Object.assign({ g, ax: 0, az: 0, vx: 0, vz: 0, len, seg: i }, o)); parent = g;
     });
   };
   if (S.hair === 'long') {
     dangle(0, 0.3, -1.05, [[3.2, 1.55, 0.6], [2.6, 1.3, 0.5]], { min: -0.05, max: 1.2, side: 0.5, grav: 0.85 });
-    for (const sx of [-1, 1]) dangle(sx * 1.42, 0.55, 0.55, [[2.2, 0.48, 0.42], [1.8, 0.4, 0.34]], { min: -0.4, max: 1.3, side: 0.9, grav: 0.9, sx });
+    // The front strands spring from the edges of the fringe and hang forward, over the front of the cloak rather than off her shoulders.
+    for (const sx of [-1, 1]) dangle(sx * 1.28, 0.8, 1.05, [[2.2, 0.48, 0.42], [1.8, 0.4, 0.34]], { min: -0.4, max: 1.3, side: 0.35, grav: 0.9, sx, front: true });
   } else {
     hair(ell(1.0, 0.95, 0.95), 0, 0.8, -1.7);                                            // the bun
     hair(new THREE.TorusGeometry(0.75, 0.16, 6, 16), 0, 0.8, -1.35, [0, 0, 0], P.hairHi);
@@ -556,8 +560,9 @@ function make(id, look, opts) {
   const colliders = [{ c: new V3(0, 5.4, 0), r: new V3(3.1 * K.chestWidth + 0.5, 5.4, 2.1 * TD * K.chestWidth + 0.5) }];
   if (hoodDown) colliders.push({ c: new V3(0, 5.6, 0), r: new V3(4.2 * CW + 0.4, 5.6, 3.35 * TD * CW + 0.4) }, { c: new V3(0, 8.25, -2.45), r: new V3(2.2, 1.5, 1.4) });
   const lc = new V3();
-  const inside = pW => { rig.torso.worldToLocal(lc.copy(pW)); let pen = 0; for (const k of colliders) { const q = lc.clone().sub(k.c).divide(k.r), l = q.length(); if (l < 1) pen += 1 - l; } return pen; };
-  const penOf = d => { d.g.updateMatrixWorld(true); return inside(d.g.localToWorld(tip.set(0, -d.len, 0))) + inside(d.g.localToWorld(tip.set(0, -d.len * 0.5, 0))); };
+  // (shrink: the front strands lie closer, over her chest, so they drape over it rather than being held off it)
+  const inside = (pW, shrink) => { rig.torso.worldToLocal(lc.copy(pW)); let pen = 0; for (const k of colliders) { const q = lc.clone().sub(k.c).divide(k.r.clone().subScalar(shrink || 0)), l = q.length(); if (l < 1) pen += 1 - l; } return pen; };
+  const penOf = d => { const sh = d.front ? 0.6 : 0; d.g.updateMatrixWorld(true); return inside(d.g.localToWorld(tip.set(0, -d.len, 0)), sh) + inside(d.g.localToWorld(tip.set(0, -d.len * 0.5, 0)), sh); };
   rig.tick = dt => {
     dt = clamp(dt || 1 / 60, 0, 0.1); t += dt;
     const k = 1 - Math.exp(-dt * 10);
@@ -577,16 +582,18 @@ function make(id, look, opts) {
       let tx = Math.atan2(-gW.z, -gW.y) * d.grav - lv.z, tz = Math.atan2(gW.x, -gW.y) * d.grav * d.side + lv.x * d.side;
       tx = clamp(tx, d.min, d.max); tz = clamp(tz, -0.9, 0.9);
       if (d.sx) tz = d.sx > 0 ? clamp(tz, -0.05, 0.9) : clamp(tz, -0.9, 0.05);       // (a side lock never swings in across her face)
+      if (d.front) { tx += d.seg ? 0 : 0.3; tz = clamp(tz, -0.35, 0.35); }                     // (the front strands lean forward and swing out only a little)
       // Kept out of her back (or the cloak): if the place it would hang is inside, the place moves to the nearest clear spot (searched outward along
       // each way it can swing, keeping to last frame's way unless another is clearly nearer), and the spring settles it there, smoothly.
       const penAt = (ax, az) => { d.g.rotation.set(-ax, 0, az); return penOf(d); };
       if (penAt(tx, tz) > 0) {
         let best = null;
         for (const [k, ux, uz] of [[0, 1, 0], [1, -1, 0], [2, 0, 1], [3, 0, -1]]) {
-          for (let a = 0.03; a <= 1.5; a += 0.03) if (penAt(tx + ux * a, tz + uz * a) <= 0) { const cost = a + (k === d.way ? 0 : 0.12); if (!best || cost < best.cost) best = { cost, k, x: tx + ux * a, z: tz + uz * a }; break; }
+          for (let a = 0.03; a <= 1.5; a += 0.03) if (penAt(tx + ux * a, tz + uz * a) <= 0) { const cost = a + (k === d.way ? 0 : 0.12) - (d.front && k === 0 ? 0.25 : 0); if (!best || cost < best.cost) best = { cost, k, x: tx + ux * a, z: tz + uz * a }; break; }
         }
         if (best) { d.way = best.k; tx = best.x; tz = best.z; }
       }
+      if (d.front && d.seg > 0) tx = Math.min(tx, 0.55);                              // (the lower half of a front strand drapes; it never juts out)
       d.tx = d.tx == null ? tx : lerp(d.tx, tx, 1 - Math.exp(-dt * 12)); d.tz = d.tz == null ? tz : lerp(d.tz, tz, 1 - Math.exp(-dt * 12));      // (eased, so the rest place never jumps)
       d.vx += (60 * (d.tx - d.ax) - 9 * d.vx) * dt; d.ax += d.vx * dt; d.vz += (60 * (d.tz - d.az) - 9 * d.vz) * dt; d.az += d.vz * dt;
       d.g.rotation.set(-d.ax, 0, d.az);
