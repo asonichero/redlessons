@@ -163,6 +163,7 @@ function create(view, opts) {
     r.armL.rotation.set(v.aL, 0, 0.25); r.armR.rotation.set(v.aR, 0, -0.25);
     r.elbowL.rotation.set(v.eL, 0, 0); r.elbowR.rotation.set(v.eR, 0, 0); r.handL.rotation.set(0.2, 0, 0); r.handR.rotation.set(0.2, 0, 0);
     r.torso.rotation.set(0.04, 0, v.tz); r.hips.rotation.set(0, 0, v.hx);
+    r.followThighs();       // (her seat rolls round with her legs before Gerda's hand is aimed at it)
     frame.position.set(base.x, base.y + v.hop, base.z);
     frame.updateMatrixWorld(true);
   }

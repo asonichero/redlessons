@@ -98,7 +98,7 @@ const TUNE = [
   ['bustX', 'Bust', 'Spacing', 1.15, 0.8, 1.6, 0.01], ['bustY', 'Bust', 'Height', 6.2, 5, 7.3, 0.05], ['bustAmt', 'Bust', 'Fullness', 0.95, 0, 1.8, 0.01], ['bustW', 'Bust', 'Width', 0.95, 0.6, 1.4, 0.01],
   ['cheekX', 'Seat', 'Spacing', 1.1, 0.6, 2, 0.01], ['cheekY', 'Seat', 'Height', -0.7, -3, 0, 0.01], ['cheekZ', 'Seat', 'Depth', -1.25, -2, -0.6, 0.01],
   ['cheekW', 'Seat', 'Width', 1.9, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 2, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.5, 0.9, 2, 0.01],
-  ['tilt', 'Seat', 'Where smacks land (lower ↔ higher)', 0.35, 0, 0.9, 0.01],
+  ['tilt', 'Seat', 'Where smacks land (lower ↔ higher)', 0.35, 0, 0.9, 0.01], ['cheekFollow', 'Seat', 'Follows the thigh (0 hips ↔ 1 thigh)', 0.5, 0, 1, 0.01],
   ['eyeX', 'Face', 'Eye spacing', 0.6, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0.04, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 0.95, 0.7, 1.4, 0.01],
   ['eyeH', 'Face', 'Eye height (size)', 1.12, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['browY', 'Face', 'Brow height', 0.4, 0.2, 0.9, 0.01],
   ['noseY', 'Face', 'Nose height', -0.4, -0.9, -0.2, 0.01], ['noseSize', 'Face', 'Nose size', 1, 0.5, 1.8, 0.01], ['mouthY', 'Face', 'Mouth height', 0.1, -0.3, 0.3, 0.01],
@@ -225,18 +225,28 @@ function make(id, look, opts) {
   skinnedOn(rig.hips, lathe(wide([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], trunkW), 0.72 * TD, 24), P.skin, torsoW);      // the hips
   // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
   const CHEEK = { x: K.cheekX, y: K.cheekY, z: K.cheekZ * TD, rx: K.cheekW, ry: K.cheekH, rz: K.cheekD };      // (low enough that the tops melt into the small of the back and the undersides meet the thighs in a crease)
-  rig.cheek = {};
+  // Each cheek hangs from a pivot at its own hip joint that turns with that thigh by a share (cheekFollow), so as the legs swing forward (sitting,
+  // bending over a lap) the seat rolls round with them rather than staying behind with the hips. The strike points and the drawers ride on it too.
+  rig.cheek = {}; rig.seatPivot = {};
+  const pivotAt = sx => new V3(sx * D.hipX, 0, 0);
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
+    const pv = new THREE.Object3D(); pv.position.copy(pivotAt(sx)); rig.hips.add(pv); rig.seatPivot[s] = pv;
     const c = document.createElement('canvas'); c.width = 64; c.height = 32; const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
-    const m = piece(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 24, 16), null, rig.hips, sx * CHEEK.x, CHEEK.y, CHEEK.z, { material: mat(null, { map: tex }), ink: 0.035 });
+    const m = piece(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 24, 16), null, pv, sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z, { material: mat(null, { map: tex }), ink: 0.035 });
     rig.cheek[s] = { mesh: m, canvas: c, tex };
   }
+  // Turn the pivots (and the frame that says which way is into the skin) after the thighs: called each tick, and by a scene that poses the legs.
+  rig.followThighs = () => {
+    const f = K.cheekFollow;
+    for (const [s, th] of [['L', rig.thighL], ['R', rig.thighR]]) rig.seatPivot[s].rotation.set(th.rotation.x * f, 0, th.rotation.z * f * 0.5);
+    rig.seat.rotation.x = -TILT + f * (rig.thighL.rotation.x + rig.thighR.rotation.x) / 2;
+  };
   const TILT = K.tilt;
   rig.seat = new THREE.Object3D(); rig.seat.rotation.x = -TILT; rig.hips.add(rig.seat);
   const onCheek = (x, dir) => { const d = dir.clone().normalize(), t = 1 / Math.sqrt((d.x / CHEEK.rx) ** 2 + (d.y / CHEEK.ry) ** 2 + (d.z / CHEEK.rz) ** 2); return new V3(x, CHEEK.y, CHEEK.z).addScaledVector(d, t); };
   const outDir = new V3(0, -Math.sin(TILT), -Math.cos(TILT));
   const mk = (p, parent) => { const o = new THREE.Object3D(); o.position.copy(p); parent.add(o); return o; };
-  rig.rear = { L: mk(onCheek(CHEEK.x, outDir), rig.hips), R: mk(onCheek(-CHEEK.x, outDir), rig.hips), C: mk(new V3(0, CHEEK.y + 0.9, CHEEK.z - 1.0), rig.hips) };
+  rig.rear = { L: mk(onCheek(CHEEK.x, outDir).sub(pivotAt(1)), rig.seatPivot.L), R: mk(onCheek(-CHEEK.x, outDir).sub(pivotAt(-1)), rig.seatPivot.R), C: mk(new V3(0, CHEEK.y + 0.9, CHEEK.z - 1.0), rig.hips) };
   rig.upperBack = mk(new V3(0, 6.2, -1.95 * TD * K.chestWidth), rig.torso);
   // The bust is sculpted into the front of the torso (and the bodice under it), not set on it, so the chest is one smooth form.
   const bust = g => {
@@ -326,7 +336,7 @@ function make(id, look, opts) {
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
     drawers.push(skinnedOn(rig.hips, lathe(wide([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.24, 0.2], [3.02, 0.42]], trunkW), 0.75 * TD, 24), P.drawers, torsoW));       // (their waist tucked under the bodice's hem)
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
-      drawers.push(piece(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), P.drawers, rig.hips, sx * CHEEK.x, CHEEK.y, CHEEK.z));
+      drawers.push(piece(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), P.drawers, rig.seatPivot[s], sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s)));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03 }));
       drawersDown.push(piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0));
@@ -509,7 +519,7 @@ function make(id, look, opts) {
     if (blinkPhase === 0) { blinkWait -= dt; if (blinkWait <= 0) blinkPhase = 1; }
     else if (blinkPhase === 1) { blink += dt * 14; if (blink >= 1) { blink = 1; blinkPhase = 2; } }
     else { blink -= dt * 9; if (blink <= 0) { blink = 0; blinkPhase = 0; blinkWait = 2.5 + Math.random() * 3.5; } }
-    applyFace();
+    applyFace(); rig.followThighs();
     const br = Math.sin(t * 1.6) * (rig.breath == null ? 1 : rig.breath);
     rig.torso.scale.set(1 + 0.006 * br, 1 + 0.004 * br, 1 + 0.014 * br);
     root_.updateMatrixWorld(true);
