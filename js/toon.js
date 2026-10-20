@@ -531,17 +531,19 @@ function make(id, look, opts) {
       let tx = Math.atan2(-gW.z, -gW.y) * d.grav - lv.z, tz = Math.atan2(gW.x, -gW.y) * d.grav * d.side + lv.x * d.side;
       tx = clamp(tx, d.min, d.max); tz = clamp(tz, -0.9, 0.9);
       if (d.sx) tz = d.sx > 0 ? clamp(tz, -0.05, 0.9) : clamp(tz, -0.9, 0.05);       // (a side lock never swings in across her face)
-      d.vx += (60 * (tx - d.ax) - 9 * d.vx) * dt; d.ax += d.vx * dt; d.vz += (60 * (tz - d.az) - 9 * d.vz) * dt; d.az += d.vz * dt;
-      d.g.rotation.set(-d.ax, 0, d.az);
-      // Kept out of her back (or the cloak): while a strand would pass into it, turn it, a little at a time, whichever way brings it out soonest.
-      let pen = penOf(d);
-      for (let it = 0; it < 14 && pen > 0; it++) {
+      // Kept out of her back (or the cloak): if the place it would hang is inside, the place moves to the nearest clear spot (searched outward along
+      // each way it can swing, keeping to last frame's way unless another is clearly nearer), and the spring settles it there, smoothly.
+      const penAt = (ax, az) => { d.g.rotation.set(-ax, 0, az); return penOf(d); };
+      if (penAt(tx, tz) > 0) {
         let best = null;
-        for (const [dx, dz] of [[0.07, 0], [-0.07, 0], [0, 0.07], [0, -0.07]]) { d.g.rotation.set(-(d.ax + dx), 0, d.az + dz); const p2 = penOf(d); if (!best || p2 < best.p) best = { p: p2, dx, dz }; }
-        if (best.p >= pen) { d.g.rotation.set(-d.ax, 0, d.az); break; }
-        d.ax += best.dx; d.az += best.dz; pen = best.p; if (best.dx) d.vx = 0; if (best.dz) d.vz = 0;
-        d.g.rotation.set(-d.ax, 0, d.az);
+        for (const [k, ux, uz] of [[0, 1, 0], [1, -1, 0], [2, 0, 1], [3, 0, -1]]) {
+          for (let a = 0.03; a <= 1.5; a += 0.03) if (penAt(tx + ux * a, tz + uz * a) <= 0) { const cost = a + (k === d.way ? 0 : 0.12); if (!best || cost < best.cost) best = { cost, k, x: tx + ux * a, z: tz + uz * a }; break; }
+        }
+        if (best) { d.way = best.k; tx = best.x; tz = best.z; }
       }
+      d.tx = d.tx == null ? tx : lerp(d.tx, tx, 1 - Math.exp(-dt * 12)); d.tz = d.tz == null ? tz : lerp(d.tz, tz, 1 - Math.exp(-dt * 12));      // (eased, so the rest place never jumps)
+      d.vx += (60 * (d.tx - d.ax) - 9 * d.vx) * dt; d.ax += d.vx * dt; d.vz += (60 * (d.tz - d.az) - 9 * d.vz) * dt; d.az += d.vz * dt;
+      d.g.rotation.set(-d.ax, 0, d.az);
     }
   };
 
