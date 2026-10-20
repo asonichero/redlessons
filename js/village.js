@@ -161,20 +161,8 @@ function build(G) {
   const place = (id, x, z, ry) => {
     const r = root.Toon.make(id); r.root.position.set(x, 0, z); r.root.rotation.y = ry; r.root.scale.setScalar(ADULT); scene.add(r.root);
     const a = anim[id] = { t: Math.random() * 10, phase: 0, speed: 0, look: 0, gesture: 0, air: false };
-    r.after = q => {
-      const s = Math.sin(a.phase) * clamp(a.speed / 20, 0, 1) * 0.7, idle = 0.02 * Math.sin(a.t * 1.1);
-      q.legL.thigh.rotation.x = s; q.legR.thigh.rotation.x = -s; q.armL.rotation.x = -s * 0.8 + idle; q.armR.rotation.x = s * 0.8 - idle - 0.9 * a.gesture;
-      if (q.elbow) q.elbow.rotation.x = -0.6 * a.gesture;
-      if (a.carry) { q.armL.rotation.x = q.armR.rotation.x = -1.2; }
-      if (a.air) { q.armL.rotation.x = q.armR.rotation.x = -2.4; q.legL.thigh.rotation.x = -0.5; q.legR.thigh.rotation.x = 0.25; }
-      const mv = clamp(a.speed / 20, 0, 1);
-      q.legL.knee.rotation.x = Math.max(0, -Math.sin(a.phase)) * 0.9 * mv + (a.air ? 0.6 : 0); q.legR.knee.rotation.x = Math.max(0, Math.sin(a.phase)) * 0.9 * mv + (a.air ? 0.6 : 0);
-      if (!a.carry && !a.gesture) { q.elbow.rotation.x = -0.22 - 0.35 * mv; q.elbowL.rotation.x = -0.18 - 0.35 * mv; }
-      q.neck.rotation.y = a.look; q.torso.rotation.z = 0.012 * Math.sin(a.t * 0.9); q.torso.rotation.x = 0.06 * mv;
-      q.torso.scale.set(1, 1 + 0.008 * Math.sin(a.t * 1.6), 1);                      // (a breath)
-      q.hips.position.y = (q.baseHip || 12) + Math.abs(Math.sin(a.phase)) * 0.6 * mv;
-    };
-    B.setPose(r, 'stand'); for (let i = 0; i < 20; i++) B.step(r, 0.1);
+    r.after = q => root.Toon.pose(q, a, q.dt);
+    r.dt = 1; r.apply();
     cast[id] = r; return r;
   };
   const heroine = place('heroine', 0, 40, Math.PI);
@@ -204,7 +192,7 @@ function build(G) {
     },
     update(dt) {
       wheel.rotation.x += dt * 0.6;
-      for (const id in cast) { anim[id].t += dt; B.step(cast[id], dt); }
+      for (const id in cast) { const r = cast[id]; anim[id].t += dt; r.dt = dt; r.apply(); r.tick(dt); }
     },
   };
   return world;
@@ -405,7 +393,9 @@ function play(G, W, L, saved) {
       if (st.jumpReq) { st.jumpReq = false; if (st.grounded && !st.carrying && !st.talking) { st.vy = 70 * Math.sqrt(size); st.grounded = false; } }
       const nx = st.pos.x + vel.x * dt, nz = st.pos.z + vel.z * dt; if (!blocked(nx, st.pos.z)) st.pos.x = nx; if (!blocked(st.pos.x, nz)) st.pos.z = nz;
       st.vy -= 260 * dt; st.y += st.vy * dt; if (st.y <= 0) { st.y = 0; st.vy = 0; st.grounded = true; }
-      st.speedN = vel.length() / PACE(size) * (0.6 + 0.4 / Math.max(size, 0.3)); ha.speed = st.talking ? 0 : st.speedN * 0.8; ha.phase += dt * st.speedN * 0.42; ha.air = !st.grounded;
+      st.speedN = vel.length() / PACE(size) * (0.6 + 0.4 / Math.max(size, 0.3)); ha.air = !st.grounded; ha.running = running;
+      // The stride: speed in her own (full-size) units, and the phase advanced by distance over stride length, so the feet keep pace with the ground.
+      ha.speed = st.talking ? 0 : vel.length() / Math.max(size, 0.3); ha.phase += dt * vel.length() / (size * ADULT * (running ? 38 : 28)) * Math.PI * 2;
       heroine.root.position.set(st.pos.x, st.y, st.pos.z); if (!st.talking) heroine.root.rotation.y = turn(heroine.root.rotation.y, st.heading, Math.min(1, dt * 12));
       if (st.carrying) { sack.position.set(st.pos.x, st.y + 30 * size * ADULT, st.pos.z); sack.scale.setScalar(1); sack.rotation.y = st.heading; }
 

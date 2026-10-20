@@ -1,18 +1,24 @@
-// Red Lessons — the toon look (style test). Smooth, rounded characters with soft cel shading and a warm ink outline, in place of the blocky skins,
-// after the concept art: the heroine in a green tunic, belt and pouches, tan trousers and tall laced boots, chestnut braids tied with red ribbon, and
-// a red cloak edged in gold and stitched with stars.
-// The joint layout matches js/blocky.js (root › hips › torso › neck; armL/armR › elbow › wrist; legL/legR { thigh › knee }) so the village and the
-// over-the-knee scene can switch over without their posing code changing. A grown adult stands 30 units tall, as before.
+// Red Lessons — the toon characters. Smooth, rounded people with soft cel shading and a warm ink outline, on a skinned skeleton: every joint
+// bends as one continuous body (no tubes meeting at a seam), the spine bends in two places, and the hands, feet, cape and long hair have bones of
+// their own. The cape and the hair are springs: they trail, swing and settle as the body moves.
 //
-// Proportions are an adult's throughout: about six and a half heads tall, a defined waist and hips, a woman's face (eyes at the middle of the head,
-// a jaw, a soft but grown-up expression). The cloak changes her scale only; Toon.make('heroine') at any scale is the same woman.
+// The joint names match the old blocky rig (root › hips › torso › neck; armL/armR › elbow › wrist; legL/legR { thigh › knee }), so code that posed
+// those still finds them. Added: spine (= torso) › chest, neck › head, wrist › hand, knee › ankle, chest › cape › capeLow, head › hair1 › hair2.
+// A grown adult stands about 30 units tall.
 //
-//   const rig = Toon.make('heroine'); rig.cloak.show(true); rig.root.scale.setScalar(0.55);
+// Proportions are an adult's throughout: about six and a half heads tall, a defined waist and hips, a woman's face. The cloak changes her scale
+// only; Toon.make('heroine') at any scale is the same woman.
+//
+//   const rig = Toon.make('heroine'); rig.cloak.show(true);
+//   each frame: Toon.pose(rig, anim, dt); rig.tick(dt);     anim = { t, phase, speed, running, look, gesture, carry, air }
 (function (root) {
 'use strict';
 const THREE = root.THREE, V2 = THREE.Vector2, V3 = THREE.Vector3;
 const srgb = h => new THREE.Color(h).convertSRGBToLinear();
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, t) => a + (b - a) * t;
+const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };     // smoothstep; a > b runs downhill
 
+// ── Materials ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Three soft bands of light, as in a cosy console game.
 let GRAD = null;
 function gradient() {
@@ -22,35 +28,86 @@ function gradient() {
   return GRAD;
 }
 const toon = (hex, extra) => new THREE.MeshToonMaterial(Object.assign({ color: srgb(hex), gradientMap: gradient() }, extra || {}));
+const SKM = {};
+const toonS = (hex, both) => { const k = hex + (both ? '2' : '1'); return SKM[k] || (SKM[k] = toon(hex, { skinning: true, side: both ? THREE.DoubleSide : THREE.FrontSide })); };   // (for skinned meshes)
 const flat = hex => new THREE.MeshBasicMaterial({ color: srgb(hex) });
 const INK = new THREE.MeshBasicMaterial({ color: srgb('#4a2c22'), side: THREE.BackSide });      // a warm brown ink, as in the concept art
-// A mesh with an ink outline (the inverted hull: the same shape a touch larger, drawn from the inside in the ink colour).
+const INKS = new THREE.MeshBasicMaterial({ color: srgb('#4a2c22'), side: THREE.BackSide, skinning: true });
+// A rigid mesh with an ink outline (the inverted hull: the same shape a touch larger, drawn from the inside in the ink colour).
 function inked(geo, mat, w) {
   const g = new THREE.Group(), m = new THREE.Mesh(geo, mat); g.add(m);
   const o = new THREE.Mesh(geo, INK); o.scale.setScalar(1 + (w == null ? 0.05 : w)); g.add(o);
   g.userData.mesh = m; return g;
 }
-// A body part turned from a profile: [[radius, height], …], squashed front to back by depth.
-// (Segments are trimmed to about 60% of what is asked: smooth enough under cel shading, and cheap on a phone.)
+
+// ── Shapes ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A body part turned from a profile: [[radius, height], …], squashed front to back by depth. (Segments trimmed: smooth under cel shading, cheap on a phone.)
 function lathe(profile, depth, seg, phi0, phiLen) {
-  if (profile[0][1] > profile[profile.length - 1][1]) profile = profile.slice().reverse();     // (bottom to top, so the faces point outward)
-  const g = new THREE.LatheGeometry(profile.map(([r, y]) => new V2(r, y)), Math.max(10, Math.round((seg || 24) * 0.62)), phi0 || 0, phiLen || Math.PI * 2); g.scale(1, 1, depth == null ? 0.72 : depth); g.computeVertexNormals(); return g;
+  if (profile[0][1] > profile[profile.length - 1][1]) profile = profile.slice().reverse();
+  const g = new THREE.LatheGeometry(profile.map(([r, y]) => new V2(r, y)), Math.max(10, Math.round((seg || 24) * 0.62)), phi0 || 0, phiLen || Math.PI * 2);
+  g.scale(1, 1, depth == null ? 0.72 : depth); g.computeVertexNormals(); return g;
 }
 const sphere = (r, sx, sy, sz) => { const g = new THREE.SphereGeometry(r, r > 1 ? 16 : 12, r > 1 ? 11 : 8); g.scale(sx || 1, sy || 1, sz || 1); return g; };
-// A limb segment from 0 down to -len, tapering from r0 to r1, with rounded ends.
-const limb = (len, r0, r1) => lathe([[0, 0.15], [r0 * 0.7, 0.05], [r0, -r0 * 0.4], [r1, -len + r1 * 0.4], [r1 * 0.7, -len - 0.05], [0, -len - 0.15]], 1, 16);
-// A five-pointed star, flat, for the cloak's embroidery.
+// A limb from 0 down to -len, tapering from r0 to r1, with rounded ends, and enough rings along it to bend smoothly at the joints.
+const limb = (len, r0, r1) => {
+  const pr = [[0, 0.15], [r0 * 0.7, 0.05], [r0, -r0 * 0.4]];
+  for (let i = 1; i < 7; i++) { const t = i / 7; pr.push([lerp(r0, r1, t), lerp(-r0 * 0.4, -len + r1 * 0.4, t)]); }
+  pr.push([r1, -len + r1 * 0.4], [r1 * 0.7, -len - 0.05], [0, -len - 0.15]);
+  return lathe(pr, 1, 16);
+};
 function starGeo(r) {
   const s = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (i) s.lineTo(x, y); else s.moveTo(x, y); }
-  return new THREE.ShapeGeometry(s);
+  return new THREE.ShapeGeometry(s).toNonIndexed();
+}
+// A piece of cloth (or a sheet of hair) with a thickness: fn(u, v) → point, u across and v down, both 0..1. Built as a closed shell (outer face,
+// inner face, and the rims between them) so that the outline hull works; groups: 0 outer, 1 inner, 2 rims. outward(p) says which way is out.
+function sheet(fn, nu, nv, thick, outward) {
+  const P = [], N = [], W = nu + 1, id = (u, v) => v * W + u;
+  for (let v = 0; v <= nv; v++) for (let u = 0; u <= nu; u++) P.push(fn(u / nu, v / nv));
+  for (let v = 0; v <= nv; v++) for (let u = 0; u <= nu; u++) {
+    const du = P[id(Math.min(nu, u + 1), v)].clone().sub(P[id(Math.max(0, u - 1), v)]), dv = P[id(u, Math.min(nv, v + 1))].clone().sub(P[id(u, Math.max(0, v - 1))]);
+    const n = du.cross(dv).normalize(); if (n.dot(outward(P[id(u, v)])) < 0) n.negate(); N.push(n);
+  }
+  const pos = [], index = [], push = p => { pos.push(p.x, p.y, p.z); return pos.length / 3 - 1; };
+  const quad = (a, b, c, d, ref) => {          // two triangles over a quad of vertex indices, wound to face ref
+    const A = new V3().fromArray(pos, a * 3), B_ = new V3().fromArray(pos, b * 3), C_ = new V3().fromArray(pos, c * 3);
+    if (B_.sub(A).cross(C_.sub(A)).dot(ref) >= 0) index.push(a, b, c, a, c, d); else index.push(a, c, b, a, d, c);
+  };
+  const o0 = pos.length / 3; P.forEach(push);
+  const i0 = pos.length / 3; P.forEach((p, k) => push(p.clone().addScaledVector(N[k], -thick)));
+  for (let v = 0; v < nv; v++) for (let u = 0; u < nu; u++) { const k = [id(u, v), id(u + 1, v), id(u + 1, v + 1), id(u, v + 1)], ref = N[k[0]].clone().add(N[k[2]]); quad(o0 + k[0], o0 + k[1], o0 + k[2], o0 + k[3], ref); }
+  const nOuter = index.length;
+  for (let v = 0; v < nv; v++) for (let u = 0; u < nu; u++) { const k = [id(u, v), id(u + 1, v), id(u + 1, v + 1), id(u, v + 1)], ref = N[k[0]].clone().add(N[k[2]]).negate(); quad(i0 + k[0], i0 + k[1], i0 + k[2], i0 + k[3], ref); }
+  const nInner = index.length;
+  // The rims: each edge of the grid, its own vertices (so its normals are its own), facing away from the sheet.
+  const edges = [[...Array(W).keys()].map(u => [id(u, 0), id(u, Math.min(1, nv))]), [...Array(W).keys()].map(u => [id(u, nv), id(u, nv - 1)]),
+    [...Array(nv + 1).keys()].map(v => [id(0, v), id(1, v)]), [...Array(nv + 1).keys()].map(v => [id(nu, v), id(nu - 1, v)])];
+  for (const e of edges) {
+    const base = pos.length / 3; for (const [k] of e) { push(P[k]); push(P[k].clone().addScaledVector(N[k], -thick)); }
+    for (let j = 0; j < e.length - 1; j++) { const ref = P[e[j][0]].clone().sub(P[e[j][1]]); quad(base + j * 2, base + j * 2 + 2, base + j * 2 + 3, base + j * 2 + 1, ref); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(index);
+  g.addGroup(0, nOuter, 0); g.addGroup(nOuter, nInner - nOuter, 1); g.addGroup(nInner, index.length - nInner, 2); g.computeVertexNormals();
+  return g;
+}
+// One face of the same cloth, lifted off it: for trims and bands. v0..v1 is the part of the cloth it covers.
+function band(fn, nu, nv, v0, v1, lift, outward) {
+  const g = sheet((u, v) => fn(u, lerp(v0, v1, v)), nu, nv, 0.001, outward), pos = g.attributes.position, nrm = g.attributes.normal, p = new V3();
+  for (let i = 0; i < pos.count; i++) { p.fromBufferAttribute(pos, i).addScaledVector(new V3().fromBufferAttribute(nrm, i), lift); pos.setXYZ(i, p.x, p.y, p.z); }
+  g.clearGroups(); g.setIndex(Array.from(g.index.array.slice(0, nu * nv * 6))); return g;
+}
+function mergeFlat(list) {       // non-indexed geometries into one
+  const pos = []; for (const g of list) pos.push(...g.attributes.position.array);
+  const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); m.computeVertexNormals(); return m;
 }
 
-// ── The people ──
+// ── The people ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 const SPECS = {
-  heroine: { skin: '#f7d6bc', skinSh: '#e6ad8e', blush: '#f0a090', hair: '#8a5030', hairHi: '#b4734a', hairDk: '#5e341c', eyes: '#6a4428', lips: '#c4646a',
-    top: 'tunic', tunic: '#3f6b3c', tunicDk: '#2c5030', collar: '#e8dcc0', lower: 'trousers', trousers: '#d2bf98', trousersDk: '#b29e78', belt: '#6a4226', bracer: '#7a4c2a', boots: '#7a4a2a', bootsDk: '#5a3420',
-    hairStyle: 'braids', ribbon: '#c42832', cloak: true },
-  mother: { skin: '#f0caa8', skinSh: '#d8a684', blush: '#e0988a', hair: '#9a7a5a', hairHi: '#c4a482', hairDk: '#6e563e', eyes: '#5a6a48', lips: '#b06a6a', grey: true,
+  // The heroine, in her own clothes: a rust bodice laced over a cream chemise, a long moss-green skirt, boots; loose auburn hair, green eyes, freckles.
+  heroine: { skin: '#f6d2b4', skinSh: '#e2a888', blush: '#f0a090', hair: '#8a3a22', hairHi: '#b0532e', hairDk: '#5e2416', eyes: '#4f7a5a', lips: '#c4646a', freckles: true,
+    top: 'bodice', blouse: '#f1e8d6', bodice: '#8a4e2c', bodiceDk: '#6a3a20', lace: '#ecd8a4', lower: 'skirt', skirt: '#617040', skirtDk: '#4a5830', belt: '#6a3a20', boots: '#5a3820',
+    hairStyle: 'long', cloak: true },
+  mother: { skin: '#f0caa8', skinSh: '#d8a684', blush: '#e0988a', hair: '#9a7a5a', hairHi: '#c4a482', hairDk: '#6e563e', eyes: '#5a6a48', lips: '#b06a6a',
     top: 'bodice', blouse: '#f2ece0', bodice: '#9a5a3a', lower: 'skirt', skirt: '#6a5a7a', skirtDk: '#54466a', belt: '#5a3a22', boots: '#3a2616', hairStyle: 'bun', apron: '#f6f0e4', flour: true },
   grandmother: { skin: '#eac6a8', skinSh: '#cfa486', blush: '#d8988c', hair: '#e8e4dc', hairHi: '#ffffff', hairDk: '#b8b0a4', eyes: '#5a7a98', lips: '#b07a80', lined: true,
     top: 'bodice', blouse: '#ece6d6', bodice: '#3a4a5a', lower: 'skirt', skirt: '#3a4a5a', skirtDk: '#2c3846', belt: '#2a1a10', boots: '#2a1a10', hairStyle: 'bun', shawl: '#a83030' },
@@ -63,73 +120,110 @@ const SPECS = {
 };
 
 function make(id) {
-  const S = SPECS[id], rig = { id, spec: S };
+  const S = SPECS[id], rig = { id, spec: S }, BN = {}, bones = [];
+  const root_ = new THREE.Group(); rig.root = root_;
+  // ── The skeleton, at rest (every bone unrotated). Positions are each bone's head, in its parent's space.
+  const bone = (name, parent, x, y, z, order) => { const b = new THREE.Bone(); b.name = name; b.position.set(x, y, z); if (order) b.rotation.order = order; (parent || root_).add(b); bones.push(b); BN[name] = b; return b; };
+  const SHX = S.male ? 3.75 : 3.15;
+  bone('hips', null, 0, 15.5, 0); bone('spine', BN.hips, 0, 1.5, 0, 'YXZ'); bone('chest', BN.spine, 0, 3.0, 0, 'YXZ');
+  bone('neck', BN.chest, 0, 4.5, 0, 'YXZ'); bone('head', BN.neck, 0, 1.0, 0, 'YXZ');
+  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+    bone('arm' + s, BN.chest, sx * SHX, 3.5, 0, 'ZXY'); bone('elbow' + s, BN['arm' + s], 0, -4.6, 0); bone('wrist' + s, BN['elbow' + s], 0, 0, 0); bone('hand' + s, BN['wrist' + s], 0, -4.3, 0);
+    bone('thigh' + s, BN.hips, sx * 1.6, 0, 0, 'ZXY'); bone('knee' + s, BN['thigh' + s], 0, -7.0, 0); bone('ankle' + s, BN['knee' + s], 0, -7.0, 0);
+  }
+  if (S.cloak) { bone('cape', BN.chest, 0, 3.1, -2.9); bone('capeLow', BN.cape, 0, -2.7, -0.5); }
+  if (S.hairStyle === 'long') { bone('hair1', BN.head, 0, -0.9, -2.6); bone('hair2', BN.hair1, 0, -1.1, -0.9); }
+  root_.updateMatrixWorld(true);
+  const skel = new THREE.Skeleton(bones), BI = new Map(bones.map((b, i) => [b, i])), IDM = new THREE.Matrix4();
+  const hipsW = BN.hips.getWorldPosition(new V3());
+  const at = (b, x, y, z) => new V3(x, y, z).add(hipsW).sub(b.getWorldPosition(new V3()));       // a point given in the hips' space, in bone b's space
+  const attach = (b, obj, x, y, z) => { obj.position.copy(at(b, x, y, z)); b.add(obj); return obj; };
+  const byHeight = y => y < 1.5 ? BN.hips : y < 4.4 ? BN.spine : BN.chest;                    // which bone a rigid detail on the torso rides on
+  const onTorso = (obj, x, y, z) => attach(byHeight(y), obj, x, y, z);
+
+  // ── Skinning. part(): a geometry given in bone `frame`'s space, each vertex weighted to bones by wfn(point); with an outline hull of width ink.
+  function addSkinned(geo, mat) { const m = new THREE.SkinnedMesh(geo, mat); m.frustumCulled = false; root_.add(m); m.bind(skel, IDM); return m; }
+  function part(geo, frame, mat, wfn, ink) {
+    const pos = geo.attributes.position, n = pos.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), p = new V3();
+    for (let i = 0; i < n; i++) {
+      p.fromBufferAttribute(pos, i);
+      const m = new Map(); for (const [b, w] of wfn(p)) if (b && w > 1e-4) m.set(b, (m.get(b) || 0) + w);
+      let ws = [...m].sort((a, b) => b[1] - a[1]).slice(0, 4); if (!ws.length) ws = [[frame, 1]];
+      const tot = ws.reduce((t, w) => t + w[1], 0);
+      ws.forEach(([b, w], k) => { si[i * 4 + k] = BI.get(b); sw[i * 4 + k] = w / tot; });
+    }
+    geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    geo.applyMatrix4(frame.matrixWorld);
+    const mesh = addSkinned(geo, mat);
+    if (ink) {
+      const og = geo.clone(), op = og.attributes.position, on = og.attributes.normal, q = new V3();
+      for (let i = 0; i < op.count; i++) { q.fromBufferAttribute(op, i).addScaledVector(new V3().fromBufferAttribute(on, i), ink); op.setXYZ(i, q.x, q.y, q.z); }
+      addSkinned(og, INKS);
+    }
+    return mesh;
+  }
+  // Weights for a limb from its bone's head (0) to its child's (-len): blended with the parent over ±bTop about the top joint, with the child over ±bBot about the bottom.
+  const limbW = (parent, self, child, len, bTop, bBot) => p => {
+    const wp = parent ? ss(-bTop, bTop, p.y) : 0, wc = child ? ss(-len + bBot, -len - bBot, p.y) : 0;
+    return [[parent, wp], [child, wc], [self, Math.max(0, 1 - wp - wc)]];
+  };
+  // The torso, in the hips' space: hips below the waist, the spine through it, the chest above; the tails of a shirt or tunic follow the thighs a little.
+  const torsoW = p => {
+    const y = p.y, wChest = ss(3.4, 5.4, y); let wHips = 1 - ss(0.0, 2.0, y);
+    const wSpine = Math.max(0, 1 - wHips - wChest), down = ss(0, -4.5, y) * 0.55, wl = down * ss(-1.2, 1.2, p.x), wr = down * ss(-1.2, 1.2, -p.x);
+    wHips = Math.max(0, wHips - wl - wr);
+    const sh = ss(SHX - 0.8, SHX + 0.4, Math.abs(p.x)) * ss(6.6, 8.0, y) * 0.3;          // the tops of the sleeves on the torso follow the arm a little
+    return [[BN.hips, wHips], [BN.spine, wSpine], [BN.chest, wChest - sh], [p.x > 0 ? BN.armL : BN.armR, sh], [BN.thighL, wl], [BN.thighR, wr]];
+  };
+  // A skirt (and an apron) in the hips' space: the lower it hangs, the more it follows the thigh on its side.
+  const skirtW = p => {
+    const down = ss(0.5, -11, p.y) * 0.75, wl = down * ss(-1.5, 1.5, p.x), wr = down * ss(-1.5, 1.5, -p.x);
+    return [[BN.hips, Math.max(0, 1 - wl - wr)], [BN.thighL, wl], [BN.thighR, wr]];
+  };
+  const T = (frame, w) => ({ frame, w });
+  const HIPS = T(BN.hips, torsoW);
   const M = { skin: toon(S.skin), hair: toon(S.hair), hairHi: toon(S.hairHi), belt: toon(S.belt), boots: toon(S.boots) };
-  const root_ = new THREE.Group(), hips = new THREE.Group(); hips.position.y = 15.5; root_.add(hips);
-  rig.root = root_; rig.hips = hips;
-  const torso = new THREE.Group(); hips.add(torso); rig.torso = torso;
 
   // ── Torso. From the hips (y 0) to the shoulders (about 8.6): hips, a waist, the ribcage, the shoulders.
   const BODY = [[0, -0.6], [3.2, -0.4], [3.5, 0.6], [3.0, 2.2], [2.55, 3.4], [2.9, 5.2], [3.2, 6.6], [3.3, 7.6], [2.6, 8.6], [1.0, 9.1], [0, 9.2]];
-  if (S.top === 'tunic') {
-    const tm = toon(S.tunic, { side: THREE.DoubleSide });
-    // The tunic: over the shoulders and down to mid-thigh, belted at the waist, flaring a little below the belt; a darker band at the hem.
-    torso.add(inked(lathe([[0, 9.25], [1.1, 9.15], [2.7, 8.72], [3.36, 7.7], [3.24, 6.6], [2.96, 5.2], [2.62, 3.4], [2.84, 2.1], [3.55, 0.6], [3.95, -1.6], [4.25, -3.7]], 0.7, 28), tm, 0.025));
-    torso.add(new THREE.Mesh(lathe([[4.18, -3.3], [4.28, -3.75], [4.24, -3.8]], 0.7, 28), toon(S.tunicDk, { side: THREE.DoubleSide })));
-    // The neckline: a cream undershirt showing in a shallow V at the throat.
-    const v = new THREE.Mesh(new THREE.CircleGeometry(0.95, 3), toon(S.collar)); v.position.set(0, 8.5, 1.85); v.rotation.set(-0.35, 0, -Math.PI / 2); torso.add(v);
-    // The figure under it: the bust, softened by the cloth.
-    for (const sx of [-1, 1]) { const b = inked(sphere(1.15, 1, 0.9, 0.78), tm, 0.03); b.position.set(sx * 1.2, 5.55, 1.5); torso.add(b); }
-    // A belt with a brass buckle, two pouches at the front of the hips and one at the side.
-    torso.add(inked(lathe([[2.98, 1.8], [2.93, 2.8]], 0.72, 28), M.belt, 0.02));
-    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.85, 0.3), toon('#d8b04a')); buckle.position.set(0, 2.3, 2.18); torso.add(buckle);
-    for (const [x, z, ry, sc] of [[-1.85, 1.7, -0.45, 1], [1.85, 1.7, 0.45, 0.85], [3.0, 0.2, 1.4, 1.1]]) {
-      const p = inked(new THREE.BoxGeometry(1.35 * sc, 1.45 * sc, 0.75), M.belt, 0.06); p.position.set(x, 1.15, z); p.rotation.y = ry; torso.add(p);
-      const flap = new THREE.Mesh(new THREE.BoxGeometry(1.38 * sc, 0.5, 0.8), toon('#583420')); flap.position.set(x, 1.6, z); flap.rotation.y = ry; torso.add(flap);
-    }
-  } else if (S.top === 'shirt') {
+  if (S.top === 'shirt') {
     // A man's build: broader at the shoulder, straighter at the waist. A loose shirt, checked for the woodcutter, the tail over the hips.
-    const sm = toon(S.shirt, { side: THREE.DoubleSide });
-    torso.add(inked(lathe([[0, 9.3], [1.15, 9.2], [2.95, 8.75], [3.85, 7.7], [3.78, 6.6], [3.45, 5.0], [3.2, 3.4], [3.25, 2.0], [3.45, 0.4], [3.6, -1.1]], 0.7, 28), sm, 0.025));
-    if (S.check) for (let y = -0.6; y < 8.6; y += 1.5) torso.add(new THREE.Mesh(lathe([[3.1 + (y > 5 ? 0.45 : y > 2 ? 0.05 : 0.3), y], [3.1 + (y > 5 ? 0.45 : y > 2 ? 0.05 : 0.3), y + 0.42]], 0.71, 28), toon(S.check)));
-    const v = new THREE.Mesh(new THREE.CircleGeometry(0.85, 3), toon(S.skin)); v.position.set(0, 8.55, 1.95); v.rotation.set(-0.35, 0, -Math.PI / 2); torso.add(v);
-    torso.add(new THREE.Mesh(lathe([[3.28, 1.6], [3.24, 2.4]], 0.72, 28), M.belt));
-    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.3), toon('#b89a4a')); buckle.position.set(0, 2.0, 2.35); torso.add(buckle);
+    part(lathe([[0, 9.3], [1.15, 9.2], [2.95, 8.75], [3.85, 7.7], [3.78, 6.6], [3.45, 5.0], [3.2, 3.4], [3.25, 2.0], [3.45, 0.4], [3.6, -1.1]], 0.7, 28), BN.hips, toonS(S.shirt, true), torsoW, 0.09);
+    if (S.check) for (let y = -0.6; y < 8.6; y += 1.5) { const r = 3.1 + (y > 5 ? 0.45 : y > 2 ? 0.05 : 0.3); part(lathe([[r + 0.04, y], [r + 0.04, y + 0.42]], 0.71, 28), BN.hips, toonS(S.check), torsoW); }
+    const v = new THREE.Mesh(new THREE.CircleGeometry(0.85, 3), toon(S.skin)); v.rotation.set(-0.35, 0, -Math.PI / 2); onTorso(v, 0, 8.55, 1.95);
+    part(lathe([[3.28, 1.6], [3.24, 2.4]], 0.72, 28), BN.hips, toonS(S.belt), torsoW, 0.05);
+    onTorso(new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.3), toon('#b89a4a')), 0, 2.0, 2.35);
   } else {
-    const bm = toon(S.bodice);
-    torso.add(inked(lathe(BODY, 0.68), bm));
-    torso.add(inked(lathe([[0, 6.7], [3.35, 6.8], [3.4, 7.7], [2.7, 8.7], [1.1, 9.15], [0, 9.25]], 0.7), toon(S.blouse), 0.03));
-    for (let i = 0; i < 4; i++) { const x = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 0.2), toon('#e8d8a8')); x.position.set(0, 2.6 + i * 1.0, 2.25 + (i > 1 ? 0.1 : 0)); x.rotation.z = i % 2 ? 0.5 : -0.5; torso.add(x); }
-    for (const sx of [-1, 1]) { const b = inked(sphere(1.25, 1, 0.9, 0.8), bm, 0.03); b.position.set(sx * 1.25, 5.6, 1.55); torso.add(b); }
-    torso.add(new THREE.Mesh(lathe([[2.62, 2.0], [2.62, 2.7]], 0.69), M.belt));
+    const bm = toonS(S.bodice);
+    part(lathe(BODY, 0.68), BN.hips, bm, torsoW, 0.09);
+    // The chemise: over the shoulders and round the neckline, above the bodice.
+    part(lathe([[0, 6.7], [3.35, 6.8], [3.4, 7.7], [2.7, 8.7], [1.1, 9.15], [0, 9.25]], 0.7), BN.hips, toonS(S.blouse), torsoW, 0.07);
+    for (let i = 0; i < 4; i++) { const x = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 0.2), toon(S.lace || '#e8d8a8')); x.rotation.z = i % 2 ? 0.5 : -0.5; onTorso(x, 0, 2.6 + i * 1.0, 2.25 + (i > 1 ? 0.1 : 0)); }
+    for (const sx of [-1, 1]) { const b = inked(sphere(1.25, 1, 0.9, 0.8), toon(S.bodice), 0.03); attach(BN.chest, b, sx * 1.25, 5.6, 1.55); }
+    part(lathe([[2.66, 2.0], [2.66, 2.7]], 0.69), BN.hips, toonS(S.bodiceDk || S.belt), torsoW, 0.04);
     if (S.shawl) {
-      // A shawl round the shoulders, knotted at the breastbone.
-      const sh = toon(S.shawl, { side: THREE.DoubleSide });
-      torso.add(inked(lathe([[1.2, 9.3], [2.8, 8.9], [3.7, 7.6], [3.75, 6.2], [3.5, 5.4]], 0.74, 28), sh, 0.03));
-      const knot = inked(sphere(0.55, 1.2, 0.9, 0.7), sh, 0.06); knot.position.set(0, 6.2, 2.45); torso.add(knot);
+      const sh = toonS(S.shawl, true);
+      part(lathe([[1.2, 9.3], [2.8, 8.9], [3.7, 7.6], [3.75, 6.2], [3.5, 5.4]], 0.74, 28), BN.hips, sh, torsoW, 0.08);
+      attach(BN.chest, inked(sphere(0.55, 1.2, 0.9, 0.7), toon(S.shawl), 0.06), 0, 6.2, 2.45);
     }
   }
   if (S.apron && S.lower === 'trousers') {
-    // A work apron over trousers: the front of a cone from the waist to the knee.
-    const ag = new THREE.LatheGeometry([new V2(4.4, -6.5), new V2(3.9, -3), new V2(3.5, 0.2), new V2(3.3, 1.8)], 20, -Math.PI * 0.32, Math.PI * 0.64); ag.scale(1, 1, 0.78); ag.computeVertexNormals();
-    torso.add(inked(ag, toon(S.apron, { side: THREE.DoubleSide }), 0.015));
+    const ag = new THREE.LatheGeometry([new V2(4.4, -6.5), new V2(3.9, -3), new V2(3.5, 0.2), new V2(3.3, 1.8)], 12, -Math.PI * 0.32, Math.PI * 0.64); ag.scale(1, 1, 0.78); ag.computeVertexNormals();
+    part(ag, BN.hips, toonS(S.apron, true), skirtW, 0.05);
   }
-  if (S.flour) for (const [x, y, z] of [[0.6, -1.0, 3.0], [-1.1, -2.6, 3.1], [1.4, 0.4, 2.9], [-0.3, -4.2, 3.4]]) { const d = new THREE.Mesh(sphere(0.32, 1.4, 1, 0.3), flat('#fbf8f0')); d.position.set(x, y, z); torso.add(d); }
+  if (S.flour) for (const [x, y, z] of [[0.6, -1.0, 3.0], [-1.1, -2.6, 3.1], [1.4, 0.4, 2.9]]) attach(BN.hips, new THREE.Mesh(sphere(0.32, 1.4, 1, 0.3), flat('#fbf8f0')), x, y, z);
   if (S.lower === 'skirt') {
-    const skirt = new THREE.Group(); hips.add(skirt); rig.skirt = skirt;
-    skirt.add(inked(lathe([[2.7, 2.3], [3.6, 0.6], [4.6, -4], [5.6, -9], [6.2, -12.6], [6.0, -13.2]], 0.78, 28), toon(S.skirt, { side: THREE.DoubleSide }), 0.025));
-    skirt.add(new THREE.Mesh(lathe([[6.08, -12.2], [6.22, -12.7], [6.02, -13.25]], 0.78, 28), toon(S.skirtDk)));
+    part(lathe([[2.7, 2.3], [3.6, 0.6], [4.6, -4], [5.6, -9], [6.2, -12.6], [6.0, -13.2]], 0.8, 28), BN.hips, toonS(S.skirt, true), skirtW, 0.08);
+    part(lathe([[6.1, -12.2], [6.24, -12.7], [6.04, -13.25]], 0.8, 28), BN.hips, toonS(S.skirtDk), skirtW);
     if (S.apron) {
-      const ag = new THREE.LatheGeometry([new V2(5.5, -8), new V2(4.8, -4), new V2(3.75, 0.4), new V2(2.75, 2.2)], 20, -Math.PI * 0.3, Math.PI * 0.6); ag.scale(1, 1, 0.8); ag.computeVertexNormals();
-      skirt.add(inked(ag, toon(S.apron, { side: THREE.DoubleSide }), 0.015));
+      const ag = new THREE.LatheGeometry([new V2(5.6, -8), new V2(4.9, -4), new V2(3.8, 0.4), new V2(2.8, 2.2)], 12, -Math.PI * 0.3, Math.PI * 0.6); ag.scale(1, 1, 0.82); ag.computeVertexNormals();
+      part(ag, BN.hips, toonS(S.apron, true), skirtW, 0.05);
     }
   }
 
-  // ── Neck and head. A woman's face, soft and warm: eyes at the middle of the head, a gentle jaw and chin, a small nose, a quiet smile.
-  const neck = new THREE.Group(); neck.position.y = 9.0; torso.add(neck); rig.neck = neck;
-  neck.add(inked(lathe([[0.88, -0.6], [0.8, 0.7], [0.84, 1.1]], 1, 14), M.skin, 0.06));
-  const head = new THREE.Group(); head.position.y = 3.2; head.scale.setScalar(0.92); neck.add(head); rig.head = head;
-  const HS = 1 / 0.92;            // (what is hung from the head, the braids, is laid out in the torso's units)
+  // ── Neck and head. The neck is skinned between the chest and the head; the head itself is one rigid piece, with the face on it.
+  part(lathe([[0.88, -0.6], [0.8, 0.7], [0.84, 1.4]], 1, 14), BN.neck, toonS(S.skin), p => { const wc = ss(0.3, -0.5, p.y), wh = ss(0.9, 1.4, p.y); return [[BN.chest, wc], [BN.head, wh], [BN.neck, Math.max(0, 1 - wc - wh)]]; }, 0.06);
+  const head = new THREE.Group(); head.position.y = 2.2; head.scale.setScalar(0.92); BN.head.add(head); rig.headGroup = head;
   head.add(inked(lathe([[0, -2.6], [0.65, -2.5], [1.35, -2.0], [1.82, -1.1], [2.05, -0.1], [2.12, 0.85], [1.96, 1.75], [1.4, 2.42], [0, 2.62]], 0.92, 28), M.skin, 0.035));
   for (const sx of [-1, 1]) { const ear = inked(sphere(0.42, 0.55, 1, 0.8), M.skin, 0.06); ear.position.set(sx * 2.05, -0.1, -0.2); head.add(ear); }
   const face = new THREE.Group(); head.add(face); rig.face = face; rig.eyes = [];
@@ -145,19 +239,19 @@ function make(id) {
     const corner = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.12), lash); corner.position.set(sx * 0.55, 0.25, 0.03); corner.rotation.z = sx * 0.4; e.add(corner);
     const brow = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 4, 10, Math.PI * 0.75), toon(S.hairDk)); brow.position.set(sx * 0.85, 0.42, 1.74); brow.rotation.set(0, sx * 0.3, Math.PI * 0.125); face.add(brow); rig['brow' + (sx < 0 ? 'R' : 'L')] = brow;
   }
-  const nose = new THREE.Mesh(sphere(0.2, 1, 0.75, 0.9), toon(S.skinSh)); nose.position.set(0, -0.78, 1.9); face.add(nose);
-  // A quiet smile: a short curve of the lip colour, turned up at the ends.
+  { const nose = new THREE.Mesh(sphere(0.2, 1, 0.75, 0.9), toon(S.skinSh)); nose.position.set(0, -0.78, 1.9); face.add(nose); }
   const smile = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.055, 4, 10, Math.PI * 0.62), flat(S.lips)); smile.position.set(0, -1.32, 1.76); smile.rotation.z = Math.PI + Math.PI * 0.19; face.add(smile); rig.mouth = smile;
   const frown = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.055, 4, 10, Math.PI * 0.55), flat(S.lips)); frown.position.set(0, -1.52, 1.74); frown.rotation.z = Math.PI * 0.225; frown.visible = false; face.add(frown);
   const open = new THREE.Mesh(sphere(0.26, 1.25, 0.8, 0.3), flat('#7a2a2e')); open.position.set(0, -1.38, 1.72); open.visible = false; face.add(open);
+  for (const sx of [-1, 1]) { const bl = new THREE.Mesh(sphere(0.4, 1.35, 0.5, 0.2), new THREE.MeshBasicMaterial({ color: srgb(S.blush), transparent: true, opacity: 0.32 })); bl.position.set(sx * 1.18, -0.75, 1.6); bl.rotation.y = sx * 0.55; face.add(bl); }
+  if (S.freckles) for (const sx of [-1, 1]) for (const [fx, fy] of [[0.95, -0.42], [1.2, -0.55], [1.05, -0.68], [1.32, -0.4]]) { const f = new THREE.Mesh(sphere(0.045, 1, 1, 0.3), flat('#c8846a')); f.position.set(sx * fx, fy, 1.78 - Math.abs(fx) * 0.12); face.add(f); }
   if (S.lined) for (const sx of [-1, 1]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.05), flat(S.skinSh)); l.position.set(sx * 1.45, -0.2, 1.55); l.rotation.set(0, sx * 0.5, sx * -0.4); face.add(l); }
   if (S.beard) {
-    // A short full beard along the jaw and a moustache.
     const bg = new THREE.SphereGeometry(1.95, 16, 9, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55); bg.scale(1.02, 1.05, 0.98);
     const beard = inked(bg, toon(S.hairDk), 0.03); beard.position.set(0, -0.55, 0.12); head.add(beard);
     const mo = inked(sphere(0.55, 1.6, 0.45, 0.5), toon(S.hairDk), 0.05); mo.position.set(0, -1.05, 1.85); head.add(mo);
   }
-  // Expressions: the brows' angle, the eyes' openness and the mouth. (The face moves; the head and body do not.)
+  // Expressions: the brows' angle, the eyes' openness and the mouth.
   const EXPR = {
     calm:    { brow: 0, browY: 0, eye: 1, mouth: 'smile' }, smile: { brow: 0.05, browY: 0.04, eye: 0.85, mouth: 'smile' },
     sulk:    { brow: -0.12, browY: -0.04, eye: 0.85, mouth: 'frown' }, defiant: { brow: -0.3, browY: -0.08, eye: 0.9, mouth: 'frown' },
@@ -171,107 +265,185 @@ function make(id) {
     smile.visible = x.mouth === 'smile'; frown.visible = x.mouth === 'frown'; open.visible = x.mouth === 'open';
   };
   rig.setDress = d => { if (d && d.expr) rig.setExpr(d.expr); };
-  for (const sx of [-1, 1]) { const bl = new THREE.Mesh(sphere(0.4, 1.35, 0.5, 0.2), new THREE.MeshBasicMaterial({ color: srgb(S.blush), transparent: true, opacity: 0.32 })); bl.position.set(sx * 1.18, -0.75, 1.6); bl.rotation.y = sx * 0.55; face.add(bl); }
 
-  // ── Hair. A cap of hair tipped back to the hairline, parted a little to one side, soft swoops falling over the temples, and either the braids
-  // (from behind each ear, over the front of the shoulders, ribbons near the top) or a bun.
-  const capGeo = new THREE.SphereGeometry(2.34, 18, 11, 0, Math.PI * 2, 0, Math.PI * 0.56);
-  const cap = inked(capGeo, M.hair, 0.03); cap.position.set(0, 0.55, -0.12); cap.rotation.x = -0.5; head.add(cap);
+  // ── Hair. A cap tipped back to the hairline, soft swoops at the parting, locks over the temples; then a bun, short hair, or (hers) long and loose.
+  const cap = inked(new THREE.SphereGeometry(2.34, 18, 11, 0, Math.PI * 2, 0, Math.PI * 0.56), M.hair, 0.03); cap.position.set(0, 0.55, -0.12); cap.rotation.x = -0.5; head.add(cap);
   const back = inked(sphere(2.15, 1, 1.1, 0.86), M.hair, 0.03); back.position.set(0, 0.05, -0.7); head.add(back);
-  // The swoops of the fringe: two soft wings from the parting, the larger to her left, reaching the tops of the brows.
   for (const [x, rz, w, len, hi] of (S.hairStyle === 'short' ? [[0.6, -0.9, 1.0, 0.9, false], [-0.75, 0.9, 0.85, 0.8, true]] : [[0.75, -0.55, 1.05, 1.65, false], [-0.85, 0.65, 0.9, 1.45, true]])) {
-    const g = new THREE.SphereGeometry(1, 20, 12); g.scale(w, len, 0.42);
+    const g = new THREE.SphereGeometry(1, 16, 10); g.scale(w, len, 0.42);
     const sw = inked(g, hi ? M.hairHi : M.hair, 0.04); sw.position.set(x, 1.45, 1.55); sw.rotation.set(-0.42, 0, rz); head.add(sw);
   }
-  if (S.hairStyle !== 'short') for (const sx of [-1, 1]) { const side = inked(sphere(0.62, 0.8, 1.9, 0.75), M.hair, 0.05); side.position.set(sx * 1.88, 0.15, 0.55); side.rotation.z = sx * 0.1; head.add(side); }
+  if (S.hairStyle !== 'short') for (const sx of [-1, 1]) {
+    const long = S.hairStyle === 'long', side = inked(sphere(0.62, 0.8, long ? 2.7 : 1.9, 0.75), M.hair, 0.05);
+    side.position.set(sx * 1.9, long ? -0.65 : 0.15, 0.5); side.rotation.z = sx * 0.12; head.add(side);
+  }
   const shineArc = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.09, 4, 24, Math.PI * 0.6), toon(S.hairHi)); shineArc.position.set(0.1, 1.85, 0.6); shineArc.rotation.set(-1.0, 0, Math.PI * 0.2); head.add(shineArc);
-  if (S.hairStyle === 'braids') {
-    for (const sx of [-1, 1]) {
-      // In the torso's units, from behind the ear down over the front of the shoulder to the chest.
-      const curve = new THREE.CatmullRomCurve3([[1.7, -0.9, -0.5], [2.15, -2.4, 0.3], [2.45, -4.2, 1.0], [2.5, -6.0, 1.55], [2.4, -7.6, 1.85]].map(([x, y, z]) => new V3(sx * x * HS, y * HS, z * HS)));
-      for (let i = 0; i < 11; i++) { const t = i / 10, p = curve.getPoint(t), s = (0.62 - t * 0.18) * HS, k = inked(sphere(s, 1.05, 1.3, 0.92), i % 2 ? M.hairHi : M.hair, 0.05); k.position.copy(p); k.rotation.z = (i % 2 ? 0.4 : -0.4) * sx; head.add(k); }
-      // A red ribbon near the top, tied in a bow; a soft tuft at the end.
-      const at = curve.getPoint(0.12), bow = new THREE.Group(); bow.position.copy(at); bow.position.z += 0.35 * HS; head.add(bow);
-      for (const bx of [-1, 1]) { const loop = inked(sphere(0.38 * HS, 1.3, 0.75, 0.5), toon(S.ribbon), 0.06); loop.position.x = bx * 0.42 * HS; loop.rotation.z = bx * 0.35; bow.add(loop); }
-      const knot = new THREE.Mesh(sphere(0.2 * HS, 1, 1, 0.8), toon(S.ribbon)); bow.add(knot);
-      const end = curve.getPoint(1), tuft = inked(sphere(0.42 * HS, 1, 1.5, 0.85), M.hair, 0.05); tuft.position.copy(end); tuft.position.y -= 0.75 * HS; head.add(tuft);
-    }
-  }
   if (S.hairStyle === 'bun') { const bun = inked(sphere(1.25, 1, 1, 1), M.hair, 0.04); bun.position.set(0, 1.4, -2.1); head.add(bun); }
-
-  // ── Arms: shoulder › elbow › wrist, upper arm 4.6 and forearm 4.2. The tunic's sleeves to the wrist under leather bracers; or a blouse rolled to the elbow.
-  for (const [key, sx] of [['armL', 1], ['armR', -1]]) {
-    const sh = new THREE.Group(); sh.position.set(sx * 3.15, 8.0, 0); sh.rotation.order = 'ZXY'; torso.add(sh); rig[key] = sh; sh.userData.sign = sx;
-    const tunic = S.top === 'tunic', shirt = S.top === 'shirt', wide = S.male ? 1.15 : 1;
-    sh.position.x = sx * (S.male ? 3.75 : 3.15);
-    sh.add(inked(limb(4.6, 1.05 * wide, 0.88 * wide), tunic ? toon(S.tunic) : shirt ? toon(S.shirt) : toon(S.blouse), 0.05));
-    if (shirt && S.check) for (const y of [-1.2, -2.8]) sh.add(new THREE.Mesh(lathe([[1.06 * wide, y], [1.04 * wide, y - 0.4]], 1, 14), toon(S.check)));
-    const elbow = new THREE.Group(); elbow.position.y = -4.6; sh.add(elbow);
-    const wrist = new THREE.Group(); elbow.add(wrist);
-    if (tunic) {
-      wrist.add(inked(limb(4.2, 0.84, 0.6), toon(S.tunic), 0.05));
-      const br = inked(lathe([[0.78, -1.2], [0.86, -1.5], [0.74, -4.0], [0.66, -4.25]], 1, 14), toon(S.bracer), 0.05); wrist.add(br);       // the bracer, laced
-      for (let i = 0; i < 3; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.1), flat('#d8c08a')); l.position.set(0, -1.9 - i * 0.7, 0.78); l.rotation.z = i % 2 ? 0.4 : -0.4; wrist.add(l); }
-    } else {
-      wrist.add(inked(limb(4.2, 0.78 * wide, 0.55 * wide), M.skin, 0.05));
-      if (shirt) wrist.add(inked(lathe([[0.95 * wide, 0.1], [1.0 * wide, -0.9], [0.86 * wide, -1.3]], 1, 14), toon(S.shirtDk), 0.05));     // the rolled sleeve
-    }
-    const hand = inked(sphere(0.68, 0.78, 1.15, 0.52), M.skin, 0.06); hand.position.y = -4.75; wrist.add(hand);
-    const thumb = inked(sphere(0.25, 1, 1.6, 1), M.skin, 0.08); thumb.position.set(sx * -0.0, -4.25, 0.45); thumb.rotation.x = 0.4; wrist.add(thumb);
-    if (key === 'armR') { rig.elbow = elbow; rig.wrist = wrist; } else { rig.elbowL = elbow; rig.wristL = wrist; }
+  if (S.hairStyle === 'long') {
+    // Long loose hair to her shoulder blades: a thick sheet in the neck's space, from inside the back of the head, falling over the top of the
+    // cape (so the cape's back, and its stars, still show below it). The top rides the head; below it, two spring bones let it swing.
+    const prof = [[3.9, 1.95], [2.6, 2.35], [1.2, 3.1], [0.2, 3.8], [-0.8, 4.25], [-1.8, 4.45]];
+    const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
+    const fn = (u, v) => { const y = lerp(3.9, -1.8, v), spread = lerp(1.05, 0.82, v), phi = Math.PI + lerp(-spread, spread, u), r = rAt(y) + 0.25 * Math.sin(u * Math.PI * 5) * v; return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r); };
+    const g = sheet(fn, 14, 10, 0.35, p => new V3(p.x, 0, p.z));
+    part(g, BN.neck, [toonS(S.hair, true), toonS(S.hairDk, true), toonS(S.hair, true)], p => {
+      const w1 = ss(2.5, 0.8, p.y), w2 = ss(0.2, -1.3, p.y);
+      return [[BN.head, 1 - w1], [BN.hair1, w1 - w2], [BN.hair2, w2]];
+    }, 0.07);
+    part(band(fn, 14, 2, 0.08, 0.2, 0.06, p => new V3(p.x, 0, p.z)), BN.neck, toonS(S.hairHi, true), p => [[BN.head, 1 - ss(2.5, 0.8, p.y)], [BN.hair1, ss(2.5, 0.8, p.y)]]);    // a band of shine
   }
-  // ── Legs: hip › knee, thigh 7.0 and shin 7.3. Trousers tucked into tall laced boots with a turned-down cuff; or bare under a skirt, short boots.
-  for (const [key, sx] of [['legL', 1], ['legR', -1]]) {
-    const thigh = new THREE.Group(); thigh.position.x = sx * 1.6; thigh.rotation.order = 'ZXY'; hips.add(thigh);
-    const trousers = S.lower === 'trousers';
-    thigh.add(inked(limb(7.0, 1.6, 1.12), trousers ? toon(S.trousers) : M.skin, 0.04));
-    const knee = new THREE.Group(); knee.position.y = -7.0; thigh.add(knee);
-    knee.add(inked(limb(7.3, 1.12, 0.74), trousers ? toon(S.trousers) : M.skin, 0.04));
+
+  // ── Arms: shoulder › elbow › wrist (the forearm's twist) › hand.
+  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+    const arm = BN['arm' + s], wrist = BN['wrist' + s], hand = BN['hand' + s], wide = S.male ? 1.15 : 1, shirt = S.top === 'shirt';
+    const sleeve = shirt ? S.shirt : S.blouse;
+    part(limb(4.6, 1.05 * wide, 0.88 * wide), arm, toonS(sleeve), limbW(BN.chest, arm, wrist, 4.6, 1.0, 0.8), 0.07);
+    if (shirt && S.check) for (const y of [-1.2, -2.8]) part(lathe([[1.08 * wide, y], [1.06 * wide, y - 0.4]], 1, 14), arm, toonS(S.check), limbW(BN.chest, arm, wrist, 4.6, 1.0, 0.8));
+    part(limb(4.3, 0.78 * wide, 0.55 * wide), wrist, toonS(S.skin), limbW(arm, wrist, hand, 4.3, 0.8, 0.45), 0.06);
+    // The sleeve, rolled to just below the elbow.
+    part(lathe([[0.97 * wide, 0.15], [1.02 * wide, -0.8], [0.88 * wide, -1.25]], 1, 14), wrist, toonS(shirt ? S.shirtDk : S.blouse), limbW(arm, wrist, hand, 4.3, 0.8, 0.45), 0.05);
+    const h = inked(sphere(0.68, 0.78, 1.15, 0.52), M.skin, 0.06); h.position.y = -0.45; hand.add(h);
+    const thumb = inked(sphere(0.25, 1, 1.6, 1), M.skin, 0.08); thumb.position.set(0, 0.05, 0.45); thumb.rotation.x = 0.4; hand.add(thumb);
+  }
+  // ── Legs: hip › knee › ankle. Trousers into tall boots (the men); or bare under a skirt, short boots.
+  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+    const thigh = BN['thigh' + s], knee = BN['knee' + s], ankle = BN['ankle' + s], trousers = S.lower === 'trousers';
+    const shinW = p => { const wt = ss(-1.0, 1.0, p.y), wa = ss(-6.4, -7.4, p.y); return [[thigh, wt], [ankle, wa], [knee, Math.max(0, 1 - wt - wa)]]; };
+    part(limb(7.0, 1.6, 1.12), thigh, toonS(trousers ? S.trousers : S.skin), limbW(BN.hips, thigh, knee, 7.0, 1.3, 1.0), 0.07);
+    part(limb(7.3, 1.12, 0.74), knee, toonS(trousers ? S.trousers : S.skin), shinW, 0.07);
     if (trousers) {
-      const boot = inked(lathe([[0, -7.75], [1.02, -7.65], [1.12, -6.6], [1.02, -4.2], [1.2, -2.2], [1.28, -1.6], [0, -1.6]], 1, 16), M.boots, 0.05); knee.add(boot);
-      const cuff = inked(lathe([[1.3, -2.3], [1.42, -1.95], [1.36, -1.45]], 1, 16), toon(S.bootsDk), 0.05); knee.add(cuff);
-      for (let i = 0; i < 4; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.07, 0.1), flat('#d8c08a')); l.position.set(0, -3.0 - i * 0.85, 1.12); l.rotation.z = i % 2 ? 0.45 : -0.45; knee.add(l); }
+      part(lathe([[0, -7.75], [1.02, -7.65], [1.12, -6.6], [1.06, -5.4], [1.02, -4.2], [1.2, -2.2], [1.28, -1.6], [0, -1.6]], 1, 16), knee, toonS(S.boots), shinW, 0.07);
+      part(lathe([[1.3, -2.3], [1.42, -1.95], [1.36, -1.45]], 1, 16), knee, toonS(S.bootsDk), shinW, 0.05);
     } else {
-      knee.add(inked(lathe([[0, -7.7], [1.0, -7.6], [1.15, -6.5], [1.12, -3.4], [1.22, -3.0], [0, -3.0]], 1, 14), M.boots, 0.05));
+      part(lathe([[0, -7.7], [1.0, -7.6], [1.15, -6.5], [1.13, -4.8], [1.12, -3.4], [1.22, -3.0], [0, -3.0]], 1, 14), knee, toonS(S.boots), shinW, 0.07);
     }
-    const toe = inked(sphere(0.98, 1, 0.6, 1.55), M.boots, 0.05); toe.position.set(0, -7.3, 0.85); knee.add(toe);
-    rig[key] = { thigh, knee, sign: sx };
+    const toe = inked(sphere(0.98, 1, 0.6, 1.55), M.boots, 0.05); toe.position.set(0, -0.3, 0.85); ankle.add(toe);
   }
-  // A relaxed stance: weight a little on one leg, arms hanging easy and slightly bent.
-  rig.legL.thigh.rotation.z = 0.05; rig.legR.thigh.rotation.z = -0.02; hips.rotation.z = 0.02; torso.rotation.z = -0.02;
-  rig.armL.rotation.set(0.05, 0, 0.14); rig.armR.rotation.set(0.05, 0, -0.14); rig.elbow.rotation.x = -0.22; rig.elbowL.rotation.x = -0.18;
 
-  // ── The cloak: waist-length, open at the front, the hood lying back, clasped at the throat; scarlet, edged in gold, stitched with stars.
+  // ── The cloak: a capelet over the shoulders and down the back, open at the front, the hood lying back; scarlet, edged in gold, stitched with stars.
+  // Short at the front (just covering the shoulders), longest at the middle of the back (to the small of it). Its back half hangs from two spring bones.
   if (S.cloak) {
-    const g = new THREE.Group(); torso.add(g);
-    const red = toon('#cc2a2e', { side: THREE.DoubleSide }), lining = toon('#86181e', { side: THREE.DoubleSide }), gold = toon('#e8b84a', { side: THREE.DoubleSide }), stitch = flat('#ffd86a');
-    const P0 = Math.PI * 0.6, PL = Math.PI * 1.8, DEPTH = 0.82;
-    const prof = [[1.35, 9.45], [2.7, 9.15], [3.9, 8.3], [4.6, 6.6], [5.1, 4.2], [5.5, 1.6], [5.7, 0.6]];
-    const outer = lathe(prof, DEPTH, 40, P0, PL);
-    g.add(inked(outer, red, 0.02));
-    g.add(new THREE.Mesh(lathe(prof.map(([r, y]) => [r * 0.965, y]), DEPTH, 40, P0, PL), lining));
-    g.add(new THREE.Mesh(lathe([[5.62, 1.25], [5.74, 0.55]], DEPTH, 40, P0, PL), gold));              // the gold hem
-    // A line of gold stitching a little above the hem, and the stars: one large in the middle of the back, small ones scattered along the hem.
-    g.add(new THREE.Mesh(lathe([[5.43, 2.05], [5.46, 1.85]], DEPTH * 1.005, 40, P0, PL), toon('#f0c860', { side: THREE.DoubleSide })));
-    const onCloak = (phi, y, r, rot) => {        // a star lying on the cape's surface at angle phi (0 = the middle of her back) and height y
-      const R = (() => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][1]) { const [r0, y0] = prof[i - 1], [r1, y1] = prof[i], t = (y - y0) / (y1 - y0); return r0 + (r1 - r0) * t; } return prof[prof.length - 1][0]; })() + 0.06;
-      const st = new THREE.Mesh(starGeo(r), stitch); st.position.set(Math.sin(Math.PI + phi) * R, y, Math.cos(Math.PI + phi) * R * DEPTH); st.rotation.set(0, Math.PI + phi, rot || 0); st.rotateX(0.18); g.add(st);
+    const g = new THREE.Group(); BN.chest.add(g); const meshes = [];
+    const prof = [[9.45, 1.45], [9.15, 2.9], [8.4, 4.25], [7.6, 4.65], [6.2, 4.7], [4.5, 4.45], [2.0, 4.35]];      // (wide enough over the shoulders to clear the arms, then close to the back)
+    const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
+    const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 7.7 - 5.2 * Math.pow(b, 1.3); };
+    const DEPTH = 0.82, PHI0 = Math.PI * 0.12, PHI1 = Math.PI * 1.88;
+    const fn = (u, v) => { const phi = lerp(PHI0, PHI1, u), y = lerp(9.45, hem(phi), v), r = rAt(y); return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * DEPTH); };
+    const out = p => new V3(p.x, 0, p.z / DEPTH);
+    const capeW = p => {
+      const backness = ss(-0.3, -1.8, p.z), wC = backness * ss(7.2, 5.4, p.y), wL = backness * ss(4.6, 2.8, p.y);
+      const side = ss(2.6, 4.2, Math.abs(p.x)) * ss(8.8, 7.0, p.y) * (1 - backness) * 0.45;
+      return [[BN.chest, Math.max(0, 1 - wC - side)], [BN.cape, wC - wL], [BN.capeLow, wL], [p.x > 0 ? BN.armL : BN.armR, side]];
     };
-    onCloak(0, 3.6, 0.75); onCloak(0.0, 3.6, 0.32, 0.3);
-    for (const [phi, y, r] of [[-0.9, 2.6, 0.26], [-0.55, 2.9, 0.18], [-0.25, 2.5, 0.22], [0.3, 2.7, 0.2], [0.62, 2.45, 0.26], [0.95, 2.85, 0.18], [1.35, 2.5, 0.22], [-1.3, 2.75, 0.2], [0.3, 5.2, 0.15], [-0.4, 5.5, 0.14]]) onCloak(phi, y, r);
-    // The hood, lying back on her shoulders: a soft rounded fold, red outside and dark inside.
-    const hoodG = new THREE.SphereGeometry(2.3, 16, 9, 0, Math.PI * 2, 0, Math.PI * 0.62); hoodG.scale(1.25, 0.8, 0.95);
-    const hood = inked(hoodG, red, 0.03); hood.position.set(0, 9.25, -2.25); hood.rotation.x = -1.35; g.add(hood);
-    const hoodIn = new THREE.Mesh(hoodG, lining); hoodIn.scale.setScalar(0.94); hood.add(hoodIn);
-    const clasp = new THREE.Mesh(sphere(0.4, 1, 1, 0.5), toon('#e8b84a')); clasp.position.set(0, 8.9, 1.62); g.add(clasp);
-    rig.cloak = { group: g, show(on) { g.visible = !!on; }, hood() {} }; g.visible = false;
+    meshes.push(part(sheet(fn, 32, 12, 0.22, out), BN.hips, [toonS('#cc2a2e', true), toonS('#86181e', true), toonS('#a82024', true)], capeW, 0.08));
+    meshes.push(part(band(fn, 32, 1, 0.9, 1.0, 0.03, out), BN.hips, toonS('#e8b84a', true), capeW));                // the gold hem
+    meshes.push(part(band(fn, 32, 1, 0.8, 0.82, 0.035, out), BN.hips, toonS('#f0c860', true), capeW));              // a line of gold stitching above it
+    // The stars: one large in the middle of the back, small ones along the hem.
+    const stars = [], put = (phi, y, r, spin) => {
+      const rr = rAt(y), p = new V3(Math.sin(phi) * rr, y, Math.cos(phi) * rr * DEPTH), n = out(p).normalize();
+      const sg = starGeo(r), m = new THREE.Matrix4().compose(p.clone().addScaledVector(n, 0.06), new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), n).multiply(new THREE.Quaternion().setFromAxisAngle(new V3(0, 0, 1), spin || 0)), new V3(1, 1, 1));
+      stars.push(sg.applyMatrix4(m));
+    };
+    put(Math.PI, 4.9, 0.8); put(Math.PI + 0.16, 5.9, 0.26, 0.4);
+    for (const [d, r] of [[-1.1, 0.24], [-0.75, 0.18], [-0.4, 0.22], [0.0, 0.2], [0.38, 0.24], [0.72, 0.18], [1.08, 0.22], [-1.45, 0.18], [1.45, 0.2]]) put(Math.PI + d, hem(Math.PI + d) + 1.15, r, d);
+    meshes.push(part(mergeFlat(stars), BN.hips, toonS('#ffd86a', true), capeW));
+    // The hood, lying back between her shoulders (under her hair), and the clasp at her throat.
+    const hoodG = new THREE.SphereGeometry(2.3, 16, 9, 0, Math.PI * 2, 0, Math.PI * 0.62); hoodG.scale(1.0, 0.5, 0.78);
+    const hood = inked(hoodG, toon('#cc2a2e', { side: THREE.DoubleSide }), 0.03); hood.rotation.x = -1.35; hood.position.copy(at(BN.chest, 0, 9.1, -1.85)); g.add(hood);
+    const clasp = new THREE.Mesh(sphere(0.4, 1, 1, 0.5), toon('#e8b84a')); clasp.position.copy(at(BN.chest, 0, 9.05, 1.45)); g.add(clasp);
+    for (const m of meshes) { m.userData.cloak = true; }
+    rig.cloak = { group: g, show(on) { g.visible = !!on; root_.traverse(o => { if (o.isSkinnedMesh && (o.userData.cloak || o.userData.cloakInk)) o.visible = !!on; }); }, hood() {} };
+    // (the outline hulls follow their meshes: mark them too)
+    root_.children.forEach((o, i, arr) => { if (o.isSkinnedMesh && o.material === INKS && arr[i - 1] && arr[i - 1].userData.cloak) o.userData.cloakInk = true; });
+    rig.cloak.show(false);
   }
-  // The interface js/blocky.js's setPose() and step() use, so the village can pose these rigs as it posed the blocky ones: the scene's own `after`
-  // does the posing; baseHip is where the hips stand.
+
+  // ── Secondary motion: spring bones that trail and swing as the body moves, hang under gravity when it leans, and settle.
+  const SPRING = { cape: { k: 70, d: 9, gv: 0.0055, ga: 0.0012, max: 0.55, min: -0.04, grav: 0.7 }, capeLow: { k: 60, d: 8, gv: 0.004, ga: 0.0015, max: 0.5, min: -0.06, grav: 0.6 },
+    hair1: { k: 55, d: 7, gv: 0.004, ga: 0.0018, max: 0.5, min: -0.05, grav: 0.8 }, hair2: { k: 45, d: 6, gv: 0.004, ga: 0.002, max: 0.55, min: -0.08, grav: 0.8 } };
+  rig.springs = Object.keys(SPRING).filter(n => BN[n]).map(n => Object.assign({ bone: BN[n], x: 0, z: 0, vx: 0, vz: 0, prev: null, vel: new V3() }, SPRING[n]));
+  const tw = new V3(), tq = new THREE.Quaternion(), ws = new V3(), gl = new V3();
+  rig.tick = dt => {
+    dt = clamp(dt || 1 / 60, 1 / 240, 1 / 20);
+    // How fast she is turning (for the lean into a turn).
+    const yaw = root_.rotation.y; if (rig._yaw == null) rig._yaw = yaw;
+    let dy = yaw - rig._yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); rig._yaw = yaw;
+    rig.yawRate = lerp(rig.yawRate || 0, dy / dt, Math.min(1, dt * 8));
+    root_.updateMatrixWorld(true); root_.getWorldScale(ws); const sc = Math.max(0.2, ws.x);
+    for (const s of rig.springs) {
+      s.bone.getWorldPosition(tw);
+      if (!s.prev) { s.prev = tw.clone(); continue; }
+      const v = tw.clone().sub(s.prev).divideScalar(dt * sc); s.prev.copy(tw);
+      if (v.length() > 600) { s.vel.set(0, 0, 0); s.x = s.z = s.vx = s.vz = 0; continue; }       // (a teleport, not a movement)
+      const acc = v.clone().sub(s.vel).divideScalar(dt); s.vel.lerp(v, 0.5);
+      s.bone.parent.getWorldQuaternion(tq).invert(); const lv = s.vel.clone().applyQuaternion(tq), la = acc.applyQuaternion(tq); gl.set(0, -1, 0).applyQuaternion(tq);
+      let tx = s.gv * lv.z + s.ga * la.z - Math.atan2(gl.z, -gl.y) * s.grav, tz = -s.gv * lv.x - s.ga * la.x + Math.atan2(gl.x, -gl.y) * s.grav;
+      tx = clamp(tx, s.min, s.max); tz = clamp(tz, -s.max * 0.6, s.max * 0.6);
+      s.vx += (s.k * (tx - s.x) - s.d * s.vx) * dt; s.x += s.vx * dt; s.vz += (s.k * (tz - s.z) - s.d * s.vz) * dt; s.z += s.vz * dt;
+      s.x = clamp(s.x, s.min, s.max); s.bone.rotation.set(s.x, 0, s.z);
+    }
+  };
+
+  // ── The names the rest of the game uses.
+  Object.assign(rig, {
+    bones: BN, skeleton: skel, hips: BN.hips, torso: BN.spine, spine: BN.spine, chest: BN.chest, neck: BN.neck, head: BN.head,
+    armL: BN.armL, armR: BN.armR, elbowL: BN.elbowL, elbow: BN.elbowR, wristL: BN.wristL, wrist: BN.wristR, handL: BN.handL, handR: BN.handR,
+    legL: { thigh: BN.thighL, knee: BN.kneeL, ankle: BN.ankleL, sign: 1 }, legR: { thigh: BN.thighR, knee: BN.kneeR, ankle: BN.ankleR, sign: -1 },
+  });
+  BN.armL.userData.sign = 1; BN.armR.userData.sign = -1;
   rig.state = {}; rig.target = {}; rig.baseHip = 15.5; rig.apply = function () { if (this.after) this.after(this); };
   rig.setExpr('calm');
+  pose(rig, { t: 0, phase: 0, speed: 0 }, 1);
   return rig;
 }
 
-root.Toon = { make, SPECS, toon, inked, INK, flat };
+// ── Movement. One procedural pose for standing, walking, running, carrying, gesturing and jumping, blended smoothly between them. ─────────────────
+// a = { t (seconds), phase (radians through the stride: the caller advances it by distance / stride length), speed (0 still, 20 or more walking),
+//       running (bool), look (head turn), gesture (0..1, right arm out), carry (bool), air (bool) }. Smoothed state is kept on a.
+function pose(r, a, dt) {
+  dt = clamp(dt || 1 / 60, 0, 0.1);
+  const k = Math.min(1, dt * 6), t = a.t || 0, p = a.phase || 0;
+  a._mv = lerp(a._mv || 0, clamp((a.speed || 0) / 20, 0, 1), k); a._run = lerp(a._run || 0, a.running ? 1 : 0, k); a._air = lerp(a._air || 0, a.air ? 1 : 0, Math.min(1, dt * 10));
+  a._carry = lerp(a._carry || 0, a.carry ? 1 : 0, k); a._g = lerp(a._g || 0, a.gesture || 0, k);
+  const accel = ((a._mv || 0) - (a._mvPrev == null ? a._mv : a._mvPrev)) / Math.max(dt, 1e-3); a._mvPrev = a._mv; a._acc = lerp(a._acc || 0, accel, Math.min(1, dt * 5));
+  const mv = a._mv, run = a._run * mv, idle = 1 - mv, air = a._air, carry = a._carry, g = a._g, skirt = r.spec && r.spec.lower === 'skirt';
+  const amp = (skirt ? 0.4 : 0.5) * mv + (skirt ? 0.08 : 0.22) * run, sL = Math.sin(p), cL = Math.cos(p), sA = Math.sin(p - 0.3);
+  const shift = Math.sin(t * 0.45), breath = Math.sin(t * 1.7);
+  // Pelvis: it rises and falls twice a stride (highest as the legs pass), turns with the stepping leg and dips on the swinging side; standing, the weight drifts from foot to foot.
+  const hipYaw = 0.12 * mv * sL, hipRoll = 0.045 * mv * cL + 0.035 * shift * idle;
+  r.hips.position.set(0.22 * shift * idle, r.baseHip + mv * (0.5 * Math.abs(cL) - 0.45) - 0.7 * run + 0.04 * breath * idle, 0);
+  r.hips.rotation.set(0.04 * run, hipYaw, hipRoll);
+  // Spine and chest: counter-turn against the pelvis (shoulders opposite the hips), lean into a run, into speeding up, and into a turn.
+  const turnLean = -0.05 * clamp(r.yawRate || 0, -4, 4) * mv, lean = 0.03 * mv + 0.12 * run + clamp(a._acc, -2, 2) * 0.04;
+  r.spine.rotation.set(lean * 0.6, -0.5 * hipYaw, -0.5 * hipRoll + turnLean);
+  r.chest.rotation.set(lean * 0.4 + 0.02 * breath * idle, -1.0 * hipYaw, -0.4 * hipRoll + turnLean * 0.5);
+  r.chest.scale.set(1 + 0.008 * breath * idle, 1 + 0.01 * breath * idle, 1 + 0.018 * breath * idle);
+  // Head: kept steady and level (it undoes most of what the body below it does), with a small nod at each step and, standing, an idle drift of attention.
+  r.neck.rotation.set(-0.8 * (lean + 0.04 * run) + 0.035 * mv * Math.sin(2 * p), (a.look || 0) + 0.5 * hipYaw + 0.12 * Math.sin(t * 0.31) * idle, -0.6 * (r.spine.rotation.z + r.chest.rotation.z));
+  r.head.rotation.set(0.02 * Math.sin(t * 0.53) * idle, 0, 0.04 * Math.sin(t * 0.37) * idle);
+  // Legs: the thigh swings; the knee folds as the leg comes through, and softens at the heel; the foot stays near level, pushing off at the back.
+  for (const [leg, ph] of [[r.legL, 0], [r.legR, Math.PI]]) {
+    const s = Math.sin(p + ph), c = Math.cos(p + ph), side = leg.sign;
+    let th = amp * s, kn = 0.06 + Math.max(0, -c) * ((skirt ? 0.55 : 0.9) * mv + (skirt ? -0.1 : 0.75) * run) + Math.max(0, s) * 0.18 * mv;
+    th = lerp(th, side > 0 ? -0.55 : 0.2, air); kn = lerp(kn, side > 0 ? 0.9 : 0.5, air);
+    leg.thigh.rotation.set(th, 0, side * (0.035 + 0.025 * idle * (side * shift > 0 ? 0.4 : 1)));
+    leg.knee.rotation.set(kn, 0, 0);
+    if (leg.ankle) leg.ankle.rotation.set(-(th + kn) * 0.85 + Math.max(0, s) * 0.3 * mv * (1 - air), 0, 0);
+  }
+  // Arms: they swing against the legs, a beat behind (so the elbows and hands trail), the elbows bending more in front and in a run; carrying, both
+  // come forward; a gesture lifts the right; in the air they rise out to the sides.
+  for (const [arm, elbow, hand, side] of [[r.armL, r.elbowL, r.handL, 1], [r.armR, r.elbow, r.handR, -1]]) {
+    const s = side > 0 ? sA : -sA;
+    const armAmp = 0.36 * mv + 0.3 * run;
+    let ax = -armAmp * s - 0.06 * run + 0.03 * Math.sin(t * 1.1 + side) * idle, az = side * (0.12 + (skirt ? 0.06 + 0.1 * run : 0.06 * run) + 0.02 * idle * shift * side), el = -(0.18 + 0.2 * mv + 0.6 * run + 0.35 * mv * Math.max(0, -s));
+    ax = lerp(ax, -1.15, carry); el = lerp(el, -0.75, carry); az = lerp(az, side * 0.05, carry);
+    if (skirt) ax = Math.min(ax, 0.3);          // (the hand never swings back into the skirt)
+    if (side < 0) { ax = lerp(ax, -1.0, g); el = lerp(el, -0.55, g); az = lerp(az, -0.08, g); }
+    ax = lerp(ax, -0.5, air); az = lerp(az, side * 0.75, air); el = lerp(el, -0.4, air);
+    arm.rotation.set(ax, 0, az); elbow.rotation.set(el, 0, 0);
+    if (hand) hand.rotation.set(0.12 * mv * Math.sin(p - 0.8) * side + 0.08, 0, side * 0.08);
+  }
+}
+
+root.Toon = { make, pose, SPECS, toon, inked, INK, flat };
 })(typeof window !== 'undefined' ? window : globalThis);
