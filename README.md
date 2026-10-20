@@ -15,7 +15,7 @@ npm test             # the pain model, the discipline scripts and the looks
 
 ## The look (`js/toon.js`, `js/stage.js`)
 
-- **Smooth, rounded characters** built from turned profiles and soft ellipsoids, with two-band cel shading and a thin warm-brown outline (an inverted hull).
+- **Smooth, rounded characters** with two-band cel shading and a thin warm-brown outline (an inverted hull). The body is skinned to its skeleton, so the trunk, each arm, each leg and the neck are continuous surfaces that bend smoothly through the shoulders, elbows, waist, hips and knees, with the outline running unbroken across them. The bust is sculpted into the torso rather than set on it.
 - **Faces built from shapes:** almond eyes with lashes, irises and a highlight, lids that blink, brows, a nose, several mouths, a flush and tears. Ten expressions, pushed further than life, ease from one to the next: calm, smile, shy, cheeky, pout, stern, surprised, wince, gritted, crying.
 - **Hair:** a cap with a proper hairline and a fringe. Red Riding Hood's long hair hangs from swinging pivots: two locks by her face and the back of it to her shoulder blades. It hangs with gravity, swings as she moves, and settles. Gerda wears hers in a bun, grey at one temple.
 - **Clothes:**
