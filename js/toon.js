@@ -474,8 +474,9 @@ function make(id, look, opts) {
   };
   if (S.hair === 'long') {
     dangle(0, 0.3, -1.05, [[3.2, 1.55, 0.6], [2.6, 1.3, 0.5]], { min: -0.05, max: 1.2, side: 0.5, grav: 0.85 });
-    // The front strands spring from the edges of the fringe and hang forward, over the front of the cloak rather than off her shoulders.
-    for (const sx of [-1, 1]) dangle(sx * 1.28, 0.8, 1.05, [[2.2, 0.48, 0.42], [1.8, 0.4, 0.34]], { min: -0.4, max: 1.3, side: 0.35, grav: 0.9, sx, front: true });
+    // The front strands spring from the outer edges of the fringe, beside her face (framing it, never over it), and hang a little forward, over the
+    // front of the cloak rather than off her shoulders.
+    for (const sx of [-1, 1]) dangle(sx * 1.55, 0.75, 0.55, [[2.2, 0.44, 0.42], [1.8, 0.38, 0.34]], { min: -0.4, max: 1.3, side: 0.35, grav: 0.9, sx, front: true });
   } else {
     hair(ell(1.0, 0.95, 0.95), 0, 0.8, -1.7);                                            // the bun
     hair(new THREE.TorusGeometry(0.75, 0.16, 6, 16), 0, 0.8, -1.35, [0, 0, 0], P.hairHi);
@@ -582,7 +583,7 @@ function make(id, look, opts) {
       let tx = Math.atan2(-gW.z, -gW.y) * d.grav - lv.z, tz = Math.atan2(gW.x, -gW.y) * d.grav * d.side + lv.x * d.side;
       tx = clamp(tx, d.min, d.max); tz = clamp(tz, -0.9, 0.9);
       if (d.sx) tz = d.sx > 0 ? clamp(tz, -0.05, 0.9) : clamp(tz, -0.9, 0.05);       // (a side lock never swings in across her face)
-      if (d.front) { tx += d.seg ? 0 : 0.3; tz = clamp(tz, -0.35, 0.35); }                     // (the front strands lean forward and swing out only a little)
+      if (d.front) { tx += d.seg ? 0 : 0.14; tz = clamp(tz, -0.35, 0.35); }                     // (the front strands lean forward and swing out only a little)
       // Kept out of her back (or the cloak): if the place it would hang is inside, the place moves to the nearest clear spot (searched outward along
       // each way it can swing, keeping to last frame's way unless another is clearly nearer), and the spring settles it there, smoothly.
       const penAt = (ax, az) => { d.g.rotation.set(-ax, 0, az); return penOf(d); };
