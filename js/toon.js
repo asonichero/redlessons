@@ -378,23 +378,29 @@ function make(id, look, opts) {
     m.renderOrder = 2; head.add(m); }
   const px = x => (x - FX0) / (FX1 - FX0) * FW, py = y => (FY1 - y) / (FY1 - FY0) * FH, U = FW / (FX1 - FX0);      // (head units to canvas pixels)
   const INKC = '#2a1612', lipsDk = shade(P.lips, -0.4);
+  // The eye as it was first drawn: a rounded white, an even arch of lashes over it with a flick at the outer corner, the iris with a darker upper half,
+  // the pupil and a highlight. Closing, the lashes come down over it, and a shut eye is that arch, low.
   function drawEye(sx, F, open) {
-    const cx = sx * K.eyeX, cy = K.eyeY, rx = 0.42 * K.eyeW, ry = 0.3 * K.eyeH, o = clamp(open, 0, 1.15);
-    // The opening: the lower lid a gentle curve, the upper lid lifting from it as the eye opens (a closed eye is a single curved line).
-    const top = cy + ry * (2.1 * o - 0.25), bot = cy - ry * 0.95 * Math.min(1, 0.35 + o), inX = cx - sx * rx, outX = cx + sx * rx, outY = cy + ry * 0.18;
-    const path = () => { fx.beginPath(); fx.moveTo(px(inX), py(cy)); fx.quadraticCurveTo(px(cx - sx * 0.1), py(top), px(outX), py(outY)); fx.quadraticCurveTo(px(cx), py(bot), px(inX), py(cy)); };
-    if (o > 0.06) {
-      fx.save(); path(); fx.fillStyle = '#fffaf2'; fx.fill(); fx.clip();
-      const ix = cx + F.look * 0.07, iy = cy + ry * 0.12, ir = 0.21 * K.iris;
-      fx.fillStyle = P.eyes; fx.beginPath(); fx.ellipse(px(ix), py(iy), ir * U, ir * 1.18 * U, 0, 0, 7); fx.fill();
-      fx.fillStyle = shade(P.eyes, -0.45); fx.beginPath(); fx.ellipse(px(ix), py(iy + ir * 0.5), ir * U, ir * 0.62 * U, 0, 0, 7); fx.fill();
-      fx.fillStyle = '#1c1210'; fx.beginPath(); fx.ellipse(px(ix), py(iy), ir * 0.42 * U, ir * 0.52 * U, 0, 0, 7); fx.fill();
-      fx.fillStyle = '#ffffff'; fx.beginPath(); fx.arc(px(ix + 0.07), py(iy + 0.09), 0.055 * U, 0, 7); fx.fill();
+    const cx = sx * K.eyeX, cy = K.eyeY, rx = 0.43 * K.eyeW, ry = 0.3 * K.eyeH, shut = clamp(1 - open, 0, 1), drop = 2 * ry * shut, E = (x, y) => [px(cx + x), py(cy + y)];
+    const ell_ = (x, y, a, b) => { fx.beginPath(); fx.ellipse(px(cx + x), py(cy + y), a * U, b * U, 0, 0, 7); };
+    if (shut < 0.97) {
+      fx.save();
+      ell_(0, 0, rx, ry); fx.clip();
+      fx.beginPath(); fx.ellipse(px(cx), py(cy - drop), rx * U, ry * U, 0, Math.PI, 2 * Math.PI); fx.lineTo(...E(rx, -ry - 2)); fx.lineTo(...E(-rx, -ry - 2)); fx.closePath(); fx.clip();      // (below the lid)
+      ell_(0, 0, rx, ry); fx.fillStyle = '#fffaf2'; fx.fill();
+      const ix = F.look * 0.06 * sx * sx, k = K.iris;
+      fx.fillStyle = P.eyes; ell_(ix, 0, 0.22 * k, 0.27 * k); fx.fill();
+      fx.fillStyle = shade(P.eyes, -0.4); ell_(ix, 0.11 * k, 0.19 * k, 0.11 * k); fx.fill();
+      fx.fillStyle = '#1c1210'; ell_(ix, 0, 0.09 * k, 0.11 * k); fx.fill();
+      fx.fillStyle = '#ffffff'; ell_(ix + 0.07 * k, 0.09 * k, 0.06 * k, 0.06 * k); fx.fill();
       fx.restore();
     }
-    // The upper lash line, thick, with a flick at the outer corner.
-    fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineJoin = 'round';
-    fx.lineWidth = 0.075 * U; fx.beginPath(); fx.moveTo(px(inX), py(cy)); fx.quadraticCurveTo(px(cx - sx * 0.1), py(top), px(outX), py(outY)); fx.lineTo(px(outX + sx * 0.12), py(outY + 0.1)); fx.stroke();
+    // The lashes: the upper arch of the eye (a touch flatter), moved down as it closes, and the flick at its outer end.
+    const ly = -0.5 * shut * K.eyeH, ar = 0.4 * K.eyeW, br = 0.4 * 0.72 * K.eyeH;
+    fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineWidth = 0.1 * U;
+    fx.beginPath(); fx.ellipse(px(cx), py(cy + ly), ar * U, br * U, 0, Math.PI + 0.15, 2 * Math.PI - 0.15); fx.stroke();
+    const wx = sx * 0.42 * K.eyeW, wy = (0.13 - 0.55 * shut) * K.eyeH, wl = 0.11 * K.eyeW, wa = sx * 0.45;
+    fx.lineWidth = 0.07 * U; fx.beginPath(); fx.moveTo(...E(wx - Math.cos(wa) * wl, wy - Math.sin(wa) * wl)); fx.lineTo(...E(wx + Math.cos(wa) * wl, wy + Math.sin(wa) * wl)); fx.stroke();
   }
   function drawBrow(sx, F) {
     const by = K.browY + F.browY, inX = sx * (K.eyeX - 0.3 * K.eyeW), outX = sx * (K.eyeX + 0.42 * K.eyeW), inY = by + F.brow * 0.3, outY = by - 0.06 - F.brow * 0.08;
