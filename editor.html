@@ -3,158 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character Measurements</title>
+<title>Character Editor</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe6f4; font-family: Georgia, 'Times New Roman', serif; color: #3a2a24; }
-  #view { position: fixed; inset: 0 340px 0 0; }
-  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; box-sizing: border-box; overflow-y: auto; background: #fbf6ec; border-left: 1px solid #d8c8a8; padding: 14px 16px 24px; font-size: 14px; }
-  h1 { font-size: 18px; margin: 0 0 4px; font-weight: normal; color: #8a1a1e; letter-spacing: .02em; }
-  .sub { font-size: 12px; color: #7a6a5a; line-height: 1.45; margin-bottom: 10px; }
-  h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8a7a6a; margin: 16px 0 6px; font-weight: normal; border-bottom: 1px solid #e6d8bc; padding-bottom: 3px; }
-  .btns { display: flex; flex-wrap: wrap; gap: 5px; }
-  button { font: 13px Georgia, serif; padding: 6px 10px; border-radius: 6px; border: 1px solid #c8b090; background: #fff; color: #3a2a24; cursor: pointer; }
-  button:hover { background: #fff3e2; } button.on { background: #cc2a2e; color: #fff; border-color: #8a1a1e; }
-  .row { display: grid; grid-template-columns: 1fr 52px 24px; align-items: center; gap: 4px 6px; margin: 7px 0 0; }
-  .row label { font-size: 13px; } .row .v { text-align: right; font-variant-numeric: tabular-nums; color: #8a1a1e; font-size: 13px; }
-  .row input[type=range] { grid-column: 1 / 4; width: 100%; margin: 0; accent-color: #cc2a2e; }
-  .row button.r { padding: 0; width: 22px; height: 22px; font-size: 12px; line-height: 1; border-radius: 50%; }
-  .row.changed label { font-weight: bold; }
-  #read { margin-top: 10px; padding: 8px 10px; background: #fff; border: 1px solid #e6d8bc; border-radius: 6px; font-size: 13px; line-height: 1.5; }
-  #read b { color: #8a1a1e; font-weight: normal; }
-  #note { font-size: 12px; color: #7a6a5a; margin-top: 6px; line-height: 1.45; }
-  textarea { width: 100%; box-sizing: border-box; height: 150px; margin-top: 8px; font: 11px ui-monospace, Menlo, monospace; display: none; }
-  #labels { position: fixed; left: 0; right: 340px; bottom: 14px; display: flex; justify-content: space-around; pointer-events: none; font-size: 14px; color: #3a2a24; text-shadow: 0 1px 0 #fff8; }
-  @media (max-width: 760px) {
-    #view { inset: 0 0 50% 0; } #panel { top: 50%; width: 100%; border-left: 0; border-top: 1px solid #d8c8a8; } #labels { right: 0; bottom: calc(50% + 10px); }
-  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; }
+  #view { position: fixed; inset: 0 320px 0 0; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
+  h1 { font-size: 15px; margin: 0 0 4px; } .sub { color: #9a8a8e; font-size: 11px; line-height: 1.5; }
+  h2 { font-size: 14px; margin: 16px 0 2px; color: #c9a84c; }
+  h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #a8969a; margin: 10px 0 5px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  button { background: #33282c; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  button:hover { background: #43343a; } button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
+  .sw { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #554449; }
+  .sw.on { border-color: #fff; box-shadow: 0 0 0 2px #c9a84c; }
+  input[type=color] { width: 30px; height: 26px; padding: 0; border: 1px solid #554449; border-radius: 4px; background: none; cursor: pointer; }
+  a { color: #c9a84c; }
+  #saved { color: #8fbf8f; font-size: 11px; margin-left: 6px; }
+  @media (max-width: 700px) { #view { inset: 0 0 50% 0; } #panel { top: 50%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } }
 </style>
 </head>
 <body>
 <div id="view"></div>
-<div id="labels"></div>
 <div id="panel">
-  <h1>Character measurements</h1>
-  <div class="sub">Adjust each character's body. Changes show at once, are kept in this browser (the game here uses them too), and can be copied into <code>js/measures.js</code> to keep for good.</div>
-  <h3>Character</h3>
-  <div class="btns" id="who"></div>
-  <h3>View</h3>
-  <div class="btns" id="views"><button data-v="front" class="on">Front</button><button data-v="three">¾</button><button data-v="side">Side</button><button data-v="back">Back</button></div>
-  <div class="btns" style="margin-top:5px"><button id="walk">Walk</button><button id="cloak">Cloak at 100%</button><button id="ruler" class="on">Head ruler</button></div>
-  <div id="read"></div>
-  <div id="note"></div>
-  <h3>Measurements</h3>
-  <div id="rows"></div>
-  <h3>Keep</h3>
-  <div class="btns"><button id="reset">Reset this character</button><button id="copy">Copy for js/measures.js</button><button id="clear">Forget browser changes</button></div>
-  <textarea id="out" readonly></textarea>
+  <h1>Character editor</h1>
+  <div class="sub">Jack and Gerda: what they wear, and their skin, hair and eyes. Changes are kept in this browser and used by <a href="lap.html">the lap scene</a>. Drag to orbit.</div>
+  <div class="btns" style="margin-top:8px"><button data-view="front" class="on">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button id="spin">Turn</button></div>
+  <div id="jack"></div>
+  <h3>His face</h3>
+  <div class="btns" id="faces"></div>
+  <div id="gerda"></div>
+  <div class="btns" style="margin-top:16px"><button id="reset">Back to their own colours</button><span id="saved"></span></div>
 </div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
-<script src="js/measures.js"></script>
-<script src="js/toon.js"></script>
+<script src="js/blocky.js"></script>
+<script src="js/looks.js"></script>
 <script>
-// The measurement editor. Each character is rebuilt from its measurements as a slider moves. For the heroine there are two figures: at full size
-// and in the cloak at 55%. They are one body: the same measurements, the smaller one scaled, so a change to one is a change to both.
 (function () {
-  const $ = id => document.getElementById(id), T = Toon, M = T.MEASURE, KEY = T.STORE_KEY, ADULT = 0.95, CLOAK = 0.55;
-  const NAMES = { heroine: 'Rosa (the heroine)', mother: 'Her mother', grandmother: 'Grandmother', miller: 'The Miller', woodcutter: 'The Woodcutter', innkeeper: 'The Innkeeper' };
-  const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }, set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { /* no storage */ } } };
+  const $ = id => document.getElementById(id), B = Blocky, L = Looks, V3 = THREE.Vector3;
+  let look = L.load(), face = 'grin', spin = false;
 
-  // ── The stage ──
-  const view = $('view'), renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-  renderer.outputEncoding = THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); view.appendChild(renderer.domElement);
-  const scene = new THREE.Scene(); scene.background = new THREE.Color('#cfe6f4').convertSRGBToLinear();
-  scene.add(new THREE.HemisphereLight(0xfff6e8, 0x8aa070, 0.55));
-  const sun = new THREE.DirectionalLight(0xfff0d8, 0.95); sun.position.set(30, 60, 50); scene.add(sun);
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(120, 48), T.toon('#bcd89a')); ground.rotation.x = -Math.PI / 2; scene.add(ground);
-  const pad = new THREE.Mesh(new THREE.CircleGeometry(30, 40), T.toon('#e8d8b4')); pad.rotation.x = -Math.PI / 2; pad.position.y = 0.05; pad.scale.set(1.4, 0.7, 1); scene.add(pad);
-  const camera = new THREE.PerspectiveCamera(28, 1, 1, 800), controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.52; controls.minDistance = 20; controls.maxDistance = 260;
+  // ── Stage: the two of them side by side on a plank floor. ──
+  const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.outputEncoding = THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); $('view').appendChild(renderer.domElement);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1416);
+  const camera = new THREE.PerspectiveCamera(32, 1, 1, 600), controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.minDistance = 20; controls.maxDistance = 200; controls.maxPolarAngle = Math.PI * 0.49;
+  scene.add(new THREE.HemisphereLight(0xfff0e0, 0x30283a, 0.7)); const sun = new THREE.DirectionalLight(0xfff0d8, 0.55); sun.position.set(30, 70, 60); scene.add(sun);
+  const fc = document.createElement('canvas'); fc.width = fc.height = 16; const fx = fc.getContext('2d');
+  for (let j = 0; j < 16; j++) for (let i = 0; i < 16; i++) { fx.fillStyle = ['#6a4a30', '#5e4028', '#745236'][(i * 7 + j * 13 + (j >> 2) * 5) % 3]; fx.fillRect(i, j, 1, 1); }
+  const ft = new THREE.CanvasTexture(fc); ft.magFilter = ft.minFilter = THREE.NearestFilter; ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(10, 10); ft.encoding = THREE.sRGBEncoding;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshLambertMaterial({ map: ft })); floor.rotation.x = -Math.PI / 2; scene.add(floor);
+  const turn = new THREE.Group(); scene.add(turn);
+  const jack = B.makeJack(), gerda = B.makeGerda(look.gerda.outfit);
+  jack.root.scale.setScalar(0.95); jack.root.position.x = -9; gerda.root.position.x = 9;     // (Jack at his size: 95% of the model's scale; Gerda at hers)
+  turn.add(jack.root, gerda.root);
+  const VIEWS = { front: [0, 22, 92], side: [92, 22, 0], back: [0, 22, -92] };
+  const view = name => { camera.position.set(...VIEWS[name]); controls.target.set(0, 16, 0); controls.update(); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
 
-  // ── State ──
-  let who = new URLSearchParams(location.search).get('who') || 'heroine', walking = false, cloakFull = false, ruler = true, figs = [], rulers = [], angle = 0;
-  const local = store.get();
-  const current = () => T.measuresFor(who, {});            // (the file's values overlaid with this browser's)
-  function setLocal(id, m) { const all = store.get(), clean = {}; for (const k in m) if (Math.abs(m[k] - M[k].def) > 1e-6) clean[k] = +m[k].toFixed(3); if (Object.keys(clean).length) all[id] = clean; else delete all[id]; store.set(all); }
-
-  // ── Building the figures ──
-  function build() {
-    for (const f of figs) scene.remove(f.r.root); for (const r of rulers) scene.remove(r); figs = []; rulers = [];
-    const m = current(), hero = who === 'heroine';
-    const list = hero ? [{ x: -9, sc: ADULT, cloak: cloakFull, label: 'Full size' }, { x: 9, sc: ADULT * CLOAK, cloak: true, label: 'In the cloak, 55%' }] : [{ x: 0, sc: ADULT, cloak: false, label: NAMES[who] }];
-    for (const L of list) {
-      const r = T.make(who); if (r.cloak) r.cloak.show(L.cloak);
-      r.root.scale.setScalar(L.sc); r.root.position.set(L.x, 0, 0); r.root.rotation.y = angle; scene.add(r.root);
-      figs.push({ r, a: { t: Math.random() * 6, phase: 0, speed: 0 }, sc: L.sc });
-      if (ruler) rulers.push(makeRuler(r, L.x + (hero ? (L.x < 0 ? -7.5 : 5.5) : -8), L.sc));
-    }
-    $('labels').innerHTML = list.map(L => '<span>' + L.label + '</span>').join('');
-    readout(m);
+  function paint() {
+    L.paintJack(jack, look.jack, { expr: face });
+    L.paintGerda(gerda, look.gerda);
   }
-  // A ruler beside a figure, marked off in its own head heights from the ground to the top of its head.
-  function makeRuler(r, x, sc) {
-    const F = r.figure, g = new THREE.Group(), h = F.height * r.measures.scale * sc, unit = F.head * r.measures.scale * sc, ink = new THREE.MeshBasicMaterial({ color: 0x8a1a1e });
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.18, h, 0.18), ink); bar.position.y = h / 2; g.add(bar);
-    for (let k = 0; k * unit <= h + 1e-6; k++) { const t = new THREE.Mesh(new THREE.BoxGeometry(k % 2 ? 0.8 : 1.4, 0.14, 0.14), ink); t.position.y = k * unit; g.add(t); }
-    const top = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.16, 0.16), new THREE.MeshBasicMaterial({ color: 0x3a2a24 })); top.position.y = h; g.add(top);
-    g.position.x = x; scene.add(g); return g;
-  }
-  function readout(m) {
-    const F = T.figure(m), H = F.height * m.scale;
-    $('read').innerHTML = `Height <b>${H.toFixed(1)}</b> units (${(H * ADULT).toFixed(1)} in the game) &middot; <b>${F.heads.toFixed(2)}</b> heads tall` +
-      (who === 'heroine' ? `<br>In the cloak: <b>${(H * ADULT * CLOAK).toFixed(1)}</b> units, the same proportions` : '');
-    $('note').textContent = `Head size is held so that every figure is at least ${T.MIN_HEADS} heads tall: grown-up proportions at any size.` + (who === 'heroine' ? ' Rosa has one set of measurements; the cloak only changes her scale.' : '');
-  }
+  let savedT = 0;
+  function changed() { look = L.save(look); paint(); sync(); $('saved').textContent = 'Saved'; clearTimeout(savedT); savedT = setTimeout(() => $('saved').textContent = '', 1200); }
 
-  // ── The controls ──
-  for (const id in NAMES) { const b = document.createElement('button'); b.textContent = NAMES[id].replace(/ \(.*\)/, ''); b.dataset.id = id; b.onclick = () => { who = id; sync(); build(); }; $('who').appendChild(b); }
-  function sync() {
-    document.querySelectorAll('#who button').forEach(b => b.classList.toggle('on', b.dataset.id === who));
-    $('cloak').style.display = who === 'heroine' ? '' : 'none';
-    const m = current(), spec = T.SPECS[who], rows = $('rows'); rows.innerHTML = '';
-    for (const k in M) {
-      const d = M[k]; if (d.women && spec.male) continue;
-      const row = document.createElement('div'); row.className = 'row' + (Math.abs(m[k] - d.def) > 1e-6 ? ' changed' : '');
-      row.innerHTML = `<label for="m-${k}">${d.label}</label><span class="v">${m[k].toFixed(k === 'headSize' ? 3 : 2)}</span><button class="r" title="Back to the default">&#8634;</button><input type="range" id="m-${k}" min="${d.min}" max="${d.max}" step="${d.step}" value="${m[k]}">`;
-      const input = row.querySelector('input'), val = row.querySelector('.v');
-      input.oninput = () => { const cur = current(); cur[k] = +input.value; const cl = T.clampMeasures(cur); setLocal(who, cl); val.textContent = cl[k].toFixed(k === 'headSize' ? 3 : 2); if (Math.abs(cl[k] - +input.value) > 1e-6) input.value = cl[k]; row.classList.toggle('changed', Math.abs(cl[k] - d.def) > 1e-6); if (k === 'headSize' || k === 'legLength' || k === 'torsoLength' || k === 'neckLength') syncValues(); schedule(); };
-      row.querySelector('.r').onclick = () => { const cur = current(); cur[k] = d.def; setLocal(who, T.clampMeasures(cur)); sync(); build(); };
-      rows.appendChild(row);
+  // ── The panel: an outfit row and a colour row per feature, for each of them. ──
+  const FEATURES = { jack: [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes']], gerda: [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips']] };
+  const NAMES = { jack: 'Jack (21)', gerda: 'Gerda (late thirties)' };
+  const syncers = [];
+  for (const who of ['jack', 'gerda']) {
+    const box = $(who); box.innerHTML = `<h2>${NAMES[who]}</h2><h3>Outfit</h3>`;
+    const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
+    for (const o of L.OUTFITS[who]) { const b = document.createElement('button'); b.textContent = o; b.onclick = () => { look[who].outfit = o; changed(); }; row.appendChild(b); syncers.push(() => b.classList.toggle('on', look[who].outfit === o)); }
+    for (const [k, name] of FEATURES[who]) {
+      const h = document.createElement('h3'); h.textContent = name; box.appendChild(h);
+      const r = document.createElement('div'); r.className = 'btns'; box.appendChild(r);
+      for (const c of L.SWATCHES[k]) { const b = document.createElement('button'); b.className = 'sw'; b.style.background = c; b.title = c; b.onclick = () => { look[who][k] = c; changed(); }; r.appendChild(b); syncers.push(() => b.classList.toggle('on', look[who][k] === c)); }
+      const pick = document.createElement('input'); pick.type = 'color'; pick.title = 'Any colour'; pick.oninput = () => { look[who][k] = pick.value; changed(); }; r.appendChild(pick);
+      syncers.push(() => { pick.value = look[who][k]; });
     }
   }
-  function syncValues() { const m = current(); for (const k in M) { const i = $('m-' + k); if (i && document.activeElement !== i) { i.value = m[k]; i.parentNode.querySelector('.v').textContent = m[k].toFixed(k === 'headSize' ? 3 : 2); } } }
-  let timer = null; const schedule = () => { clearTimeout(timer); timer = setTimeout(build, 60); };
-  const VIEWS = { front: 0, three: -0.7, side: -Math.PI / 2, back: Math.PI };
-  document.querySelectorAll('#views button').forEach(b => b.onclick = () => { angle = VIEWS[b.dataset.v]; document.querySelectorAll('#views button').forEach(x => x.classList.toggle('on', x === b)); for (const f of figs) f.r.root.rotation.y = angle; });
-  $('walk').onclick = () => { walking = !walking; $('walk').classList.toggle('on', walking); };
-  $('cloak').onclick = () => { cloakFull = !cloakFull; $('cloak').classList.toggle('on', cloakFull); build(); };
-  $('ruler').onclick = () => { ruler = !ruler; $('ruler').classList.toggle('on', ruler); build(); };
-  $('reset').onclick = () => { if (!confirm('Put ' + NAMES[who] + ' back to the measurements in js/measures.js?')) return; const all = store.get(); delete all[who]; store.set(all); sync(); build(); };
-  $('clear').onclick = () => { if (!confirm('Forget every change made in this browser, for every character?')) return; store.set({}); sync(); build(); };
-  $('copy').onclick = () => {
-    const out = {}; for (const id in NAMES) { const m = T.measuresFor(id, {}), clean = {}; for (const k in M) if (Math.abs(m[k] - M[k].def) > 1e-6) clean[k] = +m[k].toFixed(3); out[id] = clean; }
-    const body = Object.entries(out).map(([id, v]) => `  ${id}: ${JSON.stringify(v).replace(/"(\w+)":/g, '$1: ').replace(/,/g, ', ')},`).join('\n');
-    const text = `// Red Lessons — the characters' measurements (see js/toon.js, MEASURE, for what each one does; 1 is the base figure, and head size 0.92).\n// Adjust them in editor.html and press "Copy for js/measures.js" to replace this file. Anything not given here is the default.\n(function (root) {\n'use strict';\nroot.Measures = {\n${body}\n};\n})(typeof window !== 'undefined' ? window : globalThis);\n`;
-    const ta = $('out'); ta.value = text; ta.style.display = 'block'; ta.select();
-    try { navigator.clipboard.writeText(text).then(() => { $('copy').textContent = 'Copied'; setTimeout(() => { $('copy').textContent = 'Copy for js/measures.js'; }, 1600); }); } catch (e) { /* the text is selected in the box */ }
-  };
+  for (const f of ['grin', 'smile', 'shy', 'cheeky', 'squint', 'wince', 'gritted', 'crying']) {
+    const b = document.createElement('button'); b.textContent = f; b.onclick = () => { face = f; paint(); sync(); }; $('faces').appendChild(b); syncers.push(() => b.classList.toggle('on', face === f));
+  }
+  const sync = () => syncers.forEach(f => f());
+  $('reset').onclick = () => { look = L.reset(); paint(); sync(); };
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
+  $('spin').onclick = () => { spin = !spin; $('spin').classList.toggle('on', spin); if (!spin) turn.rotation.y = 0; };
 
-  // ── The frame loop ──
-  const resize = () => { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+  function resize() { const w = $('view').clientWidth, h = $('view').clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
   addEventListener('resize', resize); resize();
-  camera.position.set(0, 20, 110); controls.target.set(0, 14, 0); controls.update();
   let last = performance.now();
-  (function loop(now) {
-    const dt = Math.min(0.05, ((now || last) - last) / 1000); last = now || last;
-    for (const f of figs) {
-      const a = f.a; a.t += dt; a.speed = walking ? 40 : 0; a.running = false;
-      a.phase += dt * (walking ? 40 : 0) / (28 * f.sc) * Math.PI * 2;
-      T.pose(f.r, a, dt); f.r.tick(dt);
-    }
-    controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
-  })();
-  window.__editor = { build, figs: () => figs, set(id) { who = id; sync(); build(); }, camera, controls };
-  sync(); build();
+  (function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (spin) turn.rotation.y += dt * 0.6; B.step(jack, dt); B.step(gerda, dt); controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })(last);
+  view('front'); paint(); sync();
 })();
 </script>
 </body>

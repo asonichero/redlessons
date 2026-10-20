@@ -2,7 +2,7 @@
 // and two legs, each a plain box textured from a 64x64 skin laid out like a Minecraft skin (base layer plus outer layer), except that the
 // arms are 3x3 pixels, a little thinner than Minecraft's. The other departure from the stock rig: each leg is cut at the knee into thigh and
 // shin boxes. They read as one straight leg when standing and only show a bend when the character sits.
-// The skins are painted here, pixel by pixel, rather than loaded; blocky.html shows the pair, and js/lap.js poses them across the lap.
+// The skins are painted here, pixel by pixel, rather than loaded; editor.html shows the pair, and js/lap.js poses them across the lap.
 (function (root) {
 'use strict';
 const THREE = root.THREE;
@@ -103,6 +103,7 @@ function paintJackInto(k, st) {
     linen: '#e8dfc4', linenSh: '#cfc4a6', vest: '#4b7a3a', vestDk: '#375c2a', belt: '#4a3220', buckle: '#d6b24a', pouch: '#6b4a2a',
     trousers: '#6d5233', trousersDk: '#59422a', patch: '#8b7048', stitch: '#4a3820', boot: '#3a2616', bootHi: '#5a3d24', sole: '#22160c', lace: '#b8a070',
     drawers: '#e6dcc2', drawersSh: '#cbbf9f' };
+  if (st.colours) Object.assign(C, st.colours);                         // (the character editor's colours: skin, hair and eyes, js/looks.js)
   const pal = { H: C.hair, h: C.hairHi, d: C.brow, S: C.skin, s: C.skinSh, b: C.brow, W: C.white, E: C.iris, l: C.lid, M: C.lip, T: C.teeth, u: C.stub, n: C.skinSh, k: C.skinHi, m: C.mouth };
   const down = st.trousers === 'down', drawersDown = st.drawers === 'down';
   const outfit = ['Day', 'Soft', 'Fine', 'Night'].indexOf(st.outfit) >= 0 ? st.outfit : 'Outdoor', tunic = outfit === 'Day' || outfit === 'Soft' || outfit === 'Night', fine = outfit === 'Fine';
@@ -296,7 +297,8 @@ function paintGlutesInto(g, st) {
   st = Object.assign({ trousers: 'up', drawers: 'up', marks: { L: 0, R: 0 } }, st);
   const what = st.trousers === 'up' ? 'trousers' : st.drawers === 'up' ? 'drawers' : 'skin';
   const tr = { Outdoor: ['#6d5233', '#59422a'], Fine: ['#4c3827', '#3b2a1d'], Day: ['#b8a173', '#9b855d'], Soft: ['#7f9ccc', '#6a88b8'] }[st.outfit] || ['#6d5233', '#59422a'];   // the garment over his seat
-  const base = { trousers: tr[0], drawers: '#e6dcc2', skin: '#ebc4a0' }[what], seam = { trousers: tr[1], drawers: '#cbbf9f', skin: '#c99874' }[what];
+  const sk = st.colours || {};
+  const base = { trousers: tr[0], drawers: '#e6dcc2', skin: sk.seat || '#ebc4a0' }[what], seam = { trousers: tr[1], drawers: '#cbbf9f', skin: sk.skinSh || '#c99874' }[what];
   g.ctx.clearRect(0, 0, 24, 8);
   g.all('glutes', base);
   g.fill('glutes', 'back', seam, 3, 0, 2, 4); g.fill('glutes', 'bottom', seam, 3, 0, 2, 4);

@@ -1,7 +1,7 @@
 {
   "name": "Red Lessons",
   "short_name": "Red Lessons",
-  "start_url": "game.html",
+  "start_url": "lap.html",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#1a0f10",

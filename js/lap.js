@@ -1,35 +1,35 @@
-// Red Lessons — over the knee. A giver seated on a plain chair; the heroine face down across their lap, hips over their right knee, head and arms
-// toward the floor on their left. Only this one position (the Jack game's lap scene also had the table, the birch, his belt and pinned arm, and a
-// file of hand-edited poses; none of that is here). Everything is procedural, so it fits her at any size from full height down to the cloak's.
+// Red Lessons — over the knee. Gerda seated on a plain chair; Jack face down across her lap, hips over her right knee, head and arms toward the
+// floor on her left. This is the discipline engine of Climbing Toward Consequence (js/lap.js there) cut down to that one position, with Jack always
+// at his full size: the shrinking, the second set of poses made at half his size and the blend between them are gone. Gerda's hand-tuned poses
+// (the 100% set of that game's pose file) are baked in, and her arm is solved every frame so the hand, or the paddle's blade, lands on the middle
+// of the cheek struck.
 //
-// What carries over from the Jack game (js/lap.js there), refitted for her:
-//  • her frame across the lap (tipped head-down by PITCH), and its placement by her size, so the same lap holds her at 100% and at the cloak's 55%;
-//  • the seat block, hinged at the back of her hips, which bridges her back and her folded thighs and carries the skirt, drawers or skin and the marks;
-//  • the giver's right arm: shoulder, elbow and wrist, solved each frame so the hand (or the paddle's blade) lands on the middle of the cheek struck,
-//    lifted to a raised pose that keeps clear of the giver's head; the left hand rests between her shoulder blades;
-//  • the pain model (js/pain.js), the bands of distress that drive her face, kicks and voice, the marks, and Red, which stops everything at once.
+//  • Jack's frame across her lap (tipped head-down by PITCH), at 95% of the model's scale, as in that game;
+//  • the glutes block, hinged at the back of his hips, bridging his back and his folded thighs; it carries his trousers, drawers or bare skin, and the marks;
+//  • Gerda's right arm: shoulder, elbow and wrist, lifted to a raised pose that keeps clear of her head; her left hand rests between his shoulder blades;
+//  • the pain model (js/pain.js), the bands of distress that drive his face, kicks and voice, the marks, and Red, which stops everything at once.
 //
-//   const lap = Lap.create(view, { giver: 'innkeeper', size: 1 })     // standalone (lap.html): its own renderer, camera and orbit controls
-//   const lap = Lap.create(null, { external: { scene }, giver, size })   // in the game: adds its stage to the game's scene; the game renders
-//   lap.smack(); lap.run(n); lap.red(); lap.set({ implement, skirt, drawers, size, strength, pace }); lap.update(dt); lap.on(fn)
+//   const lap = Lap.create(view, { looks })                 // standalone (lap.html): its own renderer, camera and orbit controls
+//   const lap = Lap.create(null, { external: { scene } })   // embedded: adds its stage to another scene, which renders it
+//   lap.smack(); lap.run(n); lap.red(); lap.set({ implement, trousers, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
 (function (root) {
 'use strict';
-const THREE = root.THREE, B = root.Blocky, C = root.Cast, S = root.Pain;
+const THREE = root.THREE, B = root.Blocky, S = root.Pain, L = root.Looks;
 const V3 = THREE.Vector3, UP = new V3(0, 1, 0), DOWN = new V3(0, -1, 0);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, t) => a + (b - a) * t, DEG = Math.PI / 180;
 const srgb = hex => new THREE.Color(hex).convertSRGBToLinear();
 
-const PITCH = -0.05;                 // her body tipped a little head-down
-const LAP_Z = 6.5;                   // her hips lie this far forward of the giver's hips, over the knees
-const HOVER = 1.4;                   // at rest the hand hovers this far above the middle of her lower back
+const PITCH = -0.05;                 // his body tipped a little head-down
+const LAP_Z = 6.5;                   // his hips lie this far forward of hers, over her knees
+const JACK = 0.95;                   // Jack's size as a share of the model's own scale (Gerda is 1: about 105% of him)
+const HOVER = 1.4;                   // at rest the hand hovers this far above the middle of his lower back
 const TIMES = { lift: 0.45, hold: 0.15, strike: 0.09, contact: 0.32, back: 0.3 };
 const IMPL = { hand: { name: 'Hand', mark: 1, paddle: false }, paddle: { name: 'Paddle', mark: 8 / 3, paddle: true } };
-// The giver's torso: nearly upright, leaning a touch back at rest and further as the arm goes up, and turning a little into a strike on her right cheek
-// (the far one). These are the Jack game's hand-tuned pose file's values, baked in (radians: x lean, y turn, z roll).
+// Gerda's torso: nearly upright, leaning a touch back at rest and further as the arm goes up, and turning a little into a strike on his right cheek
+// (the far one). These are Climbing Toward Consequence's hand-tuned pose file's values (the 100% set), baked in (radians: x lean, y turn, z roll).
 const TORSO = { rest: [-0.035, 0, 0], raised: [-0.138, -0.044, -0.016], contactL: [-0.035, 0, 0], contactR: [-0.017, 0.157, 0.105] };
-const SIZE_MIN = 0.5;                // below this the position does not work
 const BANDS = ['composed', 'flinching', 'struggling', 'close to the edge of resistance', 'past the edge of resistance', 'too harsh'];
-const FACE = ['calm', 'wince', 'gritted', 'crying'];
+const FACE = ['grin', 'wince', 'gritted', 'crying'];   // Jack's faces (Blocky.JACK_EXPR), by band
 
 function create(view, opts) {
   opts = opts || {};
@@ -53,38 +53,30 @@ function create(view, opts) {
   const stage = new THREE.Group(); scene.add(stage);
   const LEGH = B.CHAIR.legH, chair = B.makeChair(); stage.add(chair);
 
-  // ── The cast ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  const her = C.make('heroine'), frame = new THREE.Group(); frame.add(her.root); stage.add(frame);
-  const qx = new THREE.Quaternion().setFromAxisAngle(new V3(1, 0, 0), Math.PI / 2), qy = new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), Math.PI / 2), qz = new THREE.Quaternion().setFromAxisAngle(new V3(0, 0, 1), PITCH);
-  frame.quaternion.copy(qz).multiply(qy).multiply(qx);          // her local +y (head) along world +x, her front facing down
-  Object.assign(her.state, { hipY: 0, lift: 0 }); Object.assign(her.target, { hipY: 0, lift: 0 });
-  const roll = C.makeSkirtRoll(her);
-  // The seat block: hinged at the top edge, in the plane of her back at the bottom of the torso, tipped part-way toward her folded thighs.
-  const seat = C.makeSeat(her.spec), seatTilt = new THREE.Group();
-  seatTilt.position.set(0, 0.6, -2.55); seatTilt.rotation.x = -0.45;
-  seat.mesh.scale.set(1.12, 1.2, 1.25); seat.mesh.position.set(0, -2.6, 2.58);
-  seatTilt.add(seat.mesh); her.hips.add(seatTilt);
-  const mk = (x, y, z, parent) => { const o = new THREE.Object3D(); o.position.set(x, y, z); parent.add(o); return o; };
-  const rear = { L: mk(2, -2.4, -0.1, seatTilt), R: mk(-2, -2.4, -0.1, seatTilt), C: mk(0, -2.4, -0.1, seatTilt) }, upperBack = mk(0, 9.5, -2.2, her.torso);
-  // Her bust, face down across a lap: the two blocks are pressed flat against the giver's thigh, so they are squashed to a sliver (they would cut into it otherwise).
-  her.torso.children.forEach(m => { if (m.isMesh && m.geometry && m.geometry.parameters && m.geometry.parameters.depth === 2.2) { m.scale.z = 0.35; m.position.z = 2.3; } });
-
-  let giver = null, giverId = null, tool = null, paddle = null;
-  const shins = () => [giver.legL, giver.legR].map(l => l.knee.children[0]);
-  function setGiver(id) {
-    if (C.SPECS[id] == null) throw new Error('Lap: unknown giver ' + id);
-    const G_ = root.Ledger && root.Ledger.GIVERS[id];
-    if (!G_ || G_.kin || (root.Ledger.ANCHORS || []).includes(id)) throw new Error('Lap: ' + id + ' does not give corrections');
-    if (giver) stage.remove(giver.root);
-    giver = C.make(id); giverId = id; stage.add(giver.root);
-    for (const sh of shins()) { sh.scale.y = (6 + LEGH) / 6; sh.position.y = -3 * sh.scale.y; }       // (seated, the shins reach the floor below the chair)
-    B.setPose(giver, 'sit'); Object.assign(giver.state, B.POSES.sit);
-    // The paddle: a short handle out of the side of the forearm near its end, and a small rounded blade.
-    tool = new THREE.Group(); tool.position.set(1.5, -PAD_M, 0); tool.rotation.z = Math.PI / 2; giver.wrist.add(tool);
-    paddle = makePaddle(); paddle.visible = false; tool.add(paddle);
-    giver.after = poseGiver;
-  }
   const HANDLE = 1.2, BLADE_L = 4.5, BLADE_W = 4, PALM_M = 6.7, PAD_M = 5.8, PAD_SIDE = 1.5 + HANDLE + BLADE_L / 2;
+  // ── The cast ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  let looks = L ? L.clean(opts.looks || L.load()) : null;
+  const jack = B.makeJack(), frame = new THREE.Group(); frame.add(jack.root); stage.add(frame);
+  const qx = new THREE.Quaternion().setFromAxisAngle(new V3(1, 0, 0), Math.PI / 2), qy = new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), Math.PI / 2), qz = new THREE.Quaternion().setFromAxisAngle(new V3(0, 0, 1), PITCH);
+  frame.quaternion.copy(qz).multiply(qy).multiply(qx);          // his local +y (head) along world +x, his front facing down
+  frame.scale.setScalar(JACK); frame.position.set(-6 * JACK, 8.75 + 2 * JACK, LAP_Z);   // his torso's centre over the middle of her thighs, his belly on them
+  Object.assign(jack.state, { hipY: 0, lift: 0 }); Object.assign(jack.target, { hipY: 0, lift: 0 });
+  // The glutes block: hinged at the top edge, in the plane of his back at the bottom of the torso, tipped part-way toward his folded thighs.
+  const glutes = B.makeGlutes(), seatTilt = new THREE.Group();
+  seatTilt.position.set(0, 0.6, -2.55); seatTilt.rotation.x = -0.45;
+  glutes.mesh.scale.set(1.1, 1.2, 1.2); glutes.mesh.position.set(0, -2.6, 2.58);
+  seatTilt.add(glutes.mesh); jack.hips.add(seatTilt);
+  const mk = (x, y, z, parent) => { const o = new THREE.Object3D(); o.position.set(x, y, z); parent.add(o); return o; };
+  const rear = { L: mk(2, -2.4, -0.05, seatTilt), R: mk(-2, -2.4, -0.05, seatTilt), C: mk(0, -2.4, -0.05, seatTilt) }, upperBack = mk(0, 10, -2, jack.torso);
+
+  // Gerda, seated: her shins lengthened to reach the floor below the chair.
+  const giver = B.makeGerda(looks ? looks.gerda.outfit : 'Work'); stage.add(giver.root);
+  for (const sh of [giver.legL, giver.legR].map(l => l.knee.children[0])) { sh.scale.y = (6 + LEGH) / 6; sh.position.y = -3 * sh.scale.y; }
+  B.setPose(giver, 'sit'); Object.assign(giver.state, B.POSES.sit);
+  // The paddle: a short handle out of the side of her forearm near its end, and a small rounded blade.
+  const tool = new THREE.Group(); tool.position.set(1.5, -PAD_M, 0); tool.rotation.z = Math.PI / 2; giver.wrist.add(tool);
+  const paddle = makePaddle(); paddle.visible = false; tool.add(paddle);
+  giver.after = poseGiver;
   function makePaddle() {
     const g = new THREE.Group(), wood = c => new THREE.MeshLambertMaterial({ color: srgb(c) });
     const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, HANDLE + 0.2, 12), wood(0x7a4e26)); handle.position.y = -(HANDLE + 0.2) / 2; g.add(handle);
@@ -96,27 +88,26 @@ function create(view, opts) {
   }
 
   // ── The session ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  const pain = S.createPain({ tolerance: 0.9, resilience: 0.65 });
-  const st = { size: 1, implement: 'hand', pace: 1, strength: 1, side: 'alt', nextSide: 'R', skirt: 'down', drawers: 'up', marks: { L: 0, R: 0 },
+  const pain = S.createPain({ tolerance: 1, resilience: 0.7 });       // (Jack's, as in the Jack game)
+  const st = { implement: 'hand', pace: 1, strength: 1, side: 'alt', nextSide: 'R', trousers: 'up', drawers: 'up', marks: { L: 0, R: 0 },
     hits: 0, ended: false, red: false, peak: 0, swing: null, runLeft: 0, gap: 0, sound: true, last: null, armed: true, aim: null, dt: 0.016 };
   const J = { kick: 0, kickSide: 'R', t: 0 };
   let dirty = true;
   const listeners = [], say = (type, data) => listeners.forEach(f => f(type, data));
   const cushion = () => {
-    const c = S.PAIN.CUSHION, worn = st.skirt === 'down' ? [c.skirt, c.drawers] : st.drawers === 'up' ? [c.drawers] : [];
+    const c = S.PAIN.CUSHION, worn = st.trousers === 'up' ? [c.trousers, c.briefs] : st.drawers === 'up' ? [c.briefs] : [];
     return 1 - worn.reduce((left, x) => left * (1 - x), 1);
   };
   const bandIndex = () => { const d = pain.distress(); return d < 0.3 ? 0 : d < 0.6 ? 1 : d < 0.9 ? 2 : d < 1 ? 3 : d < 1.5 ? 4 : 5; };
-  const canStrike = () => !st.ended && !pain.tooHarsh && !!giver;
-  const thwack = power => { if (st.sound && root.GameAudio) root.GameAudio.thwack(power, st.skirt === 'down'); };
+  const canStrike = () => !st.ended && !pain.tooHarsh;
+  const thwack = power => { if (st.sound && root.GameAudio) root.GameAudio.thwack(power, st.trousers === 'up'); };
   const voice = (power, band) => { if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false); };
 
   function smack() { if (!canStrike() || st.swing) return false; st.swing = { phase: 'lift', t: 0, side: pickSide(), waited: 0, tau: 1, hover: 1 }; return true; }
   function pickSide() { const s = st.side === 'alt' ? st.nextSide : st.side; if (st.side === 'alt') st.nextSide = st.nextSide === 'R' ? 'L' : 'R'; return s; }
   function impact(sw) {
     const impl = IMPL[st.implement], tender = (st.marks.L + st.marks.R) / 2;
-    // A smaller her feels the same smack a little more (as Jack did): the strength is divided by her size.
-    const hit = pain.hit({ implement: st.implement, strength: st.strength / clamp(st.size, 0.5, 1), speed: st.pace, raised: sw.waited, tender, cushion: cushion() });
+    const hit = pain.hit({ implement: st.implement, strength: st.strength, speed: st.pace, raised: sw.waited, tender, cushion: cushion() });
     const gain = 0.01875 * impl.mark * st.strength;
     st.marks[sw.side] = 1 - (1 - st.marks[sw.side]) * (1 - gain);
     st.hits++; st.peak = Math.max(st.peak, pain.distress()); st.last = hit;
@@ -174,7 +165,7 @@ function create(view, opts) {
     return { q: arm.quaternion.clone(), psi: elbow.rotation.x, omega };
   }
   const segD = (a, b, c) => { const ab = b.clone().sub(a), t = clamp(c.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1); return a.clone().addScaledVector(ab, t).distanceTo(c); };
-  // Of the elbow's places about the line from shoulder to target: clear of the giver's own head, laying the forearm flattest on her skin (when n is given), and nearest the usual one.
+  // Of the elbow's places about the line from shoulder to target: clear of Gerda's own head, laying the forearm flattest on his skin (when n is given), and nearest the usual one.
   function flat(S_, M, m, n, headAt) {
     const ud = M.clone().sub(S_).normalize(); let best = null;
     for (let a = -180; a <= 180; a += 10) {
@@ -189,7 +180,7 @@ function create(view, opts) {
   function poseGiver(g) {
     for (const l of [g.legL, g.legR]) { l.thigh.rotation.y = 0; l.knee.rotation.y = 0; l.knee.rotation.z = 0; }
     const sw = st.swing, impl = IMPL[st.implement], tau = sw ? sw.tau : 1, hover = sw ? (sw.hover || 0) : 1;
-    // The aim: at rest, the middle of her lower back (lifted by HOVER); in a swing, the cheek struck. It eases from one to the other.
+    // The aim: at rest, the middle of his lower back (lifted by HOVER); in a swing, the cheek struck. It eases from one to the other.
     const goal = world(rear[sw ? sw.side : 'C']); if (impl.paddle) goal.y += 0.4; goal.y += hover * HOVER;
     st.aim = !st.aim ? goal.clone() : st.aim.lerp(goal, 1 - Math.exp(-st.dt * 12));
     const T = st.aim.clone();
@@ -197,8 +188,8 @@ function create(view, opts) {
     const land = TORSO[sw && sw.side === 'R' ? 'contactR' : 'contactL'], from = sw ? TORSO.raised : TORSO.rest, tt = sw ? tau : 1, to = sw ? land : TORSO.rest;
     g.torso.rotation.order = 'YXZ'; g.torso.rotation.set(lerp(from[0], to[0], tt), lerp(from[1], to[1], tt), lerp(from[2], to[2], tt)); g.torso.position.z = -0.5;
     g.neck.rotation.set(0.62, 0.12, 0);
-    g.root.updateMatrixWorld(true); her.root.updateMatrixWorld(true);
-    // Left hand: flat between her shoulder blades.
+    g.root.updateMatrixWorld(true); jack.root.updateMatrixWorld(true);
+    // Left hand: flat between his shoulder blades.
     armPose(g, 'armL', twoBone(world(g.armL), world(upperBack), LF, POLE_L), null);
     // Right arm: landed pose and raised pose, blended by how far the swing has come.
     const sh = world(g.armR), hand = !impl.paddle, reachM = impl.paddle ? PAD_M : PALM_M;
@@ -228,29 +219,28 @@ function create(view, opts) {
     }
   }
 
-  // ── Her body: hanging off the edge of the lap; the last smack (k), her distress (d) and her wriggle (w) work on it. ──
-  her.after = function (j) {
+  // ── His body: hanging off the edge of her lap; the last smack (k), his distress (d) and his wriggle (w) work on it. ──
+  jack.after = function (j) {
     const k = J.kick, d = clamp(pain.distress(), 0, 1.5), dd = Math.min(1, d), t = J.t, mL = J.kickSide === 'L' ? 1 : 0.45, mR = J.kickSide === 'R' ? 1 : 0.45;
     const w = Math.sin(t * 9) * 0.05 * dd + Math.sin(t * 5.3) * 0.03 * dd;
-    j.legL.thigh.rotation.set(-0.96 + k * 0.9 * mL + w, 0, j.legL.sign * (0.1 + 0.18 * k * mL));
-    j.legR.thigh.rotation.set(-0.96 + k * 0.9 * mR - w, 0, j.legR.sign * -(-0.1 - 0.18 * k * mR));
+    j.legL.thigh.rotation.set(-0.96 + k * 0.9 * mL + w, 0, j.legL.sign * (0.12 + 0.2 * k * mL));
+    j.legR.thigh.rotation.set(-0.96 + k * 0.9 * mR - w, 0, j.legR.sign * (0.12 + 0.2 * k * mR));
     j.legL.knee.rotation.set(0.6 + 0.6 * k * mL + 0.5 * Math.max(0, w), 0, 0); j.legR.knee.rotation.set(0.6 + 0.6 * k * mR + 0.5 * Math.max(0, -w), 0, 0);
     j.neck.rotation.set(-0.1 - 0.5 * k + 0.1 * dd * Math.sin(t * 4), -0.75 + 0.15 * Math.sin(t * 3) * dd, 0);
     j.armL.rotation.set(-2.14 - 0.25 * k + Math.sin(t * 7) * 0.08 * dd, 0, 0.12 + 0.1 * k); j.armR.rotation.set(-2.14 - 0.25 * k + Math.sin(t * 7 + 1.7) * 0.08 * dd, 0, -(0.12 + 0.1 * k));
     if (j.elbowL) { j.elbowL.rotation.set(-(0.35 + 0.25 * k + 0.1 * dd * Math.sin(t * 7)), 0, 0); j.elbow.rotation.set(-(0.35 + 0.25 * k + 0.1 * dd * Math.sin(t * 7 + 1.7)), 0, 0); }
     j.torso.rotation.set(0, 0, 0.06 * dd * Math.sin(t * 6));
   };
-  function place() {
-    const sz = st.size; her.root.scale.setScalar(sz);
-    frame.position.set(-6 * sz, 8.75 + 2 * sz, LAP_Z);
-  }
   function repaint() {
-    const b = bandIndex(), face = FACE[Math.min(3, Math.max(0, b - (b >= 3 ? 1 : 0)))];
-    her.setDress({ expr: face, skirt: st.skirt, drawers: st.drawers, blush: b >= 1 });
-    roll.visible = st.skirt === 'up';
-    seat.paint({ skirt: st.skirt, drawers: st.drawers, marks: st.marks });
+    const b = bandIndex(), expr = FACE[Math.min(3, Math.max(0, b - (b >= 3 ? 1 : 0)))], lj = looks ? looks.jack : { outfit: 'Outdoor' };
+    const dress = { trousers: st.trousers, drawers: st.drawers, marks: st.marks, outfit: lj.outfit };
+    if (L) L.paintJack(jack, lj, Object.assign({ expr, hitched: true, blush: b >= 1 }, dress));
+    else { B.paintJackInto(jack.skin, Object.assign({ expr, hitched: true, blush: b >= 1 }, dress)); jack.tex.needsUpdate = true; }
+    B.paintGlutesInto(glutes.skin, Object.assign({ colours: L ? L.jackColours(lj) : null }, dress)); glutes.tex.needsUpdate = true;
+    jack.legL.ring.visible = jack.legR.ring.visible = st.trousers === 'down';
     dirty = false;
   }
+  function setLooks(l) { if (!L) return; looks = L.clean(l); L.paintGerda(giver, looks.gerda); dirty = true; }
 
   // ── Cameras (standalone; the game frames its own shots from these). ──
   const VIEWS = {
@@ -258,7 +248,7 @@ function create(view, opts) {
     behind: () => ({ pos: new V3(-74, 30, 22), look: new V3(-4, 10, 5) }),
     giver: () => ({ pos: new V3(-5, 40, -12), look: new V3(-5, 10, 7) }),
     top: () => ({ pos: new V3(-4, 90, 8), look: new V3(-4, 8, 6) }),
-    face: () => ({ pos: new V3(46, 14, 62), look: new V3(8, 6, 6) }),
+    face: () => ({ pos: new V3(46, 14, 62), look: new V3(8, 6, 6) }),        // his face
   };
   function view_(name) { if (!camera) return VIEWS[name](); const v = VIEWS[name](); camera.position.copy(v.pos); controls.target.copy(v.look); controls.update(); return v; }
   function resize() { if (!renderer) return; const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
@@ -270,32 +260,31 @@ function create(view, opts) {
     if (!st.ended) advance(dt);
     pain.update(dt, !!(st.swing && st.swing.phase === 'contact'));
     if (dirty || Math.floor(J.t * 4) !== Math.floor((J.t - dt) * 4)) repaint();
-    place();
-    B.step(her, dt); if (giver) B.step(giver, dt);
+    B.step(jack, dt); B.step(giver, dt);
     if (controls) controls.update();
   }
   let last = performance.now(), running = false;
   function loop(now) { if (!running) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); renderer.render(scene, camera); requestAnimationFrame(loop); }
 
   const api = {
-    stage, her, get giver() { return giver; }, get giverId() { return giverId; }, pain, st, rear, seatTilt, VIEWS, IMPL, BANDS,
-    setGiver, smack,
+    stage, jack, gerda: giver, pain, st, rear, seatTilt, VIEWS, IMPL, BANDS,
+    smack, setLooks, get looks() { return looks; },
     run(n) { st.runLeft = Math.max(0, (n || 1) - 1); return smack(); },
     // Red: everything stops at once. Nothing more is struck, whatever was queued.
     red() { st.red = true; st.ended = true; st.runLeft = 0; if (st.swing) st.swing.phase = 'back'; say('red', { hits: st.hits }); },
     end() { st.ended = true; st.runLeft = 0; },
-    set(o) { for (const k in o) { if (k === 'size') st.size = clamp(o.size, SIZE_MIN, 1); else st[k] = o[k]; } dirty = true; },
+    set(o) { for (const k in o) st[k] = o[k]; if (st.trousers === 'up') st.drawers = 'up'; dirty = true; },       // (his drawers come down only once his trousers are down)
     busy: () => !!st.swing || st.runLeft > 0,
     band: () => BANDS[bandIndex()], bandIndex,
     on(f) { listeners.push(f); },
     update, view: view_,
     start() { if (!renderer) return; running = true; resize(); root.addEventListener('resize', resize); requestAnimationFrame(loop); },
+    stop() { running = false; root.removeEventListener('resize', resize); if (renderer) renderer.dispose(); },
     renderer, camera,
   };
-  setGiver(opts.giver || 'innkeeper'); api.set({ size: opts.size || 1 });
-  place(); repaint(); update(0.016);
+  setLooks(looks); repaint(); update(0.016);
   return api;
 }
 
-root.Lap = { create, IMPL, BANDS, SIZE_MIN };
+root.Lap = { create, IMPL, BANDS, JACK };
 })(typeof window !== 'undefined' ? window : globalThis);

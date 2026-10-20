@@ -1,101 +1,67 @@
 # Red Lessons
 
-A blocky, open-world adult adventure from the Whisperwood, built on the engine of *Climbing Toward Consequence* (the Jack and the Beanstalk game, [asonichero/consequence](https://github.com/asonichero/consequence)).
+Jack and Gerda, the over-the-knee discipline scene and the pain model, taken from *Climbing Toward Consequence* ([asonichero/consequence](https://github.com/asonichero/consequence)), with a simple character editor. Jack is 21; Gerda is in her late thirties. Both are adults.
 
-The heroine is a grown woman who lives with her mother, the village baker, and has stopped coping with adult life. Grandmother gives her a waist-length red cloak. While she wears it she is small, and the village strikes a bargain with her: **no adult responsibility, but not no consequences.** Every villager keeps a book of their own terms; break one and it is written down, and when a book is full that villager calls her in to settle it. Take the cloak off and she is full height again, with a bakery to help run.
+Everything is blocky (three.js, no build step, procedural pixel textures and synthesised sound, no asset files) and installs as a mobile web app.
 
-She has never heard the tale of Red Riding Hood. The Wolf, when he comes, will offer the one thing the village won't: to wipe the books clean.
-
-## Status: milestone 2, over the knee
-
-Built: the title screen over a drone view of the village, the content notice, settings, saves and the pause menu (all ported from the Jack game); the cast on the blocky rig; the opening cutscene (Grandmother gives the cloak and the village names its terms); the free-roam village with the ledger running; the reckoning, where a giver calls her in and she owns up or lies; and the correction that follows it, over the giver's knee.
-
-## Over the knee (`js/lap.js`, `js/correction.js`, `lap.html`)
-
-One position only: the giver seated on a plain chair, the heroine face down across their lap, hips over the right knee. It is the Jack game's lap scene cut down to that position and refitted for her:
-
-- **Procedural, at any size.** The Jack game needed two hand-edited pose sets (Jack at 100% and 50%) blended by his size. Here the giver's arm is solved every frame (shoulder, elbow and wrist) so the hand lands on the middle of the cheek struck, and the paddle's blade lies flat on it, from full height down to the cloak's 55% (and to 50%, the position's limit). The giver sits nearly upright, turning a little into a strike on the far cheek: those are the Jack game's tuned values, baked in. Measured at contact, the hand lands exactly and the blade's middle within 0.6 units, for every giver, cheek and size.
-- **Her clothes.** Skirt down, or lifted and gathered at the small of her back; her drawers up, or down to just above the knee. The seat block carries the skirt, the drawers or bare skin, and the marks, cheek by cheek. Cloth takes the edge off the sting (the pain model's cushions, with a skirt and drawers added).
-- **The pain model** is the Jack game's, unchanged: distress bands drive her face (calm, wincing, gritted, crying), her kicks and her voice, and at "too harsh" nothing more is struck.
-- **The scripts** (`js/correction.js`): Token is a few over the skirt; Light adds the skirt lifted; Firm adds her drawers down; Severe ends with the paddle. Each giver has their own lines for the start, the stages, the strokes and afterwards.
-- **Red** (the button at top left, or R) stops everything at once, the giver lets her up, and the card says so. Nothing is held against her: the book was already settled.
-- **`lap.html`** previews it: pick the giver, her size, the implement and clothes, smack or run ten, and look from the front, behind, the giver's view, above or at her face.
+**What was left out.** The Jack game's scaling mechanic: Jack no longer shrinks. He is always at his full size (95% of the model's scale, so Gerda is about 105% of him). The second set of poses made at half his size, the blend between the two sets and the size slider are gone, and so is the rule that a smaller Jack feels each smack more. The rest of that game's cast (his mother, the peddler, the merchant) is not here, and neither is the earlier Red Lessons village with its heroine and villagers.
 
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens the game; /lap.html previews the over-the-knee scene
-npm test             # the ledger and the pain model
+npm run serve        # http://localhost:8123/ opens the lap scene; /editor.html is the character editor
+npm test             # the pain model, the discipline scripts and the looks
 ```
 
-## Controls
+## Over the knee (`lap.html`, `js/lap.js`)
 
-As in the Jack game: **WASD** or the arrows walk relative to the camera; **Shift** runs; **C** sneaks; **drag** turns the camera; **V** or the wheel zooms; **Space** jumps; **E** talks or acts; **Q** picks up and puts down. New here: **F** puts the cloak on or takes it off, and **L** opens the account book (there are buttons for both at the top left). On a touch screen the joystick and buttons are the Jack game's.
+Gerda sits on a plain chair; Jack lies face down across her lap, hips over her right knee, head and arms toward the floor on her left. This is the Jack game's discipline engine cut down to that one position:
 
-## The village
+- **A smack** is a lift, a hold with the arm raised (the wait builds dread), the strike, and a short hold on the skin that keeps stinging. **Run of 10** goes straight from contact back up to raised. **Pace** and **Strength** have three steps each. Space smacks.
+- **Gerda's arm** (shoulder, elbow and wrist) is solved every frame, so the end of her hand lands exactly on the middle of the cheek struck. With the paddle, the blade's middle lands within 0.7 units of it, and the blade lies flat on the angle of his seat. Her torso uses the Jack game's hand-tuned poses, baked in: nearly upright, leaning back as the arm goes up, and turning a little into a strike on the far cheek. Her left hand rests between his shoulder blades.
+- **Jack's clothes**: trousers up or down; with them down, drawers up or down. The glutes block (bridging his back and his folded thighs) shows trousers, drawers or bare skin, and the trousers bunch at his knees when they are down. Cloth takes the edge off the sting only.
+- **Marks**: bare skin colours up cheek by cheek, and tender skin hurts more.
+- **The pain model** turns each smack into his distress. Its bands (composed, flinching, struggling, close to the edge, past it, too harsh) drive his kicks, his wriggling, his voice and his face (grin, wince, gritted, crying). At "too harsh" nothing more is struck.
+- **Red** (the button, or R) stops everything at once.
+- Cameras: Side, Behind, Gerda's view, Above, His face. You can also drag to orbit.
 
-| Place | Who | Their terms |
+## Discipline (`js/discipline.js`)
+
+The **Correction** buttons run a scripted correction in the Jack game's four tiers. Gerda talks before each stage and between the runs:
+
+| Tier | Stages | Smacks |
 |---|---|---|
-| The bakery (north) | Mother | None. She keeps no book (see below). |
-| The well (centre) | Grandmother | None. She passed her terms to the Innkeeper. |
-| The mill (west) | The Miller | Errands; taking from the stall |
-| The inn (east) | The Innkeeper | Manners; mess; the evening bell |
-| The forest edge (south) | The Woodcutter | Keeping to the path |
+| Token | hand over his trousers | 6 |
+| Light | + trousers down | 20 |
+| Firm | + drawers down | 34 |
+| Severe | + the paddle to finish | 44 |
 
-What she can do in the hub so far: take a bun from the bread stall (taking), run into the apple crate and knock it over (mess; set it right with E), snap at the innkeeper or be civil (manners), take or refuse the miller's flour errand and deliver the sack to the bakery table within two minutes (errand), and leave the forest path past the woodcutter's marker (path). Out of the cloak, her mother asks for help at the bakery.
+Red ends it there and then, and her last line is the gentle one. At "too harsh" she stops. `Discipline.run(lap, tier, { say, sleep })` returns `{ hits, peak, red, tooHarsh, done }`.
 
-## The ledger (`js/ledger.js`)
+## The pain model (`js/pain.js`)
 
-Pure data and arithmetic, tested under Node. Terms are only written while she wears the cloak. Each breach goes in the enforcer's book, scaled by that villager's strictness; keeping a term builds their trust and takes a little off the book. A book comes **due** at the giver's patience. At the reckoning, an honest account settles the book at its own tier; a lie lifts it one tier and is written in Grandmother's book. The tiers are the Jack game's: Token, Light, Firm, Severe. Trust is tracked per villager and is meant to gate the world (shortcuts, rides, the deeper forest), as flight upgrades do in *Mika and the Witch's Mountain*.
+This is the Jack game's model, unchanged. Each smack adds a sharp **sting** (fading in seconds) and a deep **ache** (fading over minutes). Distress is their sum against how much he can take. The implement, strength, pace, the wait with the arm raised, the clothing and how tender the skin already is all count. Jack's tolerance is 1 and his resilience 0.7, as in that game, so he reaches the edge slowly.
 
-## Design rules
+## Character editor (`editor.html`, `js/looks.js`)
 
-- **The cloak changes her scale, not her age.** She is an adult woman in mind, voice, body and clothes at every size. Shrinking scales the model and nothing else.
-- **Her mother is never a giver.** She is the story's emotional anchor. `Ledger.ANCHORS` lists her, and the ledger refuses to write in her book or let her settle one, even if a save is edited; the tests check this.
-- **Family stay out of it.** Grandmother gave the cloak and passed her terms on (the evening bell and the truth go to the Innkeeper; a lie at a reckoning goes back in the book of whoever she lied to). She and the heroine's mother are both in `Ledger.ANCHORS`: no book, no reckoning, no part in a correction, and not present at one. Only the Woodcutter, the Miller and the Innkeeper give corrections (`Ledger.correctors()`).
-- **The heroine can't be called "Red".** That is the safe word. Her name is a placeholder (`HEROINE_NAME` in `js/cast.js`) until one is chosen.
+Jack and Gerda stand side by side, and you can pick:
+
+- **Outfit**: Jack's Outdoor, Day, Soft or Fine; Gerda's Work or Fine.
+- **Skin, hair and eyes** for both, plus Gerda's **lips**: a row of swatches, or any colour. Shading, highlights, brows and Gerda's bun follow the chosen colour.
+- **His face**: preview Jack's eight expressions.
+
+Changes are saved in the browser straight away, and the lap scene uses them. **Back to their own colours** resets both. A colour left at its default paints exactly as the model was drawn. Views: front, side, back, or turning.
 
 ## Files
 
 | File | What it is | From the Jack game |
 |---|---|---|
-| `game.html`, `js/menus.js` | The shell: notice, title, settings, saves, pause menu | Adapted |
-| `js/game.js` | The cutscene toolkit: shots, fades, waits, typed dialogue, choices, skipping | Ported (speaker names now come from the cast) |
-| `js/audio.js` | Music, ambience, smacks, voices and the speech babble, all synthesised | Ported (voice pitches now come from the cast) |
-| `js/touchui.js` | The touch controls | Ported unchanged |
-| `js/pain.js` | The pain model behind the correction | Ported (cushions for a skirt and drawers added) |
-| `js/blocky.js` | The box-built character rig and skin painter | Ported unchanged (Jack's and Gerda's painters are still in it, unused) |
-| `js/cast.js` | The heroine, her mother, Grandmother, the Woodcutter, the Miller, the Innkeeper; one painter driven by data; the cloak | New |
-| `js/ledger.js` | The bargain: terms, givers, books, trust, tiers | New |
-| `js/village.js` | The village hub, the opening, free roam, the talks and the reckoning | New |
-| `js/lap.js`, `lap.html` | Over the knee: the giver's arm solve, her frame and seat block, the session, the cameras; its preview page | Refitted from the Jack game's lap scene (one position, procedural) |
-| `js/correction.js` | The correction after a reckoning: the room, the tier scripts, the givers' lines, Red | New |
-| `tests/` | `node --test` checks for the ledger (including who may correct) and the pain model | Ledger new; pain ported |
-
-## The look and the rig (`js/toon.js`, `style.html`)
-
-Smooth rounded characters with soft cel shading and a warm brown ink outline, on a **skinned skeleton**: each body is continuous, so every joint (spine and chest, neck, shoulders, elbows, wrists, hips, knees, ankles) bends smoothly instead of tubes meeting at a seam. The cape and the heroine's long hair hang from **spring bones** that trail as she moves, swing as she turns, hang down when she leans, and settle when she stops.
-
-The heroine wears her own clothes, as in the blocky scenes: a rust bodice laced over a cream chemise, a long moss-green skirt and boots, loose auburn hair to her shoulder blades, green eyes, freckles. The cloak is a **capelet** over her shoulders and back (short at the front, longest at the middle of the back), scarlet, edged in gold and stitched with stars, the hood lying back under her hair.
-
-**Movement** (`Toon.pose`): one procedural pose for standing, walking, running, carrying, gesturing and jumping, blended smoothly between them. Walking, the pelvis rises twice a stride, turns with the stepping leg and dips on the swinging side; the shoulders counter-turn; the knee folds as the leg comes through and the foot rolls; the arms swing a beat behind the legs; the head stays steady with a small nod. She leans into a run, into speeding up and into turns. Standing, the weight drifts from foot to foot, she breathes, and her attention wanders. In a skirt the stride is a little shorter and the feet stay inside the hem. The village advances the stride by distance travelled, so the feet keep pace with the ground.
-
-`style.html` shows her standing, walking, running or walking in a circle (to watch the cape and hair), with the cloak on or off and at 55%; `style.html?cast` lines up the whole cast.
-
-## Measurements (`editor.html`, `js/measures.js`)
-
-Every character's body is built from a set of measurements: overall size, head size, neck length, torso length, shoulder, chest, waist and hip width, bust, arm and leg length and thickness, hand and foot size. `editor.html` adjusts them live, with a front, three-quarter, side or back view, a walk to watch them move, and a ruler beside each figure marked in its own head heights. For the heroine it shows her at full size and in the cloak at 55% side by side: one body, one set of measurements, the smaller figure scaled. Changes are kept in the browser (the game in the same browser uses them straight away) and **Copy for js/measures.js** produces the file to keep them for good.
-
-One guard: head size is held so every figure is at least 6.2 heads tall, so the characters keep grown-up proportions whatever the sliders do.
-
-## Pace
-
-In the cloak her pace barely drops (speed scales by 0.85 + 0.15 × her size, about 7% slower at 55%), and walking and running are both quicker than before.
-
-## Next
-
-0. Convert the over-the-knee scene to the toon rig and her trousers.
-1. An aftermath beat after a correction (the Jack game stands Jack facing the wall), and the walk from the reckoning to the giver's house.
-2. A day clock, so the evening bell (curfew) can be broken and kept.
-3. The forest path out to Grandmother's cottage, and the Wolf.
-4. Trust unlocks: the routes and rides each villager opens.
+| `js/blocky.js` | Jack and Gerda: box-built models, painted skins, wardrobes, the chair | Ported (a colour override added for the editor) |
+| `js/pain.js` | The pain model | Ported unchanged |
+| `js/audio.js` | Smacks, voices and the rest, all synthesised | Ported |
+| `js/lap.js`, `lap.html` | Over the knee: Gerda's arm solve, Jack's frame and glutes block, the session, the cameras; its viewer | Refitted: one position, full size only, poses baked in |
+| `js/discipline.js` | The scripted correction: tiers, stages, Gerda's lines | New (the tiers are the Jack game's) |
+| `js/looks.js`, `editor.html` | Outfits and colours, and the editor | New |
+| `tests/` | `node --test` checks for the pain model, the discipline scripts and the looks | Pain ported; the rest new |
+| `manifest.webmanifest`, `sw.js`, `icons/` | The installable web app | Ported |
+| `vendor/` | three.js r128 and OrbitControls | Ported |

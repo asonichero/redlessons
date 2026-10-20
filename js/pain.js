@@ -1,5 +1,5 @@
-// Red Lessons — the pain model (ported unchanged from Climbing Toward Consequence): each smack adds a sharp sting (which fades in seconds) and a deep ache (which fades over minutes); distress is their total
-// against how much the subject can take, and the band it falls in drives the subject's reactions (expression, kicking, voice). Clothing takes the edge off the sting only.
+// Red Lessons — the pain model (from Climbing Toward Consequence, unchanged) for the correction: each smack adds a sharp sting (which fades in seconds) and a deep ache (which fades over minutes); distress is their total
+// against how much the subject can take, and the band it falls in drives his reactions (expression, kicking, voice). Clothing takes the edge off the sting only.
 // Standalone: it needs nothing from the old engine. Exposes root.Pain = { PAIN, createPain }.
 (function (root) {
 'use strict';
@@ -13,7 +13,7 @@ const PAIN = {
   DWELL_RATE: 0.9, DWELL_MAX: 2.0,      // staying on the skin adds this share of the smack per second, up to this many seconds
   TENDER: 0.6,                           // fully marked skin hurts this much more
   // What clothing takes off the sting (the sharp part; the deep ache goes through cloth untouched): by garment, stacking.
-  CUSHION: { briefs: 0.12, shorts: 0.35, trousers: 0.4, skirt: 0.38, drawers: 0.12 }, CUSHION_MAX: 0.7,   // (skirt and drawers: Red Lessons' own, a long wool skirt and linen drawers)
+  CUSHION: { briefs: 0.12, shorts: 0.35, trousers: 0.4 }, CUSHION_MAX: 0.7,
   CAP: 70,                               // the capacity at tolerance 0.5 is CAP × (0.7 + 0.6 × tolerance)
   EDGE: 1, TOO_HARSH: 1.5,   // distress at the edge of resistance, and half again past it, where it's too harsh
   BANDS: [[0.3, 'composed'], [0.6, 'flinching'], [0.9, 'struggling'], [1, 'close to the edge of resistance'], [1.5, 'past the edge of resistance: most receptive'], [Infinity, 'too harsh']],

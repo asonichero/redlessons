@@ -1,5 +1,5 @@
-// Red Lessons — sound, all synthesised (no audio files): a soft pastoral score, ambience (wind, birds, a fire), the correction's smacks and the subject's cries (also used by
-// the lap scene), and a speech babble for the cutscenes (a short vowel burst per word, pitched per speaker (js/cast.js)).
+// Red Lessons (from Climbing Toward Consequence) — sound, all synthesised (no audio files): a soft pastoral score, ambience (wind, birds, a fire), the correction's smacks and Jack's cries (also used by
+// the lap scene), and a speech babble for the cutscenes (a short vowel burst per word, higher for the mother, lower for Jack and the merchant).
 // Browsers only start audio after a tap or key press: call GameAudio.init() from one (the title screen's buttons do).
 (function (root) {
 'use strict';
@@ -120,7 +120,7 @@ A.ambience = function (levels) {
   const t = ctx.currentTime; N.windGain.gain.linearRampToValueAtTime(0.35 * A.amb.wind, t + 1.5); N.fireGain.gain.linearRampToValueAtTime(0.5 * A.amb.fire, t + 1.5);
 };
 
-// ── Effects: a smack (muffled through a wall when `muffle` is set) and the subject's voice. ──────────────────────────────────────────────────────────────────
+// ── Effects: a smack (muffled through a wall when `muffle` is set) and Jack's voice. ──────────────────────────────────────────────────────────────────
 // A smack. muffle: false = bare skin in open air (a flat, bright slap with a crack and a little skin "pap"); true = through cloth (duller, with a thump);
 // a number = a low-pass cutoff in Hz: a hand on bare skin heard through a wall, which opens up as the listener gets closer.
 A.thwack = function (power, muffle, vol) {
@@ -176,8 +176,8 @@ A.voice = function (power, band, muffle, vol) {
   out.connect(dest); osc.start(t0); lfo.start(t0); osc.stop(t0 + dur + 0.05); lfo.stop(t0 + dur + 0.05);
 };
 
-// ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: a cast id from js/cast.js ──
-const PITCH = Object.assign({ narrator: 150 }, (root.Cast && root.Cast.PITCH) || {});   // (each speaker's pitch is set with the cast, in js/cast.js)
+// ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: 'mother' | 'jack' | 'gerda' | 'merchant' ──
+const PITCH = { mother: 205, gerda: 190, jack: 135, merchant: 118, narrator: 150 };
 A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through a wall (louder in the filter, to carry); opts.vol scales it
   if (!A.init()) return { stop() {} }; const ctx = A.ctx, N = A.nodes, base = PITCH[who] || 160, muffle = opts && opts.muffle;
   const words = text.split(/\s+/).filter(Boolean); let t = ctx.currentTime + 0.05; const step = seconds / Math.max(1, words.length), stopAt = t + seconds + 0.3, nodes = [];

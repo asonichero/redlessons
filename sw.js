@@ -1,10 +1,10 @@
 // Service worker: caches the game on first load so it installs and plays offline. Bump VERSION whenever the files change, so installed copies refresh.
-const APP = '0.4.0';
-const VERSION = 'red-lessons-v040-4';
+const APP = '0.5.0';
+const VERSION = 'red-lessons-v050-1';
 const FILES = [
-  'game.html', 'manifest.webmanifest',
-  'js/blocky.js', 'js/cast.js', 'js/measures.js', 'js/toon.js', 'js/audio.js', 'js/touchui.js', 'js/game.js', 'js/pain.js', 'js/ledger.js', 'js/lap.js', 'js/correction.js', 'js/village.js', 'js/menus.js',
-  'vendor/three.min.js',
+  'lap.html', 'editor.html', 'manifest.webmanifest',
+  'js/blocky.js', 'js/looks.js', 'js/audio.js', 'js/pain.js', 'js/lap.js', 'js/discipline.js',
+  'vendor/three.min.js', 'vendor/OrbitControls.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
 // Install: cache every file straight from the network (never from the browser's own cache), one by one, so a single missing file cannot stop a new version installing (that is what once kept a player on an old build).

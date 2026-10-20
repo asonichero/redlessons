@@ -2,7 +2,7 @@
   "name": "red-lessons",
   "version": "0.1.0",
   "private": true,
-  "description": "Red Lessons: a blocky open-world adult adventure from the Whisperwood, on the engine of Climbing Toward Consequence.",
+  "description": "Red Lessons: Jack and Gerda, the over-the-knee discipline scene and the pain model from Climbing Toward Consequence, with a character editor.",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "serve": "npx http-server . -p 8123 -c-1"
