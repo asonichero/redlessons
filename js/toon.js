@@ -74,9 +74,9 @@ function surface(fn, nu, nv, outward) {
 // ── The figure ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Joint positions for a figure of scale 1 (about 31 tall, the head 5.5 of it). Each character is this figure scaled.
 // headScale: the head (face, hair, hood) is drawn larger than life, for bigger expressions, on a grown-up body: about 5.6 heads tall in all.
-const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.05, ua: 5.0, fa: 4.4, neckY: 8.6, headY: 0.9, headC: 2.0, headScale: 1.32 };
+const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.1, ua: 5.0, fa: 4.4, neckY: 8.15, headY: 0.9, headC: 2.0, headScale: 1.34 };
 const SPECS = {
-  red: { name: 'Red Riding Hood', age: 21, scale: 0.97, bust: 1, hair: 'long', feet: 'boots', skirtLen: 10.9 },
+  red: { name: 'Red Riding Hood', age: 21, scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
   gerda: { name: 'Gerda', age: 'late thirties', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'bare', skirtLen: 13.6 },
 };
 
@@ -86,25 +86,25 @@ const TUNE = [
   ['hipY', 'Proportions', 'Hip height', 15.2, 12, 18, 0.05], ['hipX', 'Proportions', 'Hip joint spacing', 1.55, 1.1, 2.2, 0.01],
   ['thigh', 'Proportions', 'Thigh length', 7.4, 5.5, 9, 0.05], ['shin', 'Proportions', 'Shin length', 7.0, 5.5, 9, 0.05],
   ['torsoY', 'Proportions', 'Waist bend height', 0.9, 0.3, 1.8, 0.05], ['shY', 'Proportions', 'Shoulder height', 7.6, 6.5, 8.6, 0.05],
-  ['shX', 'Proportions', 'Shoulder width', 3.05, 2.4, 3.8, 0.01], ['ua', 'Proportions', 'Upper arm length', 5.0, 4, 6, 0.05],
-  ['fa', 'Proportions', 'Forearm length', 4.4, 3.5, 5.5, 0.05], ['neckY', 'Proportions', 'Neck base height', 8.6, 7.8, 9.4, 0.05],
-  ['headY', 'Proportions', 'Neck length', 0.9, 0.4, 1.8, 0.05], ['headScale', 'Proportions', 'Head size', 1.32, 1, 1.7, 0.01],
-  ['redScale', 'Characters', 'Red Riding Hood: overall size', 0.97, 0.85, 1.12, 0.01], ['gerdaScale', 'Characters', 'Gerda: overall size', 1.04, 0.85, 1.15, 0.01],
+  ['shX', 'Proportions', 'Shoulder width', 3.1, 2.4, 3.8, 0.01], ['ua', 'Proportions', 'Upper arm length', 5.0, 4, 6, 0.05],
+  ['fa', 'Proportions', 'Forearm length', 4.4, 3.5, 5.5, 0.05], ['neckY', 'Proportions', 'Neck base height', 8.15, 7.8, 9.4, 0.05],
+  ['headY', 'Proportions', 'Neck length', 0.9, 0.4, 1.8, 0.05], ['headScale', 'Proportions', 'Head size', 1.34, 1, 1.7, 0.01],
+  ['redScale', 'Characters', 'Red Riding Hood: overall size', 0.85, 0.7, 1.12, 0.01], ['gerdaScale', 'Characters', 'Gerda: overall size', 1.04, 0.85, 1.15, 0.01],
   ['redBust', 'Characters', 'Red Riding Hood: bust', 1, 0, 1.8, 0.01], ['gerdaBust', 'Characters', 'Gerda: bust', 1.12, 0, 1.8, 0.01],
-  ['redSkirt', 'Characters', 'Red Riding Hood: skirt length', 10.9, 6, 14, 0.1], ['gerdaSkirt', 'Characters', 'Gerda: skirt length', 13.6, 8, 14.4, 0.1],
+  ['redSkirt', 'Characters', 'Red Riding Hood: skirt length', 6, 3, 14, 0.1], ['gerdaSkirt', 'Characters', 'Gerda: skirt length', 13.6, 8, 14.4, 0.1],
   ['hipWidth', 'Body', 'Hip width', 1, 0.8, 1.3, 0.01], ['waistWidth', 'Body', 'Waist width', 1, 0.75, 1.3, 0.01], ['chestWidth', 'Body', 'Chest width', 1, 0.8, 1.3, 0.01],
   ['bodyDepth', 'Body', 'Body depth (front to back)', 1, 0.8, 1.25, 0.01], ['armGirth', 'Body', 'Arm thickness', 1, 0.7, 1.4, 0.01], ['legGirth', 'Body', 'Leg thickness', 1, 0.7, 1.4, 0.01],
-  ['neckGirth', 'Body', 'Neck thickness', 1, 0.7, 1.5, 0.01], ['handSize', 'Body', 'Hand size', 1, 0.7, 1.5, 0.01], ['footSize', 'Body', 'Foot size', 1, 0.7, 1.5, 0.01],
+  ['neckGirth', 'Body', 'Neck thickness', 1.3, 0.7, 1.5, 0.01], ['handSize', 'Body', 'Hand size', 1.3, 0.7, 1.5, 0.01], ['footSize', 'Body', 'Foot size', 1.3, 0.7, 1.5, 0.01],
   ['bustX', 'Bust', 'Spacing', 1.15, 0.8, 1.6, 0.01], ['bustY', 'Bust', 'Height', 6.2, 5, 7.3, 0.05], ['bustAmt', 'Bust', 'Fullness', 0.95, 0, 1.8, 0.01], ['bustW', 'Bust', 'Width', 0.95, 0.6, 1.4, 0.01],
-  ['cheekX', 'Seat', 'Spacing', 1.42, 0.9, 2, 0.01], ['cheekY', 'Seat', 'Height', -1.95, -3, -0.5, 0.01], ['cheekZ', 'Seat', 'Depth', -1.3, -2, -0.6, 0.01],
-  ['cheekW', 'Seat', 'Width', 1.72, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 1.85, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.45, 0.9, 2, 0.01],
+  ['cheekX', 'Seat', 'Spacing', 1.1, 0.6, 2, 0.01], ['cheekY', 'Seat', 'Height', -0.7, -3, 0, 0.01], ['cheekZ', 'Seat', 'Depth', -1.25, -2, -0.6, 0.01],
+  ['cheekW', 'Seat', 'Width', 1.9, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 2, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.5, 0.9, 2, 0.01],
   ['tilt', 'Seat', 'Where smacks land (lower ↔ higher)', 0.35, 0, 0.9, 0.01],
-  ['eyeX', 'Face', 'Eye spacing', 0.62, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0.12, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 1, 0.7, 1.4, 0.01],
-  ['eyeH', 'Face', 'Eye height (size)', 1, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['browY', 'Face', 'Brow height', 0.6, 0.4, 0.9, 0.01],
-  ['noseY', 'Face', 'Nose height', -0.55, -0.9, -0.2, 0.01], ['noseSize', 'Face', 'Nose size', 1, 0.5, 1.8, 0.01], ['mouthY', 'Face', 'Mouth height', 0, -0.3, 0.3, 0.01],
-  ['mouthSize', 'Face', 'Mouth size', 1, 0.6, 1.6, 0.01], ['blushSize', 'Face', 'Blush size', 1, 0.5, 1.6, 0.01], ['earSize', 'Face', 'Ear size', 1, 0.5, 1.6, 0.01],
-  ['hairLen', 'Hair', 'Long hair length', 1, 0.5, 1.7, 0.01], ['fringe', 'Hair', 'Fringe size', 1, 0, 1.5, 0.01], ['hairVol', 'Hair', 'Hair volume', 1, 0.9, 1.2, 0.01],
-  ['skirtFull', 'Clothes', 'Skirt fullness', 1, 0.85, 1.4, 0.01], ['cloakLen', 'Clothes', 'Cloak length', 1, 0.5, 1.8, 0.01], ['cloakWidth', 'Clothes', 'Cloak width', 1, 0.9, 1.3, 0.01],
+  ['eyeX', 'Face', 'Eye spacing', 0.6, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0.04, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 0.95, 0.7, 1.4, 0.01],
+  ['eyeH', 'Face', 'Eye height (size)', 1.12, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['browY', 'Face', 'Brow height', 0.4, 0.2, 0.9, 0.01],
+  ['noseY', 'Face', 'Nose height', -0.4, -0.9, -0.2, 0.01], ['noseSize', 'Face', 'Nose size', 1, 0.5, 1.8, 0.01], ['mouthY', 'Face', 'Mouth height', 0.1, -0.3, 0.3, 0.01],
+  ['mouthSize', 'Face', 'Mouth size', 1.25, 0.6, 1.6, 0.01], ['blushSize', 'Face', 'Blush size', 1, 0.5, 1.6, 0.01], ['earSize', 'Face', 'Ear size', 1.12, 0.5, 1.6, 0.01],
+  ['hairLen', 'Hair', 'Long hair length', 1.25, 0.5, 1.7, 0.01], ['fringe', 'Hair', 'Fringe size', 0.7, 0, 1.5, 0.01], ['hairVol', 'Hair', 'Hair volume', 1.03, 0.9, 1.2, 0.01],
+  ['skirtFull', 'Clothes', 'Skirt fullness', 0.95, 0.85, 1.4, 0.01], ['cloakLen', 'Clothes', 'Cloak length', 1.35, 0.5, 1.8, 0.01], ['cloakWidth', 'Clothes', 'Cloak width', 1.1, 0.9, 1.3, 0.01],
   ['ink', 'Style', 'Outline thickness', 1, 0, 2.5, 0.01], ['shadow', 'Style', 'Shadow tone (dark ↔ light)', 172, 90, 245, 1], ['shadowMid', 'Style', 'Mid tone', 222, 140, 255, 1],
 ];
 const TUNE_KEY = 'red-lessons:tune';
@@ -250,7 +250,8 @@ function make(id, look, opts) {
   };
   skinnedOn(rig.hips, bust(lathe(wide(dense([[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]], 44), trunkW), 0.68 * TD, 32)), top, torsoW);   // the waist, ribs, bust and shoulders
   // The bodice: laced, from the hips to under the bust.
-  skinnedOn(rig.hips, bust(lathe(wide(dense([[2.98, 0.35], [2.82, 1.5], [2.45, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 24), trunkW), 0.7 * TD, 32)), P.bodice, torsoW, { ink: 0.05 });
+  skinnedOn(rig.hips, bust(lathe(wide(dense([[3.26, 0.3], [3.12, 0.9], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 });      // (flaring at the bottom over the hips, which never show through it)
+  skinnedOn(rig.hips, lathe(wide([[3.16, 0.0], [3.28, 0.28], [3.0, 0.62]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 });      // its bound hem, a neat edge over the join with whatever is below
   for (let i = 0; i < 4; i++) for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(1.0, 0.13, 0.12), P.lace, rig.torso, 0, 0.6 + i * 1.05, (1.66 + (i > 2 ? 0.08 : 0)) * TD * trunkW(1.5 + i * 1.05), { rot: [0, 0, sx * 0.55], ink: 0 });
   // The neck: from inside the shoulders up into the head, bending with both.
   skinnedOn(rig.neck, lathe(wide([[0.7, -1.1], [0.68, -0.3], [0.64, 0.6], [0.62, 1.6]], K.neckGirth), 1, 16), P.skin, p => { const t = ss(0.1, -0.7, p.y), h = ss(0.6, 1.3, p.y); return [[rig.torso, t], [rig.head, h * (1 - t)], [rig.neck, (1 - t) * (1 - h)]]; });
@@ -322,7 +323,8 @@ function make(id, look, opts) {
   }
   const drawers = [], drawersDown = [];
   {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off)
-    drawers.push(skinnedOn(rig.hips, lathe(wide([[2.9, -2.6], [3.32, -0.4], [3.26, 0.6], [2.95, 1.5]], trunkW), 0.75 * TD, 22), P.drawers, torsoW));
+    // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
+    drawers.push(skinnedOn(rig.hips, lathe(wide([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.24, 0.2], [3.02, 0.42]], trunkW), 0.75 * TD, 24), P.drawers, torsoW));       // (their waist tucked under the bodice's hem)
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
       drawers.push(piece(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), P.drawers, rig.hips, sx * CHEEK.x, CHEEK.y, CHEEK.z));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s)));
@@ -359,14 +361,20 @@ function make(id, look, opts) {
     const lash = new THREE.Mesh(arc(0.4, 0.055, 0.15, Math.PI - 0.15), flat('#2a1612')); lash.scale.y = 0.72; lash.position.z = 0.1; lid.add(lash);
     const wing = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.06), flat('#2a1612')); wing.position.set(sx * 0.42, 0.13, 0.08); wing.rotation.z = sx * 0.45; lid.add(wing);
     // The lid itself: skin that comes down over the eye to close or narrow it.
-    const cover = new THREE.Mesh(ell(0.44, 0.3, 0.19, 16, 10), mat(P.skin)); cover.position.set(0, 0.62, 0.02); lid.add(cover);
+    // (the shape of the eye itself, squashed from its top edge down, so it closes the eye and never reaches past it to the brow)
+    const cover = new THREE.Mesh(ell(0.45, 0.3, 0.19, 16, 10), mat(P.skin)); cover.position.set(0, 0.3, 0.02); lid.add(cover);
     const b = new THREE.Mesh(arc(0.46, 0.05, 0.35, Math.PI - 0.35), flat(P.hairDk)); b.scale.set(K.eyeW, 0.55, 1); b.position.set(sx * (K.eyeX + 0.04), K.browY, faceZ(K.eyeX + 0.04, K.browY) + 0.02); b.rotation.y = sx * 0.32; face.add(b);
     eyes.push({ e, iris, cover, lash, wing, sx }); brows.push({ b, sx });
   }
-  piece(ell(0.15 * K.noseSize, 0.2 * K.noseSize, 0.17 * K.noseSize), P.skinSh, face, 0, K.noseY, faceZ(0, K.noseY), { ink: 0 });
+  // The nose: a soft slope out of the face in the face's own colour (the shading shows it), with a short shadow under its tip, as a toon nose is drawn.
+  { const N = K.noseSize, nz = faceZ(0, K.noseY);
+    const g = new THREE.SphereGeometry(1, 16, 12); g.scale(0.15 * N, 0.36 * N, 0.17 * N);
+    piece(g, P.skin, face, 0, K.noseY + 0.08 * N, nz - 0.07, { rot: [-0.42, 0, 0], ink: 0 });
+    piece(new THREE.TorusGeometry(0.11 * N, 0.022, 4, 10, Math.PI * 0.8).rotateZ(Math.PI * 1.1), shade(P.skin, -0.3), face, 0, K.noseY - 0.18 * N, nz + 0.07, { rot: [0.3, 0, 0], ink: 0 }); }
   // Mouths: one of these shows at a time.
   const M = {};
-  const mouthAt = (m, y, z) => { m.position.set(0, y + K.mouthY, faceZ(0, y + K.mouthY) - 0.08 + (z - 1.56) * 0.5); face.add(m); return m; };
+  // (each mouth sits just proud of the face's surface)
+  const mouthAt = (m, y, z) => { m.position.set(0, y + K.mouthY, faceZ(0, y + K.mouthY) + 0.03 + (z - 1.56) * 0.5); face.add(m); return m; };
   M.smile = mouthAt(new THREE.Mesh(arc(0.3, 0.045, Math.PI * 1.18, Math.PI * 1.82), flat(shade(P.lips, -0.35))), -0.98, 1.56);
   M.flat = mouthAt(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.05), flat(shade(P.lips, -0.35))), -1.2, 1.55);
   M.frown = mouthAt(new THREE.Mesh(arc(0.26, 0.045, Math.PI * 0.2, Math.PI * 0.8), flat(shade(P.lips, -0.35))), -1.42, 1.5);
@@ -375,7 +383,7 @@ function make(id, look, opts) {
     const r = new THREE.Mesh(arc(0.31, 0.05, 0, Math.PI * 2), flat(P.lips)); r.scale.y = 0.4; g.add(r); M.gritted = mouthAt(g, -1.22, 1.5); }
   M.pout = mouthAt(new THREE.Mesh(ell(0.16, 0.1, 0.06), flat(P.lips)), -1.2, 1.52);
   const lowerLip = mouthAt(new THREE.Mesh(ell(0.17, 0.06, 0.05), flat(P.lips)), -1.29, 1.5);
-  const blush = []; for (const sx of [-1, 1]) { const b = new THREE.Mesh(ell(0.38 * K.blushSize, 0.17 * K.blushSize, 0.05), flat(P.blush, 0.55)); b.position.set(sx * 0.98, -0.42, faceZ(0.98, -0.42) - 0.06); b.rotation.y = sx * 0.5; face.add(b); blush.push(b); }
+  const blush = []; for (const sx of [-1, 1]) { const b = new THREE.Mesh(ell(0.38 * K.blushSize, 0.17 * K.blushSize, 0.05), flat(P.blush, 0.55)); b.position.set(sx * 0.98, -0.42, faceZ(0.98, -0.42) + 0.01); b.rotation.y = sx * 0.5; face.add(b); blush.push(b); }
   const tears = []; for (const sx of [-1, 1]) { const t = new THREE.Mesh(ell(0.08, 0.32, 0.04), flat('#9fd0f0', 0.85)); t.position.set(sx * K.eyeX, K.eyeY - 0.47 * K.eyeH, faceZ(K.eyeX, K.eyeY - 0.47 * K.eyeH) + 0.02); t.rotation.y = sx * 0.32; face.add(t); tears.push(t); }
 
   // ── Hair. ──
@@ -402,7 +410,7 @@ function make(id, look, opts) {
     segs.forEach(([len, rx, rz], i) => {
       const g = new THREE.Group(); if (i === 0) g.position.set(x, y, z); else g.position.y = -segs[i - 1][0]; parent.add(g);
       piece(ell(rx, len * 0.58, rz), P.hair, g, 0, -len * 0.5, 0, { ink: 0.05 });
-      rig.dangles.push(Object.assign({ g, ax: 0, az: 0, vx: 0, vz: 0 }, o)); parent = g;
+      rig.dangles.push(Object.assign({ g, ax: 0, az: 0, vx: 0, vz: 0, len }, o)); parent = g;
     });
   };
   if (S.hair === 'long') {
@@ -422,7 +430,9 @@ function make(id, look, opts) {
     const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
     const DEP = 0.8, PH0 = 0.42, PH1 = Math.PI * 2 - 0.42;
     const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 9.15 - (3.05 + 2.3 * Math.pow(b, 1.4)) * K.cloakLen; };
-    const fn = (u, v) => { const phi = lerp(PH0, PH1, u), y = lerp(9.15, hem(phi), v), r = (rAt(y) + 0.12 * Math.sin(u * Math.PI * 9) * v) * Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95); return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * DEP * TD); };
+    const fn = (u, v) => { const phi = lerp(PH0, PH1, u), y = lerp(9.15, hem(phi), v), r = (rAt(y) + 0.12 * Math.sin(u * Math.PI * 9) * v) * Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95);
+      const dep = lerp(DEP, 0.6, Math.max(0, Math.cos(phi)));      // (the front panels lie close over the bust; the back stands off the shoulder blades)
+      return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * dep * TD); };
     const out = p => new V3(p.x, 0, p.z);
     cloakParts.push(piece(surface(fn, 40, 10, out), P.cloak, rig.torso, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.07 }));
     cloakParts.push(piece(surface((u, v) => { const p = fn(u, 0.93 + 0.07 * v); return p.add(out(p).normalize().multiplyScalar(0.04)); }, 40, 1, out), P.lace, rig.torso, 0, 0, 0, { side: THREE.DoubleSide, ink: 0 }));
@@ -445,7 +455,8 @@ function make(id, look, opts) {
   function applyFace() {
     for (const { b, sx } of brows) { b.rotation.z = sx * F.brow; b.position.y = K.browY + F.browY; }
     const open = clamp(F.open * (1 - blink), 0.04, 1.1);
-    for (const ey of eyes) { ey.cover.position.y = lerp(0.03, 0.62, open); ey.lash.position.y = lerp(-0.18, 0, open); ey.wing.position.y = lerp(-0.05, 0.13, open); ey.iris.position.x = F.look * 0.06; }
+    const shut = clamp(1 - open, 0, 1);
+    for (const ey of eyes) { ey.cover.visible = shut > 0.01; ey.cover.scale.y = Math.max(0.01, shut); ey.cover.position.y = 0.3 * (1 - shut); ey.lash.position.y = -0.5 * shut; ey.wing.position.y = 0.13 - 0.55 * shut; ey.iris.position.x = F.look * 0.06; }
     blush.forEach(b => { b.material.opacity = 0.2 + 0.5 * F.blush; b.visible = F.blush > 0.02; });
     tears.forEach(tr => { tr.visible = F.tears > 0.05; tr.scale.y = F.tears; });
     const ms = F.ms * K.mouthSize; for (const key in M) M[key].scale.set(ms, ms * (key === 'open' ? 1.15 : 1), 1); lowerLip.scale.set(ms, 1, 1);
@@ -482,7 +493,15 @@ function make(id, look, opts) {
   };
 
   // ── Each frame: the face eases toward its expression, she blinks, breathes, and the long hair hangs with gravity and swings as she moves. ──
-  const gW = new V3(), tq = new THREE.Quaternion(), wp = new V3();
+  const gW = new V3(), tq = new THREE.Quaternion(), wp = new V3(), tip = new V3();
+  // What the long hair can't pass through, in the torso's space (ellipsoids, a little larger than the shape, for the hair's own thickness): her back
+  // and shoulders; or, with the cloak on and the hood down, the cloak and the bunched hood.
+  const cloakOn = id === 'red' && look.outfit !== 'No cloak', hoodDown = cloakOn && look.outfit !== 'Hood up', CW = Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95);
+  const colliders = [{ c: new V3(0, 5.4, 0), r: new V3(3.1 * K.chestWidth + 0.5, 5.4, 2.1 * TD * K.chestWidth + 0.5) }];
+  if (hoodDown) colliders.push({ c: new V3(0, 5.6, 0), r: new V3(4.2 * CW + 0.4, 5.6, 3.35 * TD * CW + 0.4) }, { c: new V3(0, 8.25, -2.45), r: new V3(2.2, 1.5, 1.4) });
+  const lc = new V3();
+  const inside = pW => { rig.torso.worldToLocal(lc.copy(pW)); let pen = 0; for (const k of colliders) { const q = lc.clone().sub(k.c).divide(k.r), l = q.length(); if (l < 1) pen += 1 - l; } return pen; };
+  const penOf = d => { d.g.updateMatrixWorld(true); return inside(d.g.localToWorld(tip.set(0, -d.len, 0))) + inside(d.g.localToWorld(tip.set(0, -d.len * 0.5, 0))); };
   rig.tick = dt => {
     dt = clamp(dt || 1 / 60, 0, 0.1); t += dt;
     const k = 1 - Math.exp(-dt * 10);
@@ -504,6 +523,15 @@ function make(id, look, opts) {
       if (d.sx) tz = d.sx > 0 ? clamp(tz, -0.05, 0.9) : clamp(tz, -0.9, 0.05);       // (a side lock never swings in across her face)
       d.vx += (60 * (tx - d.ax) - 9 * d.vx) * dt; d.ax += d.vx * dt; d.vz += (60 * (tz - d.az) - 9 * d.vz) * dt; d.az += d.vz * dt;
       d.g.rotation.set(-d.ax, 0, d.az);
+      // Kept out of her back (or the cloak): while a strand would pass into it, turn it, a little at a time, whichever way brings it out soonest.
+      let pen = penOf(d);
+      for (let it = 0; it < 14 && pen > 0; it++) {
+        let best = null;
+        for (const [dx, dz] of [[0.07, 0], [-0.07, 0], [0, 0.07], [0, -0.07]]) { d.g.rotation.set(-(d.ax + dx), 0, d.az + dz); const p2 = penOf(d); if (!best || p2 < best.p) best = { p: p2, dx, dz }; }
+        if (best.p >= pen) { d.g.rotation.set(-d.ax, 0, d.az); break; }
+        d.ax += best.dx; d.az += best.dz; pen = best.p; if (best.dx) d.vx = 0; if (best.dz) d.vz = 0;
+        d.g.rotation.set(-d.ax, 0, d.az);
+      }
     }
   };
 

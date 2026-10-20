@@ -66,7 +66,10 @@
     r.setDress({ skirt: skirtView });
   }
   const VIEWS = { front: [[0, 20, 88], [0, 15, 0]], side: [[88, 20, 0], [0, 15, 0]], back: [[0, 20, -88], [0, 15, 0]], faces: [[0, 28.5, 34], [0, 28, 0]] };
-  const view = (name, ms) => { st.go(new V3(...VIEWS[name][0]), new V3(...VIEWS[name][1]), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
+  // (the faces view looks at their heads wherever their sizes put them)
+  const headsAt = () => { const p = new V3(); for (const w in rigs) p.add(rigs[w].headGroup.getWorldPosition(new V3())); return p.multiplyScalar(0.5); };
+  const view = (name, ms) => { if (name === 'faces') { const h = headsAt(); st.go(new V3(h.x, h.y + 0.3, h.z + 40), h.clone().add(new V3(0, -0.6, 0)), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); return; }
+    st.go(new V3(...VIEWS[name][0]), new V3(...VIEWS[name][1]), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
   let savedT = 0;
   function changed(who) { look = L.save(look); build(who); sync(); $('saved').textContent = 'Saved'; clearTimeout(savedT); savedT = setTimeout(() => $('saved').textContent = '', 1200); }
 
