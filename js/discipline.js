@@ -1,6 +1,6 @@
-// Red Lessons — a correction, scripted: Gerda takes Jack across her lap (js/lap.js) and works through the stages of a tier, talking between and over
-// the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what he has on (trousers up or down, drawers up
-// or down), the implement, how many, and how hard.
+// Red Lessons — a correction, scripted: Gerda takes Red Riding Hood across her lap (js/lap.js) and works through the stages of a tier, talking between and over
+// the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what she has on (skirt down or lifted, drawers
+// up or down), the implement, how many, and how hard. Gerda never calls her "Red": that word is the safe word.
 //
 //   const r = await Discipline.run(lap, 'firm', { say: text => …, sleep: ms => … })   →   { hits, peak, red, tooHarsh, done }
 //   (lap.end() from outside closes it quietly: nothing more is struck or said)
@@ -11,18 +11,18 @@
 const TIERS = ['token', 'light', 'firm', 'severe'];
 const TIER_NAMES = { token: 'Token', light: 'Light', firm: 'Firm', severe: 'Severe' };
 const SCRIPTS = {
-  token:  [{ trousers: 'up', drawers: 'up', impl: 'hand', n: 6, str: 0.7 }],
-  light:  [{ trousers: 'up', drawers: 'up', impl: 'hand', n: 10, str: 0.85 }, { trousers: 'down', drawers: 'up', impl: 'hand', n: 10, str: 0.85 }],
-  firm:   [{ trousers: 'up', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { trousers: 'down', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { trousers: 'down', drawers: 'down', impl: 'hand', n: 12, str: 1 }],
-  severe: [{ trousers: 'up', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { trousers: 'down', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { trousers: 'down', drawers: 'down', impl: 'hand', n: 12, str: 1.05 }, { trousers: 'down', drawers: 'down', impl: 'paddle', n: 10, str: 1 }],
+  token:  [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 6, str: 0.7 }],
+  light:  [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 0.85 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 10, str: 0.85 }],
+  firm:   [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', impl: 'hand', n: 12, str: 1 }],
+  severe: [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', impl: 'hand', n: 12, str: 1.05 }, { skirt: 'up', drawers: 'down', impl: 'paddle', n: 10, str: 1 }],
 };
 // What Gerda says: practical, warm, and she means it.
 const LINES = {
-  start: 'Over my knee, Jack. You know what this is for.',
-  trousers: 'Trousers down. No, don’t look at me like that. Down.',
-  drawers: 'And these. We’re not finished, and you know it.',
+  start: 'Over my knee, young lady. You know what this is for.',
+  skirt: 'Skirt up. No, don’t give me that look. Up.',
+  drawers: 'And these down. We’re not finished, and you know it.',
   paddle: 'The paddle now. Then we’re square, you and I.',
-  during: ['Hold still.', 'You’ll take this better than you took my things.', 'Breathe. I’m not going anywhere, and neither are you.', 'Nearly there.', 'Every one of these is earned, and you know it.'],
+  during: ['Hold still.', 'You’ll take this better than you took my good nature.', 'Breathe. I’m not going anywhere, and neither are you.', 'Nearly there.', 'Every one of these is earned, and you know it.'],
   done: 'There. That’s done, and it stays done.',
   after: 'Up you get, slowly. Come here. We’re all right.',
   red: 'Red. All right, love, that’s it. It’s over. Up you come, gently.',
@@ -34,7 +34,7 @@ function stageLine(prev, s) {
   if (!prev) return line('start');
   if (s.impl === 'paddle' && prev.impl !== 'paddle') return line('paddle');
   if (s.drawers === 'down' && prev.drawers !== 'down') return line('drawers');
-  if (s.trousers === 'down' && prev.trousers !== 'down') return line('trousers');
+  if (s.skirt === 'up' && prev.skirt !== 'up') return line('skirt');
   return null;
 }
 const total = tier => (SCRIPTS[tier] || []).reduce((a, s) => a + s.n, 0);
@@ -48,7 +48,7 @@ async function run(lap, tier, env) {
   let prev = null, chat = 0;
   for (const s of script) {
     if (stopped()) break;
-    lap.set({ trousers: s.trousers, drawers: s.drawers, implement: s.impl, strength: s.str });
+    lap.set({ skirt: s.skirt, drawers: s.drawers, implement: s.impl, strength: s.str });
     const l = stageLine(prev, s); if (l) { say(l); await sleep(1600); }
     if (stopped()) break;
     // The stage in runs, with a word from her between them.

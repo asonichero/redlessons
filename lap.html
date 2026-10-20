@@ -34,28 +34,29 @@
 <div id="view"></div>
 <div id="panel">
   <h1>Over the knee</h1>
-  <div class="sub">Gerda seated, Jack across her lap. Drag to orbit; the wheel zooms. Space smacks; R is Red. <a href="editor.html">Character editor</a></div>
+  <div class="sub">Gerda seated, Red Riding Hood across her lap. Drag to orbit; the wheel zooms. Space smacks; R is Red. <a href="editor.html">Character editor</a></div>
   <h3>Correction</h3>
   <div class="btns" id="tiers"></div>
   <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="paddle">Paddle</button></div>
   <h3>Clothes</h3>
-  <div class="btns"><button id="trousers">Trousers: up</button><button id="drawers">Drawers: up</button></div>
+  <div class="btns"><button id="skirt">Skirt: down</button><button id="drawers">Drawers: up</button></div>
   <h3>Smacks</h3>
   <div class="btns"><button class="big" id="one">Smack</button><button class="big" id="ten">Run of 10</button></div>
   <div class="btns" style="margin-top:6px"><span>Pace</span><button data-pace="0.7">Slow</button><button data-pace="1" class="on">Steady</button><button data-pace="1.5">Brisk</button></div>
   <div class="btns" style="margin-top:6px"><span>Strength</span><button data-str="0.6">Light</button><button data-str="1" class="on">Firm</button><button data-str="1.3">Hard</button></div>
-  <h3>His distress</h3>
+  <h3>Her distress</h3>
   <div id="meter"><i></i><b title="the edge of resistance"></b></div>
   <div id="band">composed</div>
   <div id="info"></div>
   <div class="btns" style="margin-top:10px"><button class="red" id="red">Red</button><button id="reset">Start again</button></div>
-  <h3>Camera</h3><div class="btns"><button data-view="side">Side</button><button data-view="behind">Behind</button><button data-view="giver">Gerda’s view</button><button data-view="top">Above</button><button data-view="face">His face</button></div>
+  <h3>Camera</h3><div class="btns"><button data-view="side">Side</button><button data-view="behind">Behind</button><button data-view="giver">Gerda’s view</button><button data-view="top">Above</button><button data-view="face">Her face</button></div>
 </div>
 <div id="line"></div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
-<script src="js/blocky.js"></script>
+<script src="js/toon.js"></script>
 <script src="js/looks.js"></script>
+<script src="js/stage.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/pain.js"></script>
 <script src="js/lap.js"></script>
@@ -64,7 +65,7 @@
 (function () {
   const $ = id => document.getElementById(id), A = window.GameAudio, all = sel => document.querySelectorAll(sel);
   let lap = null, session = 0, lineTimer = 0;
-  const st = { implement: 'hand', trousers: 'up', drawers: 'up', pace: 1, strength: 1 };
+  const st = { implement: 'hand', skirt: 'down', drawers: 'up', pace: 1, strength: 1 };
   const showLine = t => { $('line').textContent = 'Gerda: ' + t; $('line').classList.add('on'); clearTimeout(lineTimer); lineTimer = setTimeout(() => $('line').classList.remove('on'), 3200); };
   function build() {
     session++; $('line').classList.remove('on');
@@ -75,14 +76,14 @@
     tiers(false);
   }
   // A scripted correction: the panel's own controls are held while it runs (Red and Start again stay live).
-  const tiers = busy => { all('[data-tier], [data-impl], [data-pace], [data-str], #trousers, #drawers, #one, #ten').forEach(b => b.disabled = busy); if (!busy) label(); };
+  const tiers = busy => { all('[data-tier], [data-impl], [data-pace], [data-str], #skirt, #drawers, #one, #ten').forEach(b => b.disabled = busy); if (!busy) label(); };
   for (const t of Discipline.TIERS) {
     const b = document.createElement('button'); b.textContent = Discipline.TIER_NAMES[t]; b.dataset.tier = t; b.title = Discipline.total(t) + ' smacks';
     b.onclick = async () => {
       wake(); build(); const me = session; tiers(true);
       const r = await Discipline.run(lap, t, { say: showLine });
       if (me !== session) return;
-      Object.assign(st, { implement: lap.st.implement, trousers: lap.st.trousers, drawers: lap.st.drawers });
+      Object.assign(st, { implement: lap.st.implement, skirt: lap.st.skirt, drawers: lap.st.drawers });
       all('[data-impl]').forEach(x => x.classList.toggle('on', x.dataset.impl === st.implement));
       $('info').textContent = (r.red ? 'Red. ' : r.tooHarsh ? 'Too harsh. ' : Discipline.TIER_NAMES[t] + ', done. ') + r.hits + ' smacks.';
       tiers(false); all('#one, #ten').forEach(x => x.disabled = true);
@@ -92,14 +93,14 @@
   all('[data-impl]').forEach(b => b.onclick = () => { st.implement = b.dataset.impl; all('[data-impl]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ implement: st.implement }); });
   all('[data-pace]').forEach(b => b.onclick = () => { st.pace = +b.dataset.pace; all('[data-pace]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ pace: st.pace }); });
   all('[data-str]').forEach(b => b.onclick = () => { st.strength = +b.dataset.str; all('[data-str]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ strength: st.strength }); });
-  all('[data-view]').forEach(b => b.onclick = () => lap.view(b.dataset.view));
-  $('trousers').onclick = () => { st.trousers = st.trousers === 'up' ? 'down' : 'up'; if (st.trousers === 'up') st.drawers = 'up'; lap.set({ trousers: st.trousers, drawers: st.drawers }); label(); };
-  $('drawers').onclick = () => { if (st.trousers === 'up') return; st.drawers = st.drawers === 'up' ? 'down' : 'up'; lap.set({ drawers: st.drawers }); label(); };
-  function label() { $('trousers').textContent = 'Trousers: ' + st.trousers; $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = st.trousers === 'up'; }
+  all('[data-view]').forEach(b => b.onclick = () => lap.view(b.dataset.view, 700));
+  $('skirt').onclick = () => { st.skirt = st.skirt === 'down' ? 'up' : 'down'; if (st.skirt === 'down') st.drawers = 'up'; lap.set({ skirt: st.skirt, drawers: st.drawers }); label(); };
+  $('drawers').onclick = () => { if (st.skirt === 'down') return; st.drawers = st.drawers === 'up' ? 'down' : 'up'; lap.set({ drawers: st.drawers }); label(); };
+  function label() { $('skirt').textContent = 'Skirt: ' + (st.skirt === 'down' ? 'down' : 'lifted'); $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = st.skirt === 'down'; }
   const wake = () => { if (A) A.init(); };
   $('one').onclick = () => { wake(); lap.smack(); }; $('ten').onclick = () => { wake(); lap.run(10); };
   const red = () => { lap.red(); }; $('red').onclick = red;
-  $('reset').onclick = () => { $('info').textContent = ''; Object.assign(st, { trousers: 'up', drawers: 'up' }); build(); };
+  $('reset').onclick = () => { $('info').textContent = ''; Object.assign(st, { skirt: 'down', drawers: 'up' }); build(); };
   addEventListener('keydown', e => {
     if (e.key === ' ' && !$('one').disabled) { e.preventDefault(); wake(); lap.smack(); }
     if (e.key === 'r' || e.key === 'R') red();

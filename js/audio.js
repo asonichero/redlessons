@@ -1,5 +1,5 @@
-// Red Lessons (from Climbing Toward Consequence) — sound, all synthesised (no audio files): a soft pastoral score, ambience (wind, birds, a fire), the correction's smacks and Jack's cries (also used by
-// the lap scene), and a speech babble for the cutscenes (a short vowel burst per word, higher for the mother, lower for Jack and the merchant).
+// Red Lessons (from Climbing Toward Consequence) — sound, all synthesised (no audio files): a soft pastoral score, ambience (wind, birds, a fire), the correction's smacks and Red Riding Hood's cries
+// (in the lap scene), and a speech babble for dialogue (a short vowel burst per word, pitched per speaker).
 // Browsers only start audio after a tap or key press: call GameAudio.init() from one (the title screen's buttons do).
 (function (root) {
 'use strict';
@@ -120,7 +120,7 @@ A.ambience = function (levels) {
   const t = ctx.currentTime; N.windGain.gain.linearRampToValueAtTime(0.35 * A.amb.wind, t + 1.5); N.fireGain.gain.linearRampToValueAtTime(0.5 * A.amb.fire, t + 1.5);
 };
 
-// ── Effects: a smack (muffled through a wall when `muffle` is set) and Jack's voice. ──────────────────────────────────────────────────────────────────
+// ── Effects: a smack (muffled through a wall when `muffle` is set) and her voice. ──────────────────────────────────────────────────────────────────
 // A smack. muffle: false = bare skin in open air (a flat, bright slap with a crack and a little skin "pap"); true = through cloth (duller, with a thump);
 // a number = a low-pass cutoff in Hz: a hand on bare skin heard through a wall, which opens up as the listener gets closer.
 A.thwack = function (power, muffle, vol) {
@@ -161,11 +161,12 @@ A.birch = function (power, muffle, vol) {
   const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(130, t + 0.07);
   g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.22 * p, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08); o.connect(g); g.connect(lp); o.start(t); o.stop(t + 0.1);
 };
-A.voice = function (power, band, muffle, vol) {
+// base: the voice's pitch at rest (Hz); a woman's by default. Her vowels sit a little higher with it.
+A.voice = function (power, band, muffle, vol, base) {
   if (!A.init()) return; const ctx = A.ctx, N = A.nodes, k = (vol == null ? 1 : vol) * (muffle ? 2.2 : 1);
   const t0 = ctx.currentTime + 0.05 + Math.random() * 0.05, dur = [0.12, 0.2, 0.3, 0.42, 0.6, 0.6][band] || 0.3;
-  const f0 = 125 + 70 * clamp(power, 0, 1.5) + 22 * band + Math.random() * 14;
-  const vowel = [[420, 800], [760, 1150], [620, 1000], [700, 1100], [520, 920], [480, 880]][band] || [650, 1000];
+  const b0 = base || 215, f0 = b0 + 70 * (b0 / 125) * 0.8 * clamp(power, 0, 1.5) + 26 * band + Math.random() * 16, fm = b0 > 170 ? 1.15 : 1;
+  const vowel = ([[420, 800], [760, 1150], [620, 1000], [700, 1100], [520, 920], [480, 880]][band] || [650, 1000]).map(f => f * fm);
   const osc = ctx.createOscillator(); osc.type = 'sawtooth';
   osc.frequency.setValueAtTime(f0, t0); osc.frequency.linearRampToValueAtTime(f0 * (band >= 3 ? 1.35 : band === 2 ? 1.12 : 0.9), t0 + dur);
   const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = band >= 4 ? 7 : 5; lg.gain.value = band >= 4 ? f0 * 0.06 : f0 * 0.015; lfo.connect(lg); lg.connect(osc.frequency);
@@ -176,8 +177,8 @@ A.voice = function (power, band, muffle, vol) {
   out.connect(dest); osc.start(t0); lfo.start(t0); osc.stop(t0 + dur + 0.05); lfo.stop(t0 + dur + 0.05);
 };
 
-// ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: 'mother' | 'jack' | 'gerda' | 'merchant' ──
-const PITCH = { mother: 205, gerda: 190, jack: 135, merchant: 118, narrator: 150 };
+// ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: 'red' | 'gerda' | 'narrator' ──
+const PITCH = { red: 215, gerda: 190, narrator: 150 };
 A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through a wall (louder in the filter, to carry); opts.vol scales it
   if (!A.init()) return { stop() {} }; const ctx = A.ctx, N = A.nodes, base = PITCH[who] || 160, muffle = opts && opts.muffle;
   const words = text.split(/\s+/).filter(Boolean); let t = ctx.currentTime + 0.05; const step = seconds / Math.max(1, words.length), stopAt = t + seconds + 0.3, nodes = [];

@@ -1,10 +1,10 @@
 # Red Lessons
 
-Jack and Gerda, the over-the-knee discipline scene and the pain model, taken from *Climbing Toward Consequence* ([asonichero/consequence](https://github.com/asonichero/consequence)), with a simple character editor. Jack is 21; Gerda is in her late thirties. Both are adults.
+Red Riding Hood and Gerda in a soft toon style (after *The Wind Waker HD* and *Mika and the Witch's Mountain*): an over-the-knee discipline scene with a pain model, scripted corrections, and a simple character editor. Red Riding Hood is 21; Gerda is in her late thirties. Both are adults, built with adult proportions (about seven heads tall).
 
-Everything is blocky (three.js, no build step, procedural pixel textures and synthesised sound, no asset files) and installs as a mobile web app.
+Everything is made in code: three.js, no build step, shapes and textures generated in the browser, synthesised sound, no asset files. It installs as a mobile web app.
 
-**What was left out.** The Jack game's scaling mechanic: Jack no longer shrinks. He is always at his full size (95% of the model's scale, so Gerda is about 105% of him). The second set of poses made at half his size, the blend between the two sets and the size slider are gone, and so is the rule that a smaller Jack feels each smack more. The rest of that game's cast (his mother, the peddler, the merchant) is not here, and neither is the earlier Red Lessons village with its heroine and villagers.
+**The safe word is "Red"**, which is also how people shorten her name. The page calls her Red Riding Hood, and Gerda never calls her "Red" in her lines (a test checks this).
 
 ## Run it
 
@@ -13,55 +13,68 @@ npm run serve        # http://localhost:8123/ opens the lap scene; /editor.html 
 npm test             # the pain model, the discipline scripts and the looks
 ```
 
+## The look (`js/toon.js`, `js/stage.js`)
+
+- **Smooth, rounded characters** built from turned profiles and soft ellipsoids, with two-band cel shading and a thin warm-brown outline (an inverted hull).
+- **Faces built from shapes:** almond eyes with lashes, irises and a highlight, lids that blink, brows, a nose, several mouths, a flush and tears. Nine expressions ease from one to the next: calm, smile, shy, cheeky, pout, stern, wince, gritted, crying.
+- **Hair:** a cap with a proper hairline and a fringe. Red Riding Hood's long hair hangs from swinging pivots: two locks by her face and the back of it to her shoulder blades. It hangs with gravity, swings as she moves, and settles. Gerda wears hers in a bun, grey at one temple.
+- **Clothes:**
+  - **Red Riding Hood:** a scarlet capelet, longest at the back, edged in cream, with the hood down on her back or up over her hair. Under it, a cream blouse with puffed sleeves, a dark laced bodice, a blue skirt with a white hem, linen drawers, and boots.
+  - **Gerda:** a plum bodice, a cream blouse, an apron and a long brown skirt, bare feet. Or her lavender "Fine" gown with gold bracelets and anklets.
+  - **How the skirts move:** they are skinned to the legs, so they follow them. Seated, Gerda's skirt is its own drape over her lap and knees.
+- **Motion:** blinking, breathing, a standing idle (weight shifting from foot to foot, the head wandering), and springs on everything that reacts, so movement eases and settles instead of snapping.
+- **The room:** a cottage with plank floors, a round rug, plaster walls with beams, a window full of sky, a shelf of jars, and sunlight casting soft shadows. The walls face inward, so whichever side the camera looks from, the near wall is not drawn.
+
 ## Over the knee (`lap.html`, `js/lap.js`)
 
-Gerda sits on a plain chair; Jack lies face down across her lap, hips over her right knee, head and arms toward the floor on her left. This is the Jack game's discipline engine cut down to that one position:
+Gerda sits on a plain chair. Red Riding Hood lies face down across her lap, hips over Gerda's right thigh, head and arms toward the floor on one side, legs on the other.
 
-- **A smack** is a lift, a hold with the arm raised (the wait builds dread), the strike, and a short hold on the skin that keeps stinging. **Run of 10** goes straight from contact back up to raised. **Pace** and **Strength** have three steps each. Space smacks.
-- **Gerda's arm** (shoulder, elbow and wrist) is solved every frame, so the end of her hand lands exactly on the middle of the cheek struck. With the paddle, the blade's middle lands within 0.7 units of it, and the blade lies flat on the angle of his seat. Her torso uses the Jack game's hand-tuned poses, baked in: nearly upright, leaning back as the arm goes up, and turning a little into a strike on the far cheek. Her left hand rests between his shoulder blades.
-- **Jack's clothes**: trousers up or down; with them down, drawers up or down. The glutes block (bridging his back and his folded thighs) shows trousers, drawers or bare skin, and the trousers bunch at his knees when they are down. Cloth takes the edge off the sting only.
-- **Marks**: bare skin colours up cheek by cheek, and tender skin hurts more.
-- **The pain model** turns each smack into his distress. Its bands (composed, flinching, struggling, close to the edge, past it, too harsh) drive his kicks, his wriggling, his voice and his face (grin, wince, gritted, crying). At "too harsh" nothing more is struck.
-- **Red** (the button, or R) stops everything at once.
-- Cameras: Side, Behind, Gerda's view, Above, His face. You can also drag to orbit.
+- **A smack:** Gerda's hand lifts, holds raised (the wait builds dread), swings down along an arc, and lands with the palm flat on the middle of the cheek struck. It stays a moment on the skin, then comes back up for the next one or returns to rest above the small of her back. Her arm is solved every frame (shoulder and elbow bring the wrist into place, and the hand is turned flat to the skin), so it lands exactly wherever Red Riding Hood is, however she moves. With the **paddle**, the blade lands flat instead. Gerda's left hand rests between Red Riding Hood's shoulder blades.
+- **Controls:** Smack, Run of 10, Pace and Strength. Space smacks.
+- **Her reactions** go through springs: a kick of the legs on the side struck, a lift of the head, and a wriggle that grows with her distress. Her face follows the pain model's bands (calm, wince, gritted, crying), and her voice is synthesised.
+- **Clothes:** skirt down or lifted (gathered at her waist); with it lifted, drawers up or down (bunched above her knees). Cloth takes the edge off the sting.
+- **Marks:** colour comes up on each cheek with the smacks, and tender skin hurts more.
+- **Red** (the button, or R) stops everything at once. Nothing more is struck, and the arm comes back to rest.
+- **Cameras:** Side, Behind, Gerda's view, Above, Her face. The camera glides between them, and you can drag to orbit.
 
 ## Discipline (`js/discipline.js`)
 
-The **Correction** buttons run a scripted correction in the Jack game's four tiers. Gerda talks before each stage and between the runs:
+The **Correction** buttons run a scripted correction in four tiers. Gerda talks before each stage and between the runs:
 
 | Tier | Stages | Smacks |
 |---|---|---|
-| Token | hand over his trousers | 6 |
-| Light | + trousers down | 20 |
+| Token | hand, over her skirt | 6 |
+| Light | + skirt lifted | 20 |
 | Firm | + drawers down | 34 |
 | Severe | + the paddle to finish | 44 |
 
-Red ends it there and then, and her last line is the gentle one. At "too harsh" she stops. `Discipline.run(lap, tier, { say, sleep })` returns `{ hits, peak, red, tooHarsh, done }`.
+Red ends it there and then, and Gerda's last line is the gentle one. At "too harsh" she stops. `Discipline.run(lap, tier, { say, sleep })` returns `{ hits, peak, red, tooHarsh, done }`.
 
 ## The pain model (`js/pain.js`)
 
-This is the Jack game's model, unchanged. Each smack adds a sharp **sting** (fading in seconds) and a deep **ache** (fading over minutes). Distress is their sum against how much he can take. The implement, strength, pace, the wait with the arm raised, the clothing and how tender the skin already is all count. Jack's tolerance is 1 and his resilience 0.7, as in that game, so he reaches the edge slowly.
+Each smack adds a sharp **sting** (fading in seconds) and a deep **ache** (fading over minutes). Distress is their sum against how much she can take. The implement, strength, pace, the wait with the arm raised, the clothing and how tender the skin already is all count. Her skirt and drawers each cushion the sting.
 
 ## Character editor (`editor.html`, `js/looks.js`)
 
-Jack and Gerda stand side by side, and you can pick:
+Red Riding Hood and Gerda stand side by side in the room, idling and blinking. You can pick:
 
-- **Outfit**: Jack's Outdoor, Day, Soft or Fine; Gerda's Work or Fine.
-- **Skin, hair and eyes** for both, plus Gerda's **lips**: a row of swatches, or any colour. Shading, highlights, brows and Gerda's bun follow the chosen colour.
-- **His face**: preview Jack's eight expressions.
+- **Outfit:** hers is Hood down, Hood up or No cloak; Gerda's is Work or Fine.
+- **Colours:** skin, hair, eyes and lips for both, and the colour of her cloak. Choose from a row of swatches or pick any colour.
+- **Her face:** preview each expression.
 
-Changes are saved in the browser straight away, and the lap scene uses them. **Back to their own colours** resets both. A colour left at its default paints exactly as the model was drawn. Views: front, side, back, or turning.
+Views: front, side, back, faces, or turning. Changes are saved in the browser straight away, and the lap scene uses them. **Back to their own colours** resets both.
 
 ## Files
 
-| File | What it is | From the Jack game |
-|---|---|---|
-| `js/blocky.js` | Jack and Gerda: box-built models, painted skins, wardrobes, the chair | Ported (a colour override added for the editor) |
-| `js/pain.js` | The pain model | Ported unchanged |
-| `js/audio.js` | Smacks, voices and the rest, all synthesised | Ported |
-| `js/lap.js`, `lap.html` | Over the knee: Gerda's arm solve, Jack's frame and glutes block, the session, the cameras; its viewer | Refitted: one position, full size only, poses baked in |
-| `js/discipline.js` | The scripted correction: tiers, stages, Gerda's lines | New (the tiers are the Jack game's) |
-| `js/looks.js`, `editor.html` | Outfits and colours, and the editor | New |
-| `tests/` | `node --test` checks for the pain model, the discipline scripts and the looks | Pain ported; the rest new |
-| `manifest.webmanifest`, `sw.js`, `icons/` | The installable web app | Ported |
-| `vendor/` | three.js r128 and OrbitControls | Ported |
+| File | What it is |
+|---|---|
+| `js/toon.js` | The characters: the rig (bones), bodies, faces and expressions, hair, clothes, skinned skirts, marks; the chair and the paddle |
+| `js/stage.js` | Renderer, lights and shadows, the camera and its glides, the cottage room |
+| `js/lap.js`, `lap.html` | Over the knee: the session, Gerda's arm solving, Red Riding Hood's reactions, the cameras; its page |
+| `js/discipline.js` | The scripted correction: tiers, stages, Gerda's lines |
+| `js/pain.js` | The pain model |
+| `js/looks.js`, `editor.html` | Outfits and colours, and the editor |
+| `js/audio.js` | Smacks and her voice, all synthesised |
+| `tests/` | `node --test` checks for the pain model, the discipline scripts and the looks |
+| `manifest.webmanifest`, `sw.js`, `icons/` | The installable web app |
+| `vendor/` | three.js r128 and OrbitControls |
