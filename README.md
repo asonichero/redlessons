@@ -62,6 +62,8 @@ Red Riding Hood and Gerda stand side by side in the room, idling and blinking. Y
 - **Colours:** skin, hair, eyes and lips for both, and the colour of her cloak. Choose from a row of swatches or pick any colour.
 - **Her face:** preview each expression.
 
+**Shapes and proportions:** every number the figures are built from, in groups (proportions, each character's size, bust and skirt length, body widths, bust, seat, face, hair, clothes, outline and shading), as number boxes with step arrows (↑ ↓, Shift for ten steps). Changed values show in gold; each group resets on its own, and **Copy values** copies the ones you changed. They're kept in the browser and the lap scene uses them.
+
 Views: front, side, back, faces, or turning. Changes are saved in the browser straight away, and the lap scene uses them. **Back to their own colours** resets both.
 
 ## Files

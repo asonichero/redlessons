@@ -6,8 +6,8 @@
 <title>Character Editor</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; }
-  #view { position: fixed; inset: 0 320px 0 0; }
-  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
+  #view { position: fixed; inset: 0 360px 0 0; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 360px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
   h1 { font-size: 15px; margin: 0 0 4px; } .sub { color: #9a8a8e; font-size: 11px; line-height: 1.5; }
   h2 { font-size: 14px; margin: 16px 0 2px; color: #c9a84c; }
   h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #a8969a; margin: 10px 0 5px; }
@@ -19,6 +19,13 @@
   input[type=color] { width: 30px; height: 26px; padding: 0; border: 1px solid #554449; border-radius: 4px; background: none; cursor: pointer; }
   a { color: #c9a84c; }
   #saved { color: #8fbf8f; font-size: 11px; margin-left: 6px; }
+  details { border-top: 1px solid #3a2c30; padding: 6px 0; } details:last-of-type { border-bottom: 1px solid #3a2c30; }
+  summary { cursor: pointer; font-size: 12px; font-weight: 600; color: #d8cfc8; padding: 2px 0; }
+  .num { display: grid; grid-template-columns: 1fr 86px; align-items: center; gap: 6px; margin: 4px 0; font-size: 12px; color: #cfc4c0; }
+  .num.changed span { color: #e8c75a; }
+  .num input { width: 100%; box-sizing: border-box; background: #120e10; color: #f0ebe8; border: 1px solid #554449; border-radius: 4px; padding: 4px 6px; font: 12px ui-monospace, Menlo, monospace; text-align: right; }
+  .num input:focus { outline: none; border-color: #c9a84c; }
+  .gbtn { font-size: 11px; padding: 3px 8px; margin-top: 4px; }
   @media (max-width: 700px) { #view { inset: 0 0 50% 0; } #panel { top: 50%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } }
 </style>
 </head>
@@ -33,6 +40,10 @@
   <div class="btns" id="faces"></div>
   <div id="gerda"></div>
   <div class="btns" style="margin-top:16px"><button id="reset">Back to their own colours</button><span id="saved"></span></div>
+  <h2>Shapes and proportions</h2>
+  <div class="sub">Every number the figures are built from (js/toon.js). Use the arrows (or ↑ ↓; hold Shift for ten steps) or type a value. Kept in this browser and used by the lap scene too; values you've changed are in gold.</div>
+  <div id="tune"></div>
+  <div class="btns" style="margin-top:10px"><button id="tuneReset">Reset all shapes</button><button id="tuneCopy">Copy values</button><span id="tuneMsg" class="sub"></span></div>
 </div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
@@ -79,6 +90,36 @@
   $('reset').onclick = () => { look = L.reset(); build('red'); build('gerda'); sync(); };
   document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view, 700));
   $('spin').onclick = () => { spin = !spin; $('spin').classList.toggle('on', spin); if (!spin) turn.rotation.y = 0; };
+
+  // ── Shapes and proportions: a number box (with arrows) for each tuning value, in groups. Changes rebuild both figures, a moment after the last one.
+  const DEF = Object.fromEntries(Toon.TUNE.map(t => [t[0], t[3]])), boxes = {};
+  let tune = Toon.getTune(), tuneT = 0;
+  const decimals = step => Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  function tuneChanged() { clearTimeout(tuneT); tuneT = setTimeout(() => { tune = Toon.setTune(tune); build('red'); build('gerda'); }, 120); markChanged(); }
+  function markChanged() { for (const k in boxes) boxes[k].row.classList.toggle('changed', Math.abs(tune[k] - DEF[k]) > 1e-9); }
+  const groups = {};
+  for (const [k, g, label, def, min, max, step] of Toon.TUNE) {
+    if (!groups[g]) { const d = document.createElement('details'); d.innerHTML = `<summary>${g}</summary>`; $('tune').appendChild(d); groups[g] = d;
+      const rb = document.createElement('button'); rb.className = 'gbtn'; rb.textContent = 'Reset ' + g.toLowerCase();
+      rb.onclick = () => { for (const t of Toon.TUNE) if (t[1] === g) { tune[t[0]] = t[3]; boxes[t[0]].input.value = t[3].toFixed(decimals(t[6])); } tuneChanged(); };
+      d.rb = rb; }
+    const row = document.createElement('label'); row.className = 'num'; row.title = `${min} to ${max} (default ${def})`;
+    const input = document.createElement('input'); Object.assign(input, { type: 'number', min, max, step, value: (+tune[k]).toFixed(decimals(step)) });
+    row.innerHTML = `<span>${label}</span>`; row.appendChild(input); groups[g].appendChild(row); boxes[k] = { row, input };
+    input.addEventListener('input', () => { const v = parseFloat(input.value); if (!isFinite(v)) return; tune[k] = Math.max(min, Math.min(max, v)); tuneChanged(); });
+    input.addEventListener('change', () => { input.value = (+tune[k]).toFixed(decimals(step)); });
+    // Shift with the arrow keys steps ten at a time.
+    input.addEventListener('keydown', e => { if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return; e.preventDefault();
+      tune[k] = Math.max(min, Math.min(max, +tune[k] + (e.key === 'ArrowUp' ? 10 : -10) * step)); input.value = (+tune[k]).toFixed(decimals(step)); tuneChanged(); });
+  }
+  for (const g in groups) groups[g].appendChild(groups[g].rb);
+  $('tuneReset').onclick = () => { tune = Toon.resetTune(); for (const k in boxes) boxes[k].input.value = (+tune[k]).toFixed(decimals(Toon.TUNE.find(t => t[0] === k)[6])); markChanged(); build('red'); build('gerda'); };
+  $('tuneCopy').onclick = () => {
+    const changed = Object.fromEntries(Object.entries(tune).filter(([k, v]) => Math.abs(v - DEF[k]) > 1e-9)), text = JSON.stringify(changed, null, 2);
+    const done = ok => { $('tuneMsg').textContent = ok ? 'Copied (only the values you changed).' : text; setTimeout(() => $('tuneMsg').textContent = '', 4000); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); else done(false);
+  };
+  markChanged();
 
   build('red'); build('gerda'); view('front'); sync();
   st.start(dt => { t += dt; if (spin) turn.rotation.y += dt * 0.5; Toon.idle(rigs.red, t); Toon.idle(rigs.gerda, t + 2.1); rigs.red.tick(dt); rigs.gerda.tick(dt); });
