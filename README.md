@@ -72,17 +72,23 @@ Pure data and arithmetic, tested under Node. Terms are only written while she we
 | `js/correction.js` | The correction after a reckoning: the room, the tier scripts, the givers' lines, Red | New |
 | `tests/` | `node --test` checks for the ledger (including who may correct) and the pain model | Ledger new; pain ported |
 
-## The look (`js/toon.js`, `style.html`)
+## The look and the rig (`js/toon.js`, `style.html`)
 
-The village and its whole cast are in the toon style now, after the concept art: smooth rounded characters, soft three-band cel shading and a warm brown ink outline; flat cel-shaded buildings with outlined edges; rounded trees. The heroine wears the concept art's green tunic with belt and pouches, laced bracers, tan trousers and tall laced boots, with chestnut braids tied in red ribbon and the red cloak edged in gold and stitched with stars. She is about six and a half heads tall with a woman's face and figure, identical at every size. The men have broader builds; the woodcutter has a beard and a checked shirt, the miller a floury apron, Grandmother a shawl.
+Smooth rounded characters with soft cel shading and a warm brown ink outline, on a **skinned skeleton**: each body is continuous, so every joint (spine and chest, neck, shoulders, elbows, wrists, hips, knees, ankles) bends smoothly instead of tubes meeting at a seam. The cape and the heroine's long hair hang from **spring bones** that trail as she moves, swing as she turns, hang down when she leans, and settle when she stops.
 
-The rigs use the same joints as the blocky ones, so the village poses them with the same code, now with knees that bend as they walk and a breath at rest. Characters are kept light (about 15,000 triangles each, her 27,000) so the village runs on a phone.
+The heroine wears her own clothes, as in the blocky scenes: a rust bodice laced over a cream chemise, a long moss-green skirt and boots, loose auburn hair to her shoulder blades, green eyes, freckles. The cloak is a **capelet** over her shoulders and back (short at the front, longest at the middle of the back), scarlet, edged in gold and stitched with stars, the hood lying back under her hair.
 
-`style.html` shows her at full height, cloaked, and cloaked at 55% beside the Innkeeper; `style.html?cast` lines up the whole cast.
+**Movement** (`Toon.pose`): one procedural pose for standing, walking, running, carrying, gesturing and jumping, blended smoothly between them. Walking, the pelvis rises twice a stride, turns with the stepping leg and dips on the swinging side; the shoulders counter-turn; the knee folds as the leg comes through and the foot rolls; the arms swing a beat behind the legs; the head stays steady with a small nod. She leans into a run, into speeding up and into turns. Standing, the weight drifts from foot to foot, she breathes, and her attention wanders. In a skirt the stride is a little shorter and the feet stay inside the hem. The village advances the stride by distance travelled, so the feet keep pace with the ground.
 
-**Still blocky:** the over-the-knee scene. It needs refitting to the toon rig, and to her new clothes (trousers rather than a skirt), next.
+`style.html` shows her standing, walking, running or walking in a circle (to watch the cape and hair), with the cloak on or off and at 55%; `style.html?cast` lines up the whole cast.
 
-## Movement
+## Measurements (`editor.html`, `js/measures.js`)
+
+Every character's body is built from a set of measurements: overall size, head size, neck length, torso length, shoulder, chest, waist and hip width, bust, arm and leg length and thickness, hand and foot size. `editor.html` adjusts them live, with a front, three-quarter, side or back view, a walk to watch them move, and a ruler beside each figure marked in its own head heights. For the heroine it shows her at full size and in the cloak at 55% side by side: one body, one set of measurements, the smaller figure scaled. Changes are kept in the browser (the game in the same browser uses them straight away) and **Copy for js/measures.js** produces the file to keep them for good.
+
+One guard: head size is held so every figure is at least 6.2 heads tall, so the characters keep grown-up proportions whatever the sliders do.
+
+## Pace
 
 In the cloak her pace barely drops (speed scales by 0.85 + 0.15 × her size, about 7% slower at 55%), and walking and running are both quicker than before.
 

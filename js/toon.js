@@ -119,31 +119,92 @@ const SPECS = {
     top: 'bodice', blouse: '#f0e8d8', bodice: '#2a5a5a', lower: 'skirt', skirt: '#5a3a2a', skirtDk: '#462c1e', belt: '#3a2618', boots: '#2a1a10', hairStyle: 'bun', apron: '#ece4d0' },
 };
 
-function make(id) {
+// ── Measurements. Each character's body is built from these (multipliers on the base figure, 1 = as designed), so they can be adjusted in
+// editor.html. They come from js/measures.js (root.Measures, the saved set), overlaid with anything adjusted in this browser (localStorage), then
+// an override passed to make(). The heroine has one set: her figure in the cloak is the same body at 55% scale, never a separately proportioned one.
+const MEASURE = {
+  scale:         { label: 'Overall size', min: 0.85, max: 1.15, step: 0.01, def: 1 },
+  headSize:      { label: 'Head size', min: 0.78, max: 1.0, step: 0.005, def: 0.92 },
+  neckLength:    { label: 'Neck length', min: 0.6, max: 1.5, step: 0.01, def: 1 },
+  torsoLength:   { label: 'Torso length', min: 0.85, max: 1.15, step: 0.01, def: 1 },
+  shoulderWidth: { label: 'Shoulder width', min: 0.85, max: 1.2, step: 0.01, def: 1 },
+  chestWidth:    { label: 'Chest width', min: 0.85, max: 1.2, step: 0.01, def: 1 },
+  bust:          { label: 'Bust', min: 0.6, max: 1.4, step: 0.01, def: 1, women: true },
+  waistWidth:    { label: 'Waist width', min: 0.8, max: 1.3, step: 0.01, def: 1 },
+  hipWidth:      { label: 'Hip width', min: 0.85, max: 1.25, step: 0.01, def: 1 },
+  armLength:     { label: 'Arm length', min: 0.85, max: 1.15, step: 0.01, def: 1 },
+  armGirth:      { label: 'Arm thickness', min: 0.8, max: 1.3, step: 0.01, def: 1 },
+  handSize:      { label: 'Hand size', min: 0.8, max: 1.25, step: 0.01, def: 1 },
+  legLength:     { label: 'Leg length', min: 0.88, max: 1.15, step: 0.01, def: 1 },
+  legGirth:      { label: 'Leg thickness', min: 0.8, max: 1.3, step: 0.01, def: 1 },
+  footSize:      { label: 'Foot size', min: 0.8, max: 1.25, step: 0.01, def: 1 },
+};
+const MIN_HEADS = 6.2;              // never fewer than this many heads tall: the figure always reads as a grown adult
+const STORE_KEY = 'red-lessons:measures';
+function storedMeasures() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { return {}; } }
+// The figure's height and head height (in units, at scale 1) for a set of measurements.
+function figure(m, male) {
+  const hipsY = 15.5 + 14.75 * (m.legLength - 1), top = hipsY + 9 * m.torsoLength + 1.0 * m.neckLength + 2.2 * m.headSize / 0.92 + 2.62 * m.headSize;
+  return { hipsY, height: top, head: 5.22 * m.headSize, heads: top / (5.22 * m.headSize) };
+}
+function clampMeasures(m) {
+  const out = {};
+  for (const k in MEASURE) out[k] = clamp(+(m[k] != null ? m[k] : MEASURE[k].def) || MEASURE[k].def, MEASURE[k].min, MEASURE[k].max);
+  // The adult guard: if the head is too big for the body, it is brought down until the figure is at least MIN_HEADS tall.
+  for (let i = 0; i < 40 && figure(out).heads < MIN_HEADS; i++) out.headSize = Math.max(MEASURE.headSize.min, out.headSize - 0.005);
+  return out;
+}
+function measuresFor(id, over) {
+  const saved = (root.Measures && root.Measures[id]) || {}, local = storedMeasures()[id] || {};
+  return clampMeasures(Object.assign({}, saved, local, over || {}));
+}
+
+function make(id, over) {
   const S = SPECS[id], rig = { id, spec: S }, BN = {}, bones = [];
+  const m = measuresFor(id, over); rig.measures = m;
   const root_ = new THREE.Group(); rig.root = root_;
+  const fig = new THREE.Group(); fig.scale.setScalar(m.scale); root_.add(fig);
+  const TL = m.torsoLength, LL = m.legLength, AL = m.armLength, NL = m.neckLength, HR = m.headSize / 0.92;
+  // How wide the body is at a height on the torso (hips' space): the hips below the waist, the waist, the chest, the shoulders at the top.
+  const WIDTHS = [[0.6, m.hipWidth], [3.0, m.waistWidth], [5.4, m.chestWidth], [7.6, m.shoulderWidth]];
+  const widthAt = y => { if (y <= WIDTHS[0][0]) return WIDTHS[0][1]; for (let i = 1; i < WIDTHS.length; i++) if (y <= WIDTHS[i][0]) { const [y0, w0] = WIDTHS[i - 1], [y1, w1] = WIDTHS[i]; return lerp(w0, w1, ss(y0, y1, y)); } return WIDTHS[WIDTHS.length - 1][1]; };
+  const torsoY = y => y < 0 ? y * LL : y * TL;
+  // The deformations: a point in a part's frame (as designed) to where it goes with these measurements.
+  const D = {
+    torso: p => { const w = widthAt(p.y); p.set(p.x * w, torsoY(p.y), p.z * w); },
+    skirt: p => { const w = p.y > 0.6 ? widthAt(p.y) : m.hipWidth; p.set(p.x * w, torsoY(p.y), p.z * w); },
+    cape:  p => { const w = Math.max(widthAt(p.y), p.y > 6 ? m.shoulderWidth : 0); p.set(p.x * w, p.y * TL, p.z * w); },
+    arm:   p => p.set(p.x * m.armGirth, p.y * AL, p.z * m.armGirth),
+    leg:   p => p.set(p.x * m.legGirth, p.y * LL, p.z * m.legGirth),
+    neck:  p => p.set(p.x, p.y * NL, p.z),
+    hair:  p => { p.y -= 1.0; p.multiplyScalar(HR); p.y += 1.0 * NL; },       // (in the neck's space, scaled with the head about the head's pivot)
+  };
   // ── The skeleton, at rest (every bone unrotated). Positions are each bone's head, in its parent's space.
-  const bone = (name, parent, x, y, z, order) => { const b = new THREE.Bone(); b.name = name; b.position.set(x, y, z); if (order) b.rotation.order = order; (parent || root_).add(b); bones.push(b); BN[name] = b; return b; };
-  const SHX = S.male ? 3.75 : 3.15;
-  bone('hips', null, 0, 15.5, 0); bone('spine', BN.hips, 0, 1.5, 0, 'YXZ'); bone('chest', BN.spine, 0, 3.0, 0, 'YXZ');
-  bone('neck', BN.chest, 0, 4.5, 0, 'YXZ'); bone('head', BN.neck, 0, 1.0, 0, 'YXZ');
+  const bone = (name, parent, x, y, z, order) => { const b = new THREE.Bone(); b.name = name; b.position.set(x, y, z); if (order) b.rotation.order = order; (parent || fig).add(b); bones.push(b); BN[name] = b; return b; };
+  const SHX = S.male ? 3.75 : 3.15, F = figure(m);
+  bone('hips', null, 0, F.hipsY, 0); bone('spine', BN.hips, 0, 1.5 * TL, 0, 'YXZ'); bone('chest', BN.spine, 0, 3.0 * TL, 0, 'YXZ');
+  bone('neck', BN.chest, 0, 4.5 * TL, 0, 'YXZ'); bone('head', BN.neck, 0, 1.0 * NL, 0, 'YXZ');
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
-    bone('arm' + s, BN.chest, sx * SHX, 3.5, 0, 'ZXY'); bone('elbow' + s, BN['arm' + s], 0, -4.6, 0); bone('wrist' + s, BN['elbow' + s], 0, 0, 0); bone('hand' + s, BN['wrist' + s], 0, -4.3, 0);
-    bone('thigh' + s, BN.hips, sx * 1.6, 0, 0, 'ZXY'); bone('knee' + s, BN['thigh' + s], 0, -7.0, 0); bone('ankle' + s, BN['knee' + s], 0, -7.0, 0);
+    bone('arm' + s, BN.chest, sx * SHX * m.shoulderWidth, 3.5 * TL, 0, 'ZXY'); bone('elbow' + s, BN['arm' + s], 0, -4.6 * AL, 0); bone('wrist' + s, BN['elbow' + s], 0, 0, 0); bone('hand' + s, BN['wrist' + s], 0, -4.3 * AL, 0);
+    bone('thigh' + s, BN.hips, sx * 1.6 * m.hipWidth, 0, 0, 'ZXY'); bone('knee' + s, BN['thigh' + s], 0, -7.0 * LL, 0); bone('ankle' + s, BN['knee' + s], 0, -7.0 * LL, 0);
   }
-  if (S.cloak) { bone('cape', BN.chest, 0, 3.1, -2.9); bone('capeLow', BN.cape, 0, -2.7, -0.5); }
-  if (S.hairStyle === 'long') { bone('hair1', BN.head, 0, -0.9, -2.6); bone('hair2', BN.hair1, 0, -1.1, -0.9); }
+  if (S.cloak) { bone('cape', BN.chest, 0, 3.1 * TL, -2.9 * m.chestWidth); bone('capeLow', BN.cape, 0, -2.7 * TL, -0.5); }
+  if (S.hairStyle === 'long') { bone('hair1', BN.head, 0, -0.9 * HR, -2.6 * HR); bone('hair2', BN.hair1, 0, -1.1 * HR, -0.9 * HR); }
   root_.updateMatrixWorld(true);
   const skel = new THREE.Skeleton(bones), BI = new Map(bones.map((b, i) => [b, i])), IDM = new THREE.Matrix4();
-  const hipsW = BN.hips.getWorldPosition(new V3());
-  const at = (b, x, y, z) => new V3(x, y, z).add(hipsW).sub(b.getWorldPosition(new V3()));       // a point given in the hips' space, in bone b's space
+  const inFig = b => fig.worldToLocal(b.getWorldPosition(new V3())), hipsW = inFig(BN.hips);
+  // A point given in the hips' space, as designed, to bone b's space with the measurements applied (the torso's widths and lengths).
+  const at = (b, x, y, z) => { const q = new V3(x, y, z); D.torso(q); return q.add(hipsW).sub(inFig(b)); };
   const attach = (b, obj, x, y, z) => { obj.position.copy(at(b, x, y, z)); b.add(obj); return obj; };
   const byHeight = y => y < 1.5 ? BN.hips : y < 4.4 ? BN.spine : BN.chest;                    // which bone a rigid detail on the torso rides on
   const onTorso = (obj, x, y, z) => attach(byHeight(y), obj, x, y, z);
 
   // ── Skinning. part(): a geometry given in bone `frame`'s space, each vertex weighted to bones by wfn(point); with an outline hull of width ink.
-  function addSkinned(geo, mat) { const m = new THREE.SkinnedMesh(geo, mat); m.frustumCulled = false; root_.add(m); m.bind(skel, IDM); return m; }
+  function addSkinned(geo, mat) { const mesh = new THREE.SkinnedMesh(geo, mat); mesh.frustumCulled = false; fig.add(mesh); mesh.bind(skel, IDM); return mesh; }
+  // Which measurements apply to a part: by its weights (torso, skirt, cape, hair) or else by the bone it is built on.
+  const deformOf = (frame, wfn) => D[wfn.kind] || (/^(arm|elbow|wrist|hand)/.test(frame.name) ? D.arm : /^(thigh|knee|ankle)/.test(frame.name) ? D.leg : frame === BN.neck ? D.neck : null);
   function part(geo, frame, mat, wfn, ink) {
+    const deform = deformOf(frame, wfn);
     const pos = geo.attributes.position, n = pos.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), p = new V3();
     for (let i = 0; i < n; i++) {
       p.fromBufferAttribute(pos, i);
@@ -153,6 +214,7 @@ function make(id) {
       ws.forEach(([b, w], k) => { si[i * 4 + k] = BI.get(b); sw[i * 4 + k] = w / tot; });
     }
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    if (deform) { for (let i = 0; i < n; i++) { p.fromBufferAttribute(pos, i); deform(p); pos.setXYZ(i, p.x, p.y, p.z); } geo.computeVertexNormals(); }   // (weights as designed, shape as measured)
     geo.applyMatrix4(frame.matrixWorld);
     const mesh = addSkinned(geo, mat);
     if (ink) {
@@ -175,11 +237,13 @@ function make(id) {
     const sh = ss(SHX - 0.8, SHX + 0.4, Math.abs(p.x)) * ss(6.6, 8.0, y) * 0.3;          // the tops of the sleeves on the torso follow the arm a little
     return [[BN.hips, wHips], [BN.spine, wSpine], [BN.chest, wChest - sh], [p.x > 0 ? BN.armL : BN.armR, sh], [BN.thighL, wl], [BN.thighR, wr]];
   };
+  torsoW.kind = 'torso';
   // A skirt (and an apron) in the hips' space: the lower it hangs, the more it follows the thigh on its side.
   const skirtW = p => {
     const down = ss(0.5, -11, p.y) * 0.75, wl = down * ss(-1.5, 1.5, p.x), wr = down * ss(-1.5, 1.5, -p.x);
     return [[BN.hips, Math.max(0, 1 - wl - wr)], [BN.thighL, wl], [BN.thighR, wr]];
   };
+  skirtW.kind = 'skirt';
   const T = (frame, w) => ({ frame, w });
   const HIPS = T(BN.hips, torsoW);
   const M = { skin: toon(S.skin), hair: toon(S.hair), hairHi: toon(S.hairHi), belt: toon(S.belt), boots: toon(S.boots) };
@@ -199,7 +263,7 @@ function make(id) {
     // The chemise: over the shoulders and round the neckline, above the bodice.
     part(lathe([[0, 6.7], [3.35, 6.8], [3.4, 7.7], [2.7, 8.7], [1.1, 9.15], [0, 9.25]], 0.7), BN.hips, toonS(S.blouse), torsoW, 0.07);
     for (let i = 0; i < 4; i++) { const x = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 0.2), toon(S.lace || '#e8d8a8')); x.rotation.z = i % 2 ? 0.5 : -0.5; onTorso(x, 0, 2.6 + i * 1.0, 2.25 + (i > 1 ? 0.1 : 0)); }
-    for (const sx of [-1, 1]) { const b = inked(sphere(1.25, 1, 0.9, 0.8), toon(S.bodice), 0.03); attach(BN.chest, b, sx * 1.25, 5.6, 1.55); }
+    for (const sx of [-1, 1]) { const b = inked(sphere(1.25, 1, 0.9, 0.8), toon(S.bodice), 0.03); b.scale.setScalar(m.bust); attach(BN.chest, b, sx * 1.25, 5.6, 1.55 - 0.35 * (1 - m.bust)); }
     part(lathe([[2.66, 2.0], [2.66, 2.7]], 0.69), BN.hips, toonS(S.bodiceDk || S.belt), torsoW, 0.04);
     if (S.shawl) {
       const sh = toonS(S.shawl, true);
@@ -223,7 +287,7 @@ function make(id) {
 
   // ── Neck and head. The neck is skinned between the chest and the head; the head itself is one rigid piece, with the face on it.
   part(lathe([[0.88, -0.6], [0.8, 0.7], [0.84, 1.4]], 1, 14), BN.neck, toonS(S.skin), p => { const wc = ss(0.3, -0.5, p.y), wh = ss(0.9, 1.4, p.y); return [[BN.chest, wc], [BN.head, wh], [BN.neck, Math.max(0, 1 - wc - wh)]]; }, 0.06);
-  const head = new THREE.Group(); head.position.y = 2.2; head.scale.setScalar(0.92); BN.head.add(head); rig.headGroup = head;
+  const head = new THREE.Group(); head.position.y = 2.2 * HR; head.scale.setScalar(m.headSize); BN.head.add(head); rig.headGroup = head;
   head.add(inked(lathe([[0, -2.6], [0.65, -2.5], [1.35, -2.0], [1.82, -1.1], [2.05, -0.1], [2.12, 0.85], [1.96, 1.75], [1.4, 2.42], [0, 2.62]], 0.92, 28), M.skin, 0.035));
   for (const sx of [-1, 1]) { const ear = inked(sphere(0.42, 0.55, 1, 0.8), M.skin, 0.06); ear.position.set(sx * 2.05, -0.1, -0.2); head.add(ear); }
   const face = new THREE.Group(); head.add(face); rig.face = face; rig.eyes = [];
@@ -286,11 +350,9 @@ function make(id) {
     const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
     const fn = (u, v) => { const y = lerp(3.9, -1.8, v), spread = lerp(1.05, 0.82, v), phi = Math.PI + lerp(-spread, spread, u), r = rAt(y) + 0.25 * Math.sin(u * Math.PI * 5) * v; return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r); };
     const g = sheet(fn, 14, 10, 0.35, p => new V3(p.x, 0, p.z));
-    part(g, BN.neck, [toonS(S.hair, true), toonS(S.hairDk, true), toonS(S.hair, true)], p => {
-      const w1 = ss(2.5, 0.8, p.y), w2 = ss(0.2, -1.3, p.y);
-      return [[BN.head, 1 - w1], [BN.hair1, w1 - w2], [BN.hair2, w2]];
-    }, 0.07);
-    part(band(fn, 14, 2, 0.08, 0.2, 0.06, p => new V3(p.x, 0, p.z)), BN.neck, toonS(S.hairHi, true), p => [[BN.head, 1 - ss(2.5, 0.8, p.y)], [BN.hair1, ss(2.5, 0.8, p.y)]]);    // a band of shine
+    const hairW = Object.assign(p => { const w1 = ss(2.5, 0.8, p.y), w2 = ss(0.2, -1.3, p.y); return [[BN.head, 1 - w1], [BN.hair1, w1 - w2], [BN.hair2, w2]]; }, { kind: 'hair' });
+    part(g, BN.neck, [toonS(S.hair, true), toonS(S.hairDk, true), toonS(S.hair, true)], hairW, 0.07);
+    part(band(fn, 14, 2, 0.08, 0.2, 0.06, p => new V3(p.x, 0, p.z)), BN.neck, toonS(S.hairHi, true), hairW);    // a band of shine
   }
 
   // ── Arms: shoulder › elbow › wrist (the forearm's twist) › hand.
@@ -302,8 +364,8 @@ function make(id) {
     part(limb(4.3, 0.78 * wide, 0.55 * wide), wrist, toonS(S.skin), limbW(arm, wrist, hand, 4.3, 0.8, 0.45), 0.06);
     // The sleeve, rolled to just below the elbow.
     part(lathe([[0.97 * wide, 0.15], [1.02 * wide, -0.8], [0.88 * wide, -1.25]], 1, 14), wrist, toonS(shirt ? S.shirtDk : S.blouse), limbW(arm, wrist, hand, 4.3, 0.8, 0.45), 0.05);
-    const h = inked(sphere(0.68, 0.78, 1.15, 0.52), M.skin, 0.06); h.position.y = -0.45; hand.add(h);
-    const thumb = inked(sphere(0.25, 1, 1.6, 1), M.skin, 0.08); thumb.position.set(0, 0.05, 0.45); thumb.rotation.x = 0.4; hand.add(thumb);
+    const h = inked(sphere(0.68, 0.78, 1.15, 0.52), M.skin, 0.06); h.position.y = -0.45 * m.handSize; h.scale.setScalar(m.handSize); hand.add(h);
+    const thumb = inked(sphere(0.25, 1, 1.6, 1), M.skin, 0.08); thumb.position.set(0, 0.05, 0.45 * m.handSize); thumb.scale.setScalar(m.handSize); thumb.rotation.x = 0.4; hand.add(thumb);
   }
   // ── Legs: hip › knee › ankle. Trousers into tall boots (the men); or bare under a skirt, short boots.
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
@@ -317,7 +379,7 @@ function make(id) {
     } else {
       part(lathe([[0, -7.7], [1.0, -7.6], [1.15, -6.5], [1.13, -4.8], [1.12, -3.4], [1.22, -3.0], [0, -3.0]], 1, 14), knee, toonS(S.boots), shinW, 0.07);
     }
-    const toe = inked(sphere(0.98, 1, 0.6, 1.55), M.boots, 0.05); toe.position.set(0, -0.3, 0.85); ankle.add(toe);
+    const toe = inked(sphere(0.98, 1, 0.6, 1.55), M.boots, 0.05); toe.scale.set(m.legGirth, 1, m.footSize); toe.position.set(0, -0.3 * LL, 0.85 * m.footSize); ankle.add(toe);
   }
 
   // ── The cloak: a capelet over the shoulders and down the back, open at the front, the hood lying back; scarlet, edged in gold, stitched with stars.
@@ -335,6 +397,7 @@ function make(id) {
       const side = ss(2.6, 4.2, Math.abs(p.x)) * ss(8.8, 7.0, p.y) * (1 - backness) * 0.45;
       return [[BN.chest, Math.max(0, 1 - wC - side)], [BN.cape, wC - wL], [BN.capeLow, wL], [p.x > 0 ? BN.armL : BN.armR, side]];
     };
+    capeW.kind = 'cape';
     meshes.push(part(sheet(fn, 32, 12, 0.22, out), BN.hips, [toonS('#cc2a2e', true), toonS('#86181e', true), toonS('#a82024', true)], capeW, 0.08));
     meshes.push(part(band(fn, 32, 1, 0.9, 1.0, 0.03, out), BN.hips, toonS('#e8b84a', true), capeW));                // the gold hem
     meshes.push(part(band(fn, 32, 1, 0.8, 0.82, 0.035, out), BN.hips, toonS('#f0c860', true), capeW));              // a line of gold stitching above it
@@ -349,12 +412,12 @@ function make(id) {
     meshes.push(part(mergeFlat(stars), BN.hips, toonS('#ffd86a', true), capeW));
     // The hood, lying back between her shoulders (under her hair), and the clasp at her throat.
     const hoodG = new THREE.SphereGeometry(2.3, 16, 9, 0, Math.PI * 2, 0, Math.PI * 0.62); hoodG.scale(1.0, 0.5, 0.78);
-    const hood = inked(hoodG, toon('#cc2a2e', { side: THREE.DoubleSide }), 0.03); hood.rotation.x = -1.35; hood.position.copy(at(BN.chest, 0, 9.1, -1.85)); g.add(hood);
-    const clasp = new THREE.Mesh(sphere(0.4, 1, 1, 0.5), toon('#e8b84a')); clasp.position.copy(at(BN.chest, 0, 9.05, 1.45)); g.add(clasp);
+    const hood = inked(hoodG, toon('#cc2a2e', { side: THREE.DoubleSide }), 0.03); hood.rotation.x = -1.35; { const q = new V3(0, 9.1, -1.85); D.cape(q); hood.position.copy(q.add(hipsW).sub(inFig(BN.chest))); hood.scale.setScalar(m.shoulderWidth); } g.add(hood);
+    const clasp = new THREE.Mesh(sphere(0.4, 1, 1, 0.5), toon('#e8b84a')); { const q = new V3(0, 9.05, 1.45); D.cape(q); clasp.position.copy(q.add(hipsW).sub(inFig(BN.chest))); } g.add(clasp);
     for (const m of meshes) { m.userData.cloak = true; }
-    rig.cloak = { group: g, show(on) { g.visible = !!on; root_.traverse(o => { if (o.isSkinnedMesh && (o.userData.cloak || o.userData.cloakInk)) o.visible = !!on; }); }, hood() {} };
+    rig.cloak = { group: g, show(on) { g.visible = !!on; fig.traverse(o => { if (o.isSkinnedMesh && (o.userData.cloak || o.userData.cloakInk)) o.visible = !!on; }); }, hood() {} };
     // (the outline hulls follow their meshes: mark them too)
-    root_.children.forEach((o, i, arr) => { if (o.isSkinnedMesh && o.material === INKS && arr[i - 1] && arr[i - 1].userData.cloak) o.userData.cloakInk = true; });
+    fig.children.forEach((o, i, arr) => { if (o.isSkinnedMesh && o.material === INKS && arr[i - 1] && arr[i - 1].userData.cloak) o.userData.cloakInk = true; });
     rig.cloak.show(false);
   }
 
@@ -391,7 +454,7 @@ function make(id) {
     legL: { thigh: BN.thighL, knee: BN.kneeL, ankle: BN.ankleL, sign: 1 }, legR: { thigh: BN.thighR, knee: BN.kneeR, ankle: BN.ankleR, sign: -1 },
   });
   BN.armL.userData.sign = 1; BN.armR.userData.sign = -1;
-  rig.state = {}; rig.target = {}; rig.baseHip = 15.5; rig.apply = function () { if (this.after) this.after(this); };
+  rig.state = {}; rig.target = {}; rig.baseHip = F.hipsY; rig.figure = F; rig.apply = function () { if (this.after) this.after(this); };
   rig.setExpr('calm');
   pose(rig, { t: 0, phase: 0, speed: 0 }, 1);
   return rig;
@@ -445,5 +508,5 @@ function pose(r, a, dt) {
   }
 }
 
-root.Toon = { make, pose, SPECS, toon, inked, INK, flat };
+root.Toon = { make, pose, SPECS, MEASURE, MIN_HEADS, STORE_KEY, measuresFor, clampMeasures, figure, toon, inked, INK, flat };
 })(typeof window !== 'undefined' ? window : globalThis);
