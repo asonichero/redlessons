@@ -176,7 +176,7 @@ function make(id, look, opts) {
   const top = P.blouse;
   skinnedOn(rig.hips, lathe([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 0.72, 24), P.skin, torsoW);      // the hips
   // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
-  const CHEEK = { x: 1.42, y: -1.25, z: -1.35, rx: 1.72, ry: 1.85, rz: 1.45 };
+  const CHEEK = { x: 1.42, y: -1.95, z: -1.3, rx: 1.72, ry: 1.85, rz: 1.45 };      // (low enough that the tops melt into the small of the back and the undersides meet the thighs in a crease)
   rig.cheek = {};
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
     const c = document.createElement('canvas'); c.width = 64; c.height = 32; const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
