@@ -70,7 +70,7 @@ function create(view, opts) {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(srgb('#2a1f1c'));
   const camera = new THREE.PerspectiveCamera(opts.fov || 34, 1, 0.5, 600);
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 10; controls.maxDistance = 140; controls.maxPolarAngle = Math.PI * 0.49;
+  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 10; controls.maxDistance = 140; controls.minPolarAngle = 0.01; controls.maxPolarAngle = Math.PI - 0.01;      // (all the way round, over and under: the floor, like the walls, faces in, so from below it isn't drawn)
   // Light: a warm sky and a bounce off the floor, and the sun through the window, which casts the shadows.
   scene.add(new THREE.HemisphereLight(srgb('#fff4e4'), srgb('#8a6448'), 0.62));
   const sun = new THREE.DirectionalLight(srgb('#fff0d8'), 0.72); sun.position.set(-30, 60, 40); sun.castShadow = true;

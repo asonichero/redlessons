@@ -262,7 +262,11 @@ function make(id, look, opts) {
   // The bodice: laced, from the hips to under the bust.
   skinnedOn(rig.hips, bust(lathe(wide(dense([[3.26, 0.3], [3.12, 0.9], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 });      // (flaring at the bottom over the hips, which never show through it)
   skinnedOn(rig.hips, lathe(wide([[3.16, 0.0], [3.28, 0.28], [3.0, 0.62]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 });      // its bound hem, a neat edge over the join with whatever is below
-  for (let i = 0; i < 4; i++) for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(1.0, 0.13, 0.12), P.lace, rig.torso, 0, 0.6 + i * 1.05, (1.66 + (i > 2 ? 0.08 : 0)) * TD * trunkW(1.5 + i * 1.05), { rot: [0, 0, sx * 0.55], ink: 0 });
+  // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
+  { const BOD = wide(dense([[3.26, 0.3], [3.12, 0.9], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
+    for (let i = 0; i < 4; i++) { const yh = 1.3 + i * 1.0, z = rAt(yh) * 0.74 * TD + 0.06;
+      for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.95, 0.14, 0.1), P.lace, rig.torso, 0, yh - D.torsoY, z, { rot: [0, 0, sx * 0.55], ink: 0 });
+      for (const sx of [-1, 1]) piece(new THREE.SphereGeometry(0.09, 8, 6), shade(P.lace, -0.3), rig.torso, sx * 0.42, yh - D.torsoY, z - 0.02, { ink: 0 }); } }
   // The neck: from inside the shoulders up into the head, bending with both.
   skinnedOn(rig.neck, lathe(wide([[0.7, -1.1], [0.68, -0.3], [0.64, 0.6], [0.62, 1.6]], K.neckGirth), 1, 16), P.skin, p => { const t = ss(0.1, -0.7, p.y), h = ss(0.6, 1.3, p.y); return [[rig.torso, t], [rig.head, h * (1 - t)], [rig.neck, (1 - t) * (1 - h)]]; });
   piece(lathe(wide([[1.25, -0.25], [1.4, 0.1], [1.15, 0.3]], Math.max(K.neckGirth, 0.9)), 0.78, 18), P.blouse, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.04 });   // the collar
@@ -357,45 +361,83 @@ function make(id, look, opts) {
   // Where the face's surface is: features set on it follow it as they move.
   const HEADP = [[-2.1, 0], [-2.0, 0.6], [-1.58, 1.15], [-0.8, 1.46], [0.1, 1.58], [0.8, 1.6], [1.5, 1.42], [1.92, 1.0], [2.08, 0.45], [2.1, 0]];
   const faceZ = (x, y) => { let r = 0; for (let i = 1; i < HEADP.length; i++) if (y <= HEADP[i][0]) { r = lerp(HEADP[i - 1][1], HEADP[i][1], (y - HEADP[i - 1][0]) / (HEADP[i][0] - HEADP[i - 1][0])); break; } return 1.1 * Math.sqrt(Math.max(0, r * r - x * x)); };
-  const face = new THREE.Group(); head.add(face);
-  const eyes = [], brows = [];
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
-    const e = new THREE.Group(); e.position.set(sx * K.eyeX, K.eyeY, faceZ(K.eyeX, K.eyeY) - 0.1); e.rotation.y = sx * 0.32; e.scale.set(K.eyeW, K.eyeH, 1); face.add(e);
-    e.add(new THREE.Mesh(ell(0.43, 0.3, 0.16, 16, 10), flat('#fffaf2')));
-    const iris = new THREE.Group(); e.add(iris); iris.position.z = 0.12; iris.scale.set(K.iris, K.iris, 1);
-    iris.add(new THREE.Mesh(ell(0.22, 0.27, 0.05, 14, 8), flat(P.eyes)));
-    const dk = new THREE.Mesh(ell(0.19, 0.11, 0.05, 14, 8), flat(shade(P.eyes, -0.4))); dk.position.set(0, 0.11, 0.01); iris.add(dk);
-    const pu = new THREE.Mesh(ell(0.09, 0.11, 0.04, 10, 6), flat('#1c1210')); pu.position.z = 0.03; iris.add(pu);
-    const sh = new THREE.Mesh(ell(0.06, 0.06, 0.03, 8, 6), flat('#ffffff')); sh.position.set(0.07, 0.09, 0.05); iris.add(sh);
-    const lid = new THREE.Group(); e.add(lid);
-    const lash = new THREE.Mesh(arc(0.4, 0.055, 0.15, Math.PI - 0.15), flat('#2a1612')); lash.scale.y = 0.72; lash.position.z = 0.1; lid.add(lash);
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.06), flat('#2a1612')); wing.position.set(sx * 0.42, 0.13, 0.08); wing.rotation.z = sx * 0.45; lid.add(wing);
-    // The lid itself: skin that comes down over the eye to close or narrow it.
-    // (the shape of the eye itself, squashed from its top edge down, so it closes the eye and never reaches past it to the brow)
-    const cover = new THREE.Mesh(ell(0.45, 0.3, 0.19, 16, 10), mat(P.skin)); cover.position.set(0, 0.3, 0.02); lid.add(cover);
-    const b = new THREE.Mesh(arc(0.46, 0.05, 0.35, Math.PI - 0.35), flat(P.hairDk)); b.scale.set(K.eyeW, 0.55, 1); b.position.set(sx * (K.eyeX + 0.04), K.browY, faceZ(K.eyeX + 0.04, K.browY) + 0.02); b.rotation.y = sx * 0.32; face.add(b);
-    eyes.push({ e, iris, cover, lash, wing, sx }); brows.push({ b, sx });
+  // The nose: a soft slope out of the face in the face's own colour (the shading shows it). The shadow under it is painted, with everything else.
+  { const N = K.noseSize, g = new THREE.SphereGeometry(1, 16, 12); g.scale(0.15 * N, 0.36 * N, 0.17 * N);
+    piece(g, P.skin, head, 0, K.noseY + 0.08 * N, faceZ(0, K.noseY) - 0.07, { rot: [-0.42, 0, 0], ink: 0 }); }
+  // ── The face is painted: eyes, lids, brows, mouth, blush and tears are drawn onto a thin layer that follows the face's surface, and redrawn as the
+  // expression eases from one to the next, so every feature morphs smoothly (the mouth from a smile through flat to a frown or open; the lids down
+  // over the eyes) rather than pieces switching on and off. Drawn in the head's own units: x across, y up.
+  const FX0 = -1.62, FX1 = 1.62, FY0 = -2.05, FY1 = 1.45, FW = 512, FH = Math.round(FW * (FY1 - FY0) / (FX1 - FX0));
+  const fcan = document.createElement('canvas'); fcan.width = FW; fcan.height = FH; const fx = fcan.getContext('2d');
+  const ftex = new THREE.CanvasTexture(fcan); ftex.encoding = THREE.sRGBEncoding; ftex.anisotropy = 4;
+  { const NX = 40, NY = 44, pos = [], uv = [], idx = [];
+    for (let j = 0; j <= NY; j++) for (let i = 0; i <= NX; i++) { const x = lerp(FX0, FX1, i / NX), y = lerp(FY0, FY1, j / NY); pos.push(x, y, faceZ(x, y) + 0.012); uv.push(i / NX, j / NY); }
+    for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 2, d = a + NX + 1; idx.push(a, b, c, a, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: ftex, transparent: true, alphaTest: 0.02, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+    m.renderOrder = 2; head.add(m); }
+  const px = x => (x - FX0) / (FX1 - FX0) * FW, py = y => (FY1 - y) / (FY1 - FY0) * FH, U = FW / (FX1 - FX0);      // (head units to canvas pixels)
+  const INKC = '#2a1612', lipsDk = shade(P.lips, -0.4);
+  function drawEye(sx, F, open) {
+    const cx = sx * K.eyeX, cy = K.eyeY, rx = 0.42 * K.eyeW, ry = 0.3 * K.eyeH, o = clamp(open, 0, 1.15);
+    // The opening: the lower lid a gentle curve, the upper lid lifting from it as the eye opens (a closed eye is a single curved line).
+    const top = cy + ry * (2.1 * o - 0.25), bot = cy - ry * 0.95 * Math.min(1, 0.35 + o), inX = cx - sx * rx, outX = cx + sx * rx, outY = cy + ry * 0.18;
+    const path = () => { fx.beginPath(); fx.moveTo(px(inX), py(cy)); fx.quadraticCurveTo(px(cx - sx * 0.1), py(top), px(outX), py(outY)); fx.quadraticCurveTo(px(cx), py(bot), px(inX), py(cy)); };
+    if (o > 0.06) {
+      fx.save(); path(); fx.fillStyle = '#fffaf2'; fx.fill(); fx.clip();
+      const ix = cx + F.look * 0.07, iy = cy + ry * 0.12, ir = 0.21 * K.iris;
+      fx.fillStyle = P.eyes; fx.beginPath(); fx.ellipse(px(ix), py(iy), ir * U, ir * 1.18 * U, 0, 0, 7); fx.fill();
+      fx.fillStyle = shade(P.eyes, -0.45); fx.beginPath(); fx.ellipse(px(ix), py(iy + ir * 0.5), ir * U, ir * 0.62 * U, 0, 0, 7); fx.fill();
+      fx.fillStyle = '#1c1210'; fx.beginPath(); fx.ellipse(px(ix), py(iy), ir * 0.42 * U, ir * 0.52 * U, 0, 0, 7); fx.fill();
+      fx.fillStyle = '#ffffff'; fx.beginPath(); fx.arc(px(ix + 0.07), py(iy + 0.09), 0.055 * U, 0, 7); fx.fill();
+      fx.restore();
+    }
+    // The upper lash line, thick, with a flick at the outer corner; a fine line under the eye.
+    fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineJoin = 'round';
+    fx.lineWidth = 0.075 * U; fx.beginPath(); fx.moveTo(px(inX), py(cy)); fx.quadraticCurveTo(px(cx - sx * 0.1), py(top), px(outX), py(outY)); fx.lineTo(px(outX + sx * 0.12), py(outY + 0.1)); fx.stroke();
+    const under = 0.6 * clamp((o - 0.35) / 0.4, 0, 1);      // (the line under the eye fades as it narrows, so a shut eye is one clean line)
+    if (under > 0.01) { fx.lineWidth = 0.025 * U; fx.globalAlpha = under; fx.beginPath(); fx.moveTo(px(cx - sx * rx * 0.5), py(cy - ry * 0.75)); fx.quadraticCurveTo(px(cx), py(bot - 0.02), px(outX - sx * 0.05), py(cy - ry * 0.15)); fx.stroke(); fx.globalAlpha = 1; }
   }
-  // The nose: a soft slope out of the face in the face's own colour (the shading shows it), with a short shadow under its tip, as a toon nose is drawn.
-  { const N = K.noseSize, nz = faceZ(0, K.noseY);
-    const g = new THREE.SphereGeometry(1, 16, 12); g.scale(0.15 * N, 0.36 * N, 0.17 * N);
-    piece(g, P.skin, face, 0, K.noseY + 0.08 * N, nz - 0.07, { rot: [-0.42, 0, 0], ink: 0 });
-    piece(new THREE.TorusGeometry(0.11 * N, 0.022, 4, 10, Math.PI * 0.8).rotateZ(Math.PI * 1.1), shade(P.skin, -0.3), face, 0, K.noseY - 0.18 * N, nz + 0.07, { rot: [0.3, 0, 0], ink: 0 }); }
-  // Mouths: one of these shows at a time.
-  const M = {};
-  // (each mouth sits just proud of the face's surface)
-  const mouthAt = (m, y, z) => { m.position.set(0, y + K.mouthY, faceZ(0, y + K.mouthY) + 0.03 + (z - 1.56) * 0.5); face.add(m); return m; };
-  M.smile = mouthAt(new THREE.Mesh(arc(0.3, 0.045, Math.PI * 1.18, Math.PI * 1.82), flat(shade(P.lips, -0.35))), -0.98, 1.56);
-  M.flat = mouthAt(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.05), flat(shade(P.lips, -0.35))), -1.2, 1.55);
-  M.frown = mouthAt(new THREE.Mesh(arc(0.26, 0.045, Math.PI * 0.2, Math.PI * 0.8), flat(shade(P.lips, -0.35))), -1.42, 1.5);
-  { const g = new THREE.Group(); const o = new THREE.Mesh(ell(0.26, 0.2, 0.06), flat('#6a2026')); g.add(o); const lip = new THREE.Mesh(arc(0.26, 0.06, 0, Math.PI * 2), flat(P.lips)); lip.scale.y = 0.78; g.add(lip); M.open = mouthAt(g, -1.22, 1.5); }
-  { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.2, 0.05), flat('#fbf6ee')); g.add(t); const l = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.06), flat('#8a4a48')); g.add(l);
-    const r = new THREE.Mesh(arc(0.31, 0.05, 0, Math.PI * 2), flat(P.lips)); r.scale.y = 0.4; g.add(r); M.gritted = mouthAt(g, -1.22, 1.5); }
-  M.pout = mouthAt(new THREE.Mesh(ell(0.16, 0.1, 0.06), flat(P.lips)), -1.2, 1.52);
-  const lowerLip = mouthAt(new THREE.Mesh(ell(0.17, 0.06, 0.05), flat(P.lips)), -1.29, 1.5);
-  const blush = []; for (const sx of [-1, 1]) { const b = new THREE.Mesh(ell(0.38 * K.blushSize, 0.17 * K.blushSize, 0.05), flat(P.blush, 0.55)); b.position.set(sx * 0.98, -0.42, faceZ(0.98, -0.42) + 0.01); b.rotation.y = sx * 0.5; face.add(b); blush.push(b); }
-  const tears = []; for (const sx of [-1, 1]) { const t = new THREE.Mesh(ell(0.08, 0.32, 0.04), flat('#9fd0f0', 0.85)); t.position.set(sx * K.eyeX, K.eyeY - 0.47 * K.eyeH, faceZ(K.eyeX, K.eyeY - 0.47 * K.eyeH) + 0.02); t.rotation.y = sx * 0.32; face.add(t); tears.push(t); }
-
+  function drawBrow(sx, F) {
+    const by = K.browY + F.browY, inX = sx * (K.eyeX - 0.3 * K.eyeW), outX = sx * (K.eyeX + 0.42 * K.eyeW), inY = by + F.brow * 0.3, outY = by - 0.06 - F.brow * 0.08;
+    fx.strokeStyle = P.hairDk; fx.lineCap = 'round';
+    for (let k = 0; k < 6; k++) { const t0 = k / 6, t1 = (k + 1) / 6, at = t => [lerp(inX, outX, t), lerp(inY, outY, t) + 0.09 * Math.sin(Math.PI * t)];
+      const [x0, y0] = at(t0), [x1, y1] = at(t1); fx.lineWidth = lerp(0.105, 0.045, t1) * U; fx.beginPath(); fx.moveTo(px(x0), py(y0)); fx.lineTo(px(x1), py(y1)); fx.stroke(); }
+  }
+  function drawMouth(F) {
+    const s_ = F.ms * K.mouthSize, w = F.mw * s_, cy = -1.2 + K.mouthY, c = F.mc, o = F.mo * s_, l = -w / 2, r = w / 2, cornerY = cy + c * 0.12;
+    // Upper lip line and lower lip line: they meet at the corners; their middles part as the mouth opens. A smile lifts the corners, a frown drops them.
+    const upMid = cy + 0.02 - c * 0.04, loMid = cy - o * 0.32 - c * 0.04 - 0.01;
+    if (o > 0.03) {
+      fx.beginPath(); fx.moveTo(px(l), py(cornerY)); fx.quadraticCurveTo(px(0), py(upMid + (upMid - cornerY)), px(r), py(cornerY)); fx.quadraticCurveTo(px(0), py(loMid + (loMid - cornerY)), px(l), py(cornerY));
+      fx.fillStyle = '#6a2026'; fx.fill();
+      if (F.mt > 0.02) { fx.save(); fx.clip(); fx.fillStyle = '#fbf6ee'; const th = lerp(0.07, 0.5, F.mt) * Math.max(0.05, o * 0.32 + 0.02); fx.fillRect(px(l), py(upMid + 0.05), w * U, (th + 0.05) * U); if (F.mt > 0.7) { fx.fillRect(px(l), py(loMid + 0.02 + th * 0.4), w * U, th * 0.5 * U); } fx.restore(); }
+      fx.strokeStyle = lipsDk; fx.lineWidth = 0.035 * U; fx.stroke();
+      fx.fillStyle = P.lips; fx.globalAlpha = 0.85; fx.beginPath(); fx.ellipse(px(0), py(loMid - 0.035), w * 0.28 * U, 0.04 * U, 0, 0, 7); fx.fill(); fx.globalAlpha = 1;
+    } else {
+      fx.strokeStyle = lipsDk; fx.lineCap = 'round'; fx.lineWidth = 0.045 * U;
+      fx.beginPath(); fx.moveTo(px(l), py(cornerY)); fx.quadraticCurveTo(px(0), py(upMid + (upMid - cornerY)), px(r), py(cornerY)); fx.stroke();
+      fx.fillStyle = P.lips; fx.globalAlpha = 0.75; fx.beginPath(); fx.ellipse(px(0), py(cy - 0.08 - c * 0.03), w * 0.22 * U, 0.045 * U, 0, 0, 7); fx.fill(); fx.globalAlpha = 1;
+    }
+  }
+  function paintFace(F, open) {
+    fx.clearRect(0, 0, FW, FH);
+    if (F.blush > 0.02) for (const sx of [-1, 1]) {
+      const bx = px(sx * 0.98), byp = py(-0.42), r = 0.42 * K.blushSize * U, g = fx.createRadialGradient(bx, byp, 0, bx, byp, r);
+      g.addColorStop(0, `rgba(240,120,120,${0.55 * F.blush})`); g.addColorStop(1, 'rgba(240,120,120,0)');
+      fx.save(); fx.translate(bx, byp); fx.scale(1, 0.55); fx.translate(-bx, -byp); fx.fillStyle = g; fx.fillRect(bx - r, byp - r, 2 * r, 2 * r); fx.restore();
+    }
+    // The nose's shadow, a short soft curve under its tip.
+    fx.strokeStyle = shade(P.skin, -0.3); fx.lineWidth = 0.035 * U; fx.lineCap = 'round'; fx.beginPath(); fx.arc(px(0.02), py(K.noseY - 0.12 * K.noseSize), 0.1 * K.noseSize * U, Math.PI * 0.15, Math.PI * 0.75); fx.stroke();
+    for (const sx of [-1, 1]) { drawEye(sx, F, open); drawBrow(sx, F); }
+    drawMouth(F);
+    if (F.tears > 0.05) for (const sx of [-1, 1]) {
+      const x = sx * (K.eyeX - 0.05), y0 = K.eyeY - 0.2 * K.eyeH, len = 0.75 * F.tears;
+      fx.strokeStyle = 'rgba(150,205,240,0.9)'; fx.lineWidth = 0.08 * U; fx.lineCap = 'round'; fx.beginPath(); fx.moveTo(px(x), py(y0)); fx.quadraticCurveTo(px(x + sx * 0.06), py(y0 - len * 0.5), px(x + sx * 0.02), py(y0 - len)); fx.stroke();
+      fx.fillStyle = 'rgba(150,205,240,0.95)'; fx.beginPath(); fx.arc(px(x + sx * 0.02), py(y0 - len), 0.06 * U, 0, 7); fx.fill();
+    }
+    ftex.needsUpdate = true;
+  }
   // ── Hair. ──
   const hair = (geo, x, y, z, rot, hex) => piece(geo, hex || P.hair, head, x, y, z, { rot, ink: 0.05 });
   // The cap: over the whole crown and down the back and sides, its front edge drawn back to a hairline (higher in the middle of the forehead, lower
@@ -459,18 +501,18 @@ function make(id, look, opts) {
   }
 
   // ── Expressions: brows, lids, the look of the eyes, the mouth, a flush and tears. Changes ease in (see tick). ──
-  const EX = EXPRS, F = { brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0, ms: 1 };
+  const EX = EXPRS, F = Object.assign({ brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0, ms: 1 }, MOUTHS.flat), drawn = {};
   let target = Object.assign({}, EX.calm), blinkWait = 2 + Math.random() * 3, blinkPhase = 0, blink = 0, t = 0;      // (blinkPhase: 0 open, waiting; 1 closing; 2 opening)
-  rig.setExpr = name => { target = Object.assign({}, EX[name] || EX.calm); rig.expr = EX[name] ? name : 'calm'; for (const k in M) M[k].visible = k === target.mouth; lowerLip.visible = target.mouth === 'smile' || target.mouth === 'flat'; };
-  function applyFace() {
-    for (const { b, sx } of brows) { b.rotation.z = sx * F.brow; b.position.y = K.browY + F.browY; }
-    const open = clamp(F.open * (1 - blink), 0.04, 1.1);
-    const shut = clamp(1 - open, 0, 1);
-    for (const ey of eyes) { ey.cover.visible = shut > 0.01; ey.cover.scale.y = Math.max(0.01, shut); ey.cover.position.y = 0.3 * (1 - shut); ey.lash.position.y = -0.5 * shut; ey.wing.position.y = 0.13 - 0.55 * shut; ey.iris.position.x = F.look * 0.06; }
-    blush.forEach(b => { b.material.opacity = 0.2 + 0.5 * F.blush; b.visible = F.blush > 0.02; });
-    tears.forEach(tr => { tr.visible = F.tears > 0.05; tr.scale.y = F.tears; });
-    const ms = F.ms * K.mouthSize; for (const key in M) M[key].scale.set(ms, ms * (key === 'open' ? 1.15 : 1), 1); lowerLip.scale.set(ms, 1, 1);
+  rig.setExpr = name => { const e = EX[name] || EX.calm; target = Object.assign({}, e, MOUTHS[e.mouth] || MOUTHS.flat); rig.expr = EX[name] ? name : 'calm'; };
+  // Redraw the face when anything on it has moved (expressions ease over a few frames; a blink is quick).
+  function applyFace(force) {
+    const open = clamp(F.open * (1 - blink), 0, 1.15);
+    let moved = force || Math.abs((drawn.open == null ? -9 : drawn.open) - open) > 0.004;
+    for (const k in F) if (!moved && Math.abs((drawn[k] == null ? -9 : drawn[k]) - F[k]) > 0.003) moved = true;
+    if (!moved) return;
+    paintFace(F, open); Object.assign(drawn, F); drawn.open = open;
   }
+
 
   // ── Clothes and marks (her): the skirt down or lifted, the drawers up or down, the colour on each cheek. ──
   const marks = { L: -1, R: -1 };
@@ -515,7 +557,7 @@ function make(id, look, opts) {
   rig.tick = dt => {
     dt = clamp(dt || 1 / 60, 0, 0.1); t += dt;
     const k = 1 - Math.exp(-dt * 10);
-    for (const key of ['brow', 'browY', 'open', 'look', 'blush', 'tears', 'ms']) F[key] = lerp(F[key], target[key] == null ? (key === 'ms' ? 1 : 0) : target[key], k);
+    for (const key in F) F[key] = lerp(F[key], target[key] == null ? (key === 'ms' ? 1 : 0) : target[key], k);
     if (blinkPhase === 0) { blinkWait -= dt; if (blinkWait <= 0) blinkPhase = 1; }
     else if (blinkPhase === 1) { blink += dt * 14; if (blink >= 1) { blink = 1; blinkPhase = 2; } }
     else { blink -= dt * 9; if (blink <= 0) { blink = 0; blinkPhase = 0; blinkWait = 2.5 + Math.random() * 3.5; } }
@@ -549,12 +591,15 @@ function make(id, look, opts) {
 
   rig.eyesOpen = () => F.open * (1 - blink);      // (how open the eyes are now, blinks included)
   rig.meshes = shadowy;
-  rig.setExpr('calm'); rig.setDress({}); applyFace();
+  rig.setExpr('calm'); Object.assign(F, target); rig.setDress({}); applyFace(true);
   return rig;
 }
 
 // ── Expressions. brow: inner ends up (+) or down (-); open: how open the eyes are; mouth: which mouth; blush, tears: 0..1. ──
 // Pushed further than life, to read on the bigger heads: ms is the mouth's size.
+// The mouths, as shapes the painted mouth eases between: width, curve (+ corners up), how open, and how much of the teeth show.
+const MOUTHS = { flat: { mw: 0.42, mc: 0.05, mo: 0, mt: 0 }, smile: { mw: 0.6, mc: 0.6, mo: 0.06, mt: 0.6 }, frown: { mw: 0.48, mc: -0.5, mo: 0, mt: 0 },
+  open: { mw: 0.48, mc: -0.15, mo: 0.8, mt: 0.15 }, gritted: { mw: 0.7, mc: -0.3, mo: 0.36, mt: 1 }, pout: { mw: 0.26, mc: -0.2, mo: 0.1, mt: 0 } };
 const EXPRS = {
   calm:      { brow: 0, browY: 0, open: 0.95, mouth: 'flat', blush: 0, ms: 1 },
   smile:     { brow: 0.1, browY: 0.08, open: 0.72, mouth: 'smile', blush: 0.35, ms: 1.3 },
