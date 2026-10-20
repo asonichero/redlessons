@@ -548,6 +548,8 @@ function make(id, look, opts) {
     // The cape's sides are carried partly by the arms under them, so it lifts with them rather than letting them through.
     const capeW = p => { const side = 0.55 * ss(1.6, 3.2, Math.abs(p.x)) * ss(-0.4, 0.9, p.z) * ss(9.0, 7.4, p.y);      // (front and sides only: the back stays on her back)
       return [[rig.torso, 1 - side], [p.x > 0 ? rig.armL : rig.armR, side]]; };
+    // (whatever rests on her upper back, Gerda's hand, rests on the cape: the point is moved out to its surface, between the shoulder blades)
+    { const yb = rig.upperBack.position.y + D.torsoY, back = fn(0.5, (9.15 - yb) / (9.15 - hem(Math.PI))); rig.upperBack.position.z = Math.min(rig.upperBack.position.z, back.z - 0.12); }
     cloakParts.push(skinnedOn(rig.torso, surface(fn, 40, 10, out), P.cloak, capeW, { side: THREE.DoubleSide, ink: 0.07 }));
     cloakParts.push(skinnedOn(rig.torso, surface((u, v) => { const p = fn(u, 0.93 + 0.07 * v); return p.add(out(p).normalize().multiplyScalar(0.04)); }, 40, 1, out), P.lace, capeW, { side: THREE.DoubleSide, ink: 0 }));
     cloakParts.push(piece(ell(0.32, 0.32, 0.22), '#e8b84a', rig.torso, 0, 8.95, 1.15));       // the clasp
