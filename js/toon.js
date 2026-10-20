@@ -172,6 +172,7 @@ function make(id, look, opts) {
   // ── Skinning. The body and the skirts are skinned to the whole skeleton, so each is one continuous surface that bends smoothly through the joints
   // (shoulders, elbows, hips, knees, the neck), with an outline that runs unbroken across them. A part is given in one bone's space at rest, with a
   // weight function that says, for each point, how much each bone carries it.
+  const tints = [];
   const skel = new THREE.Skeleton(bones.slice()), BI = new Map(bones.map((b, i) => [b, i]));
   const rootInv = new THREE.Matrix4().copy(root_.matrixWorld).invert();
   const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -185,6 +186,13 @@ function make(id, look, opts) {
       ws.forEach(([b, w], k) => { si[i * 4 + k] = BI.get(b); sw[i * 4 + k] = w / tot; });
     }
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    if (o.tint) {      // (skin that the marks can bleed into: its points in the hips' space at rest, and a colour for each)
+      const toHips = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(frame.matrixWorld), at = [], q = new V3();
+      for (let i = 0; i < n; i++) at.push(q.fromBufferAttribute(pos, i).clone().applyMatrix4(toHips));
+      const col = new Float32Array(n * 3), base = srgb(hex); for (let i = 0; i < n; i++) { col[i * 3] = base.r; col[i * 3 + 1] = base.g; col[i * 3 + 2] = base.b; }
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo, at, col, base });
+      o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true });
+    }
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
     const m = new THREE.SkinnedMesh(geo, mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
     if (o.ink !== 0 && K.ink > 0) { const h = new THREE.SkinnedMesh(hullGeo(geo, (o.ink || 0.07) * K.ink), INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h; }
@@ -222,17 +230,29 @@ function make(id, look, opts) {
 
   // ── Torso: hips and seat, the waist, the ribcage and shoulders; the bust. The torso's own space starts DIM.torsoY above the hips. ──
   const top = P.blouse;
-  skinnedOn(rig.hips, lathe(wide([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], trunkW), 0.72 * TD, 24), P.skin, torsoW);      // the hips
+  skinnedOn(rig.hips, lathe(wide([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], trunkW), 0.72 * TD, 24), P.skin, torsoW, { tint: true });      // the hips
   // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
   const CHEEK = { x: K.cheekX, y: K.cheekY, z: K.cheekZ * TD, rx: K.cheekW, ry: K.cheekH, rz: K.cheekD };      // (low enough that the tops melt into the small of the back and the undersides meet the thighs in a crease)
   // Each cheek hangs from a pivot at its own hip joint that turns with that thigh by a share (cheekFollow), so as the legs swing forward (sitting,
   // bending over a lap) the seat rolls round with them rather than staying behind with the hips. The strike points and the drawers ride on it too.
   rig.cheek = {}; rig.seatPivot = {};
   const pivotAt = sx => new V3(sx * D.hipX, 0, 0);
+  // A cheek's shading blends into the hip's at its sides and top: there its surface's normals are turned toward the hips' own (outward from the body's
+  // middle), so the light falls on the two as one form; only the back of it, and the crease under it, keep their own.
+  const blendIntoHips = (g, sx, cx, cy, cz) => {
+    const pos = g.attributes.position, nor = g.attributes.normal, n = new V3(), b = new V3();
+    for (let i = 0; i < pos.count; i++) {
+      n.fromBufferAttribute(nor, i); const px_ = pos.getX(i) + sx * cx, pz = pos.getZ(i) + cz, py_ = pos.getY(i) + cy;
+      b.set(px_, 0.25 * clamp(py_, -1, 1), pz / (0.72 * TD) ** 2).normalize();
+      const w = (1 - ss(0.35, 0.9, -n.z)) * (1 - ss(0.15, 0.6, -n.y));
+      n.lerp(b, w).normalize(); nor.setXYZ(i, n.x, n.y, n.z);
+    }
+    nor.needsUpdate = true; return g;
+  };
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
     const pv = new THREE.Object3D(); pv.position.copy(pivotAt(sx)); rig.hips.add(pv); rig.seatPivot[s] = pv;
     const c = document.createElement('canvas'); c.width = 64; c.height = 32; const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
-    const m = piece(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 24, 16), null, pv, sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z, { material: mat(null, { map: tex }), ink: 0.035 });
+    const m = piece(blendIntoHips(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 24, 16), sx, CHEEK.x, CHEEK.y, CHEEK.z), null, pv, sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z, { material: mat(null, { map: tex }), ink: 0.035 });
     rig.cheek[s] = { mesh: m, canvas: c, tex };
   }
   // Turn the pivots (and the frame that says which way is into the skin) after the thighs: called each tick, and by a scene that poses the legs.
@@ -292,7 +312,7 @@ function make(id, look, opts) {
     const thigh = rig['thigh' + s], knee = rig['knee' + s], ankle = rig['ankle' + s];
     // One leg from the hip to the ankle, bending through the knee; for her, the boot's shaft and its turned-down top ride on it.
     const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, FS = K.footSize, sh = f => -Lk - f * D.shin;      // (points down the shin as a share of its length)
-    skinnedOn(thigh, lathe(wide([[0, 1.0], [1.25, 0.7], [1.72, -0.4], [1.66, -Lk * 0.34], [1.45, -Lk * 0.68], [1.15, -Lk + 0.6], [1.08, -Lk - 0.2], [1.13, sh(0.17)], [1.15, sh(0.37)], [0.9, sh(0.66)], [0.62, -La + 0.8], [0.54, -La + 0.1], [0.5, -La - 0.2], [0, -La - 0.5]], LG), 1, 20), P.skin, legW(s));
+    skinnedOn(thigh, lathe(wide([[0, 1.0], [1.25, 0.7], [1.72, -0.4], [1.66, -Lk * 0.34], [1.45, -Lk * 0.68], [1.15, -Lk + 0.6], [1.08, -Lk - 0.2], [1.13, sh(0.17)], [1.15, sh(0.37)], [0.9, sh(0.66)], [0.62, -La + 0.8], [0.54, -La + 0.1], [0.5, -La - 0.2], [0, -La - 0.5]], LG), 1, 20), P.skin, legW(s), { tint: true });
     if (S.feet === 'boots') {
       skinnedOn(thigh, lathe(wide([[0.84, sh(0.51)], [1.0, sh(0.56)], [0.8, sh(0.8)], [0.72, -La - 0.2], [0, -La - 0.4]], LG), 1, 18), P.boots, legW(s));
       skinnedOn(thigh, lathe(wide([[0.88, sh(0.507)], [1.04, sh(0.536)], [1.0, sh(0.586)]], LG), 1, 18), P.bootsDk, legW(s), { ink: 0.04 });
@@ -339,9 +359,12 @@ function make(id, look, opts) {
   const drawers = [], drawersDown = [];
   {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
-    drawers.push(skinnedOn(rig.hips, lathe(wide([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.24, 0.2], [3.02, 0.42]], trunkW), 0.75 * TD, 24), P.drawers, torsoW));       // (their waist tucked under the bodice's hem)
+    // (up over the whole seat to the waist, tucked under the bodice: fuller at the back, so the cheeks never rise above them)
+    { const g = lathe(wide(dense([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.26, 0.4], [3.08, 0.85], [2.95, 1.05]], 24), trunkW), 0.75 * TD, 32), pp = g.attributes.position;
+      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(0.2, 1.0, pp.getY(i)))); }
+      g.computeVertexNormals(); drawers.push(skinnedOn(rig.hips, g, P.drawers, torsoW)); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
-      drawers.push(piece(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), P.drawers, rig.seatPivot[s], sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z));
+      drawers.push(piece(blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z), P.drawers, rig.seatPivot[s], sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s)));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03 }));
       drawersDown.push(piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0));
@@ -525,6 +548,20 @@ function make(id, look, opts) {
 
   // ── Clothes and marks (her): the skirt down or lifted, the drawers up or down, the colour on each cheek. ──
   const marks = { L: -1, R: -1 };
+  // The colour bleeding from the cheeks into the skin around them (the hips, the small of the back, the tops of the thighs): faint, fading with
+  // distance from where each cheek is struck.
+  const markAt = { L: rig.rear.L.position.clone().add(pivotAt(1)), R: rig.rear.R.position.clone().add(pivotAt(-1)) };
+  const pinkL = srgb('#e8706c'), redL = srgb('#b02228'), tc = new THREE.Color();
+  function bleed() {
+    for (const t of tints) {
+      for (let i = 0; i < t.at.length; i++) {
+        tc.copy(t.base);
+        for (const s of ['L', 'R']) { const m = marks[s]; if (m <= 0.005) continue; const w = Math.exp(-t.at[i].distanceToSquared(markAt[s]) / (2 * 1.75 * 1.75)); tc.lerp(pinkL, Math.min(0.62, 0.72 * Math.sqrt(m) * w)); tc.lerp(redL, Math.min(0.45, 0.55 * m * m * w)); }
+        t.col[i * 3] = tc.r; t.col[i * 3 + 1] = tc.g; t.col[i * 3 + 2] = tc.b;
+      }
+      t.geo.attributes.color.needsUpdate = true;
+    }
+  }
   function paintCheek(s, m) {
     const ck = rig.cheek[s], c = ck.canvas, x = c.getContext('2d'), W = c.width, H = c.height;
     x.fillStyle = P.skin; x.fillRect(0, 0, W, H);
@@ -534,9 +571,9 @@ function make(id, look, opts) {
       const cx = 0.75 * W, cy = (0.5 + TILT / Math.PI) * H, seed = s === 'L' ? 3 : 7;
       const blot = (rgba, r, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, rgba + a + ')'); g.addColorStop(0.65, rgba + a * 0.7 + ')'); g.addColorStop(1, rgba + '0)');
         x.save(); x.translate(cx, cy); x.scale(1, 1.6); x.translate(-cx, -cy); x.fillStyle = g; x.fillRect(0, 0, W, H); x.restore(); };
-      blot('rgba(232,112,108,', 7 + 7 * Math.sqrt(m), Math.min(0.7, 0.75 * Math.sqrt(m)));
-      blot('rgba(176,34,40,', 4 + 6 * m, Math.min(0.75, 0.8 * m * m));
-      for (let i = 0; i < 9; i++) { const a = (i * 2.4 + seed), r = 2 + (i % 4); x.fillStyle = `rgba(196,52,56,${0.25 * m})`; x.beginPath(); x.ellipse(cx + Math.cos(a) * 5 * m, cy + Math.sin(a) * 6 * m, r, r * 1.4, 0, 0, 7); x.fill(); }
+      // (one soft wash, wide and fading out over the cheek, deepening at its heart; the surrounding skin takes a little of it too, see bleed)
+      blot('rgba(232,112,108,', 11 + 9 * Math.sqrt(m), Math.min(0.65, 0.7 * Math.sqrt(m)));
+      blot('rgba(176,34,40,', 6 + 7 * m, Math.min(0.7, 0.75 * m * m));
     }
     ck.tex.needsUpdate = true;
   }
@@ -550,7 +587,8 @@ function make(id, look, opts) {
       drawers.forEach(m => show(m, !bare)); drawersDown.forEach(m => show(m, bare));
     }
     const mk_ = d.marks || { L: 0, R: 0 };
-    for (const s of ['L', 'R']) { const m = Math.round((mk_[s] || 0) * 100) / 100; if (m !== marks[s]) { marks[s] = m; paintCheek(s, m); } }
+    let any = false; for (const s of ['L', 'R']) { const m = Math.round((mk_[s] || 0) * 100) / 100; if (m !== marks[s]) { marks[s] = m; paintCheek(s, m); any = true; } }
+    if (any) bleed();
   };
 
   // ── Each frame: the face eases toward its expression, she blinks, breathes, and the long hair hangs with gravity and swings as she moves. ──
@@ -628,13 +666,30 @@ const EXPRS = {
 // ── A standing idle: the weight drifts from foot to foot, the arms hang easy, the head wanders a little. ──
 function idle(r, t) {
   const sh = Math.sin(t * 0.5), sw = Math.sin(t * 0.8);
-  r.hips.position.set(0.18 * sh, DIM.hipY - 0.05 + 0.03 * Math.sin(t * 1.6), 0); r.hips.rotation.set(0, 0.03 * sw, 0.025 * sh);
+  r.hips.position.set(0.18 * sh, DIM.hipY - 0.35 + 0.03 * Math.sin(t * 1.6), 0);      // (a little low: the knees soft, so the planted feet can always be reached) r.hips.rotation.set(0, 0.03 * sw, 0.025 * sh);
   r.torso.rotation.set(0.02 * Math.sin(t * 1.6), -0.04 * sw, -0.03 * sh);
   r.neck.rotation.set(0.04 * Math.sin(t * 0.37), 0.15 * Math.sin(t * 0.23), 0.03 * Math.sin(t * 0.41) - 0.5 * r.torso.rotation.z);
   r.head.rotation.set(0, 0, 0);
   for (const [s, side] of [['L', 1], ['R', -1]]) {
     r['arm' + s].rotation.set(0.03 * Math.sin(t * 1.1 + side), 0, side * (0.13 + 0.02 * sh * side)); r['elbow' + s].rotation.set(-0.22 - 0.03 * Math.sin(t * 1.1 + side), 0, 0); r['hand' + s].rotation.set(0.1, 0, side * 0.05);
-    r['thigh' + s].rotation.set(0, 0, side * (0.03 + 0.02 * sh * side)); r['knee' + s].rotation.set(0.04 + 0.03 * Math.max(0, sh * side), 0, 0); r['ankle' + s].rotation.set(-0.03, 0, 0);
+  }
+  plantFeet(r);
+}
+// Feet planted: each ankle held at its own spot on the floor (in the root's space, under its hip at rest, a touch apart), however the hips sway. The
+// thigh and knee are solved to reach it, the knee bending forward; the foot is turned to lie flat.
+const _pf = { q: new THREE.Quaternion(), m: new THREE.Matrix4(), dn: new V3(0, -1, 0) };
+function plantFeet(r) {
+  r.root.updateMatrixWorld(true);
+  const L1 = DIM.thigh, L2 = DIM.shin;
+  for (const [s, side] of [['L', 1], ['R', -1]]) {
+    const thigh = r['thigh' + s], knee = r['knee' + s], ankle = r['ankle' + s];
+    const T = r.root.localToWorld(new V3(side * (DIM.hipX + 0.08), DIM.hipY - L1 - L2 - 0.12, 0.05)), Tl = r.hips.worldToLocal(T);      // (in the hips' space)
+    const v = Tl.sub(thigh.position), d = clamp(v.length(), 1, L1 + L2 - 0.02); v.normalize();
+    const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1)), k = Math.PI - Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
+    const fwd = new V3(0, 0, 1).addScaledVector(v, -v.z).normalize(), u = v.clone().multiplyScalar(Math.cos(a)).addScaledVector(fwd, Math.sin(a));
+    thigh.quaternion.setFromUnitVectors(_pf.dn, u); knee.rotation.set(k, 0, 0);
+    r.root.updateMatrixWorld(true);
+    ankle.parent.getWorldQuaternion(_pf.q).invert(); ankle.quaternion.copy(_pf.q.multiply(r.root.getWorldQuaternion(new THREE.Quaternion())));
   }
 }
 // Seated upright on a seat whose top is at seatY (in the world, with the root at the floor): thighs level, shins straight down to the floor.
