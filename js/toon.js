@@ -194,14 +194,15 @@ function make(id, look, opts) {
       o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true });
     }
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
-    const m = new THREE.SkinnedMesh(geo, mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
+    const m = new THREE.SkinnedMesh(geo, o.material || mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
     if (o.ink !== 0 && K.ink > 0) { const h = new THREE.SkinnedMesh(hullGeo(geo, (o.ink || 0.07) * K.ink), INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h; }
     shadowy.push(m); return m;
   }
   // The skirts: by where a point hangs, between the hips, the thighs and the shins, so a skirt follows the legs. The back of it stays with the hips over
   // the seat and only follows the legs below it; the front follows them from the hip.
+  // Lying across a lap (opts.lying) the whole skirt goes with her legs from the hip, the back included, so her thighs never push through it.
   function legWeights(p) {
-    const back = ss(0.5, -2.2, p.z), down = 0.96 * ss(lerp(0.4, -2.8, back), lerp(-3.2, -4.8, back), p.y), l = ss(-1.4, 1.4, p.x);
+    const back = opts.lying ? 0 : ss(0.5, -2.2, p.z), down = 0.96 * ss(lerp(0.4, -2.8, back), lerp(-3.2, -4.8, back), p.y), l = ss(-1.4, 1.4, p.x);
     const k = ss(-D.thigh + 1.4, -D.thigh - 1.8, p.y);
     return [[rig.hips, 1 - down], [rig.thighL, down * l * (1 - k)], [rig.thighR, down * (1 - l) * (1 - k)], [rig.kneeL, down * l * k], [rig.kneeR, down * (1 - l) * k]];
   }
@@ -253,7 +254,7 @@ function make(id, look, opts) {
     const pv = new THREE.Object3D(); pv.position.copy(pivotAt(sx)); rig.hips.add(pv); rig.seatPivot[s] = pv;
     const c = document.createElement('canvas'); c.width = 64; c.height = 32; const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
     const m = piece(blendIntoHips(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 24, 16), sx, CHEEK.x, CHEEK.y, CHEEK.z), null, pv, sx * (CHEEK.x - D.hipX), CHEEK.y, CHEEK.z, { material: mat(null, { map: tex }), ink: 0.035 });
-    rig.cheek[s] = { mesh: m, canvas: c, tex };
+    rig.cheek[s] = { mesh: m, canvas: c, tex }; if (opts.seated) m.visible = false;      // (seated, the seat is under her skirt and on the chair)
   }
   // Turn the pivots (and the frame that says which way is into the skin) after the thighs: called each tick, and by a scene that poses the legs.
   rig.followThighs = () => {
@@ -332,8 +333,10 @@ function make(id, look, opts) {
   const waist = piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 });
   if (opts.seated) seatedDrape();
   else {
-    skirt = skinned(lathe(skirtProfile, 0.9, 28), P.skirt);
-    hemBand = skinned(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28), P.hem, { ink: 0.04 });
+    // (lying, its front, the side toward the lap she lies on, is drawn in close over her legs rather than standing out as a bell)
+    const hug = g => { if (opts.lying) { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z > 0) pp.setZ(i, z * lerp(1, 0.5, ss(0.6, -2.5, pp.getY(i)))); } g.computeVertexNormals(); } return g; };
+    skirt = skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt);
+    hemBand = skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 });
     if (P.apron) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
       apron = skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 });
@@ -345,19 +348,19 @@ function make(id, look, opts) {
     const Tk = D.thigh, drop = D.shin + 0.2, lapL = Tk + 1.5, arcL = 2.2 * Math.PI / 2, total = lapL + arcL + drop;
     const at = v => {                                  // the drape's spine: centre, the way 'up' from it, the half-width and the half-depth
       const d = v * total;
-      if (d < lapL) return { c: new V3(0, 0.15, -1.5 + d), n: new V3(0, 1, 0), w: lerp(3.7, 4.0, d / lapL) * K.hipWidth, h: 2.05 * K.legGirth };
-      if (d < lapL + arcL) { const a = (d - lapL) / arcL * Math.PI / 2; return { c: new V3(0, 0.15, Tk), n: new V3(0, Math.cos(a), Math.sin(a)), w: 4.0 * K.hipWidth, h: 2.05 * K.legGirth }; }
-      const t = (d - lapL - arcL) / drop; return { c: new V3(0, 0.15 - t * drop, Tk + 0.4 * t), n: new V3(0, 0, 1), w: lerp(4.0, 4.9 * K.skirtFull, t) * K.hipWidth, h: lerp(2.05, 2.5 * K.skirtFull, t) };
+      if (d < lapL) return { c: new V3(0, -0.1, -1.5 + d), n: new V3(0, 1, 0), w: lerp(3.7, 4.0, d / lapL) * K.hipWidth, h: 2.3 * K.legGirth };
+      if (d < lapL + arcL) { const a = (d - lapL) / arcL * Math.PI / 2; return { c: new V3(0, -0.1, Tk), n: new V3(0, Math.cos(a), Math.sin(a)), w: 4.0 * K.hipWidth, h: 2.3 * K.legGirth }; }
+      const t = (d - lapL - arcL) / drop; return { c: new V3(0, -0.1 - t * drop, Tk + 0.4 * t), n: new V3(0, 0, 1), w: lerp(4.0, 4.9 * K.skirtFull, t) * K.hipWidth, h: lerp(2.3, 2.5 * K.skirtFull, t) };
     };
     const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u); return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
-    const outward = p => new V3(p.x, p.z < Tk ? p.y - 0.15 : Math.max(0, p.y - 0.15), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
+    const outward = p => new V3(p.x, p.z < Tk ? p.y + 0.1 : Math.max(0, p.y + 0.1), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
     piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, rig.hips, 0, 0, 0, { side: THREE.DoubleSide });
-    piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6]], SW), 0.9 * TD, 24), P.skirt, rig.hips);
+    piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, rig.hips);      // (closed under her seat)
     piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, rig.hips, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 });
     if (P.apron) piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, rig.hips, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 });
   }
   const drawers = [], drawersDown = [];
-  {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off)
+  if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
     // (up over the whole seat to the waist, tucked under the bodice: fuller at the back, so the cheeks never rise above them)
     { const g = lathe(wide(dense([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.26, 0.4], [3.08, 0.85], [2.95, 1.05]], 24), trunkW), 0.75 * TD, 32), pp = g.attributes.position;
@@ -518,8 +521,10 @@ function make(id, look, opts) {
       const dep = lerp(DEP, 0.6, Math.max(0, Math.cos(phi)));      // (the front panels lie close over the bust; the back stands off the shoulder blades)
       return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * dep * TD); };
     const out = p => new V3(p.x, 0, p.z);
-    cloakParts.push(piece(surface(fn, 40, 10, out), P.cloak, rig.torso, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.07 }));
-    cloakParts.push(piece(surface((u, v) => { const p = fn(u, 0.93 + 0.07 * v); return p.add(out(p).normalize().multiplyScalar(0.04)); }, 40, 1, out), P.lace, rig.torso, 0, 0, 0, { side: THREE.DoubleSide, ink: 0 }));
+    // The cape's sides are carried partly by the arms under them, so it lifts with them rather than letting them through.
+    const capeW = p => { const side = 0.8 * ss(1.8, 3.6, Math.abs(p.x)) * ss(9.0, 7.4, p.y); return [[rig.torso, 1 - side], [p.x > 0 ? rig.armL : rig.armR, side]]; };
+    cloakParts.push(skinnedOn(rig.torso, surface(fn, 40, 10, out), P.cloak, capeW, { side: THREE.DoubleSide, ink: 0.07 }));
+    cloakParts.push(skinnedOn(rig.torso, surface((u, v) => { const p = fn(u, 0.93 + 0.07 * v); return p.add(out(p).normalize().multiplyScalar(0.04)); }, 40, 1, out), P.lace, capeW, { side: THREE.DoubleSide, ink: 0 }));
     cloakParts.push(piece(ell(0.32, 0.32, 0.22), '#e8b84a', rig.torso, 0, 8.95, 1.15));       // the clasp
     for (const sx of [-1, 1]) cloakParts.push(piece(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 6), P.lace, rig.torso, sx * 0.3, 8.3, 1.25, { rot: [0.2, 0, sx * 0.25], ink: 0 }));
     if (look.outfit === 'Hood up') {
@@ -695,11 +700,11 @@ function plantFeet(r) {
 // Seated upright on a seat whose top is at seatY (in the world, with the root at the floor): thighs level, shins straight down to the floor.
 function sit(r, seatY) {
   const s = r.scaleW, kneeH = DIM.shin + 0.8;
-  r.hips.position.set(0, seatY / s + 1.7, 0);
+  r.hips.position.set(0, seatY / s + 2.55, 0);      // (the hips' underside on the seat)
   for (const l of [r.legL, r.legR]) { const drop = r.hips.position.y - kneeH; l.thigh.rotation.set(-Math.PI / 2 + Math.asin(clamp(drop / DIM.thigh, -0.5, 0.5)), 0, l.sign * 0.06); l.knee.rotation.set(Math.PI / 2 - Math.asin(clamp(drop / DIM.thigh, -0.5, 0.5)), 0, 0); l.ankle.rotation.set(0, 0, 0); }
 }
 // The seat height at which a figure sits with level thighs and its feet on the floor.
-const seatFor = id => (DIM.shin + 0.8 - 1.7) * SPECS[id].scale;
+const seatFor = id => (DIM.shin + 0.8 - 2.55) * SPECS[id].scale;
 
 // ── Props. ──
 function makeChair(seatY) {

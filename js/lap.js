@@ -127,7 +127,7 @@ function create(view, opts) {
     if (gerda) stage.remove(gerda.root); if (frame) stage.remove(frame);
     gerda = T.make('gerda', looks.gerda, { seated: true }); T.sit(gerda, seatY); stage.add(gerda.root);
     paddle = T.makePaddle(); paddle.position.y = -0.5; paddle.visible = false; gerda.handR.add(paddle);
-    red = T.make('red', looks.red); frame = new THREE.Group(); frame.add(red.root); stage.add(frame);
+    red = T.make('red', looks.red, { lying: true }); frame = new THREE.Group(); frame.add(red.root); stage.add(frame);
     red.root.position.y = -T.DIM.hipY * red.scaleW;              // (her hip joint at the frame's origin)
     const qx = new Q().setFromAxisAngle(new V3(1, 0, 0), Math.PI / 2), qy = new Q().setFromAxisAngle(new V3(0, 1, 0), Math.PI / 2), qz = new Q().setFromAxisAngle(new V3(0, 0, 1), PITCH);
     frame.quaternion.copy(qz).multiply(qy).multiply(qx);          // her head along world +x, her front facing down, tipped head-down
@@ -183,9 +183,11 @@ function create(view, opts) {
       const sh = world(gerda.armR), sc = gerda.scaleW;
       return { W: sh.add(new V3(-2.0, 4.0, 1.6).multiplyScalar(sc)), q: basis(new V3(0.15, -0.55, 1).normalize().multiplyScalar(gerda.palm.R), new V3(-0.2, -1, -0.3)), pole: new V3(-0.75, 0.1, -0.6) };
     }
-    if (name === 'rest') { const Tp = world(red.rear.C).addScaledVector(nIn, -HOVER); return Object.assign(handOn(Tp, nIn, dir, reach, half), { pole: new V3(-0.6, -0.45, -0.5) }); }
+    // (with her skirt down or her drawers up, the hand lands on the cloth, which stands this far off the skin)
+    const cloth = (st.skirt === 'down' ? 1.0 : st.skirt === 'up' && st.drawers === 'up' ? 0.12 : 0) * red.scaleW;
+    if (name === 'rest') { const Tp = world(red.rear.C).addScaledVector(nIn, -HOVER - cloth); return Object.assign(handOn(Tp, nIn, dir, reach, half), { pole: new V3(-0.6, -0.45, -0.5) }); }
     const side = st.swing ? st.swing.side : 'C';
-    return Object.assign(handOn(world(red.rear[side]), nIn, dir, reach, half), { pole: new V3(-0.6, -0.3, -0.5) });
+    return Object.assign(handOn(world(red.rear[side]).addScaledVector(nIn, -cloth), nIn, dir, reach, half), { pole: new V3(-0.6, -0.3, -0.5) });
   }
   function poseGerda() {
     const g = gerda, ph = armPhase(), side = st.swing ? st.swing.side : 'L';
