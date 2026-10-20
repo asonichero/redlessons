@@ -392,11 +392,9 @@ function make(id, look, opts) {
       fx.fillStyle = '#ffffff'; fx.beginPath(); fx.arc(px(ix + 0.07), py(iy + 0.09), 0.055 * U, 0, 7); fx.fill();
       fx.restore();
     }
-    // The upper lash line, thick, with a flick at the outer corner; a fine line under the eye.
+    // The upper lash line, thick, with a flick at the outer corner.
     fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineJoin = 'round';
     fx.lineWidth = 0.075 * U; fx.beginPath(); fx.moveTo(px(inX), py(cy)); fx.quadraticCurveTo(px(cx - sx * 0.1), py(top), px(outX), py(outY)); fx.lineTo(px(outX + sx * 0.12), py(outY + 0.1)); fx.stroke();
-    const under = 0.6 * clamp((o - 0.35) / 0.4, 0, 1);      // (the line under the eye fades as it narrows, so a shut eye is one clean line)
-    if (under > 0.01) { fx.lineWidth = 0.025 * U; fx.globalAlpha = under; fx.beginPath(); fx.moveTo(px(cx - sx * rx * 0.5), py(cy - ry * 0.75)); fx.quadraticCurveTo(px(cx), py(bot - 0.02), px(outX - sx * 0.05), py(cy - ry * 0.15)); fx.stroke(); fx.globalAlpha = 1; }
   }
   function drawBrow(sx, F) {
     const by = K.browY + F.browY, inX = sx * (K.eyeX - 0.3 * K.eyeW), outX = sx * (K.eyeX + 0.42 * K.eyeW), inY = by + F.brow * 0.3, outY = by - 0.06 - F.brow * 0.08;
