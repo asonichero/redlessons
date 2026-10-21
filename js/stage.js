@@ -37,14 +37,14 @@ function create(view, opts) {
     const loop = now => {
       if (!running) return; const dt = Math.min(0.05, (now - last) / 1000); last = now;
       if (tween) { const k = Math.min(1, (now - tween.t0) / tween.ms), e = k * k * (3 - 2 * k); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.l0, tween.l1, e); if (k >= 1) tween = null; }
-      if (each) each(dt); controls.update(); if (cottage) cottage.update(camera); renderer.render(scene, camera); requestAnimationFrame(loop);
+      if (each) each(dt); controls.update(); if (cottage) { cottage.tick(dt); cottage.update(camera); } renderer.render(scene, camera); requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
   }
   function stop() { running = false; root.removeEventListener('resize', resize); renderer.dispose(); }
   // Characters cast shadows (their outlines do not); they take none themselves, which keeps their shading clean.
   const cast = rig => { for (const m of rig.meshes) m.castShadow = true; };
-  return { renderer, scene, camera, controls, sun, resize, start, stop, go, cast };
+  return { renderer, scene, camera, controls, sun, resize, start, stop, go, cast, cottage };
 }
 
 root.Stage = { create };

@@ -9,7 +9,7 @@ Everything is made in code: three.js, no build step, shapes and textures generat
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens the lap scene; /editor.html is the character editor
+npm run serve        # http://localhost:8123/ opens the lap scene; /editor.html is the character editor; /play.html walks her round the cottage
 npm test             # the pain model, the discipline scripts and the looks
 ```
 
@@ -36,6 +36,17 @@ Gerda sits on a plain chair. Red Riding Hood lies face down across her lap, hips
 - **Marks:** colour comes up on each cheek with the smacks, and tender skin hurts more.
 - **Red** (the button, or R) stops everything at once. Nothing more is struck, and the arm comes back to rest.
 - **Cameras:** Side, Behind, Gerda's view, Above, Her face. The camera glides between them, and you can drag to orbit.
+
+## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)
+
+Red Riding Hood on her own in the cottage. **WASD** or the arrows walk her (relative to the camera), **Shift** runs, **E** does whatever's offered (shown at the bottom), **Q** lies down when she's sitting on the bed. Drag to look round her; the camera follows. On a phone: a stick, Run, Use and Lie.
+
+- **Walking and running** (`js/motion.js`, written for any of the figures): the feet are placed, not swung. Each foot plants on the floor and stays put while she passes over it, then lifts and swings to where it'll next land, so they never slide, at any speed or round a turn. The legs are solved to reach them. The hips rise and fall twice a stride, sway over the standing foot and turn with the steps; the shoulders turn against them; the arms swing from where the feet really are. Running is a longer, quicker stride with less time on the ground: the heel kicks up behind, the arms bend, she leans in. She leans into speeding up and banks into turns. Standing, her weight shifts and she breathes; after turning on the spot she takes a small step to set her feet right.
+- **In the way:** walls and furniture (and the door, open) hold her back; she slides along them.
+- **Things to do:** she walks to the right spot, turns, and reaches (crouching for low things):
+  - open and shut **the door** (by its latch) and **the chest** (lifting the lid with both hands);
+  - **take** a basket off its peg, or the jug, the bowl or the loaf off the table; carry it (a basket or the jug hangs from one hand, the bowl and the loaf in both); **put it** on the table, on the closed chest, in the open chest, back on an empty peg (baskets), or down on the floor;
+  - **sit** on either stool or on the bed, **lie down** on the bed, and get up again.
 
 ## Discipline (`js/discipline.js`)
 
@@ -74,6 +85,8 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/stage.js` | Renderer, lights and shadows, the camera and its glides |
 | `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
 | `js/lap.js`, `lap.html` | Over the knee: the session, Gerda's arm solving, Red Riding Hood's reactions, the cameras; its page |
+| `js/motion.js` | Movement for any figure: walking and running with planted feet, turning, reaching, crouching, carrying, sitting, lying |
+| `js/play.js`, `play.html` | About the cottage: the controls, the following camera, what's in the way, the things to do |
 | `js/discipline.js` | The scripted correction: tiers, stages, Gerda's lines |
 | `js/pain.js` | The pain model |
 | `js/looks.js`, `editor.html` | Outfits and colours, and the editor |

@@ -116,6 +116,8 @@ function build(scene) {
   const tx = textures(), root_ = new THREE.Group(); scene.add(root_);
   const oak = toonMap(tx.oak), oakDk = T.mat('#4e3420'), lime = toonMap(tx.lime), stone = toonMap(tx.stone);
   const panels = [];
+  // What can be used and moved, for js/play.js: the door, the chest, the things that can be carried, the pegs, the places to sit, what's in the way.
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null };
   // A panel: a group, a point on it, and the way into the room from it.
   const panel = (p, n) => { const g = new THREE.Group(); root_.add(g); panels.push({ g, p, n: n.normalize() }); return g; };
 
@@ -181,10 +183,13 @@ function build(scene) {
 
   // ── The door (left wall, near the front): planked, with a ledge and brace, strap hinges and a latch.
   { const f = walls.left.f, d = new THREE.Group(); d.position.set(-27, FOOT, 0.2); f.add(d);      // (in the wall's frame x runs from back to front, so this is near the front)
-    const leaf = box(d, 13, 28, 1.2, 0, 14, 0.6, toonMap(tx.door), { shadow: false });
+    const hinge = new THREE.Group(); hinge.position.set(-6.5, 0, 0); d.add(hinge);      // (it swings into the room on its hinges, at the back edge)
+    const leaf = box(hinge, 13, 28, 1.2, 6.5, 14, 0.6, toonMap(tx.door), { shadow: false });
     for (const y of [-9, 9]) { box(leaf, 12, 1.6, 0.8, 0, y, 0.9, oak); box(leaf, 9, 0.6, 0.4, -1.5, y + 1.6, 1.0, '#3a3634'); }
     box(leaf, 1.2, 17, 0.8, 0, 0, 0.9, oak, { rot: [0, 0, 0.62] });
     solid(leaf, new THREE.TorusGeometry(0.9, 0.18, 6, 12), '#3a3634', 4.6, 0, 1.2, { ink: 0.05 });
+    const latch = new THREE.Object3D(); latch.position.set(4.6, 0, 1.6); leaf.add(latch);
+    world.door = { pivot: hinge, latch, open: 0, target: 0, swing: -1.75, name: 'the door' };
     box(d, 15.6, 1.6, 1.6, 0, 28.8, 0.8, oak, { shadow: false }); for (const sx of [-1, 1]) box(d, 1.4, 29, 1.6, sx * 7.4, 14, 0.8, oak, { shadow: false });
     box(d, 16, 1.2, 3, 0, 0.6, 1.5, stone, { shadow: false }); }      // (the stone threshold)
 
@@ -229,20 +234,31 @@ function build(scene) {
     solid(g, slab(BW - 11, 1.2, BD + 0.5, 1, 0.5), quilt, bx + 3.5, BH + 6.1, bz + 0.6, { ink: 0.1 });
     solid(g, slab(5, 1.6, BD - 1, 1, 0.7), quilt, bx - BW / 2 + 9, BH + 6.6, bz + 0.6, { ink: 0.1, rot: [0, 0, 0.2] });   // (turned down)
     solid(g, T.ell(2.2, 1.8, BD / 2 - 2.5, 16, 10), T.mat('#efe6d0'), bx - BW / 2 + 4, BH + 6.4, bz - 0.5, { ink: 0.1 });   // the bolster
+    world.seats.push({ name: 'the bed', at: new V3(bx - 2, BH + 5.6, bz + BD / 2 - 3), facing: 0, kind: 'bed', head: new V3(bx - BW / 2 + 4, BH + 6.2, bz - 0.5), feet: new V3(bx + BW / 2 - 4, BH + 6, bz - 0.5) });
+    world.obstacles.push({ x0: X0, x1: bx + BW / 2, z0: Z0, z1: bz + BD / 2 });
   }
 
   // ── The chest (against the back wall, right): oak, iron-bound, with a gently domed lid and a lock plate.
   { const g = W.back, cx = 26, cz = Z0 + 6.5, cw = 20, ch = 10, cd = 9;
-    box(g, cw, ch, cd, cx, ch / 2 + 0.6, cz, oak);
+    // (an open box, sides and a bottom, so there's room inside: folded linen and a blanket)
+    box(g, cw, 1, cd, cx, 1.1, cz, oak); for (const sz of [-1, 1]) box(g, cw, ch, 0.9, cx, ch / 2 + 0.6, cz + sz * (cd / 2 - 0.45), oak); for (const sx of [-1, 1]) box(g, 0.9, ch, cd - 1.8, cx + sx * (cw / 2 - 0.45), ch / 2 + 0.6, cz, oak);
+    solid(g, slab(cw - 3, 4, cd - 3, 1, 0.8), T.mat('#e8e0cc'), cx - 3, 4.6, cz, { ink: 0.08 }); solid(g, slab(8, 3, cd - 3, 1, 0.8), toonMap(tx.wool), cx + 5, 7.6, cz, { ink: 0.08 });
+    const lidPivot = new THREE.Group(); lidPivot.position.set(cx, ch + 0.6, cz - cd / 2); g.add(lidPivot);      // (hinged along the back)
     const lid = new THREE.CylinderGeometry(cd / 2, cd / 2, cw, 18, 1, false, 0, Math.PI); lid.rotateZ(Math.PI / 2); lid.rotateX(-Math.PI / 2); lid.scale(1, 0.45, 1);
-    solid(g, lid, oak, cx, ch + 0.6, cz, { ink: 0.12 });
-    for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) { box(g, 1.2, ch + 0.2, cd + 0.3, cx + x, ch / 2 + 0.6, cz, '#3a3634'); }
+    solid(lidPivot, lid, oak, 0, 0, cd / 2, { ink: 0.12 });
+    box(lidPivot, cw + 0.2, 0.8, cd + 0.2, 0, 0, cd / 2, oak);
+    for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) box(lidPivot, 1.2, 1.2, cd + 0.4, x, 0.5, cd / 2, '#3a3634');
+    const grip = new THREE.Object3D(); grip.position.set(0, 0.2, cd + 0.3); lidPivot.add(grip);
+    world.chest = { pivot: lidPivot, grip, open: 0, target: 0, swing: -1.7, name: 'the chest', front: new V3(cx, 0, cz + cd / 2), top: ch + 0.6 + cd / 2 * 0.45 };
+    world.obstacles.push({ x0: cx - cw / 2, x1: cx + cw / 2, z0: Z0, z1: cz + cd / 2 });
+    world.surfaces.push({ name: 'the chest', x0: cx - cw / 2 + 2, x1: cx + cw / 2 - 2, z0: cz - 1, z1: cz + 1, y: ch + 0.6 + cd / 2 * 0.45, panel: g, front: new V3(0, 0, 1), when: () => world.chest.open < 0.05 });
+    for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) for (const sz of [-1, 1]) box(g, 1.2, ch + 0.2, 0.4, cx + x, ch / 2 + 0.6, cz + sz * (cd / 2 + 0.1), '#3a3634');
     box(g, 2.2, 3, 0.4, cx, ch - 0.6, cz + cd / 2 + 0.2, '#3a3634');
     for (const x of [-cw / 2 + 1.2, cw / 2 - 1.2]) for (const z of [-cd / 2 + 1, cd / 2 - 1]) box(g, 1.6, 0.8, 1.6, cx + x, 0.4, cz + z, oakDk);
   }
 
   // ── The peg rail (back wall, between the bed and the chest): pegs hung with bunches of dried herbs and lavender, and wicker baskets.
-  { const g = W.back, y = 31, z = Z0 + 0.9, x0 = -18, x1 = 14;
+  { const g = W.back, y = 27, z = Z0 + 0.9, x0 = -18, x1 = 14;
     box(g, x1 - x0 + 4, 1.6, 1.2, (x0 + x1) / 2, y, z, oak);
     const twine = T.mat('#c8b080'), stems = ['#6e7a42', '#8a8a4e', '#5e6a3a'], leaves = ['#7a8a4a', '#9a9a5a', '#6a7a40'];
     let i = 0;
@@ -251,11 +267,14 @@ function build(scene) {
       const hang = new THREE.Group(); hang.position.set(x, y - 0.4, z + 2.6); g.add(hang);
       pole(hang, new V3(0, 0, 0), new V3(0, -2.4, 0), 0.08, twine, { ink: 0 });
       const kind = ['herb', 'lavender', 'basket', 'herb', 'lavender', 'herb', 'basket', 'lavender', 'herb'][i % 9];
+      const peg = { at: new V3(x, y - 0.4 - 2.4, z + 2.6), item: null, panel: g };      // (where a thing hangs from: the end of the twine)
       if (kind === 'basket') {
-        const bk = toonMap(tx.wicker); const bowl = new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.0, 1.4], [3.2, 3.2], [3.3, 3.4]].map(([r, h]) => new THREE.Vector2(r, h)), 16);
-        solid(hang, bowl, bk, 0, -8.4, 0, { ink: 0.1 }).material.side = THREE.DoubleSide;
-        solid(hang, new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI), bk, 0, -5, 0, { ink: 0.06 });
-        pole(hang, new V3(0, -2.4, 0), new V3(0, -1.9, 0), 0.08, twine, { ink: 0 });
+        // A basket is a thing to carry: its own group, its origin at the middle of its base, so it can be set down on anything.
+        const it = new THREE.Group(), bk = toonMap(tx.wicker), bowl = new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.0, 1.4], [3.2, 3.2], [3.3, 3.4]].map(([r, h]) => new THREE.Vector2(r, h)), 16);
+        solid(it, bowl, bk, 0, 0, 0, { ink: 0.1 }).material.side = THREE.DoubleSide;
+        solid(it, new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI), bk, 0, 3.4, 0, { ink: 0.06 });
+        const item = { obj: it, name: 'a basket', grip: new V3(0, 6.5, 0), hangs: true, radius: 3.4, panel: g };
+        peg.item = item; item.peg = peg; it.position.copy(peg.at).sub(item.grip); root_.add(it); world.items.push(item);
       } else {
         // A bunch hung head down: stems tied at the top, opening out below into leaves (or flower heads).
         const r = rnd(31 + i), n = 7;
@@ -266,7 +285,9 @@ function build(scene) {
           else solid(hang, T.ell(0.9, 1.4, 0.6, 8, 6), leaves[s % 3], tip.x * 1.1, tip.y + 0.6, tip.z * 1.1, { ink: 0.05, rot: [r(), a, 0.4] });
         }
         solid(hang, new THREE.CylinderGeometry(0.5, 0.5, 0.8, 8), twine, 0, -3.0, 0, { ink: 0.04 });
+        peg.item = { fixed: true };
       }
+      world.pegs.push(peg);
     }
   }
 
@@ -279,15 +300,21 @@ function build(scene) {
     }
     box(g, 1.4, 1.6, L - 9, tx_, 6, tz, oak);                                                                                        // the stretcher, through both
     // On the table: a jug, a bowl, and a loaf.
-    solid(g, new THREE.LatheGeometry([[0.01, 0], [1.6, 0.1], [1.9, 2], [1.3, 3.8], [1.0, 4.4], [1.3, 4.9]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#a85a3a', tx_ - 2, H, tz - 8, { ink: 0.08 });
-    solid(g, new THREE.LatheGeometry([[0.01, 0], [2.2, 0.2], [3.2, 1.6], [3.4, 1.9]].map(([r, h]) => new THREE.Vector2(r, h)), 18), '#8a6a4a', tx_ + 1, H, tz + 3, { ink: 0.08 }).material.side = THREE.DoubleSide;
-    solid(g, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', tx_ + 1, H + 1.4, tz + 3, { ink: 0.08 });
+    // (each a thing that can be carried: a group with its origin at the middle of its base)
+    const thing = (name, build, x, z, grip, radius, ry) => { const it = new THREE.Group(); build(it); it.position.set(x, H, z); it.rotation.y = ry || 0; root_.add(it); const item = { obj: it, name, grip, radius, panel: g }; world.items.push(item); return item; };
+    thing('the jug', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [1.6, 0.1], [1.9, 2], [1.3, 3.8], [1.0, 4.4], [1.3, 4.9]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#a85a3a', 0, 0, 0, { ink: 0.08 });
+      solid(it, new THREE.TorusGeometry(1.1, 0.25, 6, 12, Math.PI * 1.2), '#a85a3a', 1.5, 3.2, 0, { rot: [0, 0, -1.2], ink: 0.05 }); }, tx_ - 2, tz - 8, new V3(0, 2.6, 0), 2, 0.6);
+    thing('the bowl', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [2.2, 0.2], [3.2, 1.6], [3.4, 1.9]].map(([r, h]) => new THREE.Vector2(r, h)), 18), '#8a6a4a', 0, 0, 0, { ink: 0.08 }).material.side = THREE.DoubleSide; }, tx_ + 1, tz + 3, new V3(0, 1.6, 0), 3.4);
+    thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
+    world.surfaces.push({ name: 'the table', x0: tx_ - D / 2 + 2, x1: tx_ + D / 2 - 2, z0: tz - L / 2 + 2, z1: tz + L / 2 - 2, y: H, panel: g, front: new V3(-1, 0, 0) });
+    world.obstacles.push({ x0: tx_ - D / 2 - 0.5, x1: tx_ + D / 2 + 0.5, z0: tz - L / 2, z1: tz + L / 2 });
     const stool = (x, z, ry) => {
       const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; g.add(s);
       solid(s, new THREE.CylinderGeometry(3.6, 3.6, 1.4, 18), oak, 0, 8.3, 0, { ink: 0.1 });
       for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; pole(s, new V3(Math.cos(a) * 2.2, 7.8, Math.sin(a) * 2.2), new V3(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4), 0.5, oak); }
     };
     stool(tx_ - 12, tz - 9, 0.3); stool(tx_ - 11, tz + 11, 1.1);
+    for (const [x, z] of [[tx_ - 12, tz - 9], [tx_ - 11, tz + 11]]) { world.seats.push({ name: 'the stool', at: new V3(x, 9, z), facing: -Math.PI / 2, kind: 'stool' }); world.obstacles.push({ x, z, r: 3.8 }); }
   }
 
   // Which panels show: those the camera is inside of.
@@ -295,8 +322,14 @@ function build(scene) {
   function update(camera) {
     camera.getWorldPosition(cp);
     for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 0.5;
+    for (const it of world.items) it.obj.visible = !it.panel || it.panel.visible;      // (a thing on a wall's peg or a table goes with that wall)
   }
-  return { group: root_, update, bounds: { X0, X1, Z0, Z1, EAVE, RIDGE } };
+  // The door and the chest's lid swing toward where they're going (0 shut, 1 open), easing.
+  function tick(dt) {
+    for (const o of [world.door, world.chest]) { if (!o) continue; o.open += (o.target - o.open) * (1 - Math.exp(-dt * 5)); const e = o.open; o.pivot.rotation.set(o === world.chest ? o.swing * e : 0, o === world.door ? o.swing * e : 0, 0); }
+  }
+  world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
+  return { group: root_, update, tick, world, bounds: { X0, X1, Z0, Z1, EAVE, RIDGE } };
 }
 
 root.Cottage = { build };

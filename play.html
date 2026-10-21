@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>About the Cottage</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a0f10">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; touch-action: none; }
+  #view { position: fixed; inset: 0; }
+  #help { position: fixed; top: 10px; left: 12px; font-size: 12px; line-height: 1.6; color: #d8ccd0; background: rgba(22,18,20,0.7); padding: 8px 12px; border-radius: 6px; }
+  #help b { color: #fff; } a { color: #c9a84c; }
+  #prompt { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); font: 17px Georgia, serif; color: #fff; background: rgba(22,18,20,0.75); border: 1px solid #554449; padding: 7px 16px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+  #prompt.on { opacity: 1; }
+  #stick { position: fixed; left: 28px; bottom: 28px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); display: none; }
+  #stick i { position: absolute; left: 40px; top: 40px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.35); }
+  .tb { position: fixed; bottom: 34px; width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(60,40,44,0.6); color: #fff; font-size: 14px; display: none; }
+  #use { right: 28px; } #run { right: 104px; } #alt { right: 28px; bottom: 110px; } .tb.on { background: #6b2a2a; }
+  @media (pointer: coarse) { #stick, .tb { display: block; } #prompt { bottom: 170px; } #help .keys { display: none; } }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="help"><b>About the cottage</b><br><span class="keys">WASD or arrows to walk · Shift to run · E to use · Q to lie down<br></span>Drag to look round · wheel to zoom · <a href="lap.html">Over the knee</a> · <a href="editor.html">Editor</a></div>
+<div id="prompt"></div>
+<div id="stick"><i></i></div>
+<button class="tb" id="run">Run</button><button class="tb" id="use">Use</button><button class="tb" id="alt">Lie</button>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="js/toon.js"></script>
+<script src="js/looks.js"></script>
+<script src="js/cottage.js"></script>
+<script src="js/stage.js"></script>
+<script src="js/motion.js"></script>
+<script src="js/play.js"></script>
+<script>
+const P = window.__play = Play.create(document.getElementById('view'), { prompt: document.getElementById('prompt') });
+// Keys: held ones move her; E uses, Q lies down (on the bed).
+const held = new Set();
+const axes = () => { const k = c => held.has(c) ? 1 : 0; P.input.move.x = k('KeyD') + k('ArrowRight') - k('KeyA') - k('ArrowLeft'); P.input.move.z = k('KeyW') + k('ArrowUp') - k('KeyS') - k('ArrowDown'); P.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || runOn; };
+let runOn = false;
+addEventListener('keydown', e => { if (e.repeat) return; held.add(e.code); if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') P.use(); if (e.code === 'KeyQ') P.use(true); if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault(); axes(); });
+addEventListener('keyup', e => { held.delete(e.code); axes(); });
+addEventListener('blur', () => { held.clear(); axes(); });
+// Touch: a stick, and buttons.
+const stick = document.getElementById('stick'), knob = stick.querySelector('i'); let sid = null;
+const stickAt = t => { const r = stick.getBoundingClientRect(), x = (t.clientX - r.left - 60) / 50, y = (t.clientY - r.top - 60) / 50, l = Math.max(1, Math.hypot(x, y)); P.input.move.x = x / l; P.input.move.z = -y / l; knob.style.transform = `translate(${x / l * 40}px, ${y / l * 40}px)`; };
+stick.addEventListener('pointerdown', e => { sid = e.pointerId; stick.setPointerCapture(sid); stickAt(e); e.stopPropagation(); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickAt(e); });
+const stickEnd = () => { sid = null; P.input.move.x = P.input.move.z = 0; knob.style.transform = ''; };
+stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
+document.getElementById('use').addEventListener('pointerdown', e => { e.stopPropagation(); P.use(); });
+document.getElementById('alt').addEventListener('pointerdown', e => { e.stopPropagation(); P.use(true); });
+const runB = document.getElementById('run'); runB.addEventListener('pointerdown', e => { e.stopPropagation(); runOn = !runOn; runB.classList.toggle('on', runOn); axes(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
