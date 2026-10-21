@@ -79,10 +79,10 @@ const GAIT = {
   lift: [1.6, 1.6], drop: [0, 0], bob: [0, 0.4], lean: [0.06, 0.2],
   sway: [0.5, 0.15],                       // the hips over the standing foot, side to side
   tilt: [0.075, 0.04],                     // the hip on the side of the swinging leg dropping (radians), the spine keeping the shoulders level
-  turn: [0.012, 0.016],                    // the hips turning with the stepping leg (per unit of the feet's reach apart); the shoulders turn against
+  turn: [0.015, 0.016],                    // the hips turning with the stepping leg (per unit of the feet's reach apart); the shoulders turn against
   down: [0.45, 0],                         // how far the hips give as each heel takes the weight
   strike: [-0.3, -0.05], pushOff: [0.55, 0.95],      // the foot's pitch landing (toes up) and leaving (on its toes): walking, running
-  straight: [0.995, 0.993],                // how straight a leg on the ground may be (of its full length): walking, running
+  straight: [0.99, 0.993],                // how straight a leg on the ground may be (of its full length): walking, running
 };
 
 function create(rig, opts) {
@@ -94,7 +94,7 @@ function create(rig, opts) {
     hands: { L: { target: null, w: 0, want: 0 }, R: { target: null, w: 0, want: 0 } }, crouch: 0,
     carry: null, carryStyle: null, carryW: 0,
     seat: null, sitW: 0, sitWant: 0, sitFrom: null, bed: null, lieW: 0, lieWant: 0,
-    locked: false, cbs: [],
+    locked: false, cbs: [], sp: {},
   };
   const fwdOf = y => new V3(Math.sin(y), 0, Math.cos(y)), sideOf = y => new V3(Math.cos(y), 0, -Math.sin(y));      // (side: her left, +x of the rig)
   const neutral = (s, at, yaw) => (at || m.pos).clone().addScaledVector(sideOf(yaw == null ? m.yaw : yaw), (s === 'L' ? 1 : -1) * HIPX * sc).setY(SOLE);
@@ -268,13 +268,18 @@ function create(rig, opts) {
     // Body: leaning into speed, into speeding up and into a turn; the shoulders turning against the hips; bending down for a low reach.
     const lean = lerp(GAIT.lean[0], GAIT.lean[1], m.runB) * mv + clamp(m.acc / (GAIT.walk * sc), -0.6, 0.6) * 0.12 + crouch * 1.0 + 0.3 * Math.sin(Math.PI * m.sitW) * (m.sitWant ? 1 : 0.6);
     const bank = clamp(-m.turnRate * 0.05 * mv, -0.18, 0.18), br = Math.sin(t * 1.6);
-    r.torso.rotation.set(lean * (1 - lieW) + 0.015 * br * idle + 0.03 * m.down * mv, -1.8 * hipYaw, bank - 0.85 * hipTilt - 0.05 * wt * (1 - sitW));      // (the spine levels the shoulders over the tilting hips, and standing, drops the shoulder over the standing leg)
+    // Each part above the hips follows the one below a moment late, on a spring, and carries on a little past where it's going before it settles
+    // (the spine after the hips, the neck after the spine): the body loosens into the step instead of moving in one piece. The chest gives as each
+    // heel takes the weight, and the head nods after it.
+    const sp = (key, to, w, z) => { const q = m.sp[key] || (m.sp[key] = { x: to, v: 0 }); q.v += (w * w * (to - q.x) - 2 * z * w * q.v) * dt; q.x += q.v * dt; return q.x; };
+    const give = m.down * mv * (1 - m.runB);
+    r.torso.rotation.set(sp('tx', lean * (1 - lieW) + 0.015 * br * idle + 0.05 * give, 15, 0.5), sp('ty', -1.8 * hipYaw, 13, 0.45), sp('tz', bank - 0.85 * hipTilt - 0.05 * wt * (1 - sitW), 13, 0.45));      // (the spine levels the shoulders over the tilting hips, and standing, drops the shoulder over the standing leg)
     // Head: steady (it undoes the lean), looking where she's going or at what she's reaching for, a little wandering when she's still.
     let lookYaw = 0.14 * Math.sin(t * 0.23) * idle, lookPitch = 0.04 * Math.sin(t * 0.37) * idle;
     if (m.look) { r.root.updateMatrixWorld(true); const hp = r.neck.getWorldPosition(new V3()), to = (typeof m.look === 'function' ? m.look() : m.look).clone().sub(hp), loc = to.applyQuaternion(rootQ.clone().invert());
       m.lookW = approach(m.lookW, 1, 4, dt); lookYaw = lerp(lookYaw, clamp(Math.atan2(loc.x, loc.z), -1, 1), m.lookW); lookPitch = lerp(lookPitch, clamp(Math.atan2(-loc.y, Math.hypot(loc.x, loc.z)), -0.5, 0.7), m.lookW); }
     else m.lookW = approach(m.lookW, 0, 4, dt);
-    r.neck.rotation.set(-0.8 * lean * (1 - crouch * 0.6) + lookPitch * (1 - lieW) - 0.25 * lieW, lookYaw * (1 - lieW) + 0.8 * hipYaw, -0.6 * bank - 0.15 * hipTilt);
+    r.neck.rotation.set(sp('nx', -0.8 * lean * (1 - crouch * 0.6) + lookPitch * (1 - lieW) - 0.25 * lieW - 0.03 * give, 11, 0.45), sp('ny', lookYaw * (1 - lieW) + 0.8 * hipYaw, 10, 0.5), sp('nz', -0.6 * bank - 0.15 * hipTilt, 10, 0.45));
     r.head.rotation.set(0, 0, 0);
     // Arms: swinging against the legs (from where the feet really are), bent more running; still, hanging easy.
     const S2 = LEG / sc * 0.85;
@@ -285,11 +290,16 @@ function create(rig, opts) {
       const rel = clamp(offs[s] / S2, -1.2, 1.2), amp = lerp(0.4, 0.75, m.runB) * mv, A = m.arms[s];
       const want = amp * rel * (rel < 0 ? lerp(0.85, 0.45, m.runB) : 1) + 0.03 * Math.sin(t * 1.1 + sd) * idle - 0.1 * rb;
       A.v += (90 * (want - A.a) - 11 * A.v) * dt; A.a += A.v * dt;
-      const eWant = 0.22 + 0.12 * mv + 1.1 * rb + 0.35 * (mv - rb) * Math.max(0, -A.a) / Math.max(0.2, amp);
+      const fwdA = Math.max(0, -A.a) / Math.max(0.2, amp);      // (how far forward this arm has come, 0..1)
+      const eWant = 0.24 + 0.14 * mv + 1.1 * rb + 0.55 * (mv - rb) * fwdA;
       A.ev += (70 * (eWant - A.e) - 9 * A.ev) * dt; A.e += A.ev * dt;
-      r['arm' + s].rotation.set(A.a, 0, sd * (0.13 + 0.12 * rb + 0.02 * shift * sd * idle + 0.04 * mv));
+      // (coming forward, the arm drifts in a little across her; the hand trails the swing at the wrist, and flops on past it)
+      r['arm' + s].rotation.set(A.a, 0, sd * (0.13 + 0.12 * rb + 0.02 * shift * sd * idle + 0.05 * mv - 0.07 * mv * fwdA));
       r['elbow' + s].rotation.set(-A.e, 0, 0);
-      r['hand' + s].rotation.set(0.1 + 0.15 * A.v * 0.05, 0, sd * 0.05);
+      r['hand' + s].rotation.set(clamp(0.12 - 0.07 * A.v, -0.3, 0.45), 0, sd * (0.05 + 0.1 * mv * fwdA));
+      // The shoulder goes with its arm: forward a touch as it swings forward, back as it swings back, and up a little at either end.
+      const sh = r['arm' + s], base = sh.userData.rest || (sh.userData.rest = sh.position.clone());
+      sh.position.set(base.x, base.y + 0.12 * Math.abs(A.a) * mv, base.z - 0.32 * A.a * mv);
     }
     // Lying: arms at her sides, legs straight, head back on the pillow.
     if (lieW > 0) for (const [s, sd] of [['L', 1], ['R', -1]]) { const a = r['arm' + s]; a.rotation.x *= 1 - lieW; a.rotation.z = lerp(a.rotation.z, sd * 0.2, lieW); r['elbow' + s].rotation.x = lerp(r['elbow' + s].rotation.x, -0.15, lieW); }
