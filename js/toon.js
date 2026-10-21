@@ -133,7 +133,8 @@ function palette(id, look) {
   P.blush = shade(P.lips, 0.35);
   if (id === 'red') {
     const cloak = l.cloak || '#a01828';
-    Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: '#3c5a8c', skirtDk: '#2c4470',
+    Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: cloak, skirtDk: shade(cloak, -0.3),      // (her skirt the red of her cloak)
+     
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
   } else if (l.outfit === 'Fine') {
     Object.assign(P, { blouse: '#b8a6dc', bodice: '#8f7ab8', lace: '#e8c75a', skirt: '#9a86c0', skirtDk: '#7a66a4', hem: '#e8c75a', apron: null, gold: '#e8c75a', boots: '#4a2f1c', bootsDk: '#e8c75a', drawers: '#f4eee2', drawersDk: '#ddd3c0' });

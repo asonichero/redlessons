@@ -12,6 +12,9 @@
   #view { position: fixed; inset: 0; }
   #help { position: fixed; top: 10px; left: 12px; font-size: 12px; line-height: 1.6; color: #d8ccd0; background: rgba(22,18,20,0.7); padding: 8px 12px; border-radius: 6px; }
   #help b { color: #fff; } a { color: #c9a84c; }
+  #help .row { margin-top: 5px; display: flex; gap: 4px; align-items: center; }
+  #help .row button { background: #33282c; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
+  #help .row button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
   #prompt { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); font: 17px Georgia, serif; color: #fff; background: rgba(22,18,20,0.75); border: 1px solid #554449; padding: 7px 16px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
   #prompt.on { opacity: 1; }
   #stick { position: fixed; left: 28px; bottom: 28px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); display: none; }
@@ -23,7 +26,8 @@
 </head>
 <body>
 <div id="view"></div>
-<div id="help"><b>About the cottage</b><br><span class="keys">WASD or arrows to walk · Shift to run · E to use · Q to lie down<br></span>Drag to look round · wheel to zoom · <a href="lap.html">Over the knee</a> · <a href="editor.html">Editor</a></div>
+<div id="help"><b>About the cottage</b><br><span class="keys">WASD or arrows to walk · Shift to run · E to use · Q to lie down · K for her skirt<br></span>Drag to look round · wheel to zoom · <a href="lap.html">Over the knee</a> · <a href="editor.html">Editor</a>
+  <div class="row">Skirt <button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div></div>
 <div id="prompt"></div>
 <div id="stick"><i></i></div>
 <button class="tb" id="run">Run</button><button class="tb" id="use">Use</button><button class="tb" id="alt">Lie</button>
@@ -54,6 +58,13 @@ stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointerca
 document.getElementById('use').addEventListener('pointerdown', e => { e.stopPropagation(); P.use(); });
 document.getElementById('alt').addEventListener('pointerdown', e => { e.stopPropagation(); P.use(true); });
 const runB = document.getElementById('run'); runB.addEventListener('pointerdown', e => { e.stopPropagation(); runOn = !runOn; runB.classList.toggle('on', runOn); axes(); });
+// Her skirt: on, lifted (gathered at her waist) or off, to see how she moves under it. Remembered in this browser.
+const SKIRTS = ['down', 'up', 'off'], skirtBtns = [...document.querySelectorAll('[data-skirt]')];
+let skirt = 'down'; try { skirt = localStorage.getItem('red-lessons:play-skirt') || 'down'; } catch (e) {}
+function setSkirt(k) { skirt = SKIRTS.includes(k) ? k : 'down'; P.rig.setDress({ skirt }); skirtBtns.forEach(b => b.classList.toggle('on', b.dataset.skirt === skirt)); try { localStorage.setItem('red-lessons:play-skirt', skirt); } catch (e) {} }
+skirtBtns.forEach(b => b.addEventListener('click', () => setSkirt(b.dataset.skirt)));
+addEventListener('keydown', e => { if (e.code === 'KeyK' && !e.repeat) setSkirt(SKIRTS[(SKIRTS.indexOf(skirt) + 1) % 3]); });
+setSkirt(skirt);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
