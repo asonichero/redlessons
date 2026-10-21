@@ -184,12 +184,15 @@ function create(view, opts) {
   function poseRed(dt, snap) {
     const k = J.kick, d = clamp(pain.distress(), 0, 1.5), dd = Math.min(1, d), t = J.t, mL = J.kickSide === 'L' ? 1 : 0.4, mR = J.kickSide === 'R' ? 1 : 0.4;
     const w = Math.sin(t * 7) * 0.06 * dd + Math.sin(t * 4.3) * 0.04 * dd;
+    // Her arms hang: whatever way her body lies, they fall straight toward the floor (the angle from her shoulders that points down), the elbows
+    // all but straight, swinging only as she kicks and wriggles.
+    const dl = new V3(0, -1, 0).applyQuaternion(red.torso.getWorldQuaternion(new Q()).invert()), hang = Math.atan2(-dl.z, -dl.y);
     const target = {
       tL: -1.0 + k * 0.6 * mL + w, tR: -1.0 + k * 0.6 * mR - w,
       kL: 0.55 + 0.7 * k * mL + 1.2 * Math.max(0, w), kR: 0.55 + 0.7 * k * mR + 1.2 * Math.max(0, -w),
       nx: -0.25 - 0.45 * k + 0.08 * dd * Math.sin(t * 3.1), ny: -0.8 + 0.12 * Math.sin(t * 2.3) * dd,
-      aL: -1.55 - 0.3 * k + Math.sin(t * 5) * 0.08 * dd, aR: -1.55 - 0.3 * k + Math.sin(t * 5 + 1.7) * 0.08 * dd,
-      eL: -0.45 - 0.35 * k, eR: -0.45 - 0.35 * k, tz: 0.06 * dd * Math.sin(t * 5.2), hop: 0.55 * k, hx: 0.05 * k * (J.kickSide === 'L' ? 1 : -1),
+      aL: hang - 0.3 * k + Math.sin(t * 5) * 0.08 * dd, aR: hang - 0.3 * k + Math.sin(t * 5 + 1.7) * 0.08 * dd,
+      eL: -0.12 - 0.35 * k, eR: -0.12 - 0.35 * k, tz: 0.06 * dd * Math.sin(t * 5.2), hop: 0.55 * k, hx: 0.05 * k * (J.kickSide === 'L' ? 1 : -1),
     };
     // Her arms are kept out of whatever is around them (Gerda's skirt, the chair, the floor): if the pose they're going to would put any part of an
     // arm inside something, it moves to the nearest pose that's clear (swung, spread or straightened), and the springs carry them there smoothly.

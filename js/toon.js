@@ -38,9 +38,10 @@ const flat = (hex, opacity) => { const k = hex + '|' + (opacity || 1); return FL
 const INK = '#3a2620';
 const INKM = [new THREE.MeshBasicMaterial({ color: srgb(INK), side: THREE.BackSide }), new THREE.MeshBasicMaterial({ color: srgb(INK), side: THREE.BackSide, skinning: true })];
 // The outline: the same shape pushed out along its normals, drawn from the inside in ink.
+// (w: one width, or one for each point)
 function hullGeo(geo, w) {
   const g = geo.clone(), p = g.attributes.position, n = g.attributes.normal, q = new V3();
-  for (let i = 0; i < p.count; i++) { q.fromBufferAttribute(p, i).addScaledVector(new V3().fromBufferAttribute(n, i), w); p.setXYZ(i, q.x, q.y, q.z); }
+  for (let i = 0; i < p.count; i++) { q.fromBufferAttribute(p, i).addScaledVector(new V3().fromBufferAttribute(n, i), typeof w === 'number' ? w : w[i]); p.setXYZ(i, q.x, q.y, q.z); }
   return g;
 }
 
@@ -196,9 +197,11 @@ function make(id, look, opts) {
       geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo, at, col, base, bone: o.follow || (frame === rig.hips ? null : frame), follow });
       o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true });
     }
+    // (o.inkAt: how much of the outline to draw at each point, 0..1, by where it is in the frame's space; none where the shape meets another)
+    const inkW = (o.ink || 0.07) * K.ink, inkAt = o.inkAt ? Array.from({ length: n }, (_, i) => inkW * o.inkAt(p.fromBufferAttribute(pos, i))) : inkW;
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
     const m = new THREE.SkinnedMesh(geo, o.material || mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
-    if (o.ink !== 0 && K.ink > 0) { const h = new THREE.SkinnedMesh(hullGeo(geo, (o.ink || 0.07) * K.ink), INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h; }
+    if (o.ink !== 0 && K.ink > 0) { const h = new THREE.SkinnedMesh(hullGeo(geo, inkAt), INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h; }
     shadowy.push(m); return m;
   }
   // The skirts: by where a point hangs, between the hips, the thighs and the shins, so a skirt follows the legs. The back of it stays with the hips over
@@ -323,7 +326,7 @@ function make(id, look, opts) {
     const thigh = rig['thigh' + s], knee = rig['knee' + s], ankle = rig['ankle' + s];
     // One leg from the hip to the ankle, bending through the knee; for her, the boot's shaft and its turned-down top ride on it.
     const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, FS = K.footSize, sh = f => -Lk - f * D.shin;      // (points down the shin as a share of its length)
-    skinnedOn(thigh, lathe(wide(dense([[0, 1.0], [1.25, 0.7], [1.72, -0.4], [1.66, -Lk * 0.34], [1.45, -Lk * 0.68], [1.15, -Lk + 0.6], [1.08, -Lk - 0.2], [1.13, sh(0.17)], [1.15, sh(0.37)], [0.9, sh(0.66)], [0.62, -La + 0.8], [0.54, -La + 0.1], [0.5, -La - 0.2], [0, -La - 0.5]], 60), LG), 1, 28), P.skin, legW(s), { tint: true });
+    skinnedOn(thigh, lathe(wide(dense([[0, 1.0], [1.25, 0.7], [1.72, -0.4], [1.66, -Lk * 0.34], [1.45, -Lk * 0.68], [1.15, -Lk + 0.6], [1.08, -Lk - 0.2], [1.13, sh(0.17)], [1.15, sh(0.37)], [0.9, sh(0.66)], [0.62, -La + 0.8], [0.54, -La + 0.1], [0.5, -La - 0.2], [0, -La - 0.5]], 60), LG), 1, 28), P.skin, legW(s), { tint: true, inkAt: q => 1 - ss(0.1, 0.8, -q.x * sx / (1.6 * LG)) * ss(-Lk * 0.8, -Lk * 0.45, q.y) });
     if (S.feet === 'boots') {
       skinnedOn(thigh, lathe(wide([[0.84, sh(0.51)], [1.0, sh(0.56)], [0.8, sh(0.8)], [0.72, -La - 0.2], [0, -La - 0.4]], LG), 1, 18), P.boots, legW(s));
       skinnedOn(thigh, lathe(wide([[0.88, sh(0.507)], [1.04, sh(0.536)], [1.0, sh(0.586)]], LG), 1, 18), P.bootsDk, legW(s), { ink: 0.04 });
@@ -392,14 +395,14 @@ function make(id, look, opts) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07 })); }
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s)));
       drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03 }));
-      drawersDown.push(piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0));
+      drawersDown.push(piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0, { ink: 0 }));
     }
     // Down, they're one garment pushed down round both legs: a rolled cuff on each thigh and the cloth between them, sagging between her legs at the
     // front and back, carried by both thighs.
     { const yb = -D.thigh * 0.74, ax = (D.hipX + 1.42 * K.legGirth), g = new THREE.TorusGeometry(1, 0.34, 8, 40).rotateX(Math.PI / 2), pp = g.attributes.position;
       for (let i = 0; i < pp.count; i++) { const x = pp.getX(i) * ax, z = pp.getZ(i) * 1.5 * K.legGirth; pp.setXYZ(i, x, yb + pp.getY(i) - 0.7 * (1 - ss(0, 1.8, Math.abs(x))), z); }
       g.computeVertexNormals();
-      const m = skinnedOn(rig.hips, g, P.drawers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { ink: 0.05 });
+      const m = skinnedOn(rig.hips, g, P.drawers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { ink: 0.05, inkAt: q => ss(0.45, 0.75, Math.abs(q.x) / ax) });      // (outlined round the outside only, not between her legs)
       drawersDown.push(m);
       // and the cloth across the middle, between her legs, sagging (the legs pass through it, hiding the part inside them)
       const gg = surface((u, v) => { const a = u * Math.PI * 2, x = Math.cos(a) * ax * v, z = Math.sin(a) * 1.5 * K.legGirth * v; return new V3(x, yb - 0.7 * (1 - ss(0, 1.8, Math.abs(x))) - 0.35 * (1 - v * v), z); }, 40, 8, p => new V3(0, -1, 0));
