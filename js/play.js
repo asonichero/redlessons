@@ -48,6 +48,7 @@ function create(view, opts) {
   let doing = null, sitting = null, lying = false;
   const wp = o => o.getWorldPosition(new V3());
   const flat = v => v.clone().setY(0);
+  const sideOf = y => new V3(Math.cos(y), 0, -Math.sin(y)), angDiff = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
   const fwd = () => new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw));
   const yawTo = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
   // A place on the floor to stand to reach p, `off` in front of it along n (its way into the room), and the way to face.
@@ -84,13 +85,34 @@ function create(view, opts) {
   let clock = 0; const timers = [];
   const wait = s => new Promise(r => timers.push({ at: clock + s, r }));
 
+  // The door (in the left wall: into the room is +x; it swings in on its hinge at the far end from the latch, toward the hinge side). Opening it,
+  // she takes the latch in the hand on the side it will swing to (from inside, facing it, her left), pulls, and her hand goes with it until
+  // it's out of reach, then the door swings on. Shutting it, she uses whichever hand is nearer the latch as she comes to it: facing the doorway,
+  // her left; with her back to it, her right, behind her.
   async function useDoor() {
-    const d = W.door, latch = wp(d.latch), n = new V3(1, 0, 0);      // (the door is in the left wall: into the room is +x)
-    const shut = d.target === 0, s = standFor(latch, n, shut ? 6 : 6);
-    if (!shut) s.at.z -= 9;      // (to shut it she stands to the hinge side of the open leaf, and pulls it to)
-    await m.goTo(s.at, shut ? s.yaw : yawTo(s.at, latch));
-    m.lookAt(() => wp(d.latch)); await m.reach('R', () => wp(d.latch).add(new V3(0.6, 0, 0)));
-    d.target = shut ? 1 : 0; await wait(0.55); await m.release('R'); m.lookAt(null);
+    const d = W.door, latch = wp(d.latch), n = new V3(1, 0, 0), hinge = wp(d.pivot), opening = d.target === 0;
+    const toHinge = flat(hinge).sub(flat(latch)).normalize();
+    let side;
+    if (opening) {
+      const s = { at: collide(flat(latch).addScaledVector(n, 6).addScaledVector(toHinge, -2.5), R), yaw: Math.atan2(-n.x, -n.z) };
+      await m.goTo(s.at, yawTo(s.at, latch));
+      side = sideOf(m.yaw).dot(toHinge) > 0 ? 'L' : 'R';
+    } else {
+      // (she goes to stand just past the end of the open leaf, clear of its swing, on the room side, coming at it however she comes, and turns
+      // only as far as she must)
+      const leaf = flat(latch).sub(flat(hinge)).normalize(), room = new V3(leaf.z, 0, -leaf.x);      // (room: square off the leaf, on the side it shuts through)
+      const at = collide(flat(hinge).addScaledVector(leaf, 14).addScaledVector(room, 2.8), R);
+      await m.goTo(at, null);
+      const to = flat(latch).sub(flat(m.pos)).normalize(), ahead = fwd().dot(to);
+      if (ahead > -0.3) await m.goTo(m.pos, m.yaw + angDiff(m.yaw, yawTo(m.pos, latch)) * 0.75);
+      side = fwd().dot(n) < 0 ? 'L' : 'R';      // (facing the doorway her left is the near hand; with her back to it, her right)
+    }
+    const reach = () => m.armReach(side);
+    m.lookAt(() => wp(d.latch)); await m.reach(side, () => wp(d.latch).add(new V3(0.6, 0, 0)));
+    d.target = opening ? 1 : 0;
+    // (her hand stays on the latch as the door moves, until the latch is past where she can follow, or it's there)
+    for (let k = 0; k < 40; k++) { await wait(0.04); if (Math.abs(d.open - d.target) < 0.05 || wp(d.latch).distanceTo(m.shoulder(side)) > reach() * 0.98) break; }
+    await m.release(side); m.lookAt(null);
   }
   async function useChest() {
     const c = W.chest, s = standFor(c.front, new V3(0, 0, 1), 5.5);

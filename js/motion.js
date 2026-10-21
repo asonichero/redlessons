@@ -114,6 +114,9 @@ function create(rig, opts) {
   m.stand = () => { m.lieWant = 0; return after(() => m.lieW < 0.02).then(() => { m.sitWant = 0; return after(() => m.sitW < 0.02, () => { m.locked = false; m.seat = null; }); }); };
   m.lie = bed => { m.bed = bed; m.lieWant = 1; return after(() => m.lieW > 0.98); };
   m.lookAt = p => { m.look = p; };
+  // (where a shoulder is, and how far its hand can reach from it)
+  m.shoulder = side => rig['arm' + side].getWorldPosition(new V3());
+  m.armReach = side => (rig['elbow' + side].position.length() + rig['hand' + side].position.length()) * sc;
   Object.defineProperty(m, 'busy', { get: () => !!m.auto || m.locked });
 
   // ── Getting about ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -344,10 +347,11 @@ function create(rig, opts) {
       const target = typeof h.target === 'function' ? h.target() : h.target, base = qa(s);
       armIK(r, s, target, pole(sd, false)); blendArm(s, base, ease(h.w));
     }
-    // A sitting figure rests her hands on her thighs.
+    // Sitting, she folds her hands in her lap: on her thighs a little in from her knees, one over the other, palms down.
     if (sitW > 0.01 && lieW < 0.5 && !m.carry) for (const [s, sd] of [['L', 1], ['R', -1]]) {
-      if (m.hands[s].w > 0.05) continue; const base = qa(s);
-      armIK(r, s, local(sd * 2.4, r.hips.position.y + 1.6, 6.5), pole(sd, true)); blendArm(s, base, sitW * (1 - lieW));
+      if (m.hands[s].w > 0.05) continue; const base = qa(s), hb = r['hand' + s].quaternion.clone();
+      armIK(r, s, local(sd * 0.35, r.hips.position.y + 2.3 + (s === 'L' ? 0.35 : 0), 4.6 + (s === 'L' ? 0.4 : 0)), pole(sd, true)); blendArm(s, base, sitW * (1 - lieW));
+      setWorldQuat(r['hand' + s], rootQ.clone().multiply(new Q().setFromEuler(new THREE.Euler(-Math.PI / 2 + 0.1, sd * 0.5, 0)))); r['hand' + s].quaternion.copy(hb.slerp(r['hand' + s].quaternion, sitW * (1 - lieW)));
     }
 
     // ── Legs: each reaching its foot (standing or stepping); sitting, feet on the floor before the seat; lying, straight.
