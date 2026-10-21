@@ -190,8 +190,9 @@ function make(id, look, opts) {
     }
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
     if (o.cover) {      // (cloth that's covered by another layer: coloured per point by o.cover(p) → [colour, share], p in the frame's space at rest)
-      const at = []; for (let i = 0; i < n; i++) at.push(p.fromBufferAttribute(pos, i).clone());
-      const col = new Float32Array(n * 3); geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); covers.push({ geo, at, col, base: srgb(hex), fn: o.cover });
+      const toHips = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(frame.matrixWorld), at = [], atH = [];
+      for (let i = 0; i < n; i++) { at.push(p.fromBufferAttribute(pos, i).clone()); atH.push(at[i].clone().applyMatrix4(toHips)); }
+      const col = new Float32Array(n * 3); geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); covers.push({ geo, at, atH, frame, col, base: srgb(hex), fn: o.cover });
       o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true, side: o.side || THREE.FrontSide });
     }
     if (o.tint) {      // (skin that the marks can bleed into: its points in the hips' space at rest, and a colour for each)
@@ -352,7 +353,7 @@ function make(id, look, opts) {
   let skirt = null, hemBand = null, apron = null;
   const waist = piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 });
   // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
-  const drapeG = new THREE.Group(); rig.hips.add(drapeG); drapeG.visible = !!opts.seated;
+  const drapeG = new THREE.Group(); rig.hips.add(drapeG); drapeG.visible = !!opts.seated; let drapeShape = null;
   seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5);
   if (!opts.seated) {
     // (lying, its front, the side toward the lap she lies on, is drawn in close over her legs rather than standing out as a bell)
@@ -373,6 +374,7 @@ function make(id, look, opts) {
   function seatedDrape(parent, len) {
     const Tk = D.thigh, full = Tk + 1.5 + 2.2 * Math.PI / 2 + D.shin + 0.2, L = len == null ? full : Math.min(len, full);
     const lapL = Math.min(Tk + 1.5, L), arcL = Math.min(2.2 * Math.PI / 2, L - lapL), drop = Math.max(0.001, L - lapL - arcL), total = lapL + arcL + drop;
+    drapeShape = { Tk, lapL, arcL, drop };
     // What the drape is, for anything that must not pass through it (js/lap.js keeps arms out): over the lap, an elliptic tube along the thighs;
     // below the knees, one standing to the floor. In the hips' space; returns how far a ball of radius r at q is inside.
     if (len == null) rig.solids.push((q, r) => {
@@ -394,7 +396,7 @@ function make(id, look, opts) {
     piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 });
     if (P.apron) piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 });
   }
-  const drawers = [], drawersDown = [], underSkirt = () => dress.skirt === 'down' ? [cc('skirt'), 1] : null;      // (the drawers: the skirt's colour while it's down over them)
+  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt === 'down' && inSkirt(rest, now) ? [cc('skirt'), 1] : null;      // (the drawers: the skirt's colour while it's down over them)
   if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
     // (up over the whole seat to the waist, tucked under the bodice: fuller at the back only low down, under the cheeks; above them it follows the
@@ -590,7 +592,18 @@ function make(id, look, opts) {
     const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 9.15 - (3.05 + 2.3 * Math.pow(b, 1.4)) * K.cloakLen; };
     const fn = (u, v) => { const phi = lerp(PH0, PH1, u), y = lerp(9.15, hem(phi), v), r = (rAt(y) + 0.12 * Math.sin(u * Math.PI * 9) * v) * Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95);
       const dep = lerp(DEP, 0.6, Math.max(0, Math.cos(phi)));      // (the front panels lie close over the bust; the back stands off the shoulder blades)
-      return new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * dep * TD); };
+      const P0 = new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * dep * TD);
+      if (!opts.lying) return P0;
+      // Lying face down across a lap, it lies along the line of her back instead of standing off it as a bell: the back of it follows her back a
+      // cloth's thickness off it, and the sides fall away round her flanks toward the floor.
+      const yH = y + D.torsoY, back = Math.max(0, -Math.cos(phi)), sd = Math.sin(phi) ** 2, w = ss(0.05, 0.35, v);
+      const zBack = -(bodyR(yH) * trunkW(yH) * 0.74 * TD + 0.32 + 0.08 * v);
+      P0.z = lerp(P0.z, Math.min(P0.z * 0.0 + zBack * Math.pow(back, 0.6), 0) + (Math.cos(phi) > 0 ? P0.z : 0), w * ss(0, 0.25, back));
+      P0.z += 2.2 * v * v * sd * w; P0.x *= lerp(1, 0.86, v * sd * w);
+      return P0; };
+    // (her body's radius at a height in the hips' space, as the waist, ribs and back are built)
+    const BODY = [[0.4, 2.9], [1.5, 2.75], [2.9, 2.38], [3.8, 2.32], [4.9, 2.55], [6.2, 2.85], [7.4, 3.0], [8.4, 2.92], [9.2, 2.3], [9.7, 1.2]];
+    function bodyR(y) { if (y <= BODY[0][0]) return BODY[0][1]; for (let i = 1; i < BODY.length; i++) if (y <= BODY[i][0]) { const [y0, r0] = BODY[i - 1], [y1, r1] = BODY[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return BODY[BODY.length - 1][1]; }
     const out = p => new V3(p.x, 0, p.z);
     // The cape's sides are carried partly by the arms under them, so it lifts with them rather than letting them through.
     const capeW = p => { const side = 0.55 * ss(1.6, 3.2, Math.abs(p.x)) * ss(-0.4, 0.9, p.z) * ss(9.0, 7.4, p.y);      // (front and sides only: the back stays on her back)
@@ -640,15 +653,29 @@ function make(id, look, opts) {
   // (Worked out from each point's place at rest, in the hips' space, where the thigh's joint is at y 0 and the leg hangs straight down.)
   const dress = { skirt: 'down', drawers: 'up' }, CC = {}, cc = k => CC[k] || (CC[k] = srgb(P[k]));
   const bootTop = -(D.thigh + 0.507 * D.shin);
-  function coverAt(t, p) {
+  // Whether a point (in the hips' space) is in the part of her the skirt covers: what's there is hidden under it, unless it pokes through, and
+  // then it should look like the skirt. Standing, the length of the skirt (the point as it is at rest, since the skirt is skinned to the legs as
+  // they are); seated, along the drape over her lap as it lies now (tilted along her thighs): the seat, the lap to the drape's hem, and for a
+  // long skirt, round the knees and down the shins.
+  const XA = new V3(1, 0, 0);
+  const inSkirt = (rest, now) => {
+    if (!(opts.seated || seatedNow)) return rest.y < 2.1 && rest.y > -S.skirtLen + 0.3;
+    const q = now.clone().applyAxisAngle(XA, -drapeG.rotation.x), Sh = drapeShape;
+    if (q.y > -3 && q.y < 2.1 && q.z < -1.2) return true;                                         // (the seat)
+    if (q.z > -1.5 && q.z < -1.5 + Sh.lapL - 0.35 && q.y > -0.1 - 2.3 * K.legGirth - 0.8) return true;      // (the lap)
+    if (Sh.drop > 0.01 && q.y < -0.1 && q.y > -0.1 - Sh.drop + 0.3 && q.z > Sh.Tk - 3) return true;           // (round the knees, down the shins)
+    return false;
+  };
+  // (rest: the point at rest, in the hips' space; now: where it is now)
+  function coverAt(t, p, now) {
     const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
     if (t.bone === rig.thighL || t.bone === rig.thighR) {
       if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w]; }
-      if (down) { const e = seatedNow ? 2.0 : 0; return [cc('skirt'), ss(-S.skirtLen + 0.4 + e, -S.skirtLen + 1.0 + e, y)]; }      // (seated, the drape ends a little sooner along the thigh)
+      if (down) return inSkirt(p, now) ? [cc('skirt'), 1] : null;
       if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y)];
       return null;
     }
-    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? [cc('skirt'), 1] : drawersOn ? [cc('drawers'), 1] : null;
+    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (inSkirt(p, now) ? [cc('skirt'), 1] : null) : drawersOn ? [cc('drawers'), 1] : null;
     if (!t.bone) {      // (the hips: the bodice over the top of them, and under it the skirt, or the drawers)
       const wb = ss(0.85, 1.15, y); if (wb >= 1) return [cc('bodice'), 1];
       const under = down ? cc('skirt') : drawersOn ? cc('drawers') : null;
@@ -660,7 +687,8 @@ function make(id, look, opts) {
   const ctmp = new THREE.Color();
   function recolourCovers() {
     for (const c of covers) {
-      for (let i = 0; i < c.at.length; i++) { ctmp.copy(c.base); const cv = c.fn(c.at[i]); if (cv && cv[1] > 0) ctmp.lerp(cv[0], Math.min(1, cv[1])); c.col[i * 3] = ctmp.r; c.col[i * 3 + 1] = ctmp.g; c.col[i * 3 + 2] = ctmp.b; }
+      const toNow = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(c.frame.matrixWorld), qn = new V3();
+      for (let i = 0; i < c.at.length; i++) { ctmp.copy(c.base); const cv = c.fn(c.atH[i], qn.copy(c.at[i]).applyMatrix4(toNow)); if (cv && cv[1] > 0) ctmp.lerp(cv[0], Math.min(1, cv[1])); c.col[i * 3] = ctmp.r; c.col[i * 3 + 1] = ctmp.g; c.col[i * 3 + 2] = ctmp.b; }
       c.geo.attributes.color.needsUpdate = true;
     }
   }
@@ -672,7 +700,7 @@ function make(id, look, opts) {
       for (let i = 0; i < t.at.length; i++) {
         tc.copy(t.base); const q = !t.bone ? t.at[i] : t.follow ? t.at[i].clone().lerp(moved(t.bone, t.at[i]), t.follow[i]) : moved(t.bone, t.at[i]);
         for (const s of ['L', 'R']) { const m = marks[s]; if (m <= 0.005) continue; const w = Math.exp(-q.distanceToSquared(mNow[s]) / (2 * 1.5 * 1.5)); tc.lerp(pinkL, Math.min(0.75, 0.95 * Math.sqrt(m) * w)); tc.lerp(redL, Math.min(0.62, 0.8 * m * m * w * w)); }
-        const cv = coverAt(t, t.at[i]); if (cv && cv[1] > 0) tc.lerp(cv[0], cv[1]);
+        const cv = coverAt(t, t.at[i], q); if (cv && cv[1] > 0) tc.lerp(cv[0], cv[1]);
         t.col[i * 3] = tc.r; t.col[i * 3 + 1] = tc.g; t.col[i * 3 + 2] = tc.b;
       }
       t.geo.attributes.color.needsUpdate = true;
@@ -681,7 +709,13 @@ function make(id, look, opts) {
 
   // Seated (on a stool or the bed, in the cottage): the skirt is the drape over her lap rather than skinned to her legs. (w: how far she's sat.)
   let seatedNow = false, dressNow = {};
-  rig.setSeated = w => { const on = w > 0.6; if (on !== seatedNow) { seatedNow = on; rig._recolour = true; rig.setDress(dressNow); } };
+  rig.setSeated = w => {
+    const on = w > 0.6; if (on !== seatedNow) { seatedNow = on; rig._recolour = true; rig.setDress(dressNow); }
+    // (the drape's top follows the line of her thighs; once she's settled the covered skin is worked out again for how she sits)
+    if (on) { const d = new V3(0, -1, 0).applyQuaternion(rig.thighL.quaternion).add(new V3(0, -1, 0).applyQuaternion(rig.thighR.quaternion)); drapeG.rotation.x = clamp(Math.atan2(-d.y, d.z), -0.6, 0.6); }
+    else drapeG.rotation.x = 0;
+    const settled = w > 0.97; if (settled && !rig._settled) { rig._recolour = true; rig.setDress(dressNow); } rig._settled = settled;
+  };
   rig.setDress = d => {
     d = d || {}; dressNow = d;
     // skirt: 'down', 'up' (lifted, gathered at the waist) or 'off' (gone, waistband and all: the editor's view for reading proportions).

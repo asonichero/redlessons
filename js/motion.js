@@ -302,17 +302,17 @@ function create(rig, opts) {
     // the same way, folding as the arm comes forward and opening as it goes back; the hand dangles from the wrist, flopping after both.
     m.arms = m.arms || { L: { a: 0, v: 0, e: 0.2, ev: 0, h: 0.1, hv: 0 }, R: { a: 0, v: 0, e: 0.2, ev: 0, h: 0.1, hv: 0 } };
     const tb = r.torso.rotation, hb = r.hips.rotation, loose = (1 - sitW) * (1 - lieW);
-    const gx = 0.85 * (tb.x + hb.x) * loose, gz = -0.85 * (tb.z + hb.z) * loose, push = clamp(m.acc / (GAIT.walk * sc), -1.5, 1.5);
+    const gx = 0.6 * (tb.x + hb.x) * loose, gz = -0.6 * (tb.z + hb.z) * loose, push = clamp(m.acc / (GAIT.walk * sc), -1.5, 1.5);
     for (const [s, sd] of [['L', 1], ['R', -1]]) {
       const rel = clamp(offs[s] / S2, -1.2, 1.2), amp = lerp(0.42, 0.6, m.runB) * mv, A = m.arms[s];
       const want = amp * rel * (rel < 0 ? lerp(0.85, 0.45, m.runB) : 1) + 0.03 * Math.sin(t * 1.1 + sd) * idle - 0.1 * rb;
-      A.v += (lerp(42, 80, m.runB) * (want - A.a) - lerp(5.5, 9, m.runB) * A.v + 3 * push) * dt; A.a += A.v * dt;
+      A.v += (lerp(62, 85, m.runB) * (want - A.a) - lerp(8, 10, m.runB) * A.v + 2 * push) * dt; A.a += A.v * dt;
       const fwdA = Math.max(0, -A.a) / Math.max(0.2, amp);      // (how far forward this arm has come, 0..1)
       // (walking, the elbow all but straight as the arm goes back and bending as it comes forward; running, held bent, closing as it comes up)
       const eWant = 0.2 + 0.05 * mv + 1.1 * rb + 0.75 * (mv - rb) * Math.min(1, fwdA) + 0.35 * rb * (Math.min(1, fwdA) - 0.4);
-      A.ev += (lerp(36, 70, m.runB) * (eWant - A.e) - lerp(4.5, 9, m.runB) * A.ev) * dt; A.e += A.ev * dt;
-      const hWant = 0.1 + (0.4 * (A.e - 0.2) - 0.3 * A.a) * (1 - rb * 0.7);
-      A.hv += (28 * (hWant - A.h) - 3.5 * A.hv) * dt; A.h += A.hv * dt;
+      A.ev += (lerp(55, 75, m.runB) * (eWant - A.e) - lerp(7, 9.5, m.runB) * A.ev) * dt; A.e += A.ev * dt;
+      const hWant = 0.1 + (0.3 * (A.e - 0.2) - 0.2 * A.a) * (1 - rb * 0.7);
+      A.hv += (45 * (hWant - A.h) - 6.5 * A.hv) * dt; A.h += A.hv * dt;
       // (coming forward, the arm drifts in a little across her)
       r['arm' + s].rotation.set(A.a + gx, 0, sd * (0.13 + 0.12 * rb + 0.02 * shift * sd * idle + 0.05 * mv - 0.07 * mv * fwdA) + gz);
       r['elbow' + s].rotation.set(-A.e, 0, 0);
@@ -359,7 +359,18 @@ function create(rig, opts) {
         // short of it from a high seat)
         const sp = m.seat.at.clone().setY(0), sfwd = fwdOf(m.seat.facing), sside = sideOf(m.seat.facing), T1 = D.thigh * sc, T2 = D.shin * sc;
         const hjY = r['thigh' + s].getWorldPosition(new V3()).y, kneeY = Math.max(hjY - 0.15 * T1, SOLE + T2), dy = clamp(hjY - kneeY, -0.85 * T1, 0.85 * T1);
-        const sitFoot = sp.addScaledVector(sfwd, Math.sqrt(T1 * T1 - dy * dy) + 0.3 * sc).addScaledVector(sside, sd * (HIPX + 0.5) * sc).setY(Math.max(SOLE, kneeY - T2));
+        let sitFoot = sp.clone().addScaledVector(sfwd, Math.sqrt(T1 * T1 - dy * dy) + 0.3 * sc).addScaledVector(sside, sd * (HIPX + 0.5) * sc).setY(Math.max(SOLE, kneeY - T2));
+        // On a high stool: someone with the legs for it perches, one foot down on the floor ahead of her and the other on the stool's foot ring;
+        // someone whose feet won't reach the floor rests both on the ring (or, failing that, lets them hang).
+        if (m.seat.rung != null && sitFoot.y > SOLE + 0.01 || m.seat.rung != null && hjY - SOLE > 0.6 * (T1 + T2)) {
+          const LL = T1 + T2, reach = hjY - SOLE, floor = reach < 0.8 * LL && s === 'L';
+          if (floor) { const f = clamp(Math.sqrt(Math.max(0, (0.93 * LL) ** 2 - reach * reach)), 3 * sc, 0.75 * LL); sitFoot = sp.clone().addScaledVector(sfwd, f).addScaledVector(sside, sd * (HIPX + 1.2) * sc).setY(SOLE); }
+          else {
+            const ring = sp.clone().addScaledVector(sfwd, m.seat.rungR + 0.5 * sc).addScaledVector(sside, sd * (HIPX + 0.3) * sc).setY(m.seat.rung + 0.3 + SOLE);
+            if (ring.distanceTo(r['thigh' + s].getWorldPosition(new V3())) < 0.97 * LL) sitFoot = ring;
+            else sitFoot.y += 0.25 * sc * Math.sin(m.t * 1.7 + sd) * sitW;      // (dangling, idly swinging)
+          }
+        }
         A.lerp(sitFoot, sitW);
       }
       feetNow[s].copy(A);

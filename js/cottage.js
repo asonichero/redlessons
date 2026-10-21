@@ -11,6 +11,7 @@
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3, srgb = h => new THREE.Color(h).convertSRGBToLinear();
+const lerp = (a, b, t) => a + (b - a) * t;
 const X0 = -54, X1 = 54, Z0 = -36, Z1 = 44, EAVE = 40, RIDGE = 80, RZ = (Z0 + Z1) / 2, FOOT = 7;
 
 function canvasTex(w, h, paint, rep) {
@@ -129,6 +130,9 @@ function build(scene) {
   // What can be used and moved, for js/play.js: the door, the chest, the things that can be carried, the pegs, the places to sit, what's in the way.
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null };
   // A panel: a group, a point on it, and the way into the room from it.
+  // A piece of furniture: its own group on a wall's panel, hidden (with what's on it) while the camera is inside it or within a few units of it,
+  // so it never fills the view.
+  const pieces = [], sub = parent => { const s = new THREE.Group(); parent.add(s); pieces.push(s); return s; };
   const panel = (p, n) => { const g = new THREE.Group(); root_.add(g); panels.push({ g, p, n: n.normalize() }); return g; };
 
   // ── Floor and rug.
@@ -223,7 +227,7 @@ function build(scene) {
 
   // ── The bed nook (back left): a raised platform boxed in at the foot, posts and a canopy rail, a curtain tied back; on it a straw mattress in
   // ticking, a heavy woollen blanket hanging over the side, a patchwork quilt turned down, and a bolster.
-  { const g = W.back, bx = X0 + 16, bz = Z0 + 12, BW = 31, BD = 23, BH = 9;      // (centre and size of the platform)
+  { const g = sub(W.back), bx = X0 + 16, bz = Z0 + 12, BW = 31, BD = 23, BH = 9;      // (centre and size of the platform)
     box(g, BW, 1.6, BD, bx, BH - 0.8, bz, oak);                                                                        // the platform's boards
     box(g, BW, BH - 1.6, 1.6, bx, (BH - 1.6) / 2, bz + BD / 2 - 0.8, oak);                                             // its front, boxed in
     box(g, 1.6, BH - 1.6, BD, bx + BW / 2 - 0.8, (BH - 1.6) / 2, bz, oak);
@@ -249,7 +253,7 @@ function build(scene) {
   }
 
   // ── The chest (against the back wall, right): oak, iron-bound, with a gently domed lid and a lock plate.
-  { const g = W.back, cx = 26, cz = Z0 + 6.5, cw = 20, ch = 10, cd = 9;
+  { const g = sub(W.back), cx = 26, cz = Z0 + 6.5, cw = 20, ch = 10, cd = 9;
     // (an open box, sides and a bottom, so there's room inside: folded linen and a blanket)
     box(g, cw, 1, cd, cx, 1.1, cz, oak); for (const sz of [-1, 1]) box(g, cw, ch, 0.9, cx, ch / 2 + 0.6, cz + sz * (cd / 2 - 0.45), oak); for (const sx of [-1, 1]) box(g, 0.9, ch, cd - 1.8, cx + sx * (cw / 2 - 0.45), ch / 2 + 0.6, cz, oak);
     solid(g, slab(cw - 3, 4, cd - 3, 1, 0.8), T.mat('#e8e0cc'), cx - 3, 4.6, cz, { ink: 0.08 }); solid(g, slab(8, 3, cd - 3, 1, 0.8), toonMap(tx.wool), cx + 5, 7.6, cz, { ink: 0.08 });
@@ -302,7 +306,7 @@ function build(scene) {
   }
 
   // ── The trestle table (along the right wall, under the window), and two low stools beside it.
-  { const g = W.right, tx_ = 38, tz = 2, L = 36, D = 13, H = 15;
+  { const g = sub(W.right), tx_ = 38, tz = 2, L = 36, D = 13, H = 15;
     solid(g, slab(D, 1.6, L, 0.6, 0.3), oak, tx_, H - 0.8, tz, { ink: 0.12 });
     for (const z of [tz - L / 2 + 5, tz + L / 2 - 5]) {
       for (const sx of [-1, 1]) pole(g, new V3(tx_ + sx * 1.0, H - 1.6, z), new V3(tx_ + sx * 5.2, 0, z), 0.7, oak, { taper: 1.1 });   // the trestle's splayed legs
@@ -318,21 +322,23 @@ function build(scene) {
     thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
     world.surfaces.push({ name: 'the table', x0: tx_ - D / 2 + 2, x1: tx_ + D / 2 - 2, z0: tz - L / 2 + 2, z1: tz + L / 2 - 2, y: H, panel: g, front: new V3(-1, 0, 0) });
     world.obstacles.push({ x0: tx_ - D / 2 - 0.5, x1: tx_ + D / 2 + 0.5, z0: tz - L / 2, z1: tz + L / 2 });
-    // (low stools: their tops at SH, a little under the knee, so she sits with her feet flat and her knees a touch above her hips)
-    const SH = 5.4, stool = (x, z, ry) => {
+    // (stools to sit at the table: their tops at SH, so a grown woman sits with the table at a height to eat from; a ring round the legs at RH,
+    // to rest the feet on for anyone whose feet don't reach the floor)
+    const SH = 9, RH = 3.6, legR = y => lerp(3.4, 2.2, y / (SH - 1.2)), stool = (x, z, ry) => {
       const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; g.add(s);
       solid(s, new THREE.CylinderGeometry(3.6, 3.6, 1.4, 18), oak, 0, SH - 0.7, 0, { ink: 0.1 });
       for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; pole(s, new V3(Math.cos(a) * 2.2, SH - 1.2, Math.sin(a) * 2.2), new V3(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4), 0.5, oak); }
+      solid(s, new THREE.TorusGeometry(legR(RH), 0.32, 6, 24), oak, 0, RH, 0, { rot: [Math.PI / 2, 0, 0], ink: 0.06 });      // the foot ring
     };
     stool(tx_ - 12, tz - 9, 0.3); stool(tx_ - 11, tz + 11, 1.1);
-    for (const [x, z] of [[tx_ - 12, tz - 9], [tx_ - 11, tz + 11]]) { world.seats.push({ name: 'the stool', at: new V3(x, SH, z), facing: -Math.PI / 2, kind: 'stool' }); world.obstacles.push({ x, z, r: 3.8 }); }
+    for (const [x, z] of [[tx_ - 12, tz - 9], [tx_ - 11, tz + 11]]) { world.seats.push({ name: 'the stool', rung: RH, rungR: legR(RH), at: new V3(x, SH, z), facing: -Math.PI / 2, kind: 'stool' }); world.obstacles.push({ x, z, r: 3.8 }); }
   }
 
   // ── The hearth (the front wall, across the room from the peg rail): a stone fireplace on a raised hearthstone, its opening under an oak lintel,
   // the chimney breast rising into the thatch; a log fire on iron fire-dogs, with an iron pot on a swinging crane over it, a kettle and the fire
   // irons on the hearth, and logs stacked beside it. The fire flickers (its flames, the embers, and the warm light it throws across the room).
   const fire = { flames: [], light: null, embers: null, t: 0 };
-  { const g = W.front, cx = -2, zb = Z1 - 2.6, D = 8, zf = zb - D, OW = 18, OH = 16, JW = 5;      // (zb: its back, in front of the foundation course)
+  { const g = sub(W.front), cx = -2, zb = Z1 - 2.6, D = 8, zf = zb - D, OW = 18, OH = 16, JW = 5;      // (zb: its back, in front of the foundation course)
     const ashlar = toonMap(tx.ashlar), soot = toonMap(tx.soot), iron = T.mat('#2e2a28'), bark = T.mat('#5a3e26');
     box(g, OW + 2 * JW + 6, 1.4, D + 9.6, cx, 0.7, Z1 - (D + 9.6) / 2, ashlar);                                // the hearthstone, raised a little
     for (const sx of [-1, 1]) box(g, JW, OH, D, cx + sx * (OW + JW) / 2, 1.4 + OH / 2, zb - D / 2, ashlar);    // the jambs
@@ -397,8 +403,12 @@ function build(scene) {
   const cp = new V3();
   function update(camera) {
     camera.getWorldPosition(cp);
-    for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 0.5;
-    for (const it of world.items) it.obj.visible = !it.panel || it.panel.visible;      // (a thing on a wall's peg or a table goes with that wall)
+    for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 2;      // (hidden as the camera comes within a couple of units of it, not only once it's through)
+    if (!pieces.boxed) { root_.updateMatrixWorld(true); pieces.boxed = true; }
+    for (const f of pieces) { const b = f.userData.box || (f.userData.box = new THREE.Box3().setFromObject(f).expandByScalar(3)); f.visible = !b.containsPoint(cp); }
+    // (a thing on a wall's peg or a table goes with that wall, and with that table)
+    const shown = o => { for (; o && o !== root_; o = o.parent) if (!o.visible) return false; return true; };
+    for (const it of world.items) it.obj.visible = !it.panel || shown(it.panel);
   }
   // The door and the chest's lid swing toward where they're going (0 shut, 1 open), easing.
   function tick(dt) {
