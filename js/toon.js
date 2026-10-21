@@ -413,15 +413,38 @@ function make(id, look, opts) {
   // ── Head and face. ──
   // (scaled about the chin, which stays where it meets the neck)
   const head = new THREE.Group(); head.position.y = D.headC + 2.1 * (D.headScale - 1); head.scale.setScalar(D.headScale); rig.head.add(head); rig.headGroup = head;
-  // The head's outline (radius by height): full at the cheekbones and temples, tapering below them into a narrower jaw and a small soft chin. Jaw width
-  // narrows everything below the cheekbones. The face's features are painted onto the same surface (faceZ).
-  const HEADP = [[-2.2, 0], [-2.16, 0.4], [-1.95, 0.74], [-1.35, 1.2], [-0.7, 1.46], [0.1, 1.58], [0.8, 1.6], [1.5, 1.42], [1.92, 1.0], [2.08, 0.45], [2.1, 0]].map(([y, r]) => [y, r * (y < 0 ? lerp(1, K.jaw, ss(-0.1, -1.4, y)) : 1)]);
-  piece(lathe(dense(HEADP.map(([y, r]) => [r, y]), 30), 1.1, 26), P.skin, head, 0, 0, 0, { ink: 0.05 });
-  for (const sx of [-1, 1]) piece(ell(0.24 * K.earSize, 0.44 * K.earSize, 0.34 * K.earSize), P.skin, head, sx * 1.56, 0.0, -0.05, { ink: 0.05 });
+  // The head is built as it's drawn: a ball for the cranium, sitting back a little, with its sides cut flat; and the face hung in front of it, its
+  // planes turning at the cheekbones, a jaw that angles down and forward from under the ear and tapers to a squared chin. Each slice across it is
+  // a rounded box (a superellipse), wider than deep, its front further forward than its back is behind; the rows run from the crown to the chin.
+  // Rows: height, half width, how far forward the front is, how far back the back is, and how square the front and back are. Jaw width narrows
+  // everything below the cheekbones. The face's features are painted onto the same surface (faceZ).
+  const HEADK = [
+    [2.12, 0.05, 0.1, 0.1, 2, 2], [1.95, 0.95, 0.9, 1.04, 2, 2], [1.55, 1.36, 1.38, 1.5, 2.05, 2], [0.95, 1.55, 1.64, 1.72, 2.3, 2.05],
+    [0.25, 1.57, 1.74, 1.72, 2.8, 2.15], [-0.35, 1.53, 1.73, 1.55, 3.0, 2.4], [-0.95, 1.42, 1.66, 0.95, 3.1, 2.6], [-1.45, 1.18, 1.56, 0.35, 3.0, 2.6],
+    [-1.85, 0.84, 1.44, -0.25, 2.9, 2.6], [-2.08, 0.5, 1.33, -0.72, 2.7, 2.5], [-2.2, 0.28, 1.2, -0.9, 2.5, 2.4], [-2.24, 0.03, 1.04, -0.88, 2.2, 2.2],
+  ].map(([y, w, f, b, nf, nb]) => [y, w * (y < 0 ? lerp(1, K.jaw, ss(-0.1, -1.4, y)) : 1), f, b, nf, nb]);
+  const headAt = y => {
+    const R = HEADK, n = R.length; y = clamp(y, R[n - 1][0], R[0][0]); let i = 0; while (i < n - 2 && y < R[i + 1][0]) i++;
+    const a = R[i], b = R[i + 1], t = (y - a[0]) / (b[0] - a[0]), h = b[0] - a[0], out = [];
+    for (let k = 1; k < 6; k++) {      // (a smooth curve through the rows: each value's slope taken from its neighbours)
+      const sl = j => { const p = R[Math.max(0, j - 1)], q = R[Math.min(n - 1, j + 1)]; return (q[k] - p[k]) / (q[0] - p[0]); };
+      const t2 = t * t, t3 = t2 * t; out.push((2 * t3 - 3 * t2 + 1) * a[k] + (t3 - 2 * t2 + t) * h * sl(i) + (-2 * t3 + 3 * t2) * b[k] + (t3 - t2) * h * sl(i + 1));
+    }
+    return { w: Math.max(0.01, out[0]), f: out[1], b: out[2], nf: out[3], nb: out[4] };
+  };
+  const pw = (c, n) => Math.sign(c) * Math.pow(Math.abs(c), 2 / n);
+  { const Y0 = HEADK[0][0], Y1 = HEADK[HEADK.length - 1][0], NU = 40, NV = 40;
+    const g = surface((u, v) => { const y = lerp(Y0, Y1, (1 - Math.cos(Math.PI * v)) / 2), H = headAt(y), a = (u - 0.5) * 2 * Math.PI, c = Math.cos(a), sn = Math.sin(a), n = c > 0 ? H.nf : H.nb;
+      // (u runs round from the back, through the front, to the back again: the seam is down the back)
+      const zc = (H.f - H.b) / 2, dz = (H.f + H.b) / 2; return new V3(H.w * pw(sn, n), y, zc + dz * pw(c, n)); }, NU, NV, p => p.clone().setY(p.y * 0.3));
+    // (the seam's two edges, and each end's ring of points, share their normals, so the shading runs smoothly across them)
+    const nm = g.attributes.normal, W = NU + 1, tmp = new V3(), tmp2 = new V3();
+    for (let v = 0; v <= NV; v++) { tmp.fromBufferAttribute(nm, v * W).add(tmp2.fromBufferAttribute(nm, v * W + NU)).normalize(); nm.setXYZ(v * W, tmp.x, tmp.y, tmp.z); nm.setXYZ(v * W + NU, tmp.x, tmp.y, tmp.z); }
+    for (const v of [0, NV]) { tmp.set(0, 0, 0); for (let u = 0; u < NU; u++) tmp.add(tmp2.fromBufferAttribute(nm, v * W + u)); tmp.normalize(); for (let u = 0; u <= NU; u++) nm.setXYZ(v * W + u, tmp.x, tmp.y, tmp.z); }
+    piece(g, P.skin, head, 0, 0, 0, { ink: 0.05 }); }
+  for (const sx of [-1, 1]) piece(ell(0.24 * K.earSize, 0.44 * K.earSize, 0.34 * K.earSize), P.skin, head, sx * (headAt(0).w - 0.04), 0.0, -0.1, { ink: 0.05 });
   // Where the face's surface is: features set on it follow it as they move.
-  const faceZ = (x, y) => { let r = 0; for (let i = 1; i < HEADP.length; i++) if (y <= HEADP[i][0]) { r = lerp(HEADP[i - 1][1], HEADP[i][1], (y - HEADP[i - 1][0]) / (HEADP[i][0] - HEADP[i - 1][0])); break; } return 1.1 * Math.sqrt(Math.max(0, r * r - x * x)); };
-  // A defined chin: a soft rounded point standing a little forward at the bottom of the face.
-  piece(ell(0.46 * K.jaw / 0.88, 0.3, 0.34), P.skin, head, 0, -1.98, faceZ(0, -1.98) - 0.18, { ink: 0.04 });
+  const faceZ = (x, y) => { const H = headAt(y), zc = (H.f - H.b) / 2, dz = (H.f + H.b) / 2, q = Math.abs(x) / H.w; return q >= 1 ? zc : zc + dz * Math.pow(1 - Math.pow(q, H.nf), 1 / H.nf); };
   // The nose: a soft slope out of the face in the face's own colour (the shading shows it). The shadow under it is painted, with everything else.
   { const N = K.noseSize, g = new THREE.SphereGeometry(1, 16, 12); g.scale(0.15 * N, 0.36 * N, 0.17 * N);
     piece(g, P.skin, head, 0, K.noseY + 0.08 * N, faceZ(0, K.noseY) - 0.07, { rot: [-0.42, 0, 0], ink: 0 }); }
