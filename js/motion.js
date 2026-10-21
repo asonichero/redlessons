@@ -73,7 +73,7 @@ function armIK(r, s, W, pole) {
 // ── Tuning (in the figure's own units, multiplied by its size) ───────────────────────────────────────────────────────────────────────────────
 const GAIT = {
   walk: 21, run: 60,                       // top speeds, world units a second at size 1 (her legs are about 14 long)
-  accel: 7, decel: 9, yawRate: 9, yawRateRun: 6, // how quickly she gets up to speed, slows, and turns (per second)
+  accel: 7, decel: 9, yawRate: 5, yawRateWalk: 3.2, yawRateRun: 2.4,      // (turning, radians a second at most: standing, walking, running) // how quickly she gets up to speed, slows, and turns (per second)
   duty: [0.62, 0.3],                      // the share of each stride a foot is on the ground: walking, running
   stride: [1.1, 0.95],                     // stride length (by leg length, and the square root of speed by leg length): walking, running
   lift: [1.6, 1.6], drop: [0, 0], bob: [0, 0.4], lean: [0.06, 0.2],
@@ -136,7 +136,12 @@ function create(rig, opts) {
     let yawTo = null;
     if (mag > 0) yawTo = Math.atan2(dir.x, dir.z); else if (m.faceYaw != null) yawTo = m.faceYaw;
     const prevYaw = m.yaw;
-    if (yawTo != null) { const dA = angDiff(m.yaw, yawTo), tr = lerp(GAIT.yawRate, GAIT.yawRateRun, m.runB); m.yaw += clamp(dA, -tr * dt, tr * dt) * (mag > 0 ? 1 : 0.7); if (mag === 0 && Math.abs(angDiff(m.yaw, yawTo)) < 0.02) m.faceYaw = null; }
+    // She turns smoothly: easing into the turn and out of it, and less sharply the faster she goes (a walk curves round; standing, she turns
+    // quicker, stepping round). How far she has still to turn is what her head and shoulders lead with (see the pose).
+    const dA = yawTo == null ? 0 : angDiff(m.yaw, yawTo), moving = mag > 0 ? clamp(m.speed / (GAIT.walk * sc), 0, 1) : 0;
+    const tr = lerp(lerp(GAIT.yawRate, GAIT.yawRateWalk, moving), GAIT.yawRateRun, m.runB);
+    m.yawV = approach(m.yawV || 0, clamp(dA * 4, -tr, tr), 9, dt); m.yaw += m.yawV * dt; m.turnErr = dA;
+    if (mag === 0 && m.faceYaw != null && Math.abs(dA) < 0.02 && Math.abs(m.yawV) < 0.1) m.faceYaw = null;
     if (mag > 0) { const f = fwdOf(m.yaw), along = Math.max(0, m.vel.dot(f)), side = m.vel.clone().addScaledVector(f, -m.vel.dot(f)); m.vel.copy(f.multiplyScalar(along)).addScaledVector(side, 0.25); }
     m.turnRate = approach(m.turnRate, angDiff(prevYaw, m.yaw) / Math.max(dt, 1e-3), 8, dt);
     m.speed = m.vel.length(); m.acc = approach(m.acc, (m.speed - before) / Math.max(dt, 1e-3), 5, dt);
@@ -213,7 +218,8 @@ function create(rig, opts) {
       // really was, and makes up the difference on the way.
       if (stance && c > 0.5) {
         if (!f.lock) f.lock = { at: toWorld(x, 0, a - 2 * a * ph / duty), yaw };
-        W = roll(f.lock.at, f.lock.yaw, pitch); yaw = f.lock.yaw; f.lift = null;
+        // (it pivots where it stands as she turns over it, rather than staying turned the old way)
+        const fy = f.lock.yaw + angDiff(f.lock.yaw, yaw) * 0.7; W = roll(f.lock.at, fy, pitch); yaw = fy; f.lift = null;
       } else {
         if (f.lock) { f.lift = { off: f.pos.clone().sub(W), yaw: f.yaw - yaw }; f.lock = null; }
         if (f.lift && !stance) { const k = 1 - ease(f.sw); W.addScaledVector(f.lift.off, k); yaw += f.lift.yaw * k; } else f.lift = null;
@@ -273,13 +279,15 @@ function create(rig, opts) {
     // heel takes the weight, and the head nods after it.
     const sp = (key, to, w, z) => { const q = m.sp[key] || (m.sp[key] = { x: to, v: 0 }); q.v += (w * w * (to - q.x) - 2 * z * w * q.v) * dt; q.x += q.v * dt; return q.x; };
     const give = m.down * mv * (1 - m.runB);
-    r.torso.rotation.set(sp('tx', lean * (1 - lieW) + 0.015 * br * idle + 0.05 * give, 15, 0.5), sp('ty', -1.8 * hipYaw, 13, 0.45), sp('tz', bank - 0.85 * hipTilt - 0.05 * wt * (1 - sitW), 13, 0.45));      // (the spine levels the shoulders over the tilting hips, and standing, drops the shoulder over the standing leg)
+    // (turning, the head looks round into the turn first and the shoulders follow it, ahead of the hips and the feet)
+    const lead = clamp(m.turnErr || 0, -1.3, 1.3) * (1 - sitW) * (1 - lieW) * (m.look ? 0.3 : 1);
+    r.torso.rotation.set(sp('tx', lean * (1 - lieW) + 0.015 * br * idle + 0.05 * give, 15, 0.5), sp('ty', -1.8 * hipYaw + 0.28 * lead, 13, 0.45), sp('tz', bank - 0.85 * hipTilt - 0.05 * wt * (1 - sitW), 13, 0.45));      // (the spine levels the shoulders over the tilting hips, and standing, drops the shoulder over the standing leg)
     // Head: steady (it undoes the lean), looking where she's going or at what she's reaching for, a little wandering when she's still.
     let lookYaw = 0.14 * Math.sin(t * 0.23) * idle, lookPitch = 0.04 * Math.sin(t * 0.37) * idle;
     if (m.look) { r.root.updateMatrixWorld(true); const hp = r.neck.getWorldPosition(new V3()), to = (typeof m.look === 'function' ? m.look() : m.look).clone().sub(hp), loc = to.applyQuaternion(rootQ.clone().invert());
       m.lookW = approach(m.lookW, 1, 4, dt); lookYaw = lerp(lookYaw, clamp(Math.atan2(loc.x, loc.z), -1, 1), m.lookW); lookPitch = lerp(lookPitch, clamp(Math.atan2(-loc.y, Math.hypot(loc.x, loc.z)), -0.5, 0.7), m.lookW); }
     else m.lookW = approach(m.lookW, 0, 4, dt);
-    r.neck.rotation.set(sp('nx', -0.8 * lean * (1 - crouch * 0.6) + lookPitch * (1 - lieW) - 0.25 * lieW - 0.03 * give, 11, 0.45), sp('ny', lookYaw * (1 - lieW) + 0.8 * hipYaw, 10, 0.5), sp('nz', -0.6 * bank - 0.15 * hipTilt, 10, 0.45));
+    r.neck.rotation.set(sp('nx', -0.8 * lean * (1 - crouch * 0.6) + lookPitch * (1 - lieW) - 0.25 * lieW - 0.03 * give, 11, 0.45), sp('ny', lookYaw * (1 - lieW) + 0.8 * hipYaw + 0.42 * lead, 10, 0.5), sp('nz', -0.6 * bank - 0.15 * hipTilt, 10, 0.45));
     r.head.rotation.set(0, 0, 0);
     // Arms: swinging against the legs (from where the feet really are), bent more running; still, hanging easy.
     const S2 = LEG / sc * 0.85;
