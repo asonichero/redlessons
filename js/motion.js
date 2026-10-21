@@ -74,15 +74,15 @@ function armIK(r, s, W, pole) {
 const GAIT = {
   walk: 21, run: 60,                       // top speeds, world units a second at size 1 (her legs are about 14 long)
   accel: 7, decel: 9, yawRate: 9, yawRateRun: 6, // how quickly she gets up to speed, slows, and turns (per second)
-  duty: [0.62, 0.36],                      // the share of each stride a foot is on the ground: walking, running
-  stride: [1.1, 1.0],                     // stride length (by leg length, and the square root of speed by leg length): walking, running
-  lift: [1.6, 1.6], drop: [0, 0.5], bob: [0, 0.7], lean: [0.06, 0.26],
+  duty: [0.62, 0.3],                      // the share of each stride a foot is on the ground: walking, running
+  stride: [1.1, 0.95],                     // stride length (by leg length, and the square root of speed by leg length): walking, running
+  lift: [1.6, 1.6], drop: [0, 0], bob: [0, 0.4], lean: [0.06, 0.2],
   sway: [0.5, 0.15],                       // the hips over the standing foot, side to side
   tilt: [0.075, 0.04],                     // the hip on the side of the swinging leg dropping (radians), the spine keeping the shoulders level
   turn: [0.012, 0.016],                    // the hips turning with the stepping leg (per unit of the feet's reach apart); the shoulders turn against
   down: [0.45, 0],                         // how far the hips give as each heel takes the weight
   strike: [-0.3, -0.05], pushOff: [0.55, 0.95],      // the foot's pitch landing (toes up) and leaving (on its toes): walking, running
-  straight: [0.995, 0.985],                // how straight a leg on the ground may be (of its full length): walking, running
+  straight: [0.995, 0.993],                // how straight a leg on the ground may be (of its full length): walking, running
 };
 
 function create(rig, opts) {
@@ -201,7 +201,7 @@ function create(rig, opts) {
         // Running, it takes a path of its own: the heel kicks up behind toward her seat, the knee drives forward with the foot tucked under it,
         // and the foot reaches out to land.
         const e = ease(sw); A = { x, z: lerp(A0.z, A1.z, e), y: lerp(A0.y, A1.y, e) + lift * (0.45 + 0.55 * big) * Math.sin(Math.PI * Math.pow(sw, 0.75)) };
-        if (rb > 0.01) { const ra = spline([A0.z, -0.12 * LEG, 0.32 * LEG, A1.z], sw), rh = Math.max(0, spline([A0.y - SOLE, 0.62 * LEG, 0.34 * LEG, A1.y - SOLE], sw)); A.z = lerp(A.z, ra, rb); A.y = lerp(A.y, SOLE + rh, rb); }
+        if (rb > 0.01) { const ra = spline([A0.z, -0.14 * LEG, 0.26 * LEG, A1.z], sw), rh = Math.max(0, spline([A0.y - SOLE, 0.5 * LEG, 0.24 * LEG, A1.y - SOLE], sw)); A.z = lerp(A.z, ra, rb); A.y = lerp(A.y, SOLE + rh, rb); }
         pitch = (lerp(pOff, 0, ss(0, 0.45, sw)) + pStrike * ss(0.55, 1, sw)) * big;
         w = 1 - ss(0, 0.12, sw) + ss(0.92, 1, sw); f.sw = sw; f.st = -1; f.land = toWorld(A1.x, A1.y, A1.z);
       }
