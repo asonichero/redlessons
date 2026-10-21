@@ -721,33 +721,58 @@ const EXPRS = {
   crying:    { brow: 0.6, browY: 0.16, open: 0.2, mouth: 'open', blush: 1, tears: 1, ms: 1.5 },
 };
 
-// ── A standing idle: the weight drifts from foot to foot, the arms hang easy, the head wanders a little. ──
+// ── A standing idle: her weight on one straight leg, the other easy, changing over now and then. ──
+// The pelvis sits over the standing foot, its hip on that side up and the other down, so the free knee eases forward; the spine bends back the
+// other way, dropping the shoulder over the standing leg, so the head stays over the foot carrying her. The free foot is set a little forward
+// and out. Every twelve seconds or so the weight goes over to the other leg (smoothly, in a second or so).
 function idle(r, t) {
-  const sh = Math.sin(t * 0.5), sw = Math.sin(t * 0.8);
-  r.hips.position.set(0.18 * sh, DIM.hipY - 0.35 + 0.03 * Math.sin(t * 1.6), 0);      // (a little low: the knees soft, so the planted feet can always be reached) r.hips.rotation.set(0, 0.03 * sw, 0.025 * sh);
-  r.torso.rotation.set(0.02 * Math.sin(t * 1.6), -0.04 * sw, -0.03 * sh);
-  r.neck.rotation.set(0.04 * Math.sin(t * 0.37), 0.15 * Math.sin(t * 0.23), 0.03 * Math.sin(t * 0.41) - 0.5 * r.torso.rotation.z);
+  const w = stance(t), sh = Math.sin(t * 0.5);
+  r.hips.position.set(0.5 * w + 0.04 * sh, DIM.hipY, 0);
+  r.hips.rotation.set(-0.02, 0.06 * w, 0.065 * w);
+  r.torso.rotation.set(0.03 + 0.012 * Math.sin(t * 1.6), -0.07 * w, -0.11 * w);
+  r.neck.rotation.set(0.04 * Math.sin(t * 0.37), 0.15 * Math.sin(t * 0.23), 0.03 * Math.sin(t * 0.41) + 0.04 * w);
   r.head.rotation.set(0, 0, 0);
   for (const [s, side] of [['L', 1], ['R', -1]]) {
-    r['arm' + s].rotation.set(0.03 * Math.sin(t * 1.1 + side), 0, side * (0.13 + 0.02 * sh * side)); r['elbow' + s].rotation.set(-0.22 - 0.03 * Math.sin(t * 1.1 + side), 0, 0); r['hand' + s].rotation.set(0.1, 0, side * 0.05);
+    const free = Math.max(0, -w * side);      // (how much this is the easy leg)
+    r['arm' + s].rotation.set(0.04 * Math.sin(t * 1.1 + side) - 0.04, 0, side * (0.12 + 0.03 * free)); r['elbow' + s].rotation.set(-0.2 - 0.04 * Math.sin(t * 1.1 + side), 0, 0); r['hand' + s].rotation.set(0.1, 0, side * 0.05);
   }
-  plantFeet(r);
+  plantFeet(r, w);
 }
-// Feet planted: each ankle held at its own spot just above the floor (its sole's height: the sole is what stands on the floor) (in the root's space, under its hip at rest, a touch apart), however the hips sway. The
-// thigh and knee are solved to reach it, the knee bending forward; the foot is turned to lie flat.
+// Which leg carries her (+1 her left, -1 her right): holding, then going over to the other.
+function stance(t) { const k = Math.sin(t * Math.PI / 12); return clamp(k * 3, -1, 1); }
+// Feet planted: each ankle held at its own spot on the floor (its sole's height: the sole is what stands on the floor), in the root's space. The
+// standing foot (w: +1 her left) is under her, a touch in, turned out a little; the free one forward and out, turned out more. The hips are raised
+// until the standing leg is all but straight. The thigh and knee are solved to reach each foot, the knee bending forward; the foot is turned to
+// lie flat on the floor, pointing its own way.
 const _pf = { q: new THREE.Quaternion(), m: new THREE.Matrix4(), dn: new V3(0, -1, 0) };
-function plantFeet(r) {
+function plantFeet(r, w) {
+  w = w || 0;
+  const L1 = DIM.thigh, L2 = DIM.shin, foot = {};
+  for (const [s, side] of [['L', 1], ['R', -1]]) {
+    const free = Math.max(0, -w * side), carry = Math.max(0, w * side);
+    foot[s] = { at: new V3(side * (DIM.hipX + 0.08 - 0.25 * carry + 0.35 * free), 0.75, 0.05 + 1.3 * free), yaw: side * (0.12 + 0.14 * free) };
+  }
+  // (raise the hips till the standing leg — or, square on, the nearer — is straight bar a hair)
   r.root.updateMatrixWorld(true);
-  const L1 = DIM.thigh, L2 = DIM.shin;
+  const S = w >= 0 ? 'L' : 'R', hj = r['thigh' + S].getWorldPosition(new V3()), A = r.root.localToWorld(foot[S].at.clone()), sc = r.root.getWorldScale(new V3()).x;
+  const want = (L1 + L2) * 0.997 * sc, hd = Math.hypot(hj.x - A.x, hj.z - A.z), lift = (A.y + Math.sqrt(Math.max(0, want * want - hd * hd)) - hj.y) / sc;
+  r.hips.position.y += lift;
+  r.root.updateMatrixWorld(true);
   for (const [s, side] of [['L', 1], ['R', -1]]) {
     const thigh = r['thigh' + s], knee = r['knee' + s], ankle = r['ankle' + s];
-    const T = r.root.localToWorld(new V3(side * (DIM.hipX + 0.08), 0.75, 0.05)), Tl = r.hips.worldToLocal(T);      // (in the hips' space)
-    const v = Tl.sub(thigh.position), d = clamp(v.length(), 1, L1 + L2 - 0.02); v.normalize();
+    const T = r.root.localToWorld(foot[s].at.clone()), Tl = r.hips.worldToLocal(T);      // (in the hips' space)
+    const v = Tl.sub(thigh.position), d = clamp(v.length(), 1, L1 + L2 - 0.01), u0 = v.clone().normalize();
     const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1)), k = Math.PI - Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
-    const fwd = new V3(0, 0, 1).addScaledVector(v, -v.z).normalize(), u = v.clone().multiplyScalar(Math.cos(a)).addScaledVector(fwd, Math.sin(a));
+    // (the knee bends toward where the foot points, so a turned-out foot has its knee over it)
+    const kd = new V3(Math.sin(foot[s].yaw), 0, Math.cos(foot[s].yaw)), fwd = kd.addScaledVector(u0, -kd.dot(u0)).normalize(), u = u0.clone().multiplyScalar(Math.cos(a)).addScaledVector(fwd, Math.sin(a));
     thigh.quaternion.setFromUnitVectors(_pf.dn, u); knee.rotation.set(k, 0, 0);
+    // (then the thigh is turned about its own length so the knee points that way too)
     r.root.updateMatrixWorld(true);
-    ankle.parent.getWorldQuaternion(_pf.q).invert(); ankle.quaternion.copy(_pf.q.multiply(r.root.getWorldQuaternion(new THREE.Quaternion())));
+    const kneeFwd = new V3(0, 0, 1).applyQuaternion(thigh.quaternion); kneeFwd.addScaledVector(u, -kneeFwd.dot(u)).normalize();
+    const turn = Math.atan2(new V3().crossVectors(kneeFwd, fwd).dot(u), kneeFwd.dot(fwd));
+    thigh.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(u, turn));
+    r.root.updateMatrixWorld(true);
+    ankle.parent.getWorldQuaternion(_pf.q).invert(); ankle.quaternion.copy(_pf.q.multiply(r.root.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), foot[s].yaw))));
   }
 }
 // Seated upright on a seat whose top is at seatY (in the world, with the root at the floor): thighs level, shins straight down to the floor.
