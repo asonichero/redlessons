@@ -275,6 +275,7 @@ function make(id, look, opts) {
   const outDir = new V3(0, -Math.sin(TILT), -Math.cos(TILT));
   const mk = (p, parent) => { const o = new THREE.Object3D(); o.position.copy(p); parent.add(o); return o; };
   rig.rear = { L: mk(onCheek(CHEEK.x, outDir).sub(pivotAt(1)), rig.seatPivot.L), R: mk(onCheek(-CHEEK.x, outDir).sub(pivotAt(-1)), rig.seatPivot.R), C: mk(new V3(0, CHEEK.y + 0.9, CHEEK.z - 1.0), rig.hips) };
+  rig.cheekC = { L: mk(new V3(CHEEK.x, CHEEK.y, CHEEK.z).sub(pivotAt(1)), rig.seatPivot.L), R: mk(new V3(-CHEEK.x, CHEEK.y, CHEEK.z).sub(pivotAt(-1)), rig.seatPivot.R) };      // (each cheek's middle)
   rig.upperBack = mk(new V3(0, 6.2, -1.95 * TD * K.chestWidth), rig.torso);
   // The bust is sculpted into the front of the torso (and the bodice under it), not set on it, so the chest is one smooth form.
   const bust = g => {
@@ -288,10 +289,10 @@ function make(id, look, opts) {
   };
   skinnedOn(rig.hips, bust(lathe(wide(dense([[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]], 44), trunkW), 0.68 * TD, 32)), top, torsoW);   // the waist, ribs, bust and shoulders
   // The bodice: laced, from the hips to under the bust.
-  skinnedOn(rig.hips, bust(lathe(wide(dense([[3.26, 0.3], [3.12, 0.9], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 });      // (flaring at the bottom over the hips, which never show through it)
-  skinnedOn(rig.hips, lathe(wide([[3.16, 0.0], [3.28, 0.28], [3.0, 0.62]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 });      // its bound hem, a neat edge over the join with whatever is below
+  skinnedOn(rig.hips, bust(lathe(wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 });      // (flaring at the bottom over the hips, which never show through it)
+  skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 });      // its bound hem, a neat edge over the join with whatever is below
   // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
-  { const BOD = wide(dense([[3.26, 0.3], [3.12, 0.9], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
+  { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
     // (from above the skirt's waistband to just under the bust)
     for (let i = 0; i < 4; i++) { const yh = 2.95 + i * 0.78, z = rAt(yh) * 0.74 * TD + 0.06;
       for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.95, 0.14, 0.1), P.lace, rig.torso, 0, yh - D.torsoY, z, { rot: [0, 0, sx * 0.55], ink: 0 });
@@ -382,9 +383,10 @@ function make(id, look, opts) {
   const drawers = [], drawersDown = [];
   if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
-    // (up over the whole seat to the waist, tucked under the bodice: fuller at the back, so the cheeks never rise above them)
+    // (up over the whole seat to the waist, tucked under the bodice: fuller at the back only low down, under the cheeks; above them it follows the
+    // small of her back, so it never stands proud of the cheeks as they roll round with her legs)
     { const g = lathe(wide(dense([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.26, 0.4], [3.08, 0.85], [2.95, 1.05]], 24), trunkW), 0.75 * TD, 32), pp = g.attributes.position;
-      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(0.2, 1.0, pp.getY(i)))); }
+      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.1, 1, ss(-1.3, -0.4, pp.getY(i)))); }
       g.computeVertexNormals(); drawers.push(skinnedOn(rig.hips, g, P.drawers, torsoW)); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07 })); }

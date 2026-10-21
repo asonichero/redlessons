@@ -217,6 +217,21 @@ function create(view, opts) {
     const sc = gerda.scaleW, d = dir.clone().addScaledVector(nIn, -dir.dot(nIn)).normalize();
     return { W: Tp.clone().addScaledVector(nIn, -half * sc).addScaledVector(d, -reach * sc), q: basis(nIn.clone().multiplyScalar(gerda.palm.R), d.clone().negate()) };
   }
+  // Where the hand lands: the top of the curve of the cheek struck, whatever is over it (skirt, drawers or skin), found by dropping a line from
+  // above the cheek's middle onto the first thing it meets; the palm comes down into it mostly from above, a little along the seat's own
+  // way into the skin. (Worked out once a frame.)
+  const ray = new THREE.Raycaster(), crowns = {}; let crownT = -1;
+  function crown(side) {
+    if (crownT !== J.t) { crownT = J.t; for (const k in crowns) delete crowns[k]; }
+    if (crowns[side]) return { p: crowns[side].p.clone(), n: crowns[side].n.clone() };
+    const mid = side === 'C' ? world(red.cheekC.L).lerp(world(red.cheekC.R), 0.5) : world(red.cheekC[side]);
+    const nIn = new V3(0, -1, 0).multiplyScalar(0.75).addScaledVector(intoSkin(), 0.25).normalize();
+    ray.set(mid.clone().addScaledVector(nIn, -12 * red.scaleW), nIn); ray.far = 24 * red.scaleW;
+    const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+    const hit = ray.intersectObjects(red.meshes, false).find(h => shown(h.object));
+    const c = { p: hit ? hit.point : world(red.rear[side === 'C' ? 'C' : side]), n: nIn };
+    crowns[side] = c; return { p: c.p.clone(), n: c.n.clone() };
+  }
   function armPose(name) {
     const impl = IMPL[st.implement], reach = impl.paddle ? 0.5 + T.PADDLE.at : 0.85, half = impl.paddle ? T.PADDLE.half : 0.28;
     const nIn = intoSkin(), dir = new V3(0.75, 0, 0.66);
@@ -224,11 +239,9 @@ function create(view, opts) {
       const sh = world(gerda.armR), sc = gerda.scaleW;
       return { W: sh.add(new V3(-2.0, 4.0, 1.6).multiplyScalar(sc)), q: basis(new V3(0.15, -0.55, 1).normalize().multiplyScalar(gerda.palm.R), new V3(-0.2, -1, -0.3)), pole: new V3(-0.75, 0.1, -0.6) };
     }
-    // (with her skirt down or her drawers up, the hand lands on the cloth, which stands this far off the skin)
-    const cloth = (st.skirt === 'down' ? 1.0 : st.skirt === 'up' && st.drawers === 'up' ? 0.12 : 0) * red.scaleW;
-    if (name === 'rest') { const Tp = world(red.rear.C).addScaledVector(nIn, -HOVER - cloth); return Object.assign(handOn(Tp, nIn, dir, reach, half), { pole: new V3(-0.6, -0.45, -0.5) }); }
-    const side = st.swing ? st.swing.side : 'C';
-    return Object.assign(handOn(world(red.rear[side]).addScaledVector(nIn, -cloth), nIn, dir, reach, half), { pole: new V3(-0.6, -0.3, -0.5) });
+    if (name === 'rest') { const Tp = crown('C').p.addScaledVector(nIn, -HOVER); return Object.assign(handOn(Tp, nIn, dir, reach, half), { pole: new V3(-0.6, -0.45, -0.5) }); }
+    const side = st.swing ? st.swing.side : 'C', c = crown(side);
+    return Object.assign(handOn(c.p, c.n, dir, reach, half), { pole: new V3(-0.6, -0.3, -0.5) });
   }
   function poseGerda() {
     const g = gerda, ph = armPhase(), side = st.swing ? st.swing.side : 'L';
@@ -279,7 +292,7 @@ function create(view, opts) {
 
   const api = {
     stage, pain, st, VIEWS, IMPL, BANDS,
-    get redRig() { return red; }, get gerda() { return gerda; }, get rear() { return red.rear; },      // (not "red": lap.red() is the safe word)
+    get redRig() { return red; }, get gerda() { return gerda; }, get rear() { return red.rear; }, get stg() { return st_; },      // (not "red": lap.red() is the safe word)
     smack,
     run(n) { st.runLeft = Math.max(0, (n || 1) - 1); return smack(); },
     // Red: everything stops at once. Nothing more is struck, whatever was queued; the arm comes back to rest.
