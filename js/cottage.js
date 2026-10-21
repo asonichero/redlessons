@@ -415,13 +415,22 @@ function build(scene) {
     // The fire: each flame stretching and swaying on its own beat, the embers pulsing, the light flickering with them.
     fire.t += dt; const ft = fire.t, flick = 0.5 + 0.25 * Math.sin(ft * 11.3) + 0.15 * Math.sin(ft * 23.7 + 1) + 0.1 * Math.sin(ft * 5.1);
     for (const f of fire.flames) { const k = 1 + 0.22 * Math.sin(ft * f.f + f.ph) + 0.12 * Math.sin(ft * f.f * 2.3 + f.ph * 2); f.m.scale.set(f.w * (1.05 - 0.1 * k), f.sz * k, f.w * (1.05 - 0.1 * k)); f.m.position.x = f.x + 0.25 * Math.sin(ft * f.f * 0.6 + f.ph); f.m.rotation.z = 0.08 * Math.sin(ft * f.f * 0.7 + f.ph); }
-    if (fire.light) fire.light.intensity = 0.8 + 0.45 * flick;
+    if (fire.light) fire.light.intensity = (0.8 + 0.45 * flick) * (fire.lightK || 1);
     if (fire.embers) fire.embers.material.color.setRGB(0.75 + 0.2 * flick, 0.14 + 0.08 * flick, 0.03);
     for (const o of [world.door, world.chest]) { if (!o) continue; o.open += (o.target - o.open) * (1 - Math.exp(-dt * 5)); const e = o.open; o.pivot.rotation.set(o === world.chest ? o.swing * e : 0, o === world.door ? o.swing * e : 0, 0); }
   }
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
-  return { group: root_, update, tick, world, bounds: { X0, X1, Z0, Z1, EAVE, RIDGE } };
+  // As the day goes: the sky in the window darkens, the shaft of sun fades, and the fire counts for more.
+  const skyM = [], shaftM = [];
+  root_.traverse(o => { if (o.isMesh && o.material && o.material.map === tx.sky) skyM.push(o.material); if (o.isMesh && o.material && o.material.transparent && o.material.opacity === 0.14) shaftM.push(o.material); });
+  function light(t) {
+    for (const m of skyM) m.color.setRGB(1, 1, 1).lerp(new THREE.Color(srgb('#2a3050')), Math.min(1, t * 1.1));
+    for (const m of shaftM) m.opacity = 0.14 * Math.max(0, 1 - t * 1.6);
+    fire.lightK = 1 + 1.8 * t;
+  }
+  return { group: root_, update, tick, light, world, bounds: { X0, X1, Z0, Z1, EAVE, RIDGE } };
 }
 
-root.Cottage = { build };
+// (the kit, for the other sets: js/cabin.js, js/wood.js)
+root.Cottage = { build, kit: { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK } };
 })(typeof window !== 'undefined' ? window : globalThis);

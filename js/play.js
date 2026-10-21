@@ -9,11 +9,16 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 function create(view, opts) {
   opts = opts || {};
-  const st = Stage.create(view, { fov: 40 }), W = st.cottage.world, B = W.bounds;
+  // (opts.set: the set to play in, scene → set (js/cottage.js by default, js/cabin.js, js/wood.js); opts.start: { at: [x, z], yaw }; opts.light: the
+  // time of day, 0..1; opts.npc: who else is there, { id, key, name, at, yaw, voice, tint, bg } (her mother at home by default, or none: null);
+  // opts.talk: the conversation offered with them (a function giving a script); opts.onExit(exit): she's walked into one of the set's exits)
+  const st = Stage.create(view, { fov: 40, set: opts.set }), W = st.cottage.world, B = W.bounds;
+  W.obstacles = W.obstacles || []; W.items = W.items || []; W.seats = W.seats || []; W.surfaces = W.surfaces || []; W.pegs = W.pegs || []; W.exits = W.exits || [];
+  st.setLight(opts.light || 0);
   let look = (root.Looks && Looks.load ? Looks.load() : {}).red;
   let rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig);
-  const sc = rig.scaleW, R = 3.2 * sc;
-  rig.root.position.set(4, 0, 2); rig.root.rotation.y = Math.PI;
+  const sc = rig.scaleW, R = 3.2 * sc, start = opts.start || { at: [4, 2], yaw: Math.PI };
+  rig.root.position.set(start.at[0], 0, start.at[1]); rig.root.rotation.y = start.yaw;
   let dress = { skirt: 'down' };
 
   // What's in her way: the walls, and the furniture (boxes and round things), as a circle of radius r pushed clear of each. The door, open, is a
@@ -30,32 +35,36 @@ function create(view, opts) {
         else { const ex = [o.x0 - r - q.x, o.x1 + r - q.x], ez = [o.z0 - r - q.z, o.z1 + r - q.z], bx = Math.abs(ex[0]) < Math.abs(ex[1]) ? ex[0] : ex[1], bz = Math.abs(ez[0]) < Math.abs(ez[1]) ? ez[0] : ez[1]; if (Math.abs(bx) < Math.abs(bz)) q.x += bx; else q.z += bz; }
       }
       // The door leaf: a line from the hinge, 13 long.
-      if (W.door.open > 0.15) { const { h, dir } = doorAt(), v = new V3(q.x - h.x, 0, q.z - h.z), t = clamp(v.dot(dir), 0, 13), c = h.clone().setY(0).addScaledVector(dir, t), d = new V3(q.x - c.x, 0, q.z - c.z), l = d.length(); if (l < r + 0.8 && l > 1e-4) { d.multiplyScalar((r + 0.8) / l); q.x = c.x + d.x; q.z = c.z + d.z; } }
-      q.x = clamp(q.x, B.x0 + r - 2.4, B.x1 - r + 2.4); q.z = clamp(q.z, B.z0 + r - 2.4, B.z1 - r + 2.4);
+      if (W.door && W.door.open > 0.15) { const { h, dir } = doorAt(), v = new V3(q.x - h.x, 0, q.z - h.z), t = clamp(v.dot(dir), 0, 13), c = h.clone().setY(0).addScaledVector(dir, t), d = new V3(q.x - c.x, 0, q.z - c.z), l = d.length(); if (l < r + 0.8 && l > 1e-4) { d.multiplyScalar((r + 0.8) / l); q.x = c.x + d.x; q.z = c.z + d.z; } }
+      if (W.constrain) q.copy(W.constrain(q, r));      // (a set's own limits: the path through the wood)
+      if (B) { q.x = clamp(q.x, B.x0 + r - 2.4, B.x1 - r + 2.4); q.z = clamp(q.z, B.z0 + r - 2.4, B.z1 - r + 2.4); }
     }
     return q;
   }
   let m = Motion.create(rig, { collide });
 
-  // ── Her mother, at home: standing by the hearth, keeping an eye on the room. She's in Rose's way like the furniture is, and Rose can talk to
-  // her. (Her own collisions are only the room's.)
-  const momLook = (root.Looks && Looks.load ? Looks.load() : {}).gerda;
-  const mom = Toon.make('gerda', momLook); st.scene.add(mom.root); st.cast(mom);
-  mom.root.position.set(-12, 0, 20); mom.root.rotation.y = Math.PI;
-  const mm = Motion.create(mom, { collide: (p, r) => p });
-  const momR = 3.6;
-  W.obstacles.push({ get x() { return mm.pos.x; }, get z() { return mm.pos.z; }, r: momR });
-  // ── Conversations (js/talk.js, js/story.js): Rose on the left, her mother on the right.
-  const talk = root.Talk ? Talk.create(st, { cast: {
-    red: { rig, name: 'Red', side: 'left', voice: 'red', tint: '#9a1a26', bg: '#f1d9cf' },
-    mother: { rig: mom, name: 'Mother', side: 'right', voice: 'gerda', tint: '#6a3a4a', bg: '#e6d8e6' },
-  }, turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw) }) : null;
+  // ── Whoever else is there (her mother at home, by the hearth, unless the page says otherwise): in Rose's way like the furniture, and someone to
+  // talk to. (Their own collisions are only the set's.)
+  const NPC = opts.npc === undefined ? { id: 'gerda', key: 'mother', name: 'Mother', at: [-12, 20], yaw: Math.PI, voice: 'gerda', tint: '#6a3a4a', bg: '#e6d8e6' } : opts.npc;
+  let mom = null, mm = null;
+  if (NPC) {
+    const looks = root.Looks && Looks.load ? Looks.load() : {};
+    mom = Toon.make(NPC.id, looks[NPC.id] || {}); st.scene.add(mom.root); st.cast(mom);
+    mom.root.position.set(NPC.at[0], 0, NPC.at[1]); mom.root.rotation.y = NPC.yaw;
+    mm = Motion.create(mom, { collide: (p, r) => { const q = p.clone(); if (B) { q.x = clamp(q.x, B.x0 + r - 2.4, B.x1 - r + 2.4); q.z = clamp(q.z, B.z0 + r - 2.4, B.z1 - r + 2.4); } return q; } });
+    W.obstacles.push({ get x() { return mm.pos.x; }, get z() { return mm.pos.z; }, r: 3.6, npc: true });
+  }
+  // ── Conversations (js/talk.js, js/story.js): Rose on the left, whoever she's with on the right.
+  const castOf = () => { const c = { red: { rig, name: 'Red', side: 'left', voice: 'red', tint: '#9a1a26', bg: '#f1d9cf' } }; if (NPC) c[NPC.key] = { rig: mom, name: NPC.name, side: 'right', voice: NPC.voice, tint: NPC.tint, bg: NPC.bg }; return c; };
+  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw) }) : null;
 
   // ── The camera: behind and above her, following; drag to look round her, the wheel to come in or go out.
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
   const camT = chest();
   st.controls.minDistance = 14; st.controls.maxDistance = 120; st.controls.enablePan = false;
-  st.go(camT.clone().add(new V3(0, 16, 42)), camT);
+  const camBack = opts.camBack || (opts.followCam ? [34, 8] : [42, 16]);      // (in the open, lower and nearer, under the trees)
+  const az = start.yaw + Math.PI + (opts.camTurn || 0);      // (behind her as she starts, or turned round from there by opts.camTurn)
+  st.go(camT.clone().add(new V3(Math.sin(az) * camBack[0], camBack[1], Math.cos(az) * camBack[0])), camT);
 
   // ── Things to do: whatever's nearest in front of her, of the things she could do from where she is.
   const input = { move: { x: 0, z: 0 }, run: false };
@@ -72,11 +81,13 @@ function create(view, opts) {
     const out = [], me = flat(m.pos), f = fwd();
     const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
-    if (talk && !sitting) add({ label: 'Talk to Mother', run: () => talkToMother() }, mm.pos.clone().setY(18));
+    if (talk && mm && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother() }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: sitting.kind === 'bed' && !m.carry ? 'Lie down / Get up' : 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, score: 0 }];
     // The door, and the chest.
-    { const d = W.door, p = wp(d.latch); add({ label: (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }
-    { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
+    // (a set's or a scene's own things to do: { label, at, run })
+    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run }, a.at);
+    if (W.door) { const d = W.door, p = wp(d.latch); add({ label: (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }
+    if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
     if (!m.carry) {
       for (const it of W.items) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: () => take(it) }, p); }
       for (const s of W.seats) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
@@ -88,7 +99,7 @@ function create(view, opts) {
         if (surfaceFree(s, c, it.radius)) add({ label: 'Put ' + it.name + ' on ' + s.name, run: () => putOn({ surface: s, at: c }) }, c);
         else { for (let k = 1; k < 8; k++) { const t = c.clone(); t.x = clamp(c.x + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 3 * (s.front.x ? 0 : 1), s.x0, s.x1); t.z = clamp(c.z + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 3 * (s.front.z ? 0 : 1), s.z0, s.z1); if (surfaceFree(s, t, it.radius)) { add({ label: 'Put ' + it.name + ' on ' + s.name, run: () => putOn({ surface: s, at: t }) }, t); break; } } }
       }
-      if (W.chest.open > 0.9) add({ label: 'Put ' + it.name + ' in the chest', run: () => putOn({ inChest: true }) }, W.chest.front);
+      if (W.chest && W.chest.open > 0.9) add({ label: 'Put ' + it.name + ' in the chest', run: () => putOn({ inChest: true }) }, W.chest.front);
       out.push({ label: 'Set ' + it.name + ' down', run: () => putOn({ floor: true }), score: 30 });
     }
     return out.sort((a, b) => a.score - b.score);
@@ -105,8 +116,10 @@ function create(view, opts) {
   // it's out of reach, then the door swings on. Shutting it, she uses whichever hand is nearer the latch as she comes to it: facing the doorway,
   // her left; with her back to it, her right, behind her.
   async function useDoor() {
-    const d = W.door, latch = wp(d.latch), n = new V3(1, 0, 0), hinge = wp(d.pivot), opening = d.target === 0;
+    const d = W.door, latch = wp(d.latch), n = d.inward ? d.inward.clone() : new V3(1, 0, 0), hinge = wp(d.pivot), opening = d.target === 0;      // (n: into the room)
     const toHinge = flat(hinge).sub(flat(latch)).normalize();
+    // (the hand on the hinge side, as she faces the doorway from inside)
+    const hingeHand = sideOf(Math.atan2(-n.x, -n.z)).dot(toHinge) > 0 ? 'L' : 'R', other = hingeHand === 'L' ? 'R' : 'L';
     let side;
     if (opening) {
       const s = { at: collide(flat(latch).addScaledVector(n, 6).addScaledVector(toHinge, -2.5), R), yaw: Math.atan2(-n.x, -n.z) };
@@ -115,12 +128,13 @@ function create(view, opts) {
     } else {
       // (she goes to stand just past the end of the open leaf, clear of its swing, on the room side, coming at it however she comes, and turns
       // only as far as she must)
-      const leaf = flat(latch).sub(flat(hinge)).normalize(), room = new V3(leaf.z, 0, -leaf.x);      // (room: square off the leaf, on the side it shuts through)
+      const leaf = flat(latch).sub(flat(hinge)).normalize(), shut = new V3(1, 0, 0).applyQuaternion(d.pivot.parent.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
+      let room = new V3(leaf.z, 0, -leaf.x); if (room.dot(shut) < 0) room.negate();      // (room: square off the leaf, on the side it shuts through)
       const at = collide(flat(hinge).addScaledVector(leaf, 14).addScaledVector(room, 2.8), R);
       await m.goTo(at, null);
       const to = flat(latch).sub(flat(m.pos)).normalize(), ahead = fwd().dot(to);
       if (ahead > -0.3) await m.goTo(m.pos, m.yaw + angDiff(m.yaw, yawTo(m.pos, latch)) * 0.75);
-      side = fwd().dot(n) < 0 ? 'L' : 'R';      // (facing the doorway her left is the near hand; with her back to it, her right)
+      side = fwd().dot(n) < 0 ? hingeHand : other;      // (facing the doorway, the hand on the hinge side is the near one; with her back to it, the other)
     }
     const reach = () => m.armReach(side);
     m.lookAt(() => wp(d.latch)); await m.reach(side, () => wp(d.latch).add(new V3(0.6, 0, 0)));
@@ -185,17 +199,24 @@ function create(view, opts) {
   // Talking to her mother: Rose goes to stand before her, a little apart, and they turn to each other; the camera settles on the two of them and
   // the conversation plays. At its end she's to come to her mother: the page is told (opts.after), and can go on to the lap scene.
   async function talkToMother() {
+    if (opts.talk) { await approach(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) opts.after('talk', picks); return; }
     // (she came home in her grandmother's cloak)
     if (look.outfit === 'No cloak') setOutfit('Hood down', true);
-    const away = flat(m.pos).sub(flat(mm.pos)); if (away.lengthSq() < 1) away.set(0, 0, -1); away.normalize();
-    const at = collide(flat(mm.pos).addScaledVector(away, 10), R);
-    await m.goTo(at, yawTo(at, mm.pos));
-    mm.face(yawTo(mm.pos, m.pos)); await wait(0.5);
+    await approach();
     talk.cast.red.rig = rig;
     const picks = await talk.play(Story.homecoming());
     setOutfit('No cloak', true);      // (cloak off, over the back of the chair, as she's told)
     if (opts.after) opts.after('homecoming', picks);
   }
+  // (Rose goes to stand before them, a little apart, and they turn to each other)
+  async function approach(dist) {
+    const away = flat(m.pos).sub(flat(mm.pos)); if (away.lengthSq() < 1) away.set(0, 0, -1); away.normalize();
+    const at = collide(flat(mm.pos).addScaledVector(away, dist || 10), R);
+    await m.goTo(at, yawTo(at, mm.pos));
+    mm.face(yawTo(mm.pos, m.pos)); await wait(0.5);
+  }
+  // A conversation as a scene runs it, where they stand (or sit), the cast as they are now.
+  async function converse(script, o) { talk.cast.red.rig = rig; return talk.play(script, o); }
   let offer = [];
   function use(alt) { if (busy()) return; const o = offer[0]; if (!o) return; act(alt && o.alt ? o.alt : o.run); }
 
@@ -206,7 +227,14 @@ function create(view, opts) {
     // Keys move her relative to the camera.
     const cf = flat(st.controls.target.clone().sub(st.camera.position)).normalize(), cr = new V3(-cf.z, 0, cf.x);
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
-    m.update(dt, { move: mv, run: input.run }); rig.tick(dt); mm.update(dt, null); mom.tick(dt);
+    m.update(dt, { move: mv, run: input.run }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }
+    // Exits: walking into one tells the page (once).
+    if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; opts.onExit(e); break; }
+    if (st.cottage.follow) st.cottage.follow(m.pos, dt);
+    if (opts.onFrame) opts.onFrame(dt);
+    // (in the open, the camera swings round behind her as she walks, slowly, so the way ahead stays in view)
+    if (opts.followCam && m.speed > 2 && !busy()) { const off = st.camera.position.clone().sub(st.controls.target), az = Math.atan2(off.x, off.z), want = m.yaw + Math.PI, da = Math.atan2(Math.sin(want - az), Math.cos(want - az)), k = Math.min(1, dt * 0.9);
+      const r = Math.hypot(off.x, off.z), na = az + da * k; off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; st.camera.position.copy(st.controls.target).add(off); }
     // The camera keeps its place relative to her, easing after her.
     const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
     st.controls.target.add(d); st.camera.position.add(d);
@@ -227,7 +255,12 @@ function create(view, opts) {
     m = Motion.create(rig, { collide }); if (carry) m.hold(carry, style);
     rig.setDress(dress); if (talk) talk.cast.red.rig = rig;
   }
-  return { stage: st, mother: mom, talk, talkToMother, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  let exited = null;
+  // Seated already, as a scene opens: Rose (who 'red') or the other, on a seat, there and then.
+  function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
+  // Gone: the stage stopped and its canvas taken away, the conversation box with it.
+  function dispose() { st.stop(); if (talk) talk.el.remove(); }
+  return { stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };

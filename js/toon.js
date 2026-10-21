@@ -134,6 +134,8 @@ const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7
 const SPECS = {
   red: { name: 'Rose', age: 19, scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
   gerda: { name: 'Maren', age: 'late thirties', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'boots', skirtLen: 13.6 },
+  // (her grandmother: shorter, softer through the middle, grey all through her hair, a knitted shawl over her shoulders, and a face that's laughed a lot)
+  gran: { name: 'Hulda', age: 'past seventy', scale: 0.93, bust: 1.18, hair: 'bun', feet: 'boots', skirtLen: 14, waist: 1.22, grey: true, shawl: true, old: true },
 };
 
 // ── Tuning: every number the figures are built from, adjustable in the editor (editor.html) and kept in the browser, so the lap scene uses them
@@ -183,14 +185,18 @@ function resetTune() { try { root.localStorage && root.localStorage.removeItem(T
 function palette(id, look) {
   const l = look || {}, P = {};
   P.skin = l.skin || '#f6d3b8'; P.skinSh = shade(P.skin, -0.12);
-  P.hair = l.hair || (id === 'red' ? '#b0582a' : '#7a3a22'); P.hairHi = shade(P.hair, 0.28); P.hairDk = shade(P.hair, -0.32);
-  P.eyes = l.eyes || (id === 'red' ? '#4f8a62' : '#4f8a62'); P.lips = l.lips || (id === 'red' ? '#d49080' : '#a8525a');
+  P.hair = l.hair || (id === 'red' ? '#b0582a' : id === 'gran' ? '#d6d0c8' : '#7a3a22'); P.hairHi = shade(P.hair, 0.28); P.hairDk = shade(P.hair, -0.32);
+  P.eyes = l.eyes || (id === 'red' ? '#4f8a62' : '#4f8a62'); P.lips = l.lips || (id === 'red' ? '#d49080' : id === 'gran' ? '#b8807a' : '#a8525a');
   P.blush = shade(P.lips, 0.35);
   if (id === 'red') {
     const cloak = l.cloak || '#a01828';
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: cloak, skirtDk: shade(cloak, -0.3),      // (her skirt the red of her cloak)
      
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
+  } else if (id === 'gran') {
+    const shawl = '#7d6a8c';
+    Object.assign(P, { cloak: shawl, cloakDk: shade(shawl, -0.3), lining: '#e2d8c8', lace: '#c9b8d4', blouse: '#efe6d4', bodice: '#4e3e56', skirt: '#5a6444', skirtDk: '#454e34', hem: '#454e34',
+      apron: '#e9dfc8', apronDk: '#d2c6aa', boots: '#3e2a1a', bootsDk: '#2a1a0e', drawers: '#f4eee2', drawersDk: '#ddd3c0' });
   } else if (l.outfit === 'Fine') {
     Object.assign(P, { blouse: '#b8a6dc', bodice: '#8f7ab8', lace: '#e8c75a', skirt: '#9a86c0', skirtDk: '#7a66a4', hem: '#e8c75a', apron: null, gold: '#e8c75a', boots: '#4a2f1c', bootsDk: '#e8c75a', drawers: '#f4eee2', drawersDk: '#ddd3c0' });
   } else {
@@ -300,7 +306,8 @@ function make(id, look, opts) {
   };
   const show = (m, on) => { m.visible = on; if (m.userData.hull) m.userData.hull.visible = on; };
   // Widths: the trunk's girth by height (in the hips' space) from the hip, waist and chest widths; a profile's radii scaled by a number or by height.
-  const trunkW = y => y <= 0.6 ? K.hipWidth : y <= 2.6 ? lerp(K.hipWidth, K.waistWidth, ss(0.6, 2.6, y)) : y <= 4.2 ? K.waistWidth : lerp(K.waistWidth, K.chestWidth, ss(4.2, 6.0, y));
+  const WW = K.waistWidth * (S.waist || 1);      // (a softer, fuller middle for some)
+  const trunkW = y => y <= 0.6 ? K.hipWidth : y <= 2.6 ? lerp(K.hipWidth, WW, ss(0.6, 2.6, y)) : y <= 4.2 ? WW : lerp(WW, K.chestWidth, ss(4.2, 6.0, y));
   const wide = (pr, f) => pr.map(([r, y]) => [r * (typeof f === 'function' ? f(y) : f), y]);
   const TD = K.bodyDepth;
 
@@ -597,6 +604,15 @@ function make(id, look, opts) {
     // The nose's shadow, a short soft curve under its tip.
     fx.strokeStyle = shade(P.skin, -0.3); fx.lineWidth = 0.035 * U; fx.lineCap = 'round'; fx.beginPath(); fx.arc(px(0.02), py(K.noseY - 0.12 * K.noseSize), 0.1 * K.noseSize * U, Math.PI * 0.15, Math.PI * 0.75); fx.stroke();
     for (const sx of [-1, 1]) { drawEye(sx, F, open); drawBrow(sx, F); }
+    // Older faces: soft laugh lines from the nose to the corners of the mouth, and a fan of them at the outer corners of the eyes, deeper when she smiles.
+    if (S.old) {
+      fx.strokeStyle = shade(P.skin, -0.15); fx.lineCap = 'round'; const sm = clamp(F.mc || 0, 0, 1);
+      for (const sx of [-1, 1]) {
+        fx.lineWidth = 0.04 * U; fx.beginPath(); fx.moveTo(px(sx * 0.42), py(K.noseY - 0.05)); fx.quadraticCurveTo(px(sx * (0.72 + 0.06 * sm)), py(-1.0 + K.mouthY), px(sx * (0.5 + 0.08 * sm)), py(-1.38 + K.mouthY)); fx.stroke();
+        fx.lineWidth = 0.03 * U; const ex = sx * (K.eyeX + 0.5 * K.eyeW), ey = K.eyeY;
+        for (const [dy, len] of [[0.1, 0.22], [-0.06, 0.26], [-0.22, 0.2]]) { fx.beginPath(); fx.moveTo(px(ex), py(ey + dy * 0.6)); fx.lineTo(px(ex + sx * len * (0.7 + 0.5 * sm)), py(ey + dy)); fx.stroke(); }
+      }
+    }
     drawMouth(F);
     if (F.tears > 0.05) for (const sx of [-1, 1]) {
       const x = sx * (K.eyeX - 0.05), y0 = K.eyeY - 0.2 * K.eyeH, len = 0.75 * F.tears;
@@ -640,17 +656,18 @@ function make(id, look, opts) {
   } else {
     hair(ell(1.0, 0.95, 0.95), 0, 0.8, -1.7);                                            // the bun
     hair(new THREE.TorusGeometry(0.75, 0.16, 6, 16), 0, 0.8, -1.35, [0, 0, 0], P.hairHi);
-    hair(ell(0.3, 0.75, 0.22), 1.02, 1.25, 1.12, [-0.6, 0.45, -0.6], '#b8b0a6');           // grey at the temple
+    if (!S.grey) hair(ell(0.3, 0.75, 0.22), 1.02, 1.25, 1.12, [-0.6, 0.45, -0.6], '#b8b0a6');           // grey at the temple
     for (const sx of [-1, 1]) hair(ell(0.42, 1.1, 0.45), sx * 1.42, -0.2, 0.35, [0, 0, sx * 0.1]);
   }
 
   // ── Her cloak: a scarlet capelet over the shoulders, longest at the back, with the hood down on her back or up over her hair. ──
   const cloakParts = [];
-  if (id === 'red' && look.outfit !== 'No cloak') {
+  // (her grandmother wears a shawl the same way: shorter, no hood)
+  if ((id === 'red' && look.outfit !== 'No cloak') || S.shawl) {
     const prof = [[9.15, 1.32], [8.75, 2.6], [8.1, 3.7], [7.2, 4.05], [6.0, 4.15], [4.0, 4.2]];
     const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
     const DEP = 0.8, PH0 = 0.42, PH1 = Math.PI * 2 - 0.42;
-    const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 9.15 - (3.05 + 2.3 * Math.pow(b, 1.4)) * K.cloakLen; };
+    const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 9.15 - (3.05 + 2.3 * Math.pow(b, 1.4)) * K.cloakLen * (S.shawl ? 0.78 : 1); };
     const fn = (u, v) => { const phi = lerp(PH0, PH1, u), y = lerp(9.15, hem(phi), v), r = (rAt(y) + 0.12 * Math.sin(u * Math.PI * 9) * v) * Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95);
       const dep = lerp(DEP, 0.6, Math.max(0, Math.cos(phi)));      // (the front panels lie close over the bust; the back stands off the shoulder blades)
       const P0 = new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * dep * TD);
@@ -673,9 +690,10 @@ function make(id, look, opts) {
     { const yb = rig.upperBack.position.y + D.torsoY, back = fn(0.5, (9.15 - yb) / (9.15 - hem(Math.PI))); rig.upperBack.position.z = Math.min(rig.upperBack.position.z, back.z - 0.12); }
     cloakParts.push(skinnedOn(rig.torso, surface(fn, 40, 10, out), P.cloak, capeW, { side: THREE.DoubleSide, ink: 0.07 }));
     cloakParts.push(skinnedOn(rig.torso, surface((u, v) => { const p = fn(u, 0.93 + 0.07 * v); return p.add(out(p).normalize().multiplyScalar(0.04)); }, 40, 1, out), P.lace, capeW, { side: THREE.DoubleSide, ink: 0 }));
-    cloakParts.push(piece(ell(0.32, 0.32, 0.22), '#e8b84a', rig.torso, 0, 8.95, 1.15));       // the clasp
+    cloakParts.push(piece(ell(0.32, 0.32, 0.22), S.shawl ? P.cloakDk : '#e8b84a', rig.torso, 0, 8.95, 1.15));       // the clasp (a knot, on a shawl)
     for (const sx of [-1, 1]) cloakParts.push(piece(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 6), P.lace, rig.torso, sx * 0.3, 8.3, 1.25, { rot: [0.2, 0, sx * 0.25], ink: 0 }));
-    if (look.outfit === 'Hood up') {
+    if (S.shawl) { /* (no hood) */ }
+    else if (look.outfit === 'Hood up') {
       const hg = new THREE.SphereGeometry(2.05, 24, 14, Math.PI / 2 + 0.95, Math.PI * 2 - 1.9, 0, Math.PI * 0.72); hg.scale(1, 1.06, 1.1);
       cloakParts.push(piece(hg, P.cloak, head, 0, 0.25, -0.15, { side: THREE.DoubleSide, ink: 0.06 }));
       cloakParts.push(piece(ell(0.7, 0.9, 0.7), P.cloak, head, 0, 1.2, -2.0, { rot: [-0.6, 0, 0] }));

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Little Red</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a0f10">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; touch-action: none; }
+  #view { position: fixed; inset: 0; }
+  #help { position: fixed; top: 10px; left: 12px; font-size: 12px; line-height: 1.6; color: #d8ccd0; background: rgba(22,18,20,0.7); padding: 8px 12px; border-radius: 6px; }
+  #help b { color: #fff; } a { color: #c9a84c; }
+  #help .row { margin-top: 5px; display: flex; gap: 4px; align-items: center; }
+  #help .row button { background: #33282c; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
+  #help .row button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
+  #prompt { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); font: 17px Georgia, serif; color: #fff; background: rgba(22,18,20,0.75); border: 1px solid #554449; padding: 7px 16px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+  #prompt.on { opacity: 1; }
+  body.talking #stick, body.talking .tb, body.talking #help, body.talking #prompt { display: none !important; }
+  #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
+  #card .go, #card button { display: inline-block; margin: 6px; padding: 8px 18px; border-radius: 10px; border: 2px solid #6b4a32; background: #8a2a2a; color: #fff; font: 16px Georgia, serif; text-decoration: none; cursor: pointer; }
+  #card button { background: #fffaf0; color: #3a2a20; }
+  #stick { position: fixed; left: 28px; bottom: 28px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); display: none; }
+  #stick i { position: absolute; left: 40px; top: 40px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.35); }
+  .tb { position: fixed; bottom: 34px; width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(60,40,44,0.6); color: #fff; font-size: 14px; display: none; }
+  #use { right: 28px; } #run { right: 104px; } #alt { right: 28px; bottom: 110px; } .tb.on { background: #6b2a2a; }
+  @media (pointer: coarse) { #stick, .tb { display: block; } #prompt { bottom: 170px; } #help .keys { display: none; } }
+  #help { top: auto; bottom: 8px; left: 10px; font-size: 11px; padding: 4px 10px; }
+  #objective { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); max-width: 80vw; text-align: center; font: italic 15px/1.4 Georgia, serif; color: #f6ecd8; background: rgba(22,18,20,0.6); padding: 6px 12px; border-radius: 8px; opacity: 0; transition: opacity .4s; pointer-events: none; }
+  #objective.on { opacity: 1; }
+  body.talking #objective { opacity: 0; }
+  #fade { position: fixed; inset: 0; background: #0e0a0c; color: #f6ecd8; display: flex; align-items: center; justify-content: center; font: italic 26px Georgia, serif; opacity: 0; transition: opacity .9s; pointer-events: none; z-index: 40; }
+  #fade.on { opacity: 1; pointer-events: auto; }
+  #title { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: radial-gradient(ellipse at center, #3a1c20 0%, #120a0c 75%); color: #f6ecd8; font-family: Georgia, serif; text-align: center; }
+  #title h1 { font-size: 46px; margin: 0; color: #e8504a; letter-spacing: .04em; } #title h2 { font-size: 20px; font-weight: normal; font-style: italic; margin: 0 0 18px; color: #e8d8c0; }
+  #title button { font: 18px Georgia, serif; padding: 10px 28px; border-radius: 12px; border: 2px solid #c9a84c; background: #6b2a2a; color: #fff; cursor: pointer; }
+  #title .skip { margin-top: 14px; font-size: 13px; color: #b8a8a0; } #title .skip a { cursor: pointer; margin: 0 6px; }
+  #help { opacity: .85; }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="help"><span class="keys">WASD or arrows to walk · Shift to run · E to use · Q to lie down</span><span> · Drag to look round · <a href="lap.html">Over the knee</a> · <a href="play.html">The cottage</a></span></div>
+<div id="objective"></div>
+<div id="prompt"></div>
+<div id="stick"><i></i></div>
+<button class="tb" id="run">Run</button><button class="tb" id="use">Use</button><button class="tb" id="alt">Lie</button>
+<div id="fade"></div>
+<div id="title"><h1>Little Red</h1><h2>Chapter One: The Red Cloak</h2><button id="begin">Begin</button>
+  <div class="skip">or start at: <a data-at="wood">the wood</a>·<a data-at="home">home</a></div></div>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="js/toon.js"></script>
+<script src="js/looks.js"></script>
+<script src="js/cottage.js"></script>
+<script src="js/cabin.js"></script>
+<script src="js/wood.js"></script>
+<script src="js/stage.js"></script>
+<script src="js/motion.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/talk.js"></script>
+<script src="js/story.js"></script>
+<script src="js/play.js"></script>
+<script src="js/chapter1.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// The fade between scenes, with the name of the next.
+const fade = (on, text) => new Promise(r => { if (on) $('fade').textContent = text || ''; $('fade').classList.toggle('on', on); setTimeout(r, on ? 950 : 50); });
+const objective = t => { $('objective').textContent = t; $('objective').classList.toggle('on', !!t); };
+// The end of the chapter: on to the lap scene.
+const card = () => { const c = document.createElement('div'); c.id = 'card'; c.innerHTML = '<p>Little Red slips off her cloak, lays it over the back of the chair, and goes to her mother.</p><a class="go" href="lap.html?scene=homecoming">Go to her</a> <button id="stay">Not yet</button>'; document.body.appendChild(c); $('stay').onclick = () => c.remove(); };
+const ch = window.__ch = Chapter1.create($('view'), { prompt: $('prompt'), objective, fade, card });
+const P = () => ch.P;
+const begin = at => { if (window.GameAudio) GameAudio.init(); $('title').remove(); ch.start(at); };
+$('begin').onclick = () => begin();
+document.querySelectorAll('[data-at]').forEach(a => a.onclick = () => begin(a.dataset.at));
+// Keys: held ones move her; E uses, Q lies down (on the bed). (The scene changes, so they go to whichever is being played.)
+const held = new Set(); let runOn = false;
+const axes = () => { const p = P(); if (!p) return; const k = c => held.has(c) ? 1 : 0; p.input.move.x = k('KeyD') + k('ArrowRight') - k('KeyA') - k('ArrowLeft'); p.input.move.z = k('KeyW') + k('ArrowUp') - k('KeyS') - k('ArrowDown'); p.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || runOn; };
+setInterval(axes, 200);
+addEventListener('keydown', e => { if (e.repeat) return; held.add(e.code); const p = P(); if (p && (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter')) p.use(); if (p && e.code === 'KeyQ') p.use(true); if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault(); axes(); });
+addEventListener('keyup', e => { held.delete(e.code); axes(); });
+addEventListener('blur', () => { held.clear(); axes(); });
+const stick = $('stick'), knob = stick.querySelector('i'); let sid = null;
+const stickAt = t => { const p = P(); if (!p) return; const r = stick.getBoundingClientRect(), x = (t.clientX - r.left - 60) / 50, y = (t.clientY - r.top - 60) / 50, l = Math.max(1, Math.hypot(x, y)); p.input.move.x = x / l; p.input.move.z = -y / l; knob.style.transform = `translate(${x / l * 40}px, ${y / l * 40}px)`; };
+stick.addEventListener('pointerdown', e => { sid = e.pointerId; stick.setPointerCapture(sid); stickAt(e); e.stopPropagation(); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickAt(e); });
+const stickEnd = () => { sid = null; const p = P(); if (p) p.input.move.x = p.input.move.z = 0; knob.style.transform = ''; };
+stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
+$('use').addEventListener('pointerdown', e => { e.stopPropagation(); const p = P(); if (p) p.use(); });
+$('alt').addEventListener('pointerdown', e => { e.stopPropagation(); const p = P(); if (p) p.use(true); });
+$('run').addEventListener('pointerdown', e => { e.stopPropagation(); runOn = !runOn; $('run').classList.toggle('on', runOn); axes(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

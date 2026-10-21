@@ -11,7 +11,7 @@ The look is a soft toon style (after *The Wind Waker HD* and *Mika and the Witch
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens the lap scene; /editor.html is the character editor; /play.html is the cottage (chapter one's homecoming)
+npm run serve        # http://localhost:8123/ opens the lap scene; /story.html is chapter one; /play.html is the cottage to wander; /editor.html is the character editor
 npm test             # the pain model, the discipline scripts and the looks
 ```
 
@@ -27,6 +27,16 @@ npm test             # the pain model, the discipline scripts and the looks
   - **How the skirts move:** they are skinned to the legs, so they follow them. Seated, her mother's skirt is its own drape over her lap and knees.
 - **Motion:** blinking, breathing, a standing idle (weight shifting from foot to foot, the head wandering), and springs on everything that reacts, so movement eases and settles instead of snapping.
 - **The cottage** (`js/cottage.js`): one modest room. Wattle-and-daub walls limewashed white in an oak frame (sill, posts, rail, braces, wall plate), on a low stone foundation, under a thick thatch roof seen from inside (rafters, purlins, ridge beam, tie beams), with a gable at each end. A planked door with strap hinges, a shuttered window letting a shaft of sun across the floor. A trestle table (jug, bowl, loaf) and two low stools; an iron-bound oak chest; a peg rail hung with dried herbs, lavender and wicker baskets; a stone hearth on the front wall, across from the pegs (a log fire on iron fire-dogs, its flames flickering and throwing a warm, wavering light across the room; an iron pot on a swinging crane, a kettle and fire irons on the hearthstone, a candlestick and jug on the mantel, logs stacked beside it, the chimney breast rising into the thatch); a raised bed nook with a straw mattress in ticking, a heavy woollen blanket, a patchwork quilt turned down, a bolster, and a curtain tied back. Walls, roof slopes and floor aren't drawn while the camera is outside them (each with whatever stands against it), so the room is open to the camera from any side, above or below.
+
+## Chapter one: The Red Cloak (`story.html`, `js/chapter1.js`)
+
+Three scenes, one after the other:
+
+1. **Her grandmother's cabin** (`js/cabin.js`): a log cabin built hard against a great oak, the trunk the back corner of the room, roots and all, with shelves of jars cut into it and two of its limbs running in under the roof as beams hung with herbs. A stone hearth, a rocking chair, a round table laid for tea, a dresser, a box bed under a patchwork quilt, a braided rug, a round window. It opens with tea and cake and being fussed; her grandmother fetches a parcel from the dresser and gives it to her: a red cloak like the one she wore as a girl. She puts it on, turns round to show it, and her grandmother calls her Little Red. Then she's free about the cabin until she goes out of the door.
+2. **The wood** (`js/wood.js`): the long path home, a minute and a half's walk if she doesn't dawdle. Her thoughts come as she goes, without stopping her (the realisation, in her own words). She can stop to pick bluebells (and carry them), sit on the flat stone by the stream, find the R and P carved in the old beech, sit on the fallen tree. The light goes from late gold to dusk as she walks, faster when she stands about, faster still sitting. At the edge of the wood the trees give way to a meadow, and over it the village, its windows lit.
+3. **Home**, late in the dusk: her mother sees her face at once, and the homecoming conversation, and a card on to the lap scene.
+
+The title screen can start at the wood or at home. Her grandmother, **Hulda**, is a third character: shorter and softer through the middle, grey all through her hair, a knitted shawl over her shoulders, laugh lines.
 
 ## Conversations (`js/talk.js`, `js/story.js`)
 
@@ -97,6 +107,9 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
 | `js/lap.js`, `lap.html` | Over the knee: the session, her mother's arm solving, Little Red's reactions, the cameras; its page |
 | `js/motion.js` | Movement for any figure: walking and running with planted feet, turning, reaching, crouching, carrying, sitting, lying |
+| `story.html`, `js/chapter1.js` | Chapter one: the cabin, the wood, home |
+| `js/cabin.js` | Her grandmother's log cabin round the great oak |
+| `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
 | `js/story.js` | The story's conversations (chapter one: the homecoming) |
 | `js/play.js`, `play.html` | About the cottage: the controls, the following camera, what's in the way, the things to do |

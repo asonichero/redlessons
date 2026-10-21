@@ -30,6 +30,8 @@ const CSS = `
 .talk.left .name { left: 200px; display: block; } .talk.right .name { right: 200px; display: block; }
 .talk .text { min-height: 3em; white-space: pre-wrap; }
 .talk.narr .text { font-style: italic; color: #5a4636; text-align: center; }
+.talk.muse .text { font-style: italic; color: #5a4636; } .talk.muse .more { display: none; } .talk.muse { pointer-events: none; opacity: .94; width: min(620px, calc(100vw - 32px)); font-size: 16px; }
+.talk.muse .box { min-height: 84px; } .talk.muse.left .box { padding-left: 132px; } .talk.muse .frame { width: 104px; height: 112px; } .talk.muse.left .name { left: 136px; }
 .talk .more { position: absolute; right: 18px; bottom: 8px; font-size: 14px; color: #8a6a50; animation: talkBob 1s ease-in-out infinite; }
 .talk.right .more { right: 200px; }
 @keyframes talkBob { 50% { transform: translateY(3px); } }
@@ -144,13 +146,13 @@ function create(stage, opts) {
 
   let playing = false;
   async function play(script, o) {
-    o = o || {}; playing = true; const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile)
+    o = o || {}; playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile)
     saved = { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: stage.controls.enabled };
     stage.controls.enabled = false;
     settle(o.shot || Object.keys(cast));
     const runList = async list => {
       for (const line of list) {
-        if (line.run) { await line.run(); continue; }
+        if (line.run) { el.classList.remove('on'); portrait = null; await line.run(); continue; }      // (the box steps aside while things happen)
         if (line.shot) { settle(line.shot); continue; }
         if (line.choose) {
           if (line.text || line.who) await show(line); else { el.classList.add('on'); textEl.textContent = ''; }
@@ -169,7 +171,23 @@ function create(stage, opts) {
     }
     return picks;
   }
-  return { play, settle, next, get playing() { return playing; }, el, cast };
+  // Thoughts, as she walks: her portrait and her words in the box, in italics, without stopping her or moving the camera; each stays long enough
+  // to read and goes. They queue. (A conversation coming on clears them.)
+  let museQ = Promise.resolve(), museN = 0;
+  function muse(text, o) {
+    o = o || {}; const n = ++museN, asked = performance.now();
+    museQ = museQ.then(() => new Promise(res => {
+      if (playing || (o.fresh !== false && performance.now() - asked > 9000)) return res();      // (a thought that's waited too long has passed)
+      const c = cast[o.who || 'red'];
+      el.classList.add('on', 'muse'); el.classList.remove('narr'); el.classList.toggle('left', c.side !== 'right'); el.classList.toggle('right', c.side === 'right');
+      el.style.setProperty('--tint', c.tint || '#8a5a3a'); nameEl.textContent = c.name; choicesEl.innerHTML = ''; moreEl.style.visibility = 'hidden';
+      portrait = { who: o.who || 'red' }; if (o.face && c.rig.setExpr) c.rig.setExpr(o.face);
+      textEl.textContent = text;
+      setTimeout(() => { if (!playing) { el.classList.remove('on', 'muse'); portrait = null; if (o.face && c.rig.setExpr) c.rig.setExpr('calm'); } res(); }, o.ms || 1500 + text.length * 45);
+    }));
+    return museQ.then(() => n);
+  }
+  return { play, settle, next, muse, get playing() { return playing; }, el, cast };
 }
 
 root.Talk = { create };
