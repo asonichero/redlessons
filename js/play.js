@@ -1,4 +1,4 @@
-// Red Lessons — Rose about the cottage (play.html): walk or run her round the room (js/motion.js moves her), the camera following;
+// Little Red’s Lessons — Rose about the cottage (play.html): walk or run her round the room (js/motion.js moves her), the camera following;
 // open and shut the door and the chest, take things down, carry them and set them down, sit on a stool or the bed, lie down on it.
 //
 //   const p = Play.create(view, { prompt: el })      p.input.move / p.input.run (set by the page's keys and touch stick); p.use() does the action offered
@@ -59,7 +59,7 @@ function create(view, opts) {
   }
   // ── Conversations (js/talk.js, js/story.js): Rose on the left, whoever she's with on the right.
   const castOf = () => { const c = { red: { rig, name: 'Red', side: 'left', voice: 'red', tint: '#9a1a26', bg: '#f1d9cf' } }; if (NPC) c[NPC.key] = { rig: mom, name: NPC.name, side: 'right', voice: NPC.voice, tint: NPC.tint, bg: NPC.bg }; return c; };
-  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw) }) : null;
+  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw), look: (who, at) => (who === 'red' ? m : mm).lookAt(at) }) : null;
 
   // ── The camera: behind and above her, following; drag to look round her, the wheel to come in or go out.
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));

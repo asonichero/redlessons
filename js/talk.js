@@ -1,4 +1,4 @@
-// Red Lessons — conversations, played the way Mika and the Witch's Mountain plays them: the camera settles on a view that shows both of them, and the
+// Little Red’s Lessons — conversations, played the way Mika and the Witch's Mountain plays them: the camera settles on a view that shows both of them, and the
 // lines come up in a box at the foot of the screen, a portrait of whoever is speaking beside it (her face, live, close up, with the expression
 // the line asks for), a name on a tab, the words typed out as they're said (and babbled, in that voice). Click, Space, Enter or E: finish the
 // line, then the next. Choices come up as buttons (or 1, 2, 3).
@@ -62,28 +62,40 @@ function create(stage, opts) {
   // canvas in the frame (so it sits in the box, over it, like the rest of the box). ──
   const pcam = new THREE.PerspectiveCamera(20, 1, 0.5, 200), pcan = document.createElement('canvas'); frame.appendChild(pcan);
   pcan.style.cssText = 'width:100%;height:100%;display:block;border-radius:11px';
-  const pctx = pcan.getContext('2d'), prt = new THREE.WebGLRenderTarget(4, 4); prt.texture.encoding = THREE.sRGBEncoding;
+  const pctx = pcan.getContext('2d'), big = document.createElement('canvas'), bctx = big.getContext('2d'), prt = new THREE.WebGLRenderTarget(4, 4); prt.texture.encoding = THREE.sRGBEncoding;
+  // (her own light, the same wherever she is: a soft sky and a warm key from above and to the front, as a painter would set it; the scene's own
+  // lights, its fog and its shadows are put aside while she's drawn)
+  const srgb = h => new THREE.Color(h).convertSRGBToLinear();
+  const pHemi = new THREE.HemisphereLight(srgb('#fff6ea'), srgb('#8a6a58'), 0.5), pKey = new THREE.DirectionalLight(srgb('#fff0dc'), 0.56), pFill = new THREE.DirectionalLight(srgb('#e4eaff'), 0.12);
+  const plights = [pHemi, pKey, pKey.target, pFill, pFill.target];
   let portrait = null, pbuf = null, pimg = null;      // (portrait: { who } while a line with a speaker is up)
   function drawPortrait(renderer, scene) {
     if (!portrait || !el.classList.contains('on')) return;
     const c = cast[portrait.who]; if (!c || !c.rig) return;
-    const dpr = Math.min(2, root.devicePixelRatio || 1), w = Math.max(2, Math.round(frame.clientWidth * dpr)), h = Math.max(2, Math.round(frame.clientHeight * dpr));
-    if (prt.width !== w || prt.height !== h) { prt.setSize(w, h); pcan.width = w; pcan.height = h; pbuf = new Uint8Array(w * h * 4); pimg = pctx.createImageData(w, h); }
+    // (drawn at twice the size and scaled down, so the fine lines of her face — lashes, brows, the set of the mouth — read as they do close to)
+    const dpr = Math.min(2, root.devicePixelRatio || 1), cw = Math.max(2, Math.round(frame.clientWidth * dpr)), ch = Math.max(2, Math.round(frame.clientHeight * dpr));
+    const ss = dpr >= 2 ? 1.5 : 2, w = Math.round(cw * ss), h = Math.round(ch * ss);
+    if (prt.width !== w || prt.height !== h) { prt.setSize(w, h); big.width = w; big.height = h; pbuf = new Uint8Array(w * h * 4); pimg = bctx.createImageData(w, h); }
+    if (pcan.width !== cw || pcan.height !== ch) { pcan.width = cw; pcan.height = ch; }
     // (in front of her face, a little to her side, looking at it)
     const rig = c.rig, head = rig.headGroup.getWorldPosition(new V3()), q = rig.neck.getWorldQuaternion(new THREE.Quaternion());
-    const fwd = new V3(0, 0, 1).applyQuaternion(q).setY(0).normalize(), side = new V3(fwd.z, 0, -fwd.x), sc = rig.scaleW;
+    const fwd = new V3(0, 0, 1).applyQuaternion(q).setY(0).normalize(), side = new V3(fwd.z, 0, -fwd.x), sc = rig.scaleW, sd = c.side === 'right' ? -1 : 1;
     const at = head.clone().add(new V3(0, -1.2 * sc, 0));
     pcam.aspect = w / h; pcam.updateProjectionMatrix();
-    pcam.position.copy(at).addScaledVector(fwd, 26 * sc).addScaledVector(side, (c.side === 'right' ? -1 : 1) * 7 * sc).add(new V3(0, 1.5 * sc, 0)); pcam.lookAt(at);
+    pcam.position.copy(at).addScaledVector(fwd, 26 * sc).addScaledVector(side, sd * 7 * sc).add(new V3(0, 1.5 * sc, 0)); pcam.lookAt(at);
+    pKey.position.copy(at).addScaledVector(fwd, 30).addScaledVector(side, sd * 22).add(new V3(0, 34, 0)); pKey.target.position.copy(at);
+    pFill.position.copy(at).addScaledVector(fwd, 20).addScaledVector(side, -sd * 26).add(new V3(0, 6, 0)); pFill.target.position.copy(at);
     // (everything but her hidden, her own colour behind her)
-    const hidden = []; for (const o of scene.children) if (o !== rig.root && !o.isLight && o.visible) { o.visible = false; hidden.push(o); }
-    const bg = scene.background, sAuto = renderer.shadowMap.autoUpdate, rt0 = renderer.getRenderTarget();
-    scene.background = new THREE.Color(c.bg || '#e8d6b8').convertSRGBToLinear(); renderer.shadowMap.autoUpdate = false;
+    const hidden = []; for (const o of scene.children) if (o !== rig.root && o.visible) { o.visible = false; hidden.push(o); }
+    for (const l of plights) scene.add(l);
+    const bg = scene.background, fog = scene.fog, sAuto = renderer.shadowMap.autoUpdate, rt0 = renderer.getRenderTarget();
+    scene.background = new THREE.Color(c.bg || '#e8d6b8').convertSRGBToLinear(); scene.fog = null; renderer.shadowMap.autoUpdate = false;
     renderer.setRenderTarget(prt); renderer.clear(); renderer.render(scene, pcam); renderer.setRenderTarget(rt0);
-    for (const o of hidden) o.visible = true; scene.background = bg; renderer.shadowMap.autoUpdate = sAuto;
+    for (const l of plights) scene.remove(l);
+    for (const o of hidden) o.visible = true; scene.background = bg; scene.fog = fog; renderer.shadowMap.autoUpdate = sAuto;
     renderer.readRenderTargetPixels(prt, 0, 0, w, h, pbuf);
     const d = pimg.data, row = w * 4; for (let y = 0; y < h; y++) d.set(pbuf.subarray((h - 1 - y) * row, (h - y) * row), y * row);      // (flipped: its rows run up)
-    pctx.putImageData(pimg, 0, 0);
+    bctx.putImageData(pimg, 0, 0); pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = 'high'; pctx.drawImage(big, 0, 0, cw, ch);
   }
   (stage.overlays || (stage.overlays = [])).push(drawPortrait);
 
@@ -103,20 +115,30 @@ function create(stage, opts) {
     if (opts.clamp) opts.clamp(pos);
     stage.go(pos, look, 900);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
-    if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, 0.45).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });
+    if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });
+    // (and each looks at the other's face — a little toward us, so that even sitting square to one another their faces read from here)
+    if (opts.look && rigs.length > 1) names.forEach((nm, k) => { const other = rigs[1 - k]; looking.add(nm);
+      opts.look(nm, () => { const h = other.headGroup.getWorldPosition(new V3()); return h.lerp(pos, 0.3); }); });
+  }
+  const looking = new Set();
+  function unlook() { if (opts.look) for (const nm of looking) opts.look(nm, null); looking.clear(); }
+
+  // ── Faces: a line sets the speaker's (and the listeners'); a look stays after the words have gone, as it would, and only eases back to her
+  // resting face a good while later, if nothing has changed it since. ──
+  const rest = {};
+  function face(who, name) { const c = cast[who]; if (!c || !c.rig.setExpr || !name) return; clearTimeout(rest[who]); c.rig.setExpr(name); }
+  function relax(who, ms) {
+    const c = cast[who]; if (!c || !c.rig.setExpr) return; clearTimeout(rest[who]); const was = c.rig.expr;
+    rest[who] = setTimeout(() => { if (c.rig.expr === was && !playing) c.rig.setExpr('calm'); }, ms);
   }
 
   // ── Lines ──
   let typing = null, waiting = null, voice = null;
   const CPS = 42;      // (letters a second)
   function show(line) {
-    const c = line.who ? cast[line.who] : null;
-    el.classList.add('on'); el.classList.toggle('narr', !c); el.classList.toggle('left', !!c && c.side !== 'right'); el.classList.toggle('right', !!c && c.side === 'right');
-    el.style.setProperty('--tint', c ? (c.tint || '#8a5a3a') : '#8a5a3a'); el.style.setProperty('--bg', c ? (c.bg || '#e8d6b8') : '#e8d6b8');
-    nameEl.textContent = c ? c.name : ''; choicesEl.innerHTML = ''; moreEl.style.visibility = 'hidden';
-    portrait = c ? { who: line.who } : null;
-    if (c && line.face && c.rig.setExpr) c.rig.setExpr(line.face);
-    if (line.listen) for (const k in line.listen) if (cast[k] && cast[k].rig.setExpr) cast[k].rig.setExpr(line.listen[k]);
+    const c = speaker(line.who);
+    if (c) face(line.who, line.face);
+    if (line.listen) for (const k in line.listen) face(k, line.listen[k]);
     const text = line.text, secs = Math.max(0.4, text.length / CPS);
     if (voice) voice.stop(); voice = c && A && A.speak ? A.speak(c.voice || line.who, text, secs * 0.92) : null;
     return new Promise(res => {
@@ -125,6 +147,15 @@ function create(stage, opts) {
       const step = () => { if (!typing) return; i = Math.min(text.length, Math.floor((performance.now() - t0) / 1000 * CPS)); textEl.textContent = text.slice(0, i); if (i >= text.length) typing.done(); else requestAnimationFrame(step); };
       textEl.textContent = ''; requestAnimationFrame(step);
     });
+  }
+  // (the box set for whoever's speaking: her side, her name, her portrait; or for narration)
+  function speaker(who) {
+    const c = who ? cast[who] : null;
+    el.classList.add('on'); el.classList.toggle('narr', !c); el.classList.toggle('left', !!c && c.side !== 'right'); el.classList.toggle('right', !!c && c.side === 'right');
+    el.style.setProperty('--tint', c ? (c.tint || '#8a5a3a') : '#8a5a3a'); el.style.setProperty('--bg', c ? (c.bg || '#e8d6b8') : '#e8d6b8');
+    nameEl.textContent = c ? c.name : ''; choicesEl.innerHTML = ''; moreEl.style.visibility = 'hidden';
+    portrait = c ? { who } : null;
+    return c;
   }
   function choose(list) {
     moreEl.style.visibility = 'hidden';
@@ -154,10 +185,10 @@ function create(stage, opts) {
     settle(o.shot || Object.keys(cast));
     const runList = async list => {
       for (const line of list) {
-        if (line.run) { el.classList.remove('on'); portrait = null; await line.run(); continue; }      // (the box steps aside while things happen)
+        if (line.run) { el.classList.remove('on'); portrait = null; unlook(); await line.run(); continue; }      // (the box steps aside while things happen)
         if (line.shot) { settle(line.shot); continue; }
         if (line.choose) {
-          if (line.text || line.who) await show(line); else { el.classList.add('on'); textEl.textContent = ''; }
+          if (line.text) await show(line); else { speaker(line.who || (cast.red ? 'red' : null)); textEl.textContent = ''; }      // (a choice on its own is hers to make: her portrait)
           const k = await choose(line.choose); picks.push(k);
           if (line.choose[k].then) await runList(line.choose[k].then);
           continue;
@@ -168,7 +199,7 @@ function create(stage, opts) {
     try { await runList(script); }
     finally {
       el.classList.remove('on'); portrait = null; playing = false; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
-      for (const k in cast) if (cast[k].rig.setExpr) cast[k].rig.setExpr('calm');
+      for (const k in cast) relax(k, o.hold || 9000); unlook();
       if (o.keepCamera) stage.controls.enabled = saved.enabled; else { stage.go(saved.pos, saved.look, 900); setTimeout(() => { stage.controls.enabled = saved.enabled; }, 950); }
     }
     return picks;
@@ -183,13 +214,13 @@ function create(stage, opts) {
       const c = cast[o.who || 'red'];
       el.classList.add('on', 'muse'); el.classList.remove('narr'); el.classList.toggle('left', c.side !== 'right'); el.classList.toggle('right', c.side === 'right');
       el.style.setProperty('--tint', c.tint || '#8a5a3a'); nameEl.textContent = c.name; choicesEl.innerHTML = ''; moreEl.style.visibility = 'hidden';
-      portrait = { who: o.who || 'red' }; if (o.face && c.rig.setExpr) c.rig.setExpr(o.face);
+      portrait = { who: o.who || 'red' }; face(o.who || 'red', o.face);
       textEl.textContent = text;
-      setTimeout(() => { if (!playing) { el.classList.remove('on', 'muse'); portrait = null; if (o.face && c.rig.setExpr) c.rig.setExpr('calm'); } res(); }, o.ms || 1500 + text.length * 45);
+      setTimeout(() => { if (!playing) { el.classList.remove('on', 'muse'); portrait = null; if (o.face) relax(o.who || 'red', 7000); } res(); }, o.ms || 1500 + text.length * 45);
     }));
     return museQ.then(() => n);
   }
-  return { play, settle, next, muse, get playing() { return playing; }, el, cast };
+  return { play, settle, next, muse, face, relax, get playing() { return playing; }, el, cast };
 }
 
 root.Talk = { create };

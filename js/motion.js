@@ -1,4 +1,4 @@
-// Red Lessons — movement for the toon characters (js/toon.js): walking, running, turning and standing, reaching, crouching, carrying, sitting and
+// Little Red’s Lessons — movement for the toon characters (js/toon.js): walking, running, turning and standing, reaching, crouching, carrying, sitting and
 // lying down. Written for any rig the toon module builds, so every character can use it.
 //
 // Walking and running are a cycle played in place, in the figure's own frame, as on a treadmill, and timed to its speed: a foot on the ground

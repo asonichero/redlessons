@@ -1,4 +1,4 @@
-// Red Lessons — the pain model (from Climbing Toward Consequence; a skirt and drawers added to the cushions) for the correction: each smack adds a sharp sting (which fades in seconds) and a deep ache (which fades over minutes); distress is their total
+// Little Red’s Lessons — the pain model (from Climbing Toward Consequence; a skirt and drawers added to the cushions) for the correction: each smack adds a sharp sting (which fades in seconds) and a deep ache (which fades over minutes); distress is their total
 // against how much the subject can take, and the band it falls in drives her reactions (expression, kicking, voice). Clothing takes the edge off the sting only.
 // Standalone: it needs nothing from the old engine. Exposes root.Pain = { PAIN, createPain }.
 (function (root) {

@@ -1,4 +1,4 @@
-// Red Lessons (from Climbing Toward Consequence) — sound, all synthesised (no audio files): a soft pastoral score, ambience (wind, birds, a fire), the correction's smacks and Red Riding Hood's cries
+// Little Red’s Lessons (from Climbing Toward Consequence) — sound, all synthesised (no audio files): a soft pastoral score, ambience (wind, birds, a fire), the correction's smacks and Red Riding Hood's cries
 // (in the lap scene), and a speech babble for dialogue (a short vowel burst per word, pitched per speaker).
 // Browsers only start audio after a tap or key press: call GameAudio.init() from one (the title screen's buttons do).
 (function (root) {

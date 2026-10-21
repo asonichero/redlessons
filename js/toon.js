@@ -1,4 +1,4 @@
-// Red Lessons — the characters, in a soft toon style: smooth rounded bodies, two-band cel shading and a thin warm outline (an inverted hull), with
+// Little Red’s Lessons — the characters, in a soft toon style: smooth rounded bodies, two-band cel shading and a thin warm outline (an inverted hull), with
 // expressive faces built from shapes. Grown-up proportions throughout: about seven heads tall.
 //
 // The rig is a tree of bones (THREE.Bone), so the skirts can be skinned to the legs and follow them:

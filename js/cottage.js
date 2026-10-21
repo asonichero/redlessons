@@ -1,4 +1,4 @@
-// Red Lessons — the cottage: one modest room, built in the same toon style as the characters (two-band shading, warm ink outlines, shapes and
+// Little Red’s Lessons — the cottage: one modest room, built in the same toon style as the characters (two-band shading, warm ink outlines, shapes and
 // textures made here). Wattle-and-daub walls limewashed white in an oak timber frame, on a low stone foundation, under a thick thatch roof seen
 // from inside (rafters, tie beams, the underside of the straw). Furnished simply: a trestle table and two low stools, a clothes chest, a peg rail
 // hung with dried herbs, lavender and baskets, and a raised bed nook with a straw mattress, heavy woollen blankets and a patchwork quilt.

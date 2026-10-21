@@ -1,4 +1,4 @@
-// Red Lessons — how Rose and her mother, Maren, look: the outfit each wears and the colours of their skin, hair, eyes and lips (and her cloak). The
+// Little Red’s Lessons — how Rose and her mother, Maren, look: the outfit each wears and the colours of their skin, hair, eyes and lips (and her cloak). The
 // character editor (editor.html) sets them; the lap scene (js/lap.js) builds the characters with them (js/toon.js). Kept in the browser.
 //
 //   const look = Looks.load()     → { red: { outfit, skin, hair, eyes, lips, cloak }, gerda: { outfit, skin, hair, eyes, lips } }

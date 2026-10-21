@@ -1,4 +1,4 @@
-// Red Lessons — over the knee. Her mother (Gerda's rig) sits on a plain chair; Rose — Red, Little Red in her cloak — lies face down across her lap, hips over her right thigh, head
+// Little Red’s Lessons — over the knee. Her mother (Gerda's rig) sits on a plain chair; Rose — Red, Little Red in her cloak — lies face down across her lap, hips over her right thigh, head
 // and arms toward the floor on her left, legs on her right. The characters are js/toon.js's; the pain model is js/pain.js.
 //
 //  • A smack: Gerda's hand lifts (or the paddle), holds raised (the wait builds dread), swings down along an arc and lands with the palm (or the

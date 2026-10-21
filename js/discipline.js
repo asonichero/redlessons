@@ -1,4 +1,4 @@
-// Red Lessons — a correction, scripted: her mother takes Little Red across her lap (js/lap.js) and works through the stages of a tier, talking between
+// Little Red’s Lessons — a correction, scripted: her mother takes Little Red across her lap (js/lap.js) and works through the stages of a tier, talking between
 // and over the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what she has on (skirt down or lifted,
 // drawers up or down), the implement, how many, and how hard.
 //

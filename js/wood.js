@@ -1,4 +1,4 @@
-// Red Lessons — the wood between her grandmother's cabin and the village: a path of trodden earth winding a long way through oaks, beeches,
+// Little Red’s Lessons — the wood between her grandmother's cabin and the village: a path of trodden earth winding a long way through oaks, beeches,
 // birches and pines, ferns and brambles, moss and toadstools. On the way: a glade of bluebells, a stream with a plank bridge and a flat stone on
 // the bank to sit on, an old beech with initials carved in it, a fallen trunk across a clearing. At the far end the trees thin to a meadow, and
 // over it the village: cottages with their windows lit and smoke going up. The light goes from late gold to dusk to blue (stage.setLight), and

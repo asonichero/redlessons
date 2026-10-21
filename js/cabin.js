@@ -1,4 +1,4 @@
-// Red Lessons — her grandmother's cabin in the wood: round logs notched at the corners, chinked with pale clay, under a steep roof of bark shingles
+// Little Red’s Lessons — her grandmother's cabin in the wood: round logs notched at the corners, chinked with pale clay, under a steep roof of bark shingles
 // furred with moss, built hard against a great oak, so that the trunk is the back corner of the room, roots and all, and two of its limbs run in
 // under the roof as beams. Shelves are cut into the trunk for her jars; herbs hang in bunches from the limbs. A stone hearth with a fire and a
 // kettle, her rocking chair before it, a round table laid for tea (pot, two cups, a cake), a dresser with plates, a box bed under a patchwork quilt,

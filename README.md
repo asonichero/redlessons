@@ -1,4 +1,4 @@
-# Red Lessons
+# Little Red’s Lessons
 
 **Rose** is nineteen. As a girl she was Little Red to the whole village; she's still Red to her mother, her grandmother, and Peter, her oldest friend, lately something more, which pleases and confuses her. She lives with her mother, **Maren**, in a small cottage at the edge of the village; her father died of a fever one winter when she was very small. Her mother lives by piecework, mending, harvests, births and farm chores, wherever she's needed, and has been leaning on Rose more and more, to ready her for a life that needn't hang on a husband with a trade. Rose is easily distracted, wilful, reluctant to take on responsibility, and much loved. Her grandmother, **Hulda**, lives in the wood, a witch in all but name, valued for her charms and herbs, and she dotes on her.
 

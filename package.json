@@ -1,8 +1,8 @@
 {
-  "name": "red-lessons",
+  "name": "little-reds-lessons",
   "version": "0.1.0",
   "private": true,
-  "description": "Red Lessons: Red Riding Hood and Gerda in a soft toon style, the over-the-knee discipline scene and the pain model, with a character editor.",
+  "description": "Little Red’s Lessons: Red Riding Hood and Gerda in a soft toon style, the over-the-knee discipline scene and the pain model, with a character editor.",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "serve": "npx http-server . -p 8123 -c-1"

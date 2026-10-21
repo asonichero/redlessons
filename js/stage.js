@@ -1,4 +1,4 @@
-// Red Lessons — the stage both pages use: a renderer with soft shadows, warm toon lighting, an orbiting camera, and the cottage (js/cottage.js),
+// Little Red’s Lessons — the stage both pages use: a renderer with soft shadows, warm toon lighting, an orbiting camera, and the cottage (js/cottage.js),
 // whose walls, roof and floor aren't drawn while the camera is outside them, so the room stays open to it from any side.
 //
 //   const st = Stage.create(view, { room: true });  st.scene.add(…);  st.start(dt => …)   (dt in seconds, each frame)

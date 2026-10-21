@@ -1,4 +1,4 @@
-// Red Lessons — chapter one, The Red Cloak (story.html): three scenes, one after the other.
+// Little Red’s Lessons — chapter one, The Red Cloak (story.html): three scenes, one after the other.
 //
 //  1. Her grandmother's cabin, late afternoon: tea and cake and being fussed; the gift of the cloak; "Little Red". Then she's free to look about,
 //     until she goes out of the door for home.
