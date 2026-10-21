@@ -1,9 +1,9 @@
 // Service worker: caches the game on first load so it installs and plays offline. Bump VERSION whenever the files change, so installed copies refresh.
-const APP = '0.6.0';
-const VERSION = 'red-lessons-v060-1';
+const APP = '0.7.0';
+const VERSION = 'red-lessons-v070-1';
 const FILES = [
   'lap.html', 'editor.html', 'manifest.webmanifest',
-  'js/toon.js', 'js/stage.js', 'js/looks.js', 'js/audio.js', 'js/pain.js', 'js/lap.js', 'js/discipline.js',
+  'js/toon.js', 'js/cottage.js', 'js/stage.js', 'js/looks.js', 'js/audio.js', 'js/pain.js', 'js/lap.js', 'js/discipline.js',
   'vendor/three.min.js', 'vendor/OrbitControls.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];

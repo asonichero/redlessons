@@ -23,7 +23,7 @@ npm test             # the pain model, the discipline scripts and the looks
   - **Gerda:** a plum bodice, a cream blouse, an apron and a long brown skirt, bare feet. Or her lavender "Fine" gown with gold bracelets.
   - **How the skirts move:** they are skinned to the legs, so they follow them. Seated, Gerda's skirt is its own drape over her lap and knees.
 - **Motion:** blinking, breathing, a standing idle (weight shifting from foot to foot, the head wandering), and springs on everything that reacts, so movement eases and settles instead of snapping.
-- **The room:** a cottage with plank floors, a round rug, plaster walls with beams, a window full of sky, a shelf of jars, and sunlight casting soft shadows. The walls face inward, so whichever side the camera looks from, the near wall is not drawn.
+- **The cottage** (`js/cottage.js`): one modest room. Wattle-and-daub walls limewashed white in an oak frame (sill, posts, rail, braces, wall plate), on a low stone foundation, under a thick thatch roof seen from inside (rafters, purlins, ridge beam, tie beams), with a gable at each end. A planked door with strap hinges, a shuttered window letting a shaft of sun across the floor. A trestle table (jug, bowl, loaf) and two low stools; an iron-bound oak chest; a peg rail hung with dried herbs, lavender and wicker baskets; a raised bed nook with a straw mattress in ticking, a heavy woollen blanket, a patchwork quilt turned down, a bolster, and a curtain tied back. Walls, roof slopes and floor aren't drawn while the camera is outside them (each with whatever stands against it), so the room is open to the camera from any side, above or below.
 
 ## Over the knee (`lap.html`, `js/lap.js`)
 
@@ -71,7 +71,8 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | File | What it is |
 |---|---|
 | `js/toon.js` | The characters: the rig (bones), bodies, faces and expressions, hair, clothes, skinned skirts, marks; the chair and the paddle |
-| `js/stage.js` | Renderer, lights and shadows, the camera and its glides, the cottage room |
+| `js/stage.js` | Renderer, lights and shadows, the camera and its glides |
+| `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
 | `js/lap.js`, `lap.html` | Over the knee: the session, Gerda's arm solving, Red Riding Hood's reactions, the cameras; its page |
 | `js/discipline.js` | The scripted correction: tiers, stages, Gerda's lines |
 | `js/pain.js` | The pain model |
