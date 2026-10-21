@@ -1,7 +1,7 @@
 {
   "name": "Red Lessons",
   "short_name": "Red Lessons",
-  "start_url": "lap.html",
+  "start_url": "story.html",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#1a0f10",
