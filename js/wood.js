@@ -77,12 +77,15 @@ function build(scene, opts) {
   const rock = kind(new THREE.DodecahedronGeometry(1, 0), T.mat('#8a8a82'), 0.05);
   const toad = kind(new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), T.mat('#c03a2a'), 0.03);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), SC = new V3(), P = new V3();
-  const put = (k, x, y, z, sx, sy, sz, ry, rx) => { E.set(rx || 0, ry || 0, 0); Q.setFromEuler(E); M.compose(P.set(x, y, z), Q, SC.set(sx, sy, sz)); k.list.push(M.clone()); };
+  let cur = null;      // (the tree being made: its parts are kept with it, so it can be hidden when it's in the camera's way)
+  const trees = [];
+  const put = (k, x, y, z, sx, sy, sz, ry, rx) => { E.set(rx || 0, ry || 0, 0); Q.setFromEuler(E); M.compose(P.set(x, y, z), Q, SC.set(sx, sy, sz)); k.list.push(M.clone()); if (cur) cur.parts.push([k, k.list.length - 1]); };
   const r = rnd(97);
   const clear = (x, z, pad) => { const n = nearest(new V3(x, 0, z)); if (n.d < widthAt(n.i) + pad) return false; for (const k in spots) if (Math.hypot(x - spots[k].at.x, z - spots[k].at.z) < 14 + pad) return false; if (Math.abs(x) < 52 && z > -50 && z < 50) return false; return true; };
   // (near the path the trees are tall, their crowns high over her head and the camera's; the pines, which branch low, keep further off)
   const tree = (x, z, big) => {
     const near = !big, t = near ? r() * 0.72 : r(), h = (big ? 52 : 64) + r() * 24;
+    cur = { x, z, r: t < 0.72 ? 3.5 : 10, parts: [], hidden: false }; trees.push(cur);
     if (t < 0.5) {      // (oak or beech)
       const tw = 1.8 + r() * 1.4; put(trunk, x, 0, z, tw, h * 0.7, tw, r() * 6);
       for (let k = 0; k < 3; k++) { const a = r() * 6.3, d = 3 + r() * 5, s = 10 + r() * 7; put(leaves[(k + Math.floor(r() * 4)) % 4], x + Math.cos(a) * d, h * (0.72 + 0.14 * k) + r() * 4, z + Math.sin(a) * d, s, s * 0.72, s, r() * 6); }
@@ -106,10 +109,27 @@ function build(scene, opts) {
   }
   // (the clearing round the cabin: a ring of trees behind it and to the sides)
   for (let k = 0; k < 26; k++) { const a = Math.PI * (0.9 + k / 26 * 1.2) + (r() - 0.5) * 0.1, d = 70 + r() * 40; tree(Math.cos(a) * d, Math.sin(a) * d + 6, true); }
+  cur = null;
+  // (the crowns cast no shadow, so the path isn't sunk in it; the trunks do)
+  const crowns = new Set([...leaves, birchLeaf, ...pines]);
   for (const k of inst) {
     if (!k.list.length) continue;
-    const m = new THREE.InstancedMesh(k.geo, k.mat, k.list.length); k.list.forEach((mm, i) => m.setMatrixAt(i, mm)); m.castShadow = true; m.receiveShadow = true; root_.add(m);
+    const m = new THREE.InstancedMesh(k.geo, k.mat, k.list.length); k.list.forEach((mm, i) => m.setMatrixAt(i, mm)); m.castShadow = !crowns.has(k); m.receiveShadow = true; root_.add(m);
     const h = new THREE.InstancedMesh(T.hullGeo(k.geo, k.ink), T.INKM[0], k.list.length); k.list.forEach((mm, i) => h.setMatrixAt(i, mm)); root_.add(h);
+    k.mesh = m; k.hull = h;
+  }
+  // A tree standing between the camera and her (or right by the camera) isn't drawn while it's there.
+  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  function occlude(cam, at) {
+    const ax = cam.x, az = cam.z, bx = at.x - ax, bz = at.z - az, L2 = bx * bx + bz * bz || 1, dirty = new Set();
+    for (const t of trees) {
+      if (Math.abs(t.x - at.x) > 140 || Math.abs(t.z - at.z) > 140) { if (!t.hidden) continue; }
+      const u = clamp(((t.x - ax) * bx + (t.z - az) * bz) / L2, 0, 1), dx = t.x - (ax + bx * u), dz = t.z - (az + bz * u);
+      const hide = (u > 0 && u < 0.97 && dx * dx + dz * dz < (t.r + 2.5) ** 2) || (t.x - ax) ** 2 + (t.z - az) ** 2 < (t.r + 6) ** 2;
+      if (hide === t.hidden) continue; t.hidden = hide;
+      for (const [k, i] of t.parts) { const mm = hide ? ZERO : k.list[i]; k.mesh.setMatrixAt(i, mm); k.hull.setMatrixAt(i, mm); dirty.add(k); }
+    }
+    for (const k of dirty) { k.mesh.instanceMatrix.needsUpdate = true; k.hull.instanceMatrix.needsUpdate = true; }
   }
 
   // ── The spots.
@@ -191,7 +211,7 @@ function build(scene, opts) {
     if (cabin && cabin.light) cabin.light(t);
   }
   function follow(pos) {
-    if (!api) return; const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
+    if (!api) return; occlude(api.camera.position, pos); const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
   }
   let clock = 0;
   function tick(dt) {

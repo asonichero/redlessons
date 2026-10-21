@@ -24,10 +24,12 @@ function create(view, opts) {
   // What's in her way: the walls, and the furniture (boxes and round things), as a circle of radius r pushed clear of each. The door, open, is a
   // board on its hinge.
   const doorAt = () => { const h = W.door.pivot.getWorldPosition(new V3()), a = W.door.pivot.getWorldQuaternion(new THREE.Quaternion()); return { h, dir: new V3(1, 0, 0).applyQuaternion(a) }; };
-  function collide(p, r) {
+  // (who: 'npc' when it's the other one moving, so she isn't kept out of her own place)
+  function collide(p, r, who) {
     const q = p.clone();
     for (let k = 0; k < 2; k++) {
       for (const o of W.obstacles) {
+        if ((o.npc && who === 'npc') || (o.rose && who !== 'npc')) continue;
         if (o.r != null) { const d = new V3(q.x - o.x, 0, q.z - o.z), l = d.length(), m = o.r + r; if (l < m) { if (l < 1e-4) d.set(1, 0, 0); else d.divideScalar(l); q.x = o.x + d.x * m; q.z = o.z + d.z * m; } continue; }
         const cx = clamp(q.x, o.x0, o.x1), cz = clamp(q.z, o.z0, o.z1), dx = q.x - cx, dz = q.z - cz, l = Math.hypot(dx, dz);
         if (l >= r) continue;
@@ -51,7 +53,8 @@ function create(view, opts) {
     const looks = root.Looks && Looks.load ? Looks.load() : {};
     mom = Toon.make(NPC.id, looks[NPC.id] || {}); st.scene.add(mom.root); st.cast(mom);
     mom.root.position.set(NPC.at[0], 0, NPC.at[1]); mom.root.rotation.y = NPC.yaw;
-    mm = Motion.create(mom, { collide: (p, r) => { const q = p.clone(); if (B) { q.x = clamp(q.x, B.x0 + r - 2.4, B.x1 - r + 2.4); q.z = clamp(q.z, B.z0 + r - 2.4, B.z1 - r + 2.4); } return q; } });
+    mm = Motion.create(mom, { collide: (p, r) => collide(p, r, 'npc') });      // (kept out of the furniture, and the walls, as Rose is; and out of Rose)
+    W.obstacles.push({ get x() { return m.pos.x; }, get z() { return m.pos.z; }, r: 3.4, rose: true });
     W.obstacles.push({ get x() { return mm.pos.x; }, get z() { return mm.pos.z; }, r: 3.6, npc: true });
   }
   // ── Conversations (js/talk.js, js/story.js): Rose on the left, whoever she's with on the right.
@@ -62,6 +65,7 @@ function create(view, opts) {
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
   const camT = chest();
   st.controls.minDistance = 14; st.controls.maxDistance = 120; st.controls.enablePan = false;
+  st.controls.maxPolarAngle = 1.5;      // (in the game the camera stays above the floor: no going round under it)
   const camBack = opts.camBack || (opts.followCam ? [34, 8] : [42, 16]);      // (in the open, lower and nearer, under the trees)
   const az = start.yaw + Math.PI + (opts.camTurn || 0);      // (behind her as she starts, or turned round from there by opts.camTurn)
   st.go(camT.clone().add(new V3(Math.sin(az) * camBack[0], camBack[1], Math.cos(az) * camBack[0])), camT);
@@ -234,10 +238,13 @@ function create(view, opts) {
     if (opts.onFrame) opts.onFrame(dt);
     // (in the open, the camera swings round behind her as she walks, slowly, so the way ahead stays in view)
     if (opts.followCam && m.speed > 2 && !busy()) { const off = st.camera.position.clone().sub(st.controls.target), az = Math.atan2(off.x, off.z), want = m.yaw + Math.PI, da = Math.atan2(Math.sin(want - az), Math.cos(want - az)), k = Math.min(1, dt * 0.9);
-      const r = Math.hypot(off.x, off.z), na = az + da * k; off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; st.camera.position.copy(st.controls.target).add(off); }
+      // (and comes in to its usual distance and height behind her, from a wider opening view)
+      const want0 = opts.followCam === true ? [34, 8] : opts.followCam, r0 = Math.hypot(off.x, off.z), kz = Math.min(1, dt * 0.8), r = r0 + (want0[0] - r0) * kz, na = az + da * k;
+      off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; off.y += (want0[1] - off.y) * kz; st.camera.position.copy(st.controls.target).add(off); }
     // The camera keeps its place relative to her, easing after her.
     const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
     st.controls.target.add(d); st.camera.position.add(d);
+    if (st.camera.position.y < 3) st.camera.position.y = 3;
     offer = busy() ? [] : options();
     if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  Get up   ·   Q  Lie down' : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }

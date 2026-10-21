@@ -17,33 +17,35 @@ const THREE = root.THREE, V3 = THREE.Vector3;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 const CSS = `
-.talk { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(900px, calc(100vw - 32px)); display: none; z-index: 20;
-  font: 18px/1.5 Georgia, 'Times New Roman', serif; color: #3a2a20; user-select: none; -webkit-user-select: none; }
+.talk { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(820px, calc(100vw - 24px)); display: none; z-index: 20;
+  font: 17px/1.4 Georgia, 'Times New Roman', serif; color: #2e2018; user-select: none; -webkit-user-select: none; }
 .talk.on { display: block; }
-.talk .box { position: relative; min-height: 132px; background: #f6ecd8; border: 3px solid #6b4a32; border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.35);
-  padding: 18px 24px 18px 24px; box-sizing: border-box; }
-.talk.left .box { padding-left: 196px; } .talk.right .box { padding-right: 196px; }
-.talk .frame { position: absolute; bottom: 10px; width: 160px; height: 176px; border: 3px solid #6b4a32; border-radius: 14px; background: transparent; display: none; }      /* (the portrait is drawn on the canvas under it) */
-.talk.left .frame { left: 12px; display: block; } .talk.right .frame { right: 12px; display: block; }
-.talk .name { position: absolute; top: -18px; padding: 2px 16px; background: var(--tint, #8a5a3a); color: #fff8ec; border: 3px solid #6b4a32; border-radius: 10px;
-  font: bold 16px/1.4 Georgia, serif; letter-spacing: .02em; display: none; }
-.talk.left .name { left: 200px; display: block; } .talk.right .name { right: 200px; display: block; }
-.talk .text { min-height: 3em; white-space: pre-wrap; }
-.talk.narr .text { font-style: italic; color: #5a4636; text-align: center; }
-.talk.muse .text { font-style: italic; color: #5a4636; } .talk.muse .more { display: none; } .talk.muse { pointer-events: none; opacity: .94; width: min(620px, calc(100vw - 32px)); font-size: 16px; }
-.talk.muse .box { min-height: 84px; } .talk.muse.left .box { padding-left: 132px; } .talk.muse .frame { width: 104px; height: 112px; } .talk.muse.left .name { left: 136px; }
-.talk .more { position: absolute; right: 18px; bottom: 8px; font-size: 14px; color: #8a6a50; animation: talkBob 1s ease-in-out infinite; }
-.talk.right .more { right: 200px; }
-@keyframes talkBob { 50% { transform: translateY(3px); } }
-.talk .choices { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-.talk .choices button { text-align: left; font: 17px/1.35 Georgia, serif; color: #3a2a20; background: #fffaf0; border: 2px solid #b08a68; border-radius: 10px;
-  padding: 8px 14px; cursor: pointer; }
+/* (one line high, growing as the words need; translucent, so the scene shows through) */
+.talk .box { position: relative; background: rgba(246,236,216,.8); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 2px solid rgba(107,74,50,.85);
+  border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); padding: 9px 18px; box-sizing: border-box; }
+.talk.left .box { padding-left: 112px; } .talk.right .box { padding-right: 112px; }
+.talk .frame { position: absolute; bottom: 4px; width: 92px; height: 100px; border: 2px solid rgba(107,74,50,.9); border-radius: 12px; background: transparent; display: none; overflow: hidden; }      /* (the portrait is drawn into it) */
+.talk.left .frame { left: 8px; display: block; } .talk.right .frame { right: 8px; display: block; }
+.talk .name { position: absolute; top: -14px; padding: 0 12px; background: var(--tint, #8a5a3a); color: #fff8ec; border: 2px solid rgba(107,74,50,.9); border-radius: 8px;
+  font: bold 14px/1.5 Georgia, serif; letter-spacing: .02em; display: none; }
+.talk.left .name { left: 112px; display: block; } .talk.right .name { right: 112px; display: block; }
+.talk .text { min-height: 1.4em; white-space: pre-wrap; }
+.talk.narr .text { font-style: italic; color: #4a3a2c; text-align: center; }
+.talk.muse .text { font-style: italic; color: #4a3a2c; } .talk.muse .more { display: none; } .talk.muse { pointer-events: none; width: min(560px, calc(100vw - 24px)); font-size: 15px; }
+.talk .more { position: absolute; right: 10px; bottom: 2px; font-size: 11px; color: #8a6a50; animation: talkBob 1s ease-in-out infinite; }
+.talk.right .more { right: 112px; }
+@keyframes talkBob { 50% { transform: translateY(2px); } }
+.talk .choices { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.talk .choices:empty { display: none; }
+.talk .choices button { text-align: left; font: 16px/1.3 Georgia, serif; color: #2e2018; background: rgba(255,250,240,.9); border: 2px solid #b08a68; border-radius: 9px;
+  padding: 6px 12px; cursor: pointer; }
 .talk .choices button:hover, .talk .choices button:focus { background: #f1dcc0; border-color: #6b4a32; outline: none; }
 .talk .choices button b { color: #8a5a3a; margin-right: 8px; }
 @media (max-width: 640px) {
-  .talk { font-size: 16px; bottom: 10px; } .talk .box { min-height: 112px; padding: 14px 16px; }
-  .talk.left .box { padding-left: 128px; } .talk.right .box { padding-right: 128px; }
-  .talk .frame { width: 104px; height: 116px; } .talk.left .name { left: 132px; } .talk.right .name { right: 132px; } .talk.right .more { right: 132px; }
+  .talk { font-size: 15px; bottom: 8px; width: calc(100vw - 16px); } .talk .box { padding: 7px 12px; }
+  .talk.left .box { padding-left: 76px; } .talk.right .box { padding-right: 76px; }
+  .talk .frame { width: 60px; height: 66px; } .talk.left .name { left: 76px; } .talk.right .name { right: 76px; } .talk.right .more { right: 76px; }
+  .talk .name { font-size: 12px; top: -12px; } .talk.muse { font-size: 14px; } .talk .choices button { font-size: 14px; padding: 5px 10px; }
 }`;
 
 function create(stage, opts) {

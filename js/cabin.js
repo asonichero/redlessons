@@ -11,8 +11,9 @@
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
 const KIT = root.Cottage.kit, { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK } = KIT;
 const lerp = (a, b, t) => a + (b - a) * t;
-const X0 = -36, X1 = 36, Z0 = -26, Z1 = 30, EAVE = 30, RIDGE = 56, RZ = (Z0 + Z1) / 2, LR = 1.5, STEP = 2.9;
-const OAK = { x: 29, z: -21, r: 12 };
+const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 32, RIDGE = 64, RZ = (Z0 + Z1) / 2, LR = 1.5, STEP = 2.9;
+const OAK = { x: X1 - 7, z: Z0 + 5, r: 12 };
+const DOOR = -10, WIN = 22;      // (where the door and the window are along the front wall, as x)
 
 let TX = null;
 function tex() {
@@ -72,7 +73,7 @@ function build(scene, opts) {
   };
   const walls = {
     back: { a: new V3(X0, 0, Z0), b: new V3(OAK.x - Math.sqrt(OAK.r ** 2 - (Z0 - OAK.z) ** 2) + 1, 0, Z0), n: new V3(0, 0, 1), over: [3, 0] },
-    front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), over: [3, 3], holes: [{ x0: 18, x1: 31, y0: 0, y1: 24 }, { x0: 47, x1: 59, y0: 11, y1: 23 }] },
+    front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), over: [3, 3], holes: [{ x0: DOOR - X0 - 6.5, x1: DOOR - X0 + 6.5, y0: 0, y1: 24 }, { x0: WIN - X0 - 6, x1: WIN - X0 + 6, y0: 11, y1: 23 }] },
     left: { a: new V3(X0, 0, Z1), b: new V3(X0, 0, Z0), n: new V3(1, 0, 0), over: [0, 0], gable: true },
     right: { a: new V3(X1, 0, OAK.z + Math.sqrt(OAK.r ** 2 - (X1 - OAK.x) ** 2) - 1), b: new V3(X1, 0, Z1), n: new V3(-1, 0, 0), over: [0, 0], gable: true },
   };
@@ -114,7 +115,7 @@ function build(scene, opts) {
   }
   // The limbs, as beams under the roof (inside only), each a tapering pole from the trunk across the room.
   const limbG = new THREE.Group(); root_.add(limbG);
-  const limbs = [[new V3(OAK.x - 8, 31, OAK.z + 6), new V3(X0 + 2, 36, 4)], [new V3(OAK.x - 6, 34, OAK.z + 9), new V3(-4, 40, Z1 - 2)]];
+  const limbs = [[new V3(OAK.x - 8, 35, OAK.z + 6), new V3(X0 + 2, 41, 4)], [new V3(OAK.x - 6, 38, OAK.z + 9), new V3(-4, 46, Z1 - 2)]];
   if (!opts.outside) for (const [a, b] of limbs) pole(limbG, a, b, 1.8, barkM, { taper: 1.6, ink: 0.1 });
 
   // ── The roof: steep slopes of mossy bark shingles from the ridge to past the eaves, on rafters.
@@ -131,7 +132,7 @@ function build(scene, opts) {
   if (!opts.outside) pole(roofs[1], new V3(X0 - 3, RIDGE - 1.4, RZ), new V3(X1 + 3, RIDGE - 1.4, RZ), 1.1, logM, { shadow: false });
 
   // ── The door (front wall, left of centre): planks and a ledge, on strap hinges, swinging in; a latch; out to the wood.
-  { const f = new THREE.Group(); f.position.set(X0 + 24.5, 0, Z1 - 0.4); W.front.add(f);      // (the opening in the front wall: 18..31 along it)
+  { const f = new THREE.Group(); f.position.set(DOOR, 0, Z1 - 0.4); W.front.add(f);      // (in the opening in the front wall)
     const hinge = new THREE.Group(); hinge.position.set(-6, 0, 0); f.add(hinge);
     const leaf = box(hinge, 12, 23, 1.0, 6, 11.5, 0, toonMap(tx.door), { shadow: false }); leaf.rotation.y = Math.PI;
     for (const y of [-7.5, 7.5]) box(leaf, 11, 1.4, 0.7, 0, y, -0.8, oakDk);
@@ -140,10 +141,10 @@ function build(scene, opts) {
     solid(hinge, new THREE.TorusGeometry(0.8, 0.16, 6, 12), iron, 10.5, 11.5, -1.0, { ink: 0.04 });
     box(f, 14, 1.4, 2.6, 0, 23.7, 0, oakDk, { shadow: false }); for (const sx of [-1, 1]) box(f, 1.2, 24, 2.6, sx * 6.6, 12, 0, oakDk, { shadow: false });
     world.door = { pivot: hinge, latch, open: 0, target: 0, swing: 1.75, name: 'the door', inward: new V3(0, 0, -1), axis: 'y' };
-    world.exits.push({ name: 'the wood', at: new V3(X0 + 24.5, 0, Z1 - 4), r: 6, when: () => world.door.open > 0.6 });      // (out through the open door)
+    world.exits.push({ name: 'the wood', at: new V3(DOOR, 0, Z1 - 4), r: 6, when: () => world.door.open > 0.6 });      // (out through the open door)
   }
   // ── The window (front wall, right): round-headed, four panes onto the wood.
-  { const f = new THREE.Group(); f.position.set(X0 + 53, 17, Z1 - 0.2); W.front.add(f);
+  { const f = new THREE.Group(); f.position.set(WIN, 17, Z1 - 0.2); W.front.add(f);
     const view = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: tx.green })); view.position.z = 1.2; view.rotation.y = Math.PI; f.add(view);
     for (const [w, h, x, y] of [[13, 1, 0, 6], [13, 1, 0, -6], [1, 13, -6, 0], [1, 13, 6, 0], [0.6, 12, 0, 0], [12, 0.6, 0, 0]]) box(f, w, h, 1.2, x, y, 0, oakDk, { shadow: false });
     box(f, 14, 0.8, 3, 0, -6.6, -1.2, oakDk, { shadow: false });
@@ -213,7 +214,7 @@ function build(scene, opts) {
   }
 
   // ── The dresser against the back wall: plates on its rack, and on its top, a parcel tied with twine (her gift).
-  { const g = W.back, dx = -20, dz = Z0 + 4;
+  { const g = W.back, dx = -24, dz = Z0 + 4;
     box(g, 18, 12, 6, dx, 6, dz, toonMap(tx.oak)); box(g, 18.6, 0.8, 6.6, dx, 12.4, dz, oakDk);
     for (const x of [-4.5, 4.5]) box(g, 0.3, 9, 0.2, dx + x, 6, dz + 3.05, oakDk, { ink: 0 });
     box(g, 18, 14, 1, dx, 20, Z0 + 1.5, toonMap(tx.oak)); for (const y of [16, 22]) box(g, 18, 0.6, 2.4, dx, y, Z0 + 2.4, oakDk);

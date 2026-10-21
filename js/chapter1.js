@@ -44,7 +44,8 @@ function create(view, ui) {
           const at = flat(gp()).add(new V3(0, 0, 8)); await g.goTo(at, yawTo(at, gp()));
           await g.reach('R', gp()); g.reach('L', gp().add(new V3(1.5, 0, 0))); g.hold(gift, 'front'); gift.panel = null; W.items.splice(W.items.indexOf(gift), 1);
           g.release('L'); await g.release('R');
-          const red = P.motion.pos.clone(), to = red.clone().add(new V3(7, 0, 1)); await g.goTo(to, yawTo(to, red));
+          // (round the table, not through it: out to its side, then to Rose's)
+          const red = P.motion.pos.clone(), to = red.clone().add(new V3(-7, 0, 1)); await g.goTo(new V3(-17, 0, 2), null); await g.goTo(to, yawTo(to, red));
           await P.getUp(); await P.motion.face(yawTo(P.motion.pos, g.pos)); P.talk.settle(['red', 'gran']); await P.wait(0.6);
         },
         giveGift: async () => { const it = g.drop(); P.motion.hold(it, 'front'); await P.wait(0.8); },
