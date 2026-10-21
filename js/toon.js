@@ -346,8 +346,10 @@ function make(id, look, opts) {
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
   let skirt = null, hemBand = null, apron = null;
   const waist = piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 });
-  if (opts.seated) seatedDrape();
-  else {
+  // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
+  const drapeG = new THREE.Group(); rig.hips.add(drapeG); drapeG.visible = !!opts.seated;
+  seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5);
+  if (!opts.seated) {
     // (lying, its front, the side toward the lap she lies on, is drawn in close over her legs rather than standing out as a bell)
     // (drawn in, but never closer than a cloth's thickness outside the front of her thighs)
     const thighFront = (x, y) => { const rt = lerp(1.75, 1.2, clamp(-y / D.thigh, 0, 1)) * K.legGirth + 0.55; let z = 0; for (const c of [D.hipX, -D.hipX]) z = Math.max(z, Math.sqrt(Math.max(0, rt * rt - (x - c) ** 2))); return z; };
@@ -361,28 +363,30 @@ function make(id, look, opts) {
   }
   // Seated (Gerda in the lap scene) the skirt is its own drape, in the hips' space with the thighs level along +z: a tube over the lap, turned
   // round the knees, then hanging to the hem, with the apron laid along the top of it. (Skinning a skirt through a right-angled knee folds it.)
-  function seatedDrape() {
-    const Tk = D.thigh, drop = D.shin + 0.2, lapL = Tk + 1.5, arcL = 2.2 * Math.PI / 2, total = lapL + arcL + drop;
+  // (len: how far the drape runs from the back of the seat, when it's shorter than the lap and over the knees to the floor)
+  function seatedDrape(parent, len) {
+    const Tk = D.thigh, full = Tk + 1.5 + 2.2 * Math.PI / 2 + D.shin + 0.2, L = len == null ? full : Math.min(len, full);
+    const lapL = Math.min(Tk + 1.5, L), arcL = Math.min(2.2 * Math.PI / 2, L - lapL), drop = Math.max(0.001, L - lapL - arcL), total = lapL + arcL + drop;
     // What the drape is, for anything that must not pass through it (js/lap.js keeps arms out): over the lap, an elliptic tube along the thighs;
     // below the knees, one standing to the floor. In the hips' space; returns how far a ball of radius r at q is inside.
-    rig.solids.push((q, r) => {
+    if (len == null) rig.solids.push((q, r) => {
       const w = 4.0 * K.hipWidth + r, h = 2.3 * K.legGirth + r; let pen = 0;
       if (q.z > -1.5 - r && q.z < Tk + 0.4) { const d = Math.hypot(q.x / w, (q.y + 0.1) / h); if (d < 1) pen = Math.max(pen, (1 - d) * Math.min(w, h)); }
       if (q.y < -0.1 && q.y > -0.1 - drop - r) { const t = clamp((-0.1 - q.y) / drop, 0, 1), wx = lerp(4.0, 4.9 * K.skirtFull, t) * K.hipWidth + r, wz = lerp(2.3, 2.5 * K.skirtFull, t) + r, d = Math.hypot(q.x / wx, (q.z - Tk - 0.4 * t) / wz); if (d < 1) pen = Math.max(pen, (1 - d) * Math.min(wx, wz)); }
       return pen;
     });
     const at = v => {                                  // the drape's spine: centre, the way 'up' from it, the half-width and the half-depth
-      const d = v * total;
+      const d = Math.min(v * total, L - 1e-6 * (L - lapL - arcL < 0.01 ? 1 : 0));      // (a short drape ends on the lap, or round the knees)
       if (d < lapL) return { c: new V3(0, -0.1, -1.5 + d), n: new V3(0, 1, 0), w: lerp(3.7, 4.0, d / lapL) * K.hipWidth, h: 2.3 * K.legGirth };
-      if (d < lapL + arcL) { const a = (d - lapL) / arcL * Math.PI / 2; return { c: new V3(0, -0.1, Tk), n: new V3(0, Math.cos(a), Math.sin(a)), w: 4.0 * K.hipWidth, h: 2.3 * K.legGirth }; }
+      if (d < lapL + arcL || drop < 0.01) { const a = arcL > 0 ? clamp((d - lapL) / arcL, 0, 1) * Math.PI / 2 : 0; return { c: new V3(0, -0.1, Tk), n: new V3(0, Math.cos(a), Math.sin(a)), w: 4.0 * K.hipWidth, h: 2.3 * K.legGirth }; }
       const t = (d - lapL - arcL) / drop; return { c: new V3(0, -0.1 - t * drop, Tk + 0.4 * t), n: new V3(0, 0, 1), w: lerp(4.0, 4.9 * K.skirtFull, t) * K.hipWidth, h: lerp(2.3, 2.5 * K.skirtFull, t) };
     };
     const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u); return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
     const outward = p => new V3(p.x, p.z < Tk ? p.y + 0.1 : Math.max(0, p.y + 0.1), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
-    piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, rig.hips, 0, 0, 0, { side: THREE.DoubleSide });
-    piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, rig.hips);      // (closed under her seat)
-    piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, rig.hips, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 });
-    if (P.apron) piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, rig.hips, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 });
+    piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, parent, 0, 0, 0, { side: THREE.DoubleSide });
+    piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, parent);      // (closed under her seat)
+    piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 });
+    if (P.apron) piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 });
   }
   const drawers = [], drawersDown = [];
   if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
@@ -634,7 +638,7 @@ function make(id, look, opts) {
     const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
     if (t.bone === rig.thighL || t.bone === rig.thighR) {
       if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w]; }
-      if (down) return [cc('skirt'), ss(-S.skirtLen + 0.4, -S.skirtLen + 1.0, y)];
+      if (down) { const e = seatedNow ? 2.0 : 0; return [cc('skirt'), ss(-S.skirtLen + 0.4 + e, -S.skirtLen + 1.0 + e, y)]; }      // (seated, the drape ends a little sooner along the thigh)
       if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y)];
       return null;
     }
@@ -662,12 +666,16 @@ function make(id, look, opts) {
     }
   }
 
+  // Seated (on a stool or the bed, in the cottage): the skirt is the drape over her lap rather than skinned to her legs. (w: how far she's sat.)
+  let seatedNow = false, dressNow = {};
+  rig.setSeated = w => { const on = w > 0.6; if (on !== seatedNow) { seatedNow = on; rig._recolour = true; rig.setDress(dressNow); } };
   rig.setDress = d => {
-    d = d || {};
+    d = d || {}; dressNow = d;
     // skirt: 'down', 'up' (lifted, gathered at the waist) or 'off' (gone, waistband and all: the editor's view for reading proportions).
     {
       const sk = d.skirt || 'down', down = sk === 'down', bare = !down && d.drawers === 'down';
-      for (const m of [skirt, hemBand, apron]) if (m) show(m, down);
+      for (const m of [skirt, hemBand, apron]) if (m) show(m, down && !seatedNow);
+      drapeG.visible = !!opts.seated || (down && seatedNow);
       roll.visible = sk === 'up'; waist.visible = sk !== 'off';
       drawers.forEach(m => show(m, !bare)); drawersDown.forEach(m => show(m, bare));
       if (sk !== dress.skirt || (d.drawers || 'up') !== dress.drawers) { dress.skirt = sk; dress.drawers = d.drawers || 'up'; rig._recolour = true; }

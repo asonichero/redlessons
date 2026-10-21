@@ -318,13 +318,14 @@ function build(scene) {
     thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
     world.surfaces.push({ name: 'the table', x0: tx_ - D / 2 + 2, x1: tx_ + D / 2 - 2, z0: tz - L / 2 + 2, z1: tz + L / 2 - 2, y: H, panel: g, front: new V3(-1, 0, 0) });
     world.obstacles.push({ x0: tx_ - D / 2 - 0.5, x1: tx_ + D / 2 + 0.5, z0: tz - L / 2, z1: tz + L / 2 });
-    const stool = (x, z, ry) => {
+    // (low stools: their tops at SH, a little under the knee, so she sits with her feet flat and her knees a touch above her hips)
+    const SH = 5.4, stool = (x, z, ry) => {
       const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; g.add(s);
-      solid(s, new THREE.CylinderGeometry(3.6, 3.6, 1.4, 18), oak, 0, 8.3, 0, { ink: 0.1 });
-      for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; pole(s, new V3(Math.cos(a) * 2.2, 7.8, Math.sin(a) * 2.2), new V3(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4), 0.5, oak); }
+      solid(s, new THREE.CylinderGeometry(3.6, 3.6, 1.4, 18), oak, 0, SH - 0.7, 0, { ink: 0.1 });
+      for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; pole(s, new V3(Math.cos(a) * 2.2, SH - 1.2, Math.sin(a) * 2.2), new V3(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4), 0.5, oak); }
     };
     stool(tx_ - 12, tz - 9, 0.3); stool(tx_ - 11, tz + 11, 1.1);
-    for (const [x, z] of [[tx_ - 12, tz - 9], [tx_ - 11, tz + 11]]) { world.seats.push({ name: 'the stool', at: new V3(x, 9, z), facing: -Math.PI / 2, kind: 'stool' }); world.obstacles.push({ x, z, r: 3.8 }); }
+    for (const [x, z] of [[tx_ - 12, tz - 9], [tx_ - 11, tz + 11]]) { world.seats.push({ name: 'the stool', at: new V3(x, SH, z), facing: -Math.PI / 2, kind: 'stool' }); world.obstacles.push({ x, z, r: 3.8 }); }
   }
 
   // ── The hearth (the front wall, across the room from the peg rail): a stone fireplace on a raised hearthstone, its opening under an oak lintel,
