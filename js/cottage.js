@@ -43,6 +43,16 @@ function textures() {
     }
   });
   // Straw thatch, seen from below: bundles running down the slope, golden to dusky.
+  // Dressed stone for the fireplace: squared blocks in courses, each a little different, in pale lime mortar; and soot for its inside.
+  TEX.ashlar = canvasTex(128, 128, (x, w, h) => {
+    x.fillStyle = '#d6cfbf'; x.fillRect(0, 0, w, h); const r = rnd(23);
+    for (let row = 0; row < 4; row++) for (let i = -1; i < 3; i++) {
+      const bw = w / 2, x0 = i * bw + (row % 2 ? bw / 2 : 0) + 2, y0 = row * h / 4 + 2, g = 150 + r() * 40;
+      x.fillStyle = `rgb(${g + 8},${g + 2},${g - 10})`; x.beginPath(); x.roundRect ? x.roundRect(x0, y0, bw - 4, h / 4 - 4, 5) : x.rect(x0, y0, bw - 4, h / 4 - 4); x.fill();
+      x.fillStyle = 'rgba(255,255,255,0.12)'; x.fillRect(x0 + 4, y0 + 3, bw - 16, 3);
+    }
+  }, [1, 1]);
+  TEX.soot = canvasTex(64, 64, (x, w, h) => { const gr = x.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#1c1614'); gr.addColorStop(1, '#4a3a30'); x.fillStyle = gr; x.fillRect(0, 0, w, h); const r = rnd(29); for (let i = 0; i < 60; i++) { x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(r() * w, r() * h, 3, 2); } });
   TEX.thatch = canvasTex(256, 256, (x, w, h) => {
     x.fillStyle = '#a8864a'; x.fillRect(0, 0, w, h); const r = rnd(5);
     for (let i = 0; i < 900; i++) { const c = ['#c9a65e', '#b8914c', '#8e6c38', '#d8bc76'][i % 4], px = r() * w, py = r() * h; x.strokeStyle = c; x.globalAlpha = 0.55; x.lineWidth = 1 + r() * 1.5; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (r() - 0.5) * 3, py + 14 + r() * 18); x.stroke(); }
@@ -317,6 +327,71 @@ function build(scene) {
     for (const [x, z] of [[tx_ - 12, tz - 9], [tx_ - 11, tz + 11]]) { world.seats.push({ name: 'the stool', at: new V3(x, 9, z), facing: -Math.PI / 2, kind: 'stool' }); world.obstacles.push({ x, z, r: 3.8 }); }
   }
 
+  // ── The hearth (the front wall, across the room from the peg rail): a stone fireplace on a raised hearthstone, its opening under an oak lintel,
+  // the chimney breast rising into the thatch; a log fire on iron fire-dogs, with an iron pot on a swinging crane over it, a kettle and the fire
+  // irons on the hearth, and logs stacked beside it. The fire flickers (its flames, the embers, and the warm light it throws across the room).
+  const fire = { flames: [], light: null, embers: null, t: 0 };
+  { const g = W.front, cx = -2, zb = Z1 - 2.6, D = 8, zf = zb - D, OW = 18, OH = 16, JW = 5;      // (zb: its back, in front of the foundation course)
+    const ashlar = toonMap(tx.ashlar), soot = toonMap(tx.soot), iron = T.mat('#2e2a28'), bark = T.mat('#5a3e26');
+    box(g, OW + 2 * JW + 6, 1.4, D + 9.6, cx, 0.7, Z1 - (D + 9.6) / 2, ashlar);                                // the hearthstone, raised a little
+    for (const sx of [-1, 1]) box(g, JW, OH, D, cx + sx * (OW + JW) / 2, 1.4 + OH / 2, zb - D / 2, ashlar);    // the jambs
+    box(g, OW, OH, 1.2, cx, 1.4 + OH / 2, zb - 0.6, soot, { ink: 0 });                                         // the fireback, sooted
+    for (const sx of [-1, 1]) box(g, 0.6, OH, D - 1.4, cx + sx * (OW / 2 - 0.3), 1.4 + OH / 2, zb - D / 2 - 0.5, soot, { ink: 0 });
+    box(g, OW, 0.6, D - 1.2, cx, 1.4 + OH - 0.3, zb - D / 2 - 0.4, soot, { ink: 0 });                          // and its roof
+    box(g, OW + 2 * JW + 3, 2.8, 2.6, cx, 1.4 + OH + 1.4, zf + 0.6, toonMap(tx.oak));                            // the oak lintel
+    // The breast above: stone, stepping in to the stack, up into the thatch.
+    box(g, OW + 2 * JW + 1, 14, D - 1, cx, 1.4 + OH + 2.8 + 7, zb - (D - 1) / 2, ashlar);
+    box(g, OW + 2 * JW + 6, 1.2, 3.4, cx, 1.4 + OH + 2.8 + 4.5, zf - 0.3, toonMap(tx.oak));                      // a mantel shelf
+    { const t = new THREE.CylinderGeometry(Math.SQRT1_2, Math.SQRT1_2 * 1.55, 1, 4, 1).rotateY(Math.PI / 4); t.scale(18, 12, 6.6); solid(g, t, ashlar, cx, 1.4 + OH + 2.8 + 14 + 6, zb - 3.6, { ink: 0.12 }); }
+    box(g, 13, 26, 5.8, cx, 1.4 + OH + 2.8 + 14 + 12 + 13, zb - 3.2, ashlar);
+    // On the mantel: a candlestick, a little jug and a pewter plate stood on edge.
+    { const my = 1.4 + OH + 2.8 + 4.5 + 0.6;
+      solid(g, new THREE.CylinderGeometry(0.5, 0.8, 1.2, 10), '#b89a5a', cx - 9, my + 0.6, zf - 0.2, { ink: 0.05 }); solid(g, new THREE.CylinderGeometry(0.35, 0.35, 2.4, 8), '#f2ead6', cx - 9, my + 2.4, zf - 0.2, { ink: 0.05 });
+      solid(g, new THREE.LatheGeometry([[0.01, 0], [0.9, 0.1], [1.1, 1], [0.7, 1.9], [0.85, 2.3]].map(([r, h]) => new THREE.Vector2(r, h)), 12), '#6a8a9a', cx + 8, my, zf - 0.2, { ink: 0.05 });
+      solid(g, new THREE.CylinderGeometry(2.2, 2.2, 0.3, 18), '#a9aeb2', cx + 3, my + 2.2, zb - D + 1.2, { rot: [Math.PI / 2 - 0.15, 0, 0], ink: 0.05 }); }
+    // The fire: two fire-dogs, logs across them, a bed of embers, and the flames.
+    const fy = 1.4, fz = zb - D / 2 - 0.6;
+    for (const sx of [-1, 1]) { box(g, 0.6, 0.6, 6, cx + sx * 4, fy + 1.2, fz, iron); box(g, 0.6, 3, 0.6, cx + sx * 4, fy + 1.8, fz - 3, iron); }
+    for (const [x, y, z, ry, L] of [[0, 2.3, -0.6, 0.15, 11], [0.5, 2.3, 1.2, -0.1, 10], [-0.5, 3.4, 0.3, 0.6, 9]]) {
+      const lg = solid(g, new THREE.CylinderGeometry(0.85, 0.95, L, 10), bark, cx + x, fy + y, fz + z, { rot: [0, ry, Math.PI / 2], ink: 0.06 });
+      for (const e of [-1, 1]) solid(lg, new THREE.CircleGeometry(0.85, 10), '#c98a4a', 0, e * L / 2, 0, { rot: [e * -Math.PI / 2, 0, 0], ink: 0 });
+    }
+    fire.embers = new THREE.Mesh(T.ell(4.2, 0.45, 2.2, 16, 8), new THREE.MeshBasicMaterial({ color: srgb('#e0561e') })); fire.embers.position.set(cx, fy + 0.5, fz); g.add(fire.embers);
+    // (each flame a soft teardrop, flat-coloured like the rest: an orange outer, yellow within, pale at the heart)
+    const tear = new THREE.LatheGeometry([[0, 0], [0.55, 0.12], [0.62, 0.35], [0.48, 0.65], [0.24, 0.95], [0, 1.3]].map(([r, h]) => new THREE.Vector2(Math.max(0.001, r), h)), 12);
+    const fm = c => new THREE.MeshBasicMaterial({ color: srgb(c), transparent: true, opacity: 0.92, depthWrite: false });
+    const layers = [['#ff7d24', 1], ['#ffc23a', 0.68], ['#fff1b0', 0.4]];
+    for (const [x, z, sz] of [[0, 0, 4.2], [-2.6, 0.4, 3.0], [2.4, -0.3, 3.3], [-1.2, -0.8, 2.4], [1.4, 0.9, 2.2]]) {
+      for (const [c, k] of layers) {
+        const f = new THREE.Mesh(tear, fm(c)); f.position.set(cx + x, fy + 2.4, fz + z + (1 - k) * 0.4); f.renderOrder = 3 + (1 - k) * 2; g.add(f);
+        fire.flames.push({ m: f, sz: sz * k, w: sz * k * 0.75, ph: Math.random() * 6.3, f: 7 + Math.random() * 5, x: cx + x });
+      }
+    }
+    fire.light = new THREE.PointLight(srgb('#ff9a4a'), 1.0, 120, 1.6); fire.light.position.set(cx, fy + 6, fz - 4); root_.add(fire.light);
+    // The crane: an iron post at the side of the opening that the arm swings on, a chain, and the pot.
+    const px = cx + OW / 2 - 1.2; box(g, 0.6, 14, 0.6, px, fy + 7.5, zb - 2.5, iron);
+    box(g, 8.5, 0.6, 0.6, px - 4.2, fy + 13, zb - 3.2, iron, { rot: [0, -0.35, 0] });
+    box(g, 0.25, 2.6, 0.25, px - 7.6, fy + 11.6, zb - 4.6, iron, { ink: 0 });
+    solid(g, new THREE.LatheGeometry([[0.01, 0], [1.2, 0.25], [1.75, 1.05], [1.75, 1.95], [1.5, 2.4], [1.65, 2.55]].map(([r, h]) => new THREE.Vector2(r, h)), 16), iron, px - 7.6, fy + 7.6, zb - 4.6, { ink: 0.08 }).material.side = THREE.DoubleSide;
+    solid(g, new THREE.TorusGeometry(1.55, 0.12, 6, 16, Math.PI), iron, px - 7.6, fy + 10.15, zb - 4.6, { ink: 0 });
+    // On the hearth: the kettle, and the fire irons leaning on the jamb.
+    { const kx = cx + OW / 2 + JW + 1.2, kz = zf - 2.5;
+      solid(g, new THREE.LatheGeometry([[0.01, 0], [1.6, 0.1], [1.9, 1.2], [1.4, 2.4], [0.5, 2.8], [0.6, 3.1]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#3a3634', kx, 1.4, kz, { ink: 0.07 });
+      solid(g, new THREE.TorusGeometry(1.2, 0.12, 6, 14, Math.PI), '#3a3634', kx, 1.4 + 3.0, kz, { ink: 0 });
+      solid(g, new THREE.CylinderGeometry(0.2, 0.35, 2.2, 8), '#3a3634', kx + 1.9, 1.4 + 2.0, kz, { rot: [0, 0, -0.9], ink: 0.04 }); }
+    for (const [dx, tip] of [[-0.6, 'poker'], [0.6, 'shovel']]) {
+      const tx_ = cx - OW / 2 - JW - 1.2 + dx, tz = zf - 0.8, it = new THREE.Group(); it.position.set(tx_, 1.4, tz); it.rotation.set(0.12, 0, dx * 0.1); g.add(it);
+      pole(it, new V3(0, 0, 0), new V3(0, 12, 0), 0.18, iron, { ink: 0.04 }); solid(it, new THREE.TorusGeometry(0.6, 0.14, 6, 12), iron, 0, 12.6, 0, { ink: 0 });
+      if (tip === 'shovel') box(it, 2.2, 0.2, 2.6, 0, 0.3, 0.4, iron, { rot: [0.25, 0, 0] }); else solid(it, new THREE.ConeGeometry(0.3, 1, 6), iron, 0, -0.2, 0, { rot: [Math.PI, 0, 0], ink: 0 });
+    }
+    // Logs stacked by the hearth, ends out.
+    { const lx = cx + OW / 2 + JW + 8, rows = [[0, 3], [1, 2], [2, 1]];
+      for (const [row, n] of rows) for (let i = 0; i < n; i++) { const lg = solid(g, new THREE.CylinderGeometry(1.15, 1.25, 8, 10), bark, lx + (i - (n - 1) / 2) * 2.5, 1.2 + row * 2.1, zb - 5, { rot: [Math.PI / 2, 0, 0], ink: 0.06 });
+        solid(lg, new THREE.CircleGeometry(1.15, 10), '#c49a62', 0, 4.01, 0, { rot: [-Math.PI / 2, 0, 0], ink: 0 }); }
+      world.obstacles.push({ x0: lx - 4.5, x1: lx + 4.5, z0: zb - 7, z1: Z1 }); }
+    world.obstacles.push({ x0: cx - (OW / 2 + JW + 3), x1: cx + (OW / 2 + JW + 3), z0: Z1 - D - 9.6, z1: Z1 });
+  }
+
   // Which panels show: those the camera is inside of.
   const cp = new V3();
   function update(camera) {
@@ -326,6 +401,11 @@ function build(scene) {
   }
   // The door and the chest's lid swing toward where they're going (0 shut, 1 open), easing.
   function tick(dt) {
+    // The fire: each flame stretching and swaying on its own beat, the embers pulsing, the light flickering with them.
+    fire.t += dt; const ft = fire.t, flick = 0.5 + 0.25 * Math.sin(ft * 11.3) + 0.15 * Math.sin(ft * 23.7 + 1) + 0.1 * Math.sin(ft * 5.1);
+    for (const f of fire.flames) { const k = 1 + 0.22 * Math.sin(ft * f.f + f.ph) + 0.12 * Math.sin(ft * f.f * 2.3 + f.ph * 2); f.m.scale.set(f.w * (1.05 - 0.1 * k), f.sz * k, f.w * (1.05 - 0.1 * k)); f.m.position.x = f.x + 0.25 * Math.sin(ft * f.f * 0.6 + f.ph); f.m.rotation.z = 0.08 * Math.sin(ft * f.f * 0.7 + f.ph); }
+    if (fire.light) fire.light.intensity = 0.8 + 0.45 * flick;
+    if (fire.embers) fire.embers.material.color.setRGB(0.75 + 0.2 * flick, 0.14 + 0.08 * flick, 0.03);
     for (const o of [world.door, world.chest]) { if (!o) continue; o.open += (o.target - o.open) * (1 - Math.exp(-dt * 5)); const e = o.open; o.pivot.rotation.set(o === world.chest ? o.swing * e : 0, o === world.door ? o.swing * e : 0, 0); }
   }
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
