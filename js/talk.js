@@ -116,9 +116,12 @@ function create(stage, opts) {
     stage.go(pos, look, 900);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
     if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });
-    // (and each looks at the other's face — a little toward us, so that even sitting square to one another their faces read from here)
+    // (and each looks at the other's face, turned a little toward us, so that even sitting square to one another their faces read from here)
     if (opts.look && rigs.length > 1) names.forEach((nm, k) => { const other = rigs[1 - k]; looking.add(nm);
-      opts.look(nm, () => { const h = other.headGroup.getWorldPosition(new V3()); return h.lerp(pos, 0.3); }); });
+      // (a little: a quarter of the way between them, sideways toward us, which turns the head some fifteen degrees, never round over a shoulder)
+      opts.look(nm, () => { const me = rigs[k].headGroup.getWorldPosition(new V3()), h = other.headGroup.getWorldPosition(new V3()), gap = h.distanceTo(me);
+        const toCam = pos.clone().sub(h).setY(0), along = h.clone().sub(me).setY(0).normalize(); toCam.addScaledVector(along, -toCam.dot(along));
+        return toCam.lengthSq() > 1e-6 ? h.addScaledVector(toCam.normalize(), 0.25 * gap) : h; }); });
   }
   const looking = new Set();
   function unlook() { if (opts.look) for (const nm of looking) opts.look(nm, null); looking.clear(); }

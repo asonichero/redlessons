@@ -105,7 +105,8 @@ function create(rig, opts) {
 
   // ── Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   m.goTo = (pos, yaw, o) => { m.auto = { pos: pos.clone().setY(0), yaw, run: !!(o && o.run) }; return after(() => !m.auto); };
-  m.face = yaw => { m.faceYaw = yaw; return after(() => Math.abs(angDiff(m.yaw, yaw)) < 0.05 && m.speed < 0.5); };
+  m.face = yaw => { if (m.seat) return Promise.resolve(); m.faceYaw = yaw;      // (seated, she faces the way the seat does)
+    return after(() => Math.abs(angDiff(m.yaw, yaw)) < 0.05 && m.speed < 0.5); };
   m.reach = (side, target) => { const h = m.hands[side]; h.target = target; h.want = 1; return after(() => h.w > 0.97); };
   m.release = side => { const h = m.hands[side]; h.want = 0; return after(() => h.w < 0.03, () => { h.target = null; }); };
   m.hold = (item, style) => { m.carry = item; m.carryStyle = style || 'front'; };
@@ -139,7 +140,8 @@ function create(rig, opts) {
     // Turning: toward where she's going (she can't go much sideways: the speed she keeps is what lies ahead of her as she turns); standing, toward
     // where she's been asked to face.
     let yawTo = null;
-    if (mag > 0) yawTo = Math.atan2(dir.x, dir.z); else if (m.faceYaw != null) yawTo = m.faceYaw;
+    if (m.seat) { m.faceYaw = null; m.yawV = 0; }      // (seated, the seat sets which way she faces: nothing else turns her, or the two would fight, frame by frame)
+    else if (mag > 0) yawTo = Math.atan2(dir.x, dir.z); else if (m.faceYaw != null) yawTo = m.faceYaw;
     const prevYaw = m.yaw;
     // She turns smoothly: easing into the turn and out of it, and less sharply the faster she goes (a walk curves round; standing, she turns
     // quicker, stepping round). How far she has still to turn is what her head and shoulders lead with (see the pose).

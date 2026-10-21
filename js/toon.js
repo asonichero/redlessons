@@ -421,8 +421,9 @@ function make(id, look, opts) {
   let skirt = null, hemBand = null, apron = null;
   const waist = clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 }));
   // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
-  const drapeG = new THREE.Group(); rig.hips.add(drapeG); drapeG.visible = !!opts.seated; let drapeShape = null;
-  seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5);
+  // (the part under her seat isn't tilted with the lap: tilted, its front rises through the bodice, or the apron)
+  const drapeG = new THREE.Group(), seatG = new THREE.Group(); rig.hips.add(drapeG, seatG); drapeG.visible = seatG.visible = !!opts.seated; let drapeShape = null;
+  seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5, opts.seated ? rig.hips : seatG);
   if (!opts.seated) {
     // (lying, its front, the side toward the lap she lies on, is drawn in close over her legs rather than standing out as a bell)
     // (drawn in, but never closer than a cloth's thickness outside the front of her thighs)
@@ -439,7 +440,7 @@ function make(id, look, opts) {
   // Seated (Gerda in the lap scene) the skirt is its own drape, in the hips' space with the thighs level along +z: a tube over the lap, turned
   // round the knees, then hanging to the hem, with the apron laid along the top of it. (Skinning a skirt through a right-angled knee folds it.)
   // (len: how far the drape runs from the back of the seat, when it's shorter than the lap and over the knees to the floor)
-  function seatedDrape(parent, len) {
+  function seatedDrape(parent, len, under) {
     const Tk = D.thigh, full = Tk + 1.5 + 2.2 * Math.PI / 2 + D.shin + 0.2, L = len == null ? full : Math.min(len, full);
     const lapL = Math.min(Tk + 1.5, L), arcL = Math.min(2.2 * Math.PI / 2, L - lapL), drop = Math.max(0.001, L - lapL - arcL), total = lapL + arcL + drop;
     drapeShape = { Tk, lapL, arcL, drop };
@@ -460,7 +461,7 @@ function make(id, look, opts) {
     const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u); return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
     const outward = p => new V3(p.x, p.z < Tk ? p.y + 0.1 : Math.max(0, p.y + 0.1), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
     clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, parent, 0, 0, 0, { side: THREE.DoubleSide }));
-    clipSrc('skirt', piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, parent));      // (closed under her seat)
+    clipSrc('skirt', piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, under));      // (closed under her seat)
     clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 }));
     if (P.apron) clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 }));
   }
@@ -801,9 +802,9 @@ function make(id, look, opts) {
     {
       const sk = d.skirt || 'down', down = sk === 'down', bare = !down && d.drawers === 'down';
       for (const m of [skirt, hemBand, apron]) if (m) show(m, down && !seatedNow);
-      drapeG.visible = !!opts.seated || (down && seatedNow);
+      drapeG.visible = seatG.visible = !!opts.seated || (down && seatedNow);
       roll.visible = sk === 'up'; waist.visible = sk !== 'off';
-      drawers.forEach(m => show(m, !bare)); drawersDown.forEach(m => show(m, bare));
+      drawers.forEach(m => show(m, !bare && !(down && seatedNow))); drawersDown.forEach(m => show(m, bare));      // (seated, the drape is over them: drawn, they'd only poke through it)
       if (sk !== dress.skirt || (d.drawers || 'up') !== dress.drawers) { dress.skirt = sk; dress.drawers = d.drawers || 'up'; rig._recolour = true; }
     }
     const mk_ = d.marks || { L: 0, R: 0 };
