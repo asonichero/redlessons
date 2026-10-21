@@ -75,16 +75,16 @@ const GAIT = {
   walk: 21, run: 60,                       // top speeds, world units a second at size 1 (her legs are about 14 long)
   accel: 7, decel: 9, yawRate: 5, yawRateWalk: 3.2, yawRateRun: 2.4,      // (turning, radians a second at most: standing, walking, running) // how quickly she gets up to speed, slows, and turns (per second)
   duty: [0.62, 0.3],                      // the share of each stride a foot is on the ground: walking, running
-  stride: [1.1, 0.95],                     // stride length (by leg length, and the square root of speed by leg length): walking, running
-  lift: [1.6, 1.6], drop: [0, 0], bob: [0, 0.4], lean: [0.1, 0.3],
+  stride: [1.25, 0.95],                     // stride length (by leg length, and the square root of speed by leg length): walking, running
+  lift: [1.6, 1.6], drop: [0, 0], bob: [0, 0.4], lean: [0.1, 0.17],
   sway: [0.5, 0.15],                       // the hips over the standing foot, side to side
   tilt: [0.075, 0.04],                     // the hip on the side of the swinging leg dropping (radians), the spine keeping the shoulders level
   turn: [0.015, 0.016],                    // the hips turning with the stepping leg (per unit of the feet's reach apart); the shoulders turn against
-  down: [0.45, 0],                         // how far the hips give as each heel takes the weight
+  down: [0.12, 0],                         // how far the hips give as each heel takes the weight
   strike: [-0.3, -0.05], pushOff: [0.55, 0.95],      // the foot's pitch landing (toes up) and leaving (on its toes): walking, running
-  straight: [0.99, 0.993],
+  straight: [0.998, 0.993],
   ahead: [0.22, 0.5],                      // how far ahead of the middle of her steps her weight is carried, by half a step: walking, running
-  pitch: [0.06, 0.16],                     // the pelvis tipping forward with it                // how straight a leg on the ground may be (of its full length): walking, running
+  pitch: [0.05, 0.06],                     // the pelvis tipping forward with it                // how straight a leg on the ground may be (of its full length): walking, running
 };
 
 function create(rig, opts) {
@@ -216,7 +216,7 @@ function create(rig, opts) {
         // Running, it takes a path of its own: the heel kicks up behind toward her seat, the knee drives forward with the foot tucked under it,
         // and the foot reaches out to land.
         const e = ease(sw); A = { x, z: lerp(A0.z, A1.z, e), y: lerp(A0.y, A1.y, e) + lift * (0.45 + 0.55 * big) * Math.sin(Math.PI * Math.pow(sw, 0.75)) };
-        if (rb > 0.01) { const ra = spline([A0.z, -0.14 * LEG, 0.26 * LEG, A1.z], sw), rh = Math.max(0, spline([A0.y - SOLE, 0.5 * LEG, 0.24 * LEG, A1.y - SOLE], sw)); A.z = lerp(A.z, ra, rb); A.y = lerp(A.y, SOLE + rh, rb); }
+        if (rb > 0.01) { const ra = spline([A0.z, -0.14 * LEG, 0.26 * LEG, A1.z], sw), rh = Math.max(0, spline([A0.y - SOLE, 0.38 * LEG, 0.22 * LEG, A1.y - SOLE], sw)); A.z = lerp(A.z, ra, rb); A.y = lerp(A.y, SOLE + rh, rb); }
         pitch = (lerp(pOff, 0, ss(0, 0.45, sw)) + pStrike * ss(0.55, 1, sw)) * big;
         w = 1 - ss(0, 0.12, sw) + ss(0.92, 1, sw); f.sw = sw; f.st = -1; f.land = toWorld(A1.x, A1.y, A1.z);
       }
@@ -273,12 +273,14 @@ function create(rig, opts) {
       for (const s of ['L', 'R']) {
         const f = m.feet[s], hj = r['thigh' + s].getWorldPosition(new V3());
         const needFor = (A, at) => { const hd = Math.hypot(A.x - at.x, A.z - at.z); return hj.y - (A.y + Math.sqrt(Math.max(0, Lr * Lr - hd * hd))); };
-        if (f.w > 0) need = Math.max(need, needFor(f.pos, hj) * clamp(f.w, 0, 1));
+        // (a foot late in its stance stops holding her up: its heel peels off the floor as she passes over it, see the legs below)
+        const fw = f.st >= 0 ? f.w * (1 - ss(0.45, 0.8, f.st) * m.cyc) : f.w * (1 - m.cyc);      // (and one in the air, none)
+        if (fw > 0) need = Math.max(need, needFor(f.pos, hj) * clamp(fw, 0, 1));
         // A foot about to land: the hips start down to meet it (judged from where they'll be when it does), so the weight rolls onto it.
-        if (f.sw > 0 && f.land && m.cyc > 0.5) { const w = ss(0.35, 1, f.sw) * m.cyc; if (w > 0) need = Math.max(need, needFor(f.land, hj) * w); }
+        if (f.sw > 0 && f.land && m.cyc > 0.5) { const w = ss(0.7, 1, f.sw) * m.cyc; if (w > 0) need = Math.max(need, needFor(f.land, hj) * w); }
       }
       // (down at once, so a leg is never stretched past its length; back up a little more gently)
-      m.hipDrop = need > (m.hipDrop || 0) ? need : approach(m.hipDrop || 0, need, lerp(7, 16, m.runB), dt);
+      m.hipDrop = need > (m.hipDrop || 0) ? need : approach(m.hipDrop || 0, need, lerp(18, 16, m.runB), dt);
       r.hips.position.y -= m.hipDrop / sc * (1 - sitW);
     }
     // Body: leaning into speed, into speeding up and into a turn; the shoulders turning against the hips; bending down for a low reach.
@@ -309,13 +311,13 @@ function create(rig, opts) {
     const tb = r.torso.rotation, hb = r.hips.rotation, loose = (1 - sitW) * (1 - lieW);
     const gx = 0.6 * (tb.x + hb.x) * loose, gz = -0.6 * (tb.z + hb.z) * loose, push = clamp(m.acc / (GAIT.walk * sc), -1.5, 1.5);
     for (const [s, sd] of [['L', 1], ['R', -1]]) {
-      const rel = clamp(offs[s] / S2, -1.2, 1.2), amp = lerp(0.42, 0.6, m.runB) * mv, A = m.arms[s];
-      const want = amp * rel * (rel < 0 ? lerp(0.85, 0.45, m.runB) : 1) + 0.03 * Math.sin(t * 1.1 + sd) * idle - 0.1 * rb;
-      A.v += (lerp(62, 85, m.runB) * (want - A.a) - lerp(8, 10, m.runB) * A.v + 2 * push) * dt; A.a += A.v * dt;
-      const fwdA = Math.max(0, -A.a) / Math.max(0.2, amp);      // (how far forward this arm has come, 0..1)
+      const rel = clamp(offs[s] / S2, -1.2, 1.2), amp = lerp(0.38, 0.6, m.runB) * mv, A = m.arms[s];
+      const want = amp * rel * (rel < 0 ? lerp(0.7, 0.45, m.runB) : 1) + 0.03 * Math.sin(t * 1.1 + sd) * idle - 0.12 * rb;      // (walking, it swings further back than forward; running, it pumps forward and back about her side)
+      A.v += (lerp(62, 300, m.runB) * (want - A.a) - lerp(10.5, 21, m.runB) * A.v + 2 * push) * dt; A.a += A.v * dt;      // (running, driven from the shoulder in time with the legs, quicker than an arm would swing by itself)
+      const fwdA = Math.max(0, -A.a) / Math.max(0.2, amp), thru = clamp(0.5 - A.a / (1.6 * Math.max(0.2, amp)), 0, 1);      // (how far forward this arm has come, 0..1; and how far through its swing, from the back)
       // (walking, the elbow all but straight as the arm goes back and bending as it comes forward; running, held bent, closing as it comes up)
-      const eWant = 0.2 + 0.05 * mv + 1.1 * rb + 0.75 * (mv - rb) * Math.min(1, fwdA) + 0.35 * rb * (Math.min(1, fwdA) - 0.4);
-      A.ev += (lerp(55, 75, m.runB) * (eWant - A.e) - lerp(7, 9.5, m.runB) * A.ev) * dt; A.e += A.ev * dt;
+      const eWant = 0.2 + 0.05 * mv + 1.1 * rb + 0.5 * (mv - rb) * thru + 0.35 * rb * (Math.min(1, fwdA) - 0.4);
+      A.ev += (lerp(55, 75, m.runB) * (eWant - A.e) - lerp(11.5, 9.5, m.runB) * A.ev) * dt; A.e += A.ev * dt;      // (walking, damped enough that it opens as the arm goes back, rather than lagging folded behind her)
       const hWant = 0.1 + (0.3 * (A.e - 0.2) - 0.2 * A.a) * (1 - rb * 0.7);
       A.hv += (45 * (hWant - A.h) - 6.5 * A.hv) * dt; A.h += A.hv * dt;
       // (coming forward, the arm drifts in a little across her)
@@ -378,6 +380,16 @@ function create(rig, opts) {
           }
         }
         A.lerp(sitFoot, sitW);
+      }
+      // Late in its stance, a foot she has passed over is left behind: its heel rises, rolling it up onto its ball as far as the leg needs to
+      // reach it, so she goes on over it tall rather than sinking to keep it flat. (The foot pushes off; it doesn't hold her back.)
+      if (f.lock && f.st >= 0.3 && sitW < 0.001 && lieW < 0.001) {
+        r.root.updateMatrixWorld(true);
+        const hj = r['thigh' + s].getWorldPosition(new V3()), Lr = LEG * 0.998, p0 = Math.max(0, f.pitch);
+        if (A.distanceTo(hj) > Lr && roll(f.lock.at, f.yaw, 1.25).distanceTo(hj) <= Lr) {
+          let lo = p0, hi = 1.25; for (let k = 0; k < 10; k++) { const mid = (lo + hi) / 2; if (roll(f.lock.at, f.yaw, mid).distanceTo(hj) > Lr) lo = mid; else hi = mid; }
+          A = roll(f.lock.at, f.yaw, hi); f.pitch = hi; f.pos.copy(A);
+        }
       }
       feetNow[s].copy(A);
       const footQ = yawQ(m.seat ? m.yaw : f.yaw).multiply(new Q().setFromAxisAngle(new V3(1, 0, 0), f.pitch * (1 - sitW)));
