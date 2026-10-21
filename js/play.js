@@ -10,10 +10,11 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 function create(view, opts) {
   opts = opts || {};
   const st = Stage.create(view, { fov: 40 }), W = st.cottage.world, B = W.bounds;
-  const look = (root.Looks && Looks.load ? Looks.load() : {}).red;
-  const rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig);
+  let look = (root.Looks && Looks.load ? Looks.load() : {}).red;
+  let rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig);
   const sc = rig.scaleW, R = 3.2 * sc;
   rig.root.position.set(-8, 0, 14); rig.root.rotation.y = Math.PI;
+  let dress = { skirt: 'down' };
 
   // What's in her way: the walls, and the furniture (boxes and round things), as a circle of radius r pushed clear of each. The door, open, is a
   // board on its hinge.
@@ -34,7 +35,7 @@ function create(view, opts) {
     }
     return q;
   }
-  const m = Motion.create(rig, { collide });
+  let m = Motion.create(rig, { collide });
 
   // ── The camera: behind and above her, following; drag to look round her, the wheel to come in or go out.
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
@@ -162,7 +163,20 @@ function create(view, opts) {
     if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  Get up   ·   Q  Lie down' : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }
   st.start(frame);
-  return { stage: st, rig, motion: m, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  // What she wears: the skirt (on, lifted or off), and her outfit (her cloak, with the hood down or up, or none). The outfit is part of how she's
+  // built, so changing it builds her again where she stands, carrying whatever she was carrying; it's kept with her looks, for every page.
+  function setDress(d) { dress = Object.assign({}, dress, d); rig.setDress(dress); }
+  function setOutfit(outfit) {
+    if (doing || !root.Looks) return;
+    const all = Looks.load(); all.red.outfit = outfit; look = Looks.save(all).red;
+    if (sitting || lying) { sitting = null; lying = false; }
+    const at = m.pos.clone(), yaw = m.yaw, carry = m.carry, style = m.carryStyle;
+    st.scene.remove(rig.root);
+    rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig); rig.root.position.copy(at); rig.root.rotation.y = yaw;
+    m = Motion.create(rig, { collide }); if (carry) m.hold(carry, style);
+    rig.setDress(dress);
+  }
+  return { stage: st, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };

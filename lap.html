@@ -40,6 +40,7 @@
   <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="paddle">Paddle</button></div>
   <h3>Clothes</h3>
   <div class="btns"><button id="skirt">Skirt: down</button><button id="drawers">Drawers: up</button></div>
+  <div class="btns" style="margin-top:6px"><span>Cloak</span><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div>
   <h3>Smacks</h3>
   <div class="btns"><button class="big" id="one">Smack</button><button class="big" id="ten">Run of 10</button></div>
   <div class="btns" style="margin-top:6px"><span>Pace</span><button data-pace="0.7">Slow</button><button data-pace="1" class="on">Steady</button><button data-pace="1.5">Brisk</button></div>
@@ -77,7 +78,7 @@
     tiers(false);
   }
   // A scripted correction: the panel's own controls are held while it runs (Red and Start again stay live).
-  const tiers = busy => { all('[data-tier], [data-impl], [data-pace], [data-str], #skirt, #drawers, #one, #ten').forEach(b => b.disabled = busy); if (!busy) label(); };
+  const tiers = busy => { all('[data-tier], [data-impl], [data-pace], [data-str], [data-outfit], #skirt, #drawers, #one, #ten').forEach(b => b.disabled = busy); if (!busy) label(); };
   for (const t of Discipline.TIERS) {
     const b = document.createElement('button'); b.textContent = Discipline.TIER_NAMES[t]; b.dataset.tier = t; b.title = Discipline.total(t) + ' smacks';
     b.onclick = async () => {
@@ -97,6 +98,9 @@
   all('[data-view]').forEach(b => b.onclick = () => lap.view(b.dataset.view, 700));
   $('skirt').onclick = () => { st.skirt = st.skirt === 'down' ? 'up' : 'down'; if (st.skirt === 'down') st.drawers = 'up'; lap.set({ skirt: st.skirt, drawers: st.drawers }); label(); };
   $('drawers').onclick = () => { if (st.skirt === 'down') return; st.drawers = st.drawers === 'up' ? 'down' : 'up'; lap.set({ drawers: st.drawers }); label(); };
+  // Her cloak: none, hood down or hood up (kept with her looks, so the editor and the cottage wear the same); she's built again in it.
+  const showOutfit = () => all('[data-outfit]').forEach(b => b.classList.toggle('on', b.dataset.outfit === lap.looks.red.outfit));
+  all('[data-outfit]').forEach(b => b.onclick = () => { if (!lap || lap.busy()) return; const l = Looks.load(); l.red.outfit = b.dataset.outfit; lap.setLooks(Looks.save(l)); showOutfit(); });
   function label() { $('skirt').textContent = 'Skirt: ' + (st.skirt === 'down' ? 'down' : 'lifted'); $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = st.skirt === 'down'; }
   const wake = () => { if (A) A.init(); };
   $('one').onclick = () => { wake(); lap.smack(); }; $('ten').onclick = () => { wake(); lap.run(10); };
@@ -107,7 +111,7 @@
     if (e.key === 'r' || e.key === 'R') red();
   });
   setInterval(() => { if (!lap) return; const d = lap.pain.distress(); $('meter').firstElementChild.style.width = Math.min(100, d / 1.5 * 100) + '%'; $('band').textContent = lap.band(); const t = $('info').textContent; if (!/^(Red|Too|Token|Light|Firm|Severe)/.test(t)) $('info').textContent = lap.st.hits + ' smacks'; }, 120);
-  build(); label(); window.__lap = () => lap;
+  build(); label(); showOutfit(); window.__lap = () => lap;
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

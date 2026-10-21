@@ -5,7 +5,7 @@ const L = require('../js/looks.js');
 test('a missing or broken look falls back to the defaults', () => {
   assert.deepEqual(L.clean(null), L.DEFAULT);
   const c = L.clean({ red: { outfit: 'Armour', skin: 'red', hair: '#123456' }, gerda: { outfit: 'Fine' } });
-  assert.equal(c.red.outfit, 'Hood down'); assert.equal(c.red.skin, L.DEFAULT.red.skin); assert.equal(c.red.hair, '#123456'); assert.equal(c.gerda.outfit, 'Fine');
+  assert.equal(c.red.outfit, L.DEFAULT.red.outfit); assert.equal(c.red.skin, L.DEFAULT.red.skin); assert.equal(c.red.hair, '#123456'); assert.equal(c.gerda.outfit, 'Fine');
 });
 
 test('only Red Riding Hood and Gerda are kept', () => {

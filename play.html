@@ -27,7 +27,8 @@
 <body>
 <div id="view"></div>
 <div id="help"><b>About the cottage</b><br><span class="keys">WASD or arrows to walk · Shift to run · E to use · Q to lie down · K for her skirt<br></span>Drag to look round · wheel to zoom · <a href="lap.html">Over the knee</a> · <a href="editor.html">Editor</a>
-  <div class="row">Skirt <button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div></div>
+  <div class="row">Skirt <button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div>
+  <div class="row">Cloak <button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div></div>
 <div id="prompt"></div>
 <div id="stick"><i></i></div>
 <button class="tb" id="run">Run</button><button class="tb" id="use">Use</button><button class="tb" id="alt">Lie</button>
@@ -61,10 +62,15 @@ const runB = document.getElementById('run'); runB.addEventListener('pointerdown'
 // Her skirt: on, lifted (gathered at her waist) or off, to see how she moves under it. Remembered in this browser.
 const SKIRTS = ['down', 'up', 'off'], skirtBtns = [...document.querySelectorAll('[data-skirt]')];
 let skirt = 'down'; try { skirt = localStorage.getItem('red-lessons:play-skirt') || 'down'; } catch (e) {}
-function setSkirt(k) { skirt = SKIRTS.includes(k) ? k : 'down'; P.rig.setDress({ skirt }); skirtBtns.forEach(b => b.classList.toggle('on', b.dataset.skirt === skirt)); try { localStorage.setItem('red-lessons:play-skirt', skirt); } catch (e) {} }
+function setSkirt(k) { skirt = SKIRTS.includes(k) ? k : 'down'; P.setDress({ skirt }); skirtBtns.forEach(b => b.classList.toggle('on', b.dataset.skirt === skirt)); try { localStorage.setItem('red-lessons:play-skirt', skirt); } catch (e) {} }
 skirtBtns.forEach(b => b.addEventListener('click', () => setSkirt(b.dataset.skirt)));
 addEventListener('keydown', e => { if (e.code === 'KeyK' && !e.repeat) setSkirt(SKIRTS[(SKIRTS.indexOf(skirt) + 1) % 3]); });
 setSkirt(skirt);
+// Her cloak: none, hood down or hood up (kept with her looks, so the editor and the lap scene wear the same).
+const outfitBtns = [...document.querySelectorAll('[data-outfit]')];
+const showOutfit = () => outfitBtns.forEach(b => b.classList.toggle('on', b.dataset.outfit === P.outfit));
+outfitBtns.forEach(b => b.addEventListener('click', () => { P.setOutfit(b.dataset.outfit); showOutfit(); }));
+showOutfit();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>

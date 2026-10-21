@@ -18,6 +18,7 @@ npm test             # the pain model, the discipline scripts and the looks
 - **Smooth, rounded characters** with two-band cel shading and a thin warm-brown outline (an inverted hull). The body is skinned to its skeleton, so the trunk, each arm, each leg and the neck are continuous surfaces that bend smoothly through the shoulders, elbows, waist, hips and knees, with the outline running unbroken across them. The bust is sculpted into the torso rather than set on it.
 - **Painted faces:** eyes, lids, brows, mouth, blush and tears are drawn onto a thin layer that follows the face, and redrawn as the expression changes, so every feature morphs smoothly (the mouth from a smile through flat to a frown or open; the lids down over the eyes). The nose is a soft 3D slope with a painted shadow. Ten expressions, pushed further than life, ease from one to the next: calm, smile, shy, cheeky, pout, stern, surprised, wince, gritted, crying.
 - **Hair:** a cap with a proper hairline and a fringe. Red Riding Hood's long hair hangs from swinging pivots: two locks by her face and the back of it to her shoulder blades. It hangs with gravity, swings as she moves, and settles. Gerda wears hers in a bun, grey at one temple.
+- **Clipping:** a covered part (skin under the skirt or in the boots, the drawers under the skirt, the blouse under the bodice, Gerda's skirt behind her apron) keeps its own colour unless it pokes through what covers it; there, it's drawn in that layer's colour, so it reads as a fold of the cloth rather than something showing through. (Each frame, each figure's outer clothes are drawn on their own as depth first; a covered point in front of its layer's outer surface is one that has come through.)
 - **Clothes:**
   - **Red Riding Hood:** a scarlet capelet, longest at the back, edged in cream, with the hood down on her back or up over her hair. Under it, a cream blouse with puffed sleeves, a dark laced bodice, a skirt in the red of her cloak with a white hem, linen drawers, and boots.
   - **Gerda:** a plum bodice, a cream blouse, an apron and a long brown skirt, bare feet. Or her lavender "Fine" gown with gold bracelets.
@@ -70,7 +71,7 @@ Each smack adds a sharp **sting** (fading in seconds) and a deep **ache** (fadin
 
 Red Riding Hood and Gerda stand side by side in the room, idling and blinking. You can pick:
 
-- **Outfit:** hers is Hood down, Hood up or No cloak; Gerda's is Work or Fine.
+- **Outfit:** hers is No cloak (the default), Hood down or Hood up; Gerda's is Work or Fine.
 - **Colours:** skin, hair, eyes and lips for both, and the colour of her cloak. Choose from a row of swatches or pick any colour.
 - **Her face:** preview each expression.
 

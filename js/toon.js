@@ -37,6 +37,61 @@ const FLATS = {};
 const flat = (hex, opacity) => { const k = hex + '|' + (opacity || 1); return FLATS[k] || (FLATS[k] = new THREE.MeshBasicMaterial({ color: srgb(hex), transparent: opacity < 1, opacity: opacity || 1, depthWrite: !(opacity < 1) })); };
 const INK = '#3a2620';
 const INKM = [new THREE.MeshBasicMaterial({ color: srgb(INK), side: THREE.BackSide }), new THREE.MeshBasicMaterial({ color: srgb(INK), side: THREE.BackSide, skinning: true })];
+// ── Clipping. A covered part (skin under the skirt or inside the boots, the drawers under the skirt, the blouse under the bodice) keeps its
+// own colour unless it pokes out through what covers it; then, there, it's drawn in the colour of the layer it came through, so the poke reads
+// as a fold of that layer rather than something showing through. To know where: before each frame the outer layers of each figure (four
+// kinds: skirts, boots, drawers, bodice and apron) are drawn on their own as depth, and a covered point that lies in front of the outer surface
+// of the layer over it, there on the screen, is one that has come through it. (So, looking up under a skirt, the legs are legs.)
+const CLIP_KINDS = { skirt: 0, boots: 1, drawers: 2, bodice: 3, apron: 3 };
+const LIVE = new Set(); let liveId = 0;
+const WHITE = (() => { const t = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat); t.needsUpdate = true; return t; })();
+const DEPTHM = [false, true].map(sk => new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, skinning: sk, side: THREE.FrontSide }));
+// A material for a covered part: its own colour per point ('color'), and per point the colour of what covers it and how much ('cover', the
+// fourth number), and which kind of layer that is ('coverKind').
+function clipMaterial(rig, o) {
+  const m = new THREE.MeshToonMaterial(Object.assign({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true }, o));
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, rig.clipU);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 cover; attribute float coverKind; varying vec4 vCover; varying float vKind;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCover = cover; vKind = coverKind;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec4 vCover; varying float vKind; uniform sampler2D uClip0; uniform sampler2D uClip1; uniform sampler2D uClip2; uniform sampler2D uClip3; uniform vec2 uClipRes;
+float clipDepth(vec4 v) { return dot(v, (255. / 256.) / vec4(256. * 256. * 256., 256. * 256., 256., 1.)); }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+if (vCover.a > 0.002) {
+  vec2 st = gl_FragCoord.xy / uClipRes;
+  vec4 pk = vKind < 0.5 ? texture2D(uClip0, st) : vKind < 1.5 ? texture2D(uClip1, st) : vKind < 2.5 ? texture2D(uClip2, st) : texture2D(uClip3, st);
+  float d = clipDepth(pk);
+  if (d < 0.99999 && gl_FragCoord.z < d - 0.00001) diffuseColor.rgb = mix(diffuseColor.rgb, vCover.rgb, vCover.a);
+}`);
+  };
+  return m;
+}
+// Draw each live figure's outer layers as depth, kind by kind. Called by the stage before each frame is drawn.
+const _sz = new THREE.Vector2();
+function clipPass(renderer, scene, camera) {
+  renderer.getDrawingBufferSize(_sz); const w = Math.max(1, _sz.x), h = Math.max(1, _sz.y);
+  const inScene = o => { for (; o; o = o.parent) if (o === scene) return true; return false; };
+  const bg = scene.background, mask = camera.layers.mask, auto = renderer.shadowMap.autoUpdate, rt0 = renderer.getRenderTarget(), cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
+  scene.background = null; renderer.shadowMap.autoUpdate = false; renderer.setClearColor(0xffffff, 1);
+  for (const rig of LIVE) {
+    if (!inScene(rig.root)) { if (!rig.root.parent) { LIVE.delete(rig); for (const t of rig.clipRT) t.dispose(); } continue; }
+    rig.clipU.uClipRes.value.copy(_sz);
+    for (let k = 0; k < 4; k++) {
+      const list = rig.clipSrc[k].filter(m => { for (let o = m; o; o = o.parent) if (!o.visible) return false; return true; });
+      const rt = rig.clipRT[k], U = rig.clipU['uClip' + k];
+      if (!list.length) { U.value = WHITE; continue; }
+      if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
+      const L = 1 + ((rig.clipId * 4 + k) % 31), saved = list.map(m => m.material);
+      list.forEach(m => { m.layers.enable(L); m.material = DEPTHM[m.isSkinnedMesh ? 1 : 0]; });
+      camera.layers.set(L); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, camera);
+      list.forEach((m, i) => { m.layers.disable(L); m.material = saved[i]; });
+      U.value = rt.texture;
+    }
+  }
+  camera.layers.mask = mask; scene.background = bg; renderer.shadowMap.autoUpdate = auto; renderer.setRenderTarget(rt0); renderer.setClearColor(cc, ca);
+}
+
 // The outline: the same shape pushed out along its normals, drawn from the inside in ink.
 // (w: one width, or one for each point)
 function hullGeo(geo, w) {
@@ -97,8 +152,8 @@ const TUNE = [
   ['bodyDepth', 'Body', 'Body depth (front to back)', 1, 0.8, 1.25, 0.01], ['armGirth', 'Body', 'Arm thickness', 1, 0.7, 1.4, 0.01], ['legGirth', 'Body', 'Leg thickness', 1, 0.7, 1.4, 0.01],
   ['neckGirth', 'Body', 'Neck thickness', 1.3, 0.7, 1.5, 0.01], ['handSize', 'Body', 'Hand size', 1.3, 0.7, 1.5, 0.01], ['footSize', 'Body', 'Foot size', 1.3, 0.7, 1.5, 0.01],
   ['bustX', 'Bust', 'Spacing', 1.15, 0.8, 1.6, 0.01], ['bustY', 'Bust', 'Height', 6.2, 5, 7.3, 0.05], ['bustAmt', 'Bust', 'Fullness', 0.95, 0, 1.8, 0.01], ['bustW', 'Bust', 'Width', 0.95, 0.6, 1.4, 0.01],
-  ['cheekX', 'Seat', 'Spacing', 1.32, 0.6, 2, 0.01], ['cheekY', 'Seat', 'Height', -0.85, -3, 0, 0.01], ['cheekZ', 'Seat', 'Depth', -1.3, -2, -0.6, 0.01],
-  ['cheekW', 'Seat', 'Width', 1.8, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 1.7, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.5, 0.9, 2, 0.01],
+  ['cheekX', 'Seat', 'Spacing', 1.05, 0.6, 2, 0.01], ['cheekY', 'Seat', 'Height', -0.85, -3, 0, 0.01], ['cheekZ', 'Seat', 'Depth', -1.15, -2, -0.6, 0.01],
+  ['cheekW', 'Seat', 'Width', 2.28, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 1.75, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.5, 0.9, 2, 0.01],
   ['tilt', 'Seat', 'Where smacks land (lower ↔ higher)', 0.35, 0, 0.9, 0.01], ['cheekFollow', 'Seat', 'Follows the thigh (0 hips ↔ 1 thigh)', 1, 0, 1, 0.01],
   ['eyeX', 'Face', 'Eye spacing', 0.66, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 0.95, 0.7, 1.4, 0.01],
   ['eyeH', 'Face', 'Eye height (size)', 1, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['jaw', 'Face', 'Jaw width', 0.88, 0.7, 1.15, 0.01], ['browY', 'Face', 'Brow height', 0.4, 0.2, 0.9, 0.01],
@@ -149,6 +204,10 @@ function make(id, look, opts) {
   const S = SPECS[id]; if (!S) throw new Error('Toon: unknown character ' + id);
   look = look || {}; const P = palette(id, look), D = DIM;
   const rig = { id, spec: S, look, P, scaleW: S.scale, solids: [] };
+  rig.clipId = liveId++; rig.clipSrc = [[], [], [], []]; rig.clipRT = [0, 1, 2, 3].map(() => new THREE.WebGLRenderTarget(4, 4, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter }));
+  rig.clipU = { uClip0: { value: WHITE }, uClip1: { value: WHITE }, uClip2: { value: WHITE }, uClip3: { value: WHITE }, uClipRes: { value: new THREE.Vector2(1, 1) } };
+  LIVE.add(rig);
+  const clipSrc = (kind, m) => { if (m) rig.clipSrc[CLIP_KINDS[kind]].push(m); return m; };
   const root_ = new THREE.Group(); root_.scale.setScalar(S.scale); rig.root = root_;
   const bones = [];
   const bone = (name, parent, x, y, z, order) => { const b = new THREE.Bone(); b.name = name; b.position.set(x, y, z); if (order) b.rotation.order = order; parent.add(b); bones.push(b); rig[name] = b; return b; };
@@ -192,8 +251,9 @@ function make(id, look, opts) {
     if (o.cover) {      // (cloth that's covered by another layer: coloured per point by o.cover(p) → [colour, share], p in the frame's space at rest)
       const toHips = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(frame.matrixWorld), at = [], atH = [];
       for (let i = 0; i < n; i++) { at.push(p.fromBufferAttribute(pos, i).clone()); atH.push(at[i].clone().applyMatrix4(toHips)); }
-      const col = new Float32Array(n * 3); geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); covers.push({ geo, at, atH, frame, col, base: srgb(hex), fn: o.cover });
-      o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true, side: o.side || THREE.FrontSide });
+      const col = new Float32Array(n * 3), cov = new Float32Array(n * 4), kind = new Float32Array(n); geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.setAttribute('cover', new THREE.BufferAttribute(cov, 4)); geo.setAttribute('coverKind', new THREE.BufferAttribute(kind, 1));
+      covers.push({ geo, at, atH, frame, col, cov, kind, base: srgb(hex), fn: o.cover });
+      o.material = clipMaterial(rig, { side: o.side || THREE.FrontSide });
     }
     if (o.tint) {      // (skin that the marks can bleed into: its points in the hips' space at rest, and a colour for each)
       const toHips = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(frame.matrixWorld), at = [], q = new V3();
@@ -201,8 +261,9 @@ function make(id, look, opts) {
       const col = new Float32Array(n * 3), base = srgb(hex); for (let i = 0; i < n; i++) { col[i * 3] = base.r; col[i * 3 + 1] = base.g; col[i * 3 + 2] = base.b; }
       // (o.follow: a bone each point rides on by a share, for points that bend between it and the hips)
       const follow = o.follow ? at.map(q => { const w = wfn(q).find(e => e[0] === o.follow); return w ? w[1] : 0; }) : null;
-      geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo, at, col, base, bone: o.follow || (frame === rig.hips ? null : frame), follow });
-      o.material = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: ramp(), skinning: true });
+      const cov = new Float32Array(n * 4), kind = new Float32Array(n); geo.setAttribute('cover', new THREE.BufferAttribute(cov, 4)); geo.setAttribute('coverKind', new THREE.BufferAttribute(kind, 1));
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); tints.push({ geo, at, col, cov, kind, base, bone: o.follow || (frame === rig.hips ? null : frame), follow });
+      o.material = clipMaterial(rig, {});
     }
     // (o.inkAt: how much of the outline to draw at each point, 0..1, by where it is in the frame's space; none where the shape meets another)
     const inkW = (o.ink || 0.07) * K.ink, inkAt = o.inkAt ? Array.from({ length: n }, (_, i) => inkW * o.inkAt(p.fromBufferAttribute(pos, i))) : inkW;
@@ -297,10 +358,10 @@ function make(id, look, opts) {
     }
     g.computeVertexNormals(); return g;
   };
-  skinnedOn(rig.hips, bust(lathe(wide(dense([[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]], 44), trunkW), 0.68 * TD, 32)), top, torsoW, { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y)] });   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
+  skinnedOn(rig.hips, bust(lathe(wide(dense([[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]], 44), trunkW), 0.68 * TD, 32)), top, torsoW, { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] });   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
   // The bodice: laced, from the hips to under the bust.
-  skinnedOn(rig.hips, bust(lathe(wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 });      // (flaring at the bottom over the hips, which never show through it)
-  skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 });      // its bound hem, a neat edge over the join with whatever is below
+  clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 }));      // (flaring at the bottom over the hips, which never show through it)
+  clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 }));      // its bound hem, a neat edge over the join with whatever is below
   // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
   { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
     // (from above the skirt's waistband to just under the bust)
@@ -335,10 +396,10 @@ function make(id, look, opts) {
     const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, FS = K.footSize, sh = f => -Lk - f * D.shin;      // (points down the shin as a share of its length)
     skinnedOn(thigh, lathe(wide(dense([[0, 1.0], [1.25, 0.7], [1.72, -0.4], [1.66, -Lk * 0.34], [1.45, -Lk * 0.68], [1.15, -Lk + 0.6], [1.08, -Lk - 0.2], [1.13, sh(0.17)], [1.15, sh(0.37)], [0.9, sh(0.66)], [0.62, -La + 0.8], [0.54, -La + 0.1], [0.5, -La - 0.2], [0, -La - 0.5]], 60), LG), 1, 28), P.skin, legW(s), { tint: true, inkAt: q => 1 - ss(0.1, 0.8, -q.x * sx / (1.6 * LG)) * ss(-Lk * 0.8, -Lk * 0.45, q.y) });
     if (S.feet === 'boots') {
-      skinnedOn(thigh, lathe(wide([[0.84, sh(0.51)], [1.0, sh(0.56)], [0.8, sh(0.8)], [0.72, -La - 0.2], [0, -La - 0.4]], LG), 1, 18), P.boots, legW(s));
-      skinnedOn(thigh, lathe(wide([[0.88, sh(0.507)], [1.04, sh(0.536)], [1.0, sh(0.586)]], LG), 1, 18), P.bootsDk, legW(s), { ink: 0.04 });
-      piece(flatFoot(ell(0.78 * FS, 0.62, 1.55 * FS), 0.5), P.boots, ankle, 0, -0.22, 0.62 * FS);
-      piece(flatFoot(ell(0.82 * FS, 0.2, 1.62 * FS), 0.12), P.bootsDk, ankle, 0, -0.62, 0.62 * FS, { ink: 0.04 });      // (the sole)
+      clipSrc('boots', skinnedOn(thigh, lathe(wide([[0.84, sh(0.51)], [1.0, sh(0.56)], [0.8, sh(0.8)], [0.72, -La - 0.2], [0, -La - 0.4]], LG), 1, 18), P.boots, legW(s)));
+      clipSrc('boots', skinnedOn(thigh, lathe(wide([[0.88, sh(0.507)], [1.04, sh(0.536)], [1.0, sh(0.586)]], LG), 1, 18), P.bootsDk, legW(s), { ink: 0.04 }));
+      clipSrc('boots', piece(flatFoot(ell(0.78 * FS, 0.62, 1.55 * FS), 0.5), P.boots, ankle, 0, -0.22, 0.62 * FS));
+      clipSrc('boots', piece(flatFoot(ell(0.82 * FS, 0.2, 1.62 * FS), 0.12), P.bootsDk, ankle, 0, -0.62, 0.62 * FS, { ink: 0.04 }));      // (the sole)
     } else {
       piece(flatFoot(ell(0.62 * FS, 0.5, 1.45 * FS), 0.4), P.skin, ankle, 0, -0.35, 0.62 * FS);
       if (P.gold) piece(new THREE.TorusGeometry(0.62 * LG, 0.08, 6, 16).rotateX(Math.PI / 2), P.gold, knee, 0, -D.shin + 0.6, 0, { ink: 0 });
@@ -351,7 +412,7 @@ function make(id, look, opts) {
   const skirtProfile = wide([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]], SW);
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
   let skirt = null, hemBand = null, apron = null;
-  const waist = piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 });
+  const waist = clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 }));
   // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
   const drapeG = new THREE.Group(); rig.hips.add(drapeG); drapeG.visible = !!opts.seated; let drapeShape = null;
   seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5);
@@ -361,11 +422,11 @@ function make(id, look, opts) {
     const thighFront = (x, y) => { const rt = lerp(1.75, 1.2, clamp(-y / D.thigh, 0, 1)) * K.legGirth + 0.55; let z = 0; for (const c of [D.hipX, -D.hipX]) z = Math.max(z, Math.sqrt(Math.max(0, rt * rt - (x - c) ** 2))); return z; };
     const hug = g => { if (opts.lying) { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z > 0) pp.setZ(i, Math.max(z * lerp(1, 0.55, ss(0.6, -2.5, y)), y < 0.6 ? thighFront(pp.getX(i), y) : 0)); } g.computeVertexNormals(); } return g; };
     // (behind the apron, the skirt is the apron's colour)
-    skirt = skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt, P.apron ? { cover: p => [cc('apron'), ss(0.85, 0.7, Math.abs(Math.atan2(p.x, p.z))) * ss(-9.2, -8.7, p.y)] } : {});
-    hemBand = skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 });
+    skirt = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt, P.apron ? { cover: p => [cc('apron'), ss(0.85, 0.7, Math.abs(Math.atan2(p.x, p.z))) * ss(-9.2, -8.7, p.y), 'apron'] } : {}));
+    hemBand = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 }));
     if (P.apron) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
-      apron = skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 });
+      apron = clipSrc('apron', skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 }));
     }
   }
   // Seated (Gerda in the lap scene) the skirt is its own drape, in the hips' space with the thighs level along +z: a tube over the lap, turned
@@ -391,24 +452,24 @@ function make(id, look, opts) {
     };
     const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u); return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
     const outward = p => new V3(p.x, p.z < Tk ? p.y + 0.1 : Math.max(0, p.y + 0.1), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
-    piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, parent, 0, 0, 0, { side: THREE.DoubleSide });
-    piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, parent);      // (closed under her seat)
-    piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 });
-    if (P.apron) piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 });
+    clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, parent, 0, 0, 0, { side: THREE.DoubleSide }));
+    clipSrc('skirt', piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, parent));      // (closed under her seat)
+    clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 }));
+    if (P.apron) clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 }));
   }
-  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt === 'down' && inSkirt(rest, now) ? [cc('skirt'), 1] : null;      // (the drawers: the skirt's colour while it's down over them)
+  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt === 'down' && inSkirt(rest, now) ? [cc('skirt'), 1, 'skirt'] : null;      // (the drawers: the skirt's colour while it's down over them)
   if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
     // (up over the whole seat to the waist, tucked under the bodice: fuller at the back only low down, under the cheeks; above them it follows the
     // small of her back, so it never stands proud of the cheeks as they roll round with her legs)
     { const g = lathe(wide(dense([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.26, 0.4], [3.08, 0.85], [2.95, 1.05]], 24), trunkW), 0.75 * TD, 32), pp = g.attributes.position;
       for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.1, 1, ss(-1.3, -0.4, pp.getY(i)))); }
-      g.computeVertexNormals(); drawers.push(skinnedOn(rig.hips, g, P.drawers, torsoW, { cover: underSkirt })); }
+      g.computeVertexNormals(); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, torsoW, { cover: underSkirt }))); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
-      { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07, cover: underSkirt })); }
-      drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s), { cover: underSkirt }));
-      drawers.push(skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03, cover: underSkirt }));
-      drawersDown.push(piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0, { ink: 0 }));
+      { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07, cover: underSkirt }))); }
+      drawers.push(clipSrc('drawers', skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s), { cover: underSkirt })));
+      drawers.push(clipSrc('drawers', skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03, cover: underSkirt })));
+      drawersDown.push(clipSrc('drawers', piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0, { ink: 0 })));
     }
     // Down, they're one garment pushed down round both legs: a rolled cuff on each thigh and the cloth between them, sagging between her legs at the
     // front and back, carried by both thighs.
@@ -416,17 +477,17 @@ function make(id, look, opts) {
       for (let i = 0; i < pp.count; i++) { const x = pp.getX(i) * ax, z = pp.getZ(i) * 1.5 * K.legGirth; pp.setXYZ(i, x, yb + pp.getY(i) - 0.7 * (1 - ss(0, 1.8, Math.abs(x))), z); }
       g.computeVertexNormals();
       const m = skinnedOn(rig.hips, g, P.drawers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { ink: 0.05, inkAt: q => ss(0.45, 0.75, Math.abs(q.x) / ax) });      // (outlined round the outside only, not between her legs)
-      drawersDown.push(m);
+      drawersDown.push(clipSrc('drawers', m));
       // and the cloth across the middle, between her legs, sagging (the legs pass through it, hiding the part inside them)
       const gg = surface((u, v) => { const a = u * Math.PI * 2, x = Math.cos(a) * ax * v, z = Math.sin(a) * 1.5 * K.legGirth * v; return new V3(x, yb - 0.7 * (1 - ss(0, 1.8, Math.abs(x))) - 0.35 * (1 - v * v), z); }, 40, 8, p => new V3(0, -1, 0));
-      drawersDown.push(skinnedOn(rig.hips, gg, P.drawers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0 })); }
+      drawersDown.push(clipSrc('drawers', skinnedOn(rig.hips, gg, P.drawers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0 }))); }
   }
   // The skirt lifted: gathered in a roll across the small of her back.
   const roll = new THREE.Group(); rig.hips.add(roll); roll.visible = false;
   // (an oval ring hugging the back and sides of her waist, the hem's band showing along its lower edge, and the cloth bunched at each hip)
-  piece(new THREE.TorusGeometry(2.75, 0.68, 10, 24, Math.PI * 1.1).rotateX(Math.PI / 2).rotateY(Math.PI * 0.95).scale(trunkW(2.1), 1, 0.66 * TD * trunkW(2.1)), P.skirt, roll, 0, 2.1, 0);
-  piece(new THREE.TorusGeometry(2.75, 0.24, 6, 24, Math.PI * 1.05).rotateX(Math.PI / 2).rotateY(Math.PI * 0.975).scale(trunkW(1.45), 1, 0.7 * TD * trunkW(1.45)), P.hem, roll, 0, 1.45, -0.15, { ink: 0.03 });
-  for (const sx of [-1, 1]) piece(ell(0.95, 0.75, 0.8), P.skirt, roll, sx * 2.55 * trunkW(1.9), 1.9, -0.6);
+  clipSrc('skirt', piece(new THREE.TorusGeometry(2.75, 0.68, 10, 24, Math.PI * 1.1).rotateX(Math.PI / 2).rotateY(Math.PI * 0.95).scale(trunkW(2.1), 1, 0.66 * TD * trunkW(2.1)), P.skirt, roll, 0, 2.1, 0));
+  clipSrc('skirt', piece(new THREE.TorusGeometry(2.75, 0.24, 6, 24, Math.PI * 1.05).rotateX(Math.PI / 2).rotateY(Math.PI * 0.975).scale(trunkW(1.45), 1, 0.7 * TD * trunkW(1.45)), P.hem, roll, 0, 1.45, -0.15, { ink: 0.03 }));
+  for (const sx of [-1, 1]) clipSrc('skirt', piece(ell(0.95, 0.75, 0.8), P.skirt, roll, sx * 2.55 * trunkW(1.9), 1.9, -0.6));
 
   // ── Head and face. ──
   // (scaled about the chin, which stays where it meets the neck)
@@ -670,26 +731,26 @@ function make(id, look, opts) {
   function coverAt(t, p, now) {
     const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
     if (t.bone === rig.thighL || t.bone === rig.thighR) {
-      if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w]; }
-      if (down) return inSkirt(p, now) ? [cc('skirt'), 1] : null;
-      if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y)];
+      if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w, 'boots']; }
+      if (down) return inSkirt(p, now) ? [cc('skirt'), 1, 'skirt'] : null;
+      if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y), 'drawers'];
       return null;
     }
-    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (inSkirt(p, now) ? [cc('skirt'), 1] : null) : drawersOn ? [cc('drawers'), 1] : null;
+    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (inSkirt(p, now) ? [cc('skirt'), 1, 'skirt'] : null) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
     if (!t.bone) {      // (the hips: the bodice over the top of them, and under it the skirt, or the drawers)
-      const wb = ss(0.85, 1.15, y); if (wb >= 1) return [cc('bodice'), 1];
-      const under = down ? cc('skirt') : drawersOn ? cc('drawers') : null;
-      if (!under) return wb > 0 ? [cc('bodice'), wb] : null;
-      return [under.clone().lerp(cc('bodice'), wb), 1];
+      const wb = ss(0.85, 1.15, y); if (wb >= 0.5) return [cc('bodice'), 1, 'bodice'];
+      return down ? [cc('skirt'), 1, 'skirt'] : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
     }
     return null;
   }
   const ctmp = new THREE.Color();
+  // (cv: [colour, share, kind] — what covers the point, or nothing)
+  const setCover = (c, i, cv) => { const w = cv && cv[1] > 0 ? Math.min(1, cv[1]) : 0; if (w) { c.cov[i * 4] = cv[0].r; c.cov[i * 4 + 1] = cv[0].g; c.cov[i * 4 + 2] = cv[0].b; } c.cov[i * 4 + 3] = w; c.kind[i] = w ? CLIP_KINDS[cv[2]] : 0; };
   function recolourCovers() {
     for (const c of covers) {
       const toNow = new THREE.Matrix4().copy(rig.hips.matrixWorld).invert().multiply(c.frame.matrixWorld), qn = new V3();
-      for (let i = 0; i < c.at.length; i++) { ctmp.copy(c.base); const cv = c.fn(c.atH[i], qn.copy(c.at[i]).applyMatrix4(toNow)); if (cv && cv[1] > 0) ctmp.lerp(cv[0], Math.min(1, cv[1])); c.col[i * 3] = ctmp.r; c.col[i * 3 + 1] = ctmp.g; c.col[i * 3 + 2] = ctmp.b; }
-      c.geo.attributes.color.needsUpdate = true;
+      for (let i = 0; i < c.at.length; i++) { ctmp.copy(c.base); c.col[i * 3] = ctmp.r; c.col[i * 3 + 1] = ctmp.g; c.col[i * 3 + 2] = ctmp.b; setCover(c, i, c.fn(c.atH[i], qn.copy(c.at[i]).applyMatrix4(toNow))); }
+      c.geo.attributes.color.needsUpdate = true; c.geo.attributes.cover.needsUpdate = true; c.geo.attributes.coverKind.needsUpdate = true;
     }
   }
   function bleed(force) {
@@ -700,10 +761,10 @@ function make(id, look, opts) {
       for (let i = 0; i < t.at.length; i++) {
         tc.copy(t.base); const q = !t.bone ? t.at[i] : t.follow ? t.at[i].clone().lerp(moved(t.bone, t.at[i]), t.follow[i]) : moved(t.bone, t.at[i]);
         for (const s of ['L', 'R']) { const m = marks[s]; if (m <= 0.005) continue; const w = Math.exp(-q.distanceToSquared(mNow[s]) / (2 * 1.5 * 1.5)); tc.lerp(pinkL, Math.min(0.75, 0.95 * Math.sqrt(m) * w)); tc.lerp(redL, Math.min(0.62, 0.8 * m * m * w * w)); }
-        const cv = coverAt(t, t.at[i], q); if (cv && cv[1] > 0) tc.lerp(cv[0], cv[1]);
+        setCover(t, i, coverAt(t, t.at[i], q));
         t.col[i * 3] = tc.r; t.col[i * 3 + 1] = tc.g; t.col[i * 3 + 2] = tc.b;
       }
-      t.geo.attributes.color.needsUpdate = true;
+      t.geo.attributes.color.needsUpdate = true; t.geo.attributes.cover.needsUpdate = true; t.geo.attributes.coverKind.needsUpdate = true;
     }
   }
 
@@ -896,6 +957,6 @@ function makePaddle() {
 }
 
 setTune(loadTune(), false);
-const Toon = { make, idle, stance, sit, seatFor, makeChair, makePaddle, PADDLE, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
+const Toon = { make, clipPass, idle, stance, sit, seatFor, makeChair, makePaddle, PADDLE, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
 root.Toon = Toon;
 })(typeof window !== 'undefined' ? window : globalThis);

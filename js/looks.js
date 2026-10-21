@@ -7,7 +7,7 @@
 'use strict';
 const KEY = 'red-lessons:looks:v2';
 const DEFAULT = {
-  red: { outfit: 'Hood down', skin: '#f6d3b8', hair: '#b0582a', eyes: '#4f8a62', lips: '#d49080', cloak: '#a01828' },
+  red: { outfit: 'No cloak', skin: '#f6d3b8', hair: '#b0582a', eyes: '#4f8a62', lips: '#d49080', cloak: '#a01828' },
   gerda: { outfit: 'Work', skin: '#f6d3b8', hair: '#7a3a22', eyes: '#4f8a62', lips: '#a8525a' },
 };
 const OUTFITS = { red: ['Hood down', 'Hood up', 'No cloak'], gerda: ['Work', 'Fine'] };
