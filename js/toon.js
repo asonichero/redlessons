@@ -816,6 +816,6 @@ function makePaddle() {
 }
 
 setTune(loadTune(), false);
-const Toon = { make, idle, sit, seatFor, makeChair, makePaddle, PADDLE, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
+const Toon = { make, idle, stance, sit, seatFor, makeChair, makePaddle, PADDLE, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
 root.Toon = Toon;
 })(typeof window !== 'undefined' ? window : globalThis);
