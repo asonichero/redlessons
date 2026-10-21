@@ -62,7 +62,30 @@ if (vCover.a > 0.002) {
   vec2 st = gl_FragCoord.xy / uClipRes;
   vec4 pk = vKind < 0.5 ? texture2D(uClip0, st) : vKind < 1.5 ? texture2D(uClip1, st) : vKind < 2.5 ? texture2D(uClip2, st) : texture2D(uClip3, st);
   float d = clipDepth(pk);
+  // (not drawn where it's through what covers it, or just at it: that's right there, shaded as itself; no seam where the two meet)
+  if (d < 0.99999 && vCover.a > 0.5 && gl_FragCoord.z < d + 0.00006) discard;
   if (d < 0.99999 && gl_FragCoord.z < d - 0.00001) diffuseColor.rgb = mix(diffuseColor.rgb, vCover.rgb, vCover.a);
+}`);
+  };
+  return m;
+}
+// The outline of something covered: drawn in ink as any other, except where it lies in front of what covers it (pushing through the cloth over
+// it): there it isn't drawn at all, so the shape of what's underneath never shows as a line on top. (The same test as clipMaterial's.)
+function clipInk(rig) {
+  const m = new THREE.MeshBasicMaterial({ color: srgb(INK), side: THREE.BackSide, skinning: true });
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, rig.clipU);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 cover; attribute float coverKind; varying float vCovA; varying float vKind;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCovA = cover.a; vKind = coverKind;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying float vCovA; varying float vKind; uniform sampler2D uClip0; uniform sampler2D uClip1; uniform sampler2D uClip2; uniform sampler2D uClip3; uniform vec2 uClipRes;
+float clipDepth(vec4 v) { return dot(v, (255. / 256.) / vec4(256. * 256. * 256., 256. * 256., 256., 1.)); }`)
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+if (vCovA > 0.002) {
+  vec2 st = gl_FragCoord.xy / uClipRes;
+  vec4 pk = vKind < 0.5 ? texture2D(uClip0, st) : vKind < 1.5 ? texture2D(uClip1, st) : vKind < 2.5 ? texture2D(uClip2, st) : texture2D(uClip3, st);
+  float d = clipDepth(pk);
+  if (d < 0.99999 && gl_FragCoord.z < d + 0.00006) discard;
 }`);
   };
   return m;
@@ -275,7 +298,11 @@ function make(id, look, opts) {
     const inkW = (o.ink || 0.07) * K.ink, inkAt = o.inkAt ? Array.from({ length: n }, (_, i) => inkW * o.inkAt(p.fromBufferAttribute(pos, i))) : inkW;
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
     const m = new THREE.SkinnedMesh(geo, o.material || mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
-    if (o.ink !== 0 && K.ink > 0) { const h = new THREE.SkinnedMesh(hullGeo(geo, inkAt), INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h; }
+    if (o.ink !== 0 && K.ink > 0) {
+      // (something that can be covered has an outline that knows it: it shares the cover each point has, as that changes, and isn't drawn where it pushes through)
+      const hg = hullGeo(geo, inkAt), covered = !!geo.attributes.cover; if (covered) { hg.setAttribute('cover', geo.attributes.cover); hg.setAttribute('coverKind', geo.attributes.coverKind); }
+      const h = new THREE.SkinnedMesh(hg, covered ? clipInk(rig) : INKM[1]); h.frustumCulled = false; root_.add(h); h.updateMatrixWorld(true); h.bind(skel, h.matrixWorld); m.userData.hull = h;
+    }
     shadowy.push(m); return m;
   }
   // The skirts: by where a point hangs, between the hips, the thighs and the shins, so a skirt follows the legs. The back of it stays with the hips over
@@ -429,8 +456,9 @@ function make(id, look, opts) {
     // (drawn in, but never closer than a cloth's thickness outside the front of her thighs)
     const thighFront = (x, y) => { const rt = lerp(1.75, 1.2, clamp(-y / D.thigh, 0, 1)) * K.legGirth + 0.55; let z = 0; for (const c of [D.hipX, -D.hipX]) z = Math.max(z, Math.sqrt(Math.max(0, rt * rt - (x - c) ** 2))); return z; };
     const hug = g => { if (opts.lying) { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z > 0) pp.setZ(i, Math.max(z * lerp(1, 0.55, ss(0.6, -2.5, y)), y < 0.6 ? thighFront(pp.getX(i), y) : 0)); } g.computeVertexNormals(); } return g; };
-    // (behind the apron, the skirt is the apron's colour)
-    skirt = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt, P.apron ? { cover: p => [cc('apron'), ss(0.85, 0.7, Math.abs(Math.atan2(p.x, p.z))) * ss(-9.2, -8.7, p.y), 'apron'] } : {}));
+    // (where it pushes through the apron, the skirt is the apron's colour: every point of it below the bodice may, since the colour only shows
+    // where it's in front of the apron, wherever the apron is)
+    skirt = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt, P.apron ? { cover: p => [cc('apron'), ss(1.05, 0.88, Math.abs(Math.atan2(p.x, p.z))) * ss(1.2, 0.8, p.y), 'apron'] } : {}));
     hemBand = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 }));
     if (P.apron) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
@@ -465,7 +493,9 @@ function make(id, look, opts) {
     clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 }));
     if (P.apron) clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 }));
   }
-  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt === 'down' && inSkirt(rest, now) ? [cc('skirt'), 1, 'skirt'] : null;      // (the drawers: the skirt's colour while it's down over them)
+  // (under the skirt; and in front, where an apron hangs over the skirt, under that, the outermost: what pushes through there pushes through both)
+  const skirtOver = p => P.apron && p.z > 0 && p.y > -9.2 && Math.abs(Math.atan2(p.x, p.z)) < 0.78 ? [cc('apron'), 1, 'apron'] : [cc('skirt'), 1, 'skirt'];
+  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt === 'down' && inSkirt(rest, now) ? skirtOver(rest) : null;      // (the drawers: the skirt's colour while it's down over them)
   if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
     // (up over the whole seat to the waist, tucked under the bodice: fuller at the back only low down, under the cheeks; above them it follows the
@@ -751,14 +781,14 @@ function make(id, look, opts) {
     const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
     if (t.bone === rig.thighL || t.bone === rig.thighR) {
       if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w, 'boots']; }
-      if (down) return inSkirt(p, now) ? [cc('skirt'), 1, 'skirt'] : null;
+      if (down) return inSkirt(p, now) ? skirtOver(p) : null;
       if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y), 'drawers'];
       return null;
     }
-    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (inSkirt(p, now) ? [cc('skirt'), 1, 'skirt'] : null) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
+    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (inSkirt(p, now) ? skirtOver(p) : null) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
     if (!t.bone) {      // (the hips: the bodice over the top of them, and under it the skirt, or the drawers)
       const wb = ss(0.85, 1.15, y); if (wb >= 0.5) return [cc('bodice'), 1, 'bodice'];
-      return down ? [cc('skirt'), 1, 'skirt'] : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
+      return down ? skirtOver(p) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
     }
     return null;
   }
@@ -805,6 +835,9 @@ function make(id, look, opts) {
       drapeG.visible = seatG.visible = !!opts.seated || (down && seatedNow);
       roll.visible = sk === 'up'; waist.visible = sk !== 'off';
       drawers.forEach(m => show(m, !bare && !(down && seatedNow))); drawersDown.forEach(m => show(m, bare));      // (seated, the drape is over them: drawn, they'd only poke through it)
+      // (under a skirt that's down, their outline is never rightly seen: where they push through it they take its colour, and an ink line round
+      // that would only draw the shape of what's underneath)
+      drawers.forEach(m => { if (m.userData.hull) m.userData.hull.visible = m.visible && !down; });
       if (sk !== dress.skirt || (d.drawers || 'up') !== dress.drawers) { dress.skirt = sk; dress.drawers = d.drawers || 'up'; rig._recolour = true; }
     }
     const mk_ = d.marks || { L: 0, R: 0 };

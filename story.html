@@ -11,6 +11,13 @@
   html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: Georgia, 'Times New Roman', serif; color: #f3ead8; touch-action: none; }
   #view { position: fixed; inset: 0; }
   a { color: #c9a84c; }
+  #endcard { position: fixed; inset: 0; z-index: 46; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(8,4,6,0.86); color: #f3e4b0; opacity: 0; transition: opacity 1.4s; }
+  #endcard.on { opacity: 1; }
+  #endcard .num { font-size: 14px; letter-spacing: .5em; text-transform: uppercase; color: #c9b87a; } #endcard i { width: 64px; height: 1px; background: #8a6a3a; }
+  #endcard .name { font-size: clamp(28px, 6.4vw, 58px); letter-spacing: .05em; text-shadow: 0 3px 0 #5a1418; }
+  #endcard nav { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; justify-content: center; }
+  #endcard button { font: 17px Georgia, serif; padding: 11px 22px; border-radius: 8px; border: 1px solid #6a5054; background: rgba(30,20,22,0.85); color: #f3ead8; cursor: pointer; }
+  #endcard button:hover { border-color: #c9a84c; background: #4a3238; } #endcard button.primary { background: #7a2228; border-color: #c9a84c; }
   #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
   #card .go, #card button { display: inline-block; margin: 6px; padding: 8px 18px; border-radius: 10px; border: 2px solid #6b4a32; background: #8a2a2a; color: #fff; font: 16px Georgia, serif; text-decoration: none; cursor: pointer; }
   #card button { background: #fffaf0; color: #3a2a20; }
@@ -53,6 +60,10 @@
 <script src="js/audio.js"></script>
 <script src="js/talk.js"></script>
 <script src="js/story.js"></script>
+<script src="js/pain.js"></script>
+<script src="js/lap.js"></script>
+<script src="js/discipline.js"></script>
+<script src="js/correction.js"></script>
 <script src="js/play.js"></script>
 <script src="js/chapter1.js"></script>
 <script src="js/hud.js"></script>
@@ -61,8 +72,11 @@ const $ = id => document.getElementById(id);
 const NAMES = { cabin: 'Grandmother’s cabin', wood: 'The wood', home: 'Home' };
 // The fade between scenes, with the name of the next.
 const fade = (on, text) => new Promise(r => { if (on) $('fade').textContent = text || ''; $('fade').classList.toggle('on', on); setTimeout(r, on ? 950 : 50); });
-// The end of the chapter: on to the lap scene.
-const card = () => { const c = document.createElement('div'); c.id = 'card'; c.innerHTML = '<p>Little Red slips off her cloak, lays it over the back of the chair, and goes to her mother.</p><a class="go" href="lap.html?scene=homecoming">Go to her</a> <button id="stay">Not yet</button>'; document.body.appendChild(c); $('stay').onclick = () => c.remove(); };
+// The end of the chapter: a card, over the room (as Consequence closes its chapters).
+const card = () => { hud.show(false); const c = document.createElement('div'); c.id = 'endcard';
+  c.innerHTML = '<div class="num">The end of chapter one</div><i></i><div class="name">The Red Cloak</div><nav><button id="again">Play it again</button><button id="totitle" class="primary">Back to the title</button></nav>';
+  document.body.appendChild(c); requestAnimationFrame(() => c.classList.add('on'));
+  $('again').onclick = () => { c.remove(); hud.show(true); ch.start('cabin'); }; $('totitle').onclick = () => location.reload(); };
 // The controls and menus (js/hud.js): they go to whichever scene is being played.
 const hud = Hud.create({ get: () => ch.P, title: () => location.reload(),
   scenes: Object.keys(NAMES).map(k => ({ label: NAMES[k], run: () => ch.start(k) })),

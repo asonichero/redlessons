@@ -178,7 +178,7 @@ function create(opts) {
   // ── The camera: in close, at the usual distance, or well back (the wheel still zooms between). ──
   const ZOOMS = [['Close', 0.55], ['Usual', 1], ['Far', 1.9]]; let zoom = 1, base = null;
   function stepCam() {
-    const p = P(); if (!p || (p.talk && p.talk.playing)) return; const st = p.stage, off = st.camera.position.clone().sub(st.controls.target);
+    const p = P(); if (!p || (p.talk && p.talk.playing) || document.body.classList.contains('correcting')) return; const st = p.stage, off = st.camera.position.clone().sub(st.controls.target);
     if (base == null || Math.abs(off.length() - base * ZOOMS[zoom][1]) > 2) { base = off.length() / ZOOMS[zoom][1]; }      // (the wheel moved it: start from there)
     zoom = (zoom + 1) % ZOOMS.length; const want = Math.max(st.controls.minDistance, Math.min(st.controls.maxDistance, base * ZOOMS[zoom][1]));
     st.go(st.controls.target.clone().add(off.setLength(want)), st.controls.target.clone(), 450);

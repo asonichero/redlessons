@@ -5,9 +5,10 @@
 //  2. The wood: the long path home, hers to walk (or run, or dawdle). Her thoughts come as she goes; she can stop to pick bluebells, sit by the
 //     stream, find the carving on the old beech, sit on the fallen tree. The light goes as she walks, and faster when she dawdles. At the edge
 //     of the wood the village comes into sight, and with it, everything she left there.
-//  3. Home, late in the dusk: her mother sees her face at once, and the conversation (js/story.js, the homecoming), and a card on to the lap scene.
+//  3. Home, late in the dusk: her mother sees her face at once, and the conversation (js/story.js, the homecoming); the correction, played there in
+//     the room (js/correction.js), and after it the two of them; the end of the chapter.
 //
-//   const ch = Chapter1.create(view, { objective, fade, card })   ch.start(scene?)   ch.P: the scene being played (js/play.js)
+//   const ch = Chapter1.create(view, { objective, fade, card })   ch.start(scene?)   ch.P: the scene being played (js/play.js)   (card: the chapter's end)
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE.Vector3;
@@ -99,10 +100,15 @@ function create(view, ui) {
     }
   }
 
-  // ── 3. Home, at dusk: in through the door, her mother by the hearth; she sees Rose's face, and they talk.
+  // ── 3. Home, at dusk: in through the door, her mother by the hearth; she sees Rose's face, and they talk. Then the correction she's earned (a
+  // light one: home late through the wood, at dusk), there in the room (js/correction.js), and after it, the two of them; the end of the chapter.
   async function home() {
-    P = Play.create(view, { light: Math.max(0.82, dusk), prompt: ui.prompt, start: { at: [-44, 31], yaw: Math.PI / 2 },
-      after: (sc, picks) => { if (sc === 'homecoming' && ui.card) ui.card(); } });
+    P = Play.create(view, { light: Math.max(0.82, dusk), start: { at: [-44, 31], yaw: Math.PI / 2 },
+      after: async sc => { if (sc !== 'homecoming') return; const p = P;
+        const r = await Correction.run(p, { tier: 'light', fade: on => ui.fade ? ui.fade(on) : null });
+        if (p !== P) return; await p.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
+        try { localStorage.setItem('little-red:scene', 'end'); } catch (e) { /* no storage */ }
+        if (ui.card) ui.card(r); } });
     P.act(async () => { await P.wait(1.4); await P.talkToMother(); });
   }
 

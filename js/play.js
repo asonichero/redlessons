@@ -203,14 +203,14 @@ function create(view, opts) {
   // Talking to her mother: Rose goes to stand before her, a little apart, and they turn to each other; the camera settles on the two of them and
   // the conversation plays. At its end she's to come to her mother: the page is told (opts.after), and can go on to the lap scene.
   async function talkToMother() {
-    if (opts.talk) { await approach(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) opts.after('talk', picks); return; }
+    if (opts.talk) { await approach(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) await opts.after('talk', picks); return; }
     // (she came home in her grandmother's cloak)
     if (look.outfit === 'No cloak') setOutfit('Hood down', true);
     await approach();
     talk.cast.red.rig = rig;
     const picks = await talk.play(Story.homecoming());
     setOutfit('No cloak', true);      // (cloak off, over the back of the chair, as she's told)
-    if (opts.after) opts.after('homecoming', picks);
+    if (opts.after) await opts.after('homecoming', picks);      // (and whatever comes of it, before she's free again)
   }
   // (Rose goes to stand before them, a little apart, and they turn to each other)
   async function approach(dist) {
@@ -226,6 +226,8 @@ function create(view, opts) {
 
   // ── Each frame.
   const prevT = camT.clone();
+  // (anything else that runs with the scene, frame by frame, and stops when it's paused: P.tick(fn) → a function to take it off again)
+  const tickers = [], tick = f => { tickers.push(f); return () => { const i = tickers.indexOf(f); if (i >= 0) tickers.splice(i, 1); }; };
   function frame(dt) {
     clock += dt; for (let i = timers.length - 1; i >= 0; i--) if (timers[i].at <= clock) { timers[i].r(); timers.splice(i, 1); }
     // Keys move her relative to the camera.
@@ -236,6 +238,7 @@ function create(view, opts) {
     if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; opts.onExit(e); break; }
     if (st.cottage.follow) st.cottage.follow(m.pos, dt);
     if (opts.onFrame) opts.onFrame(dt);
+    for (const f of tickers.slice()) f(dt);
     // (in the open, the camera swings round behind her as she walks, slowly, so the way ahead stays in view)
     if (opts.followCam && m.speed > 2 && !busy()) { const off = st.camera.position.clone().sub(st.controls.target), az = Math.atan2(off.x, off.z), want = m.yaw + Math.PI, da = Math.atan2(Math.sin(want - az), Math.cos(want - az)), k = Math.min(1, dt * 0.9);
       // (and comes in to its usual distance and height behind her, from a wider opening view)
@@ -267,7 +270,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  return { stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };

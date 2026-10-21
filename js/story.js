@@ -127,5 +127,24 @@ const SPOTS = {
   log: [['calm', 'Just a little longer.'], ['pout', 'Just a little.']],
 };
 
-root.Story = { homecoming, grandmother, granAgain, WALK, SPOTS };
+// After the correction (js/correction.js): the two of them in the room by the fire. How it went decides it (Discipline.run's result): taken all
+// the way through, her mother holds her, as she did the winter of the mill pond; stopped with her name, she's Rose, and they talk as two women.
+const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
+  { text: 'Her mother has her up on her feet and close before she quite knows how she got there.' },
+  { who: 'mother', face: 'shy', listen: { red: 'shy' }, text: r.rose ? 'Rose. I’m here. Breathe with me.' : 'That was more than I meant it to be. I’m sorry, love.' },
+  { who: 'red', face: 'shy', text: 'I’m all right. It was just… a lot, all at once.' },
+  { who: 'mother', face: 'calm', text: 'Then that’s what we talk about. Not the wood, not any of it. You.' },
+  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'Thank you for stopping.' },
+  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Always. That was the promise, and it holds. Come on. There’s soup, and the fire’s warm.' },
+] : [
+  { text: 'It takes a while for the crying to run its course. Her mother waits it out, a hand on her back.' },
+  { who: 'mother', face: 'calm', listen: { red: 'crying' }, text: 'There now. That’s done, and it stays done. No more about the wood.' },
+  { who: 'red', face: 'crying', listen: { mother: 'calm' }, text: 'I’m sorry, Mama.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you are. Come here.' },
+  { text: 'Her mother holds her there by the fire until the shaking stops, the way she did the winter of the mill pond.' },
+  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: '…Somebody had hold of me.' },
+  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Somebody always will. Now: soup, and bed. And that cloak hangs by the door, where I can see it.' },
+];
+
+root.Story = { homecoming, afterCorrection, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

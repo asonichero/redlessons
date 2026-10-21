@@ -31,7 +31,7 @@ const CSS = `
 .talk.left .name { left: 112px; display: block; } .talk.right .name { right: 112px; display: block; }
 .talk .text { min-height: 1.4em; white-space: pre-wrap; }
 .talk.narr .text { font-style: italic; color: #4a3a2c; text-align: center; }
-.talk.muse .text { font-style: italic; color: #4a3a2c; } .talk.muse .more { display: none; } .talk.muse { pointer-events: none; width: min(560px, calc(100vw - 24px)); font-size: 15px; }
+.talk.muse .text { font-style: italic; color: #4a3a2c; } .talk.muse .more, .talk.cap .more { display: none; } .talk.cap { pointer-events: none; } .talk.muse { pointer-events: none; width: min(560px, calc(100vw - 24px)); font-size: 15px; }
 .talk .more { position: absolute; right: 10px; bottom: 2px; font-size: 11px; color: #8a6a50; animation: talkBob 1s ease-in-out infinite; }
 .talk.right .more { right: 112px; }
 @keyframes talkBob { 50% { transform: translateY(2px); } }
@@ -85,8 +85,9 @@ function create(stage, opts) {
     pcam.position.copy(at).addScaledVector(fwd, 26 * sc).addScaledVector(side, sd * 7 * sc).add(new V3(0, 1.5 * sc, 0)); pcam.lookAt(at);
     pKey.position.copy(at).addScaledVector(fwd, 30).addScaledVector(side, sd * 22).add(new V3(0, 34, 0)); pKey.target.position.copy(at);
     pFill.position.copy(at).addScaledVector(fwd, 20).addScaledVector(side, -sd * 26).add(new V3(0, 6, 0)); pFill.target.position.copy(at);
-    // (everything but her hidden, her own colour behind her)
-    const hidden = []; for (const o of scene.children) if (o !== rig.root && o.visible) { o.visible = false; hidden.push(o); }
+    // (everything but her hidden, her own colour behind her: whatever isn't on the way down from the scene to her, wherever she stands in it)
+    const chain = new Set(); for (let o = rig.root; o && o !== scene; o = o.parent) chain.add(o);
+    const hidden = []; for (const o of [scene, ...chain]) if (o !== rig.root) for (const k of o.children) if (!chain.has(k) && k.visible) { k.visible = false; hidden.push(k); }
     for (const l of plights) scene.add(l);
     const bg = scene.background, fog = scene.fog, sAuto = renderer.shadowMap.autoUpdate, rt0 = renderer.getRenderTarget();
     scene.background = new THREE.Color(c.bg || '#e8d6b8').convertSRGBToLinear(); scene.fog = null; renderer.shadowMap.autoUpdate = false;
@@ -119,7 +120,7 @@ function create(stage, opts) {
     // (and each looks at the other's face, turned a little toward us, so that even sitting square to one another their faces read from here)
     if (opts.look && rigs.length > 1) names.forEach((nm, k) => { const other = rigs[1 - k]; looking.add(nm);
       // (a little: a quarter of the way between them, sideways toward us, which turns the head some fifteen degrees, never round over a shoulder)
-      opts.look(nm, () => { const me = rigs[k].headGroup.getWorldPosition(new V3()), h = other.headGroup.getWorldPosition(new V3()), gap = h.distanceTo(me);
+      opts.look(nm, () => { const me = rigs[k].headGroup.getWorldPosition(new V3()), h = other.headGroup.getWorldPosition(new V3()).add(new V3(0, -1.6 * other.scaleW, 0)), gap = h.distanceTo(me);      // (at the mouth: looking up at someone taller, she needn't tip her head right back)
         const toCam = pos.clone().sub(h).setY(0), along = h.clone().sub(me).setY(0).normalize(); toCam.addScaledVector(along, -toCam.dot(along));
         return toCam.lengthSq() > 1e-6 ? h.addScaledVector(toCam.normalize(), 0.25 * gap) : h; }); });
   }
@@ -211,6 +212,22 @@ function create(stage, opts) {
     }
     return picks;
   }
+  // A line said over something else going on (the correction: her mother talking as her hand falls): her portrait, her name, the words typed
+  // out and voiced, then gone once they've had time to be read. Nothing waits on it, and nothing is clicked; a new one takes its place.
+  let capN = 0;
+  function caption(who, text, o) {
+    o = o || {}; const n = ++capN, c = cast[who]; if (!c) return Promise.resolve();
+    el.classList.remove('muse'); el.classList.add('cap'); speaker(who); face(who, o.face); choicesEl.innerHTML = '';
+    const cps = CPS(), secs = Math.max(0.4, text.length / cps), t0 = performance.now();
+    if (voice) voice.stop(); voice = A && A.speak ? A.speak(c.voice || who, text, secs * 0.92) : null;
+    const step = () => { if (n !== capN) return; const i = Math.min(text.length, Math.floor((performance.now() - t0) / 1000 * cps)); textEl.textContent = text.slice(0, i); if (i < text.length) requestAnimationFrame(step); };
+    textEl.textContent = ''; requestAnimationFrame(step);
+    // (o.wait: the scene's own clock, so that a line holds while the game is paused)
+    const hold = secs + Math.max(1.6, text.length * 0.05);
+    return (o.wait ? o.wait(hold) : new Promise(r => setTimeout(r, hold * 1000))).then(() => { if (n === capN) { el.classList.remove('on', 'cap'); portrait = null; } });
+  }
+  function captionOff() { capN++; el.classList.remove('on', 'cap'); portrait = null; if (voice) { voice.stop(); voice = null; } }
+
   // Thoughts, as she walks: her portrait and her words in the box, in italics, without stopping her or moving the camera; each stays long enough
   // to read and goes. They queue. (A conversation coming on clears them.)
   let museQ = Promise.resolve(), museN = 0;
@@ -229,7 +246,7 @@ function create(stage, opts) {
   }
   // (done with: its box, its keys)
   function destroy() { root.removeEventListener('keydown', keys, true); el.remove(); clearTimeout(autoT); for (const k in rest) clearTimeout(rest[k]); if (voice) voice.stop(); if (playing) document.body.classList.remove('talking'); playing = false; }
-  return { play, settle, next, muse, face, relax, destroy, get playing() { return playing; }, el, cast };
+  return { play, settle, next, muse, caption, captionOff, face, relax, destroy, get playing() { return playing; }, el, cast };
 }
 
 root.Talk = { create };

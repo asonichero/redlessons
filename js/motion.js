@@ -115,6 +115,9 @@ function create(rig, opts) {
   m.stand = () => { m.lieWant = 0; return after(() => m.lieW < 0.02).then(() => { m.sitWant = 0; return after(() => m.sitW < 0.02, () => { m.locked = false; m.seat = null; }); }); };
   m.lie = bed => { m.bed = bed; m.lieWant = 1; return after(() => m.lieW > 0.98); };
   m.lookAt = p => { m.look = p; };
+  // (moved at once, standing, while nobody's looking: between scenes, under a fade)
+  m.warp = (pos, yaw) => { m.pos.copy(pos).setY(0); m.yaw = yaw; m.vel.set(0, 0, 0); m.speed = 0; m.auto = null; m.faceYaw = null; m.yawV = 0;
+    for (const s of ['L', 'R']) { const f = m.feet[s]; f.pos.copy(neutral(s)); f.yaw = yaw; f.pitch = 0; f.lock = null; f.lift = null; } };
   // (where a shoulder is, and how far its hand can reach from it)
   m.shoulder = side => rig['arm' + side].getWorldPosition(new V3());
   m.armReach = side => (rig['elbow' + side].position.length() + rig['hand' + side].position.length()) * sc;
@@ -297,7 +300,7 @@ function create(rig, opts) {
     // Head: steady (it undoes the lean), looking where she's going or at what she's reaching for, a little wandering when she's still.
     let lookYaw = 0.14 * Math.sin(t * 0.23) * idle, lookPitch = 0.04 * Math.sin(t * 0.37) * idle;
     if (m.look) { r.root.updateMatrixWorld(true); const hp = r.neck.getWorldPosition(new V3()), to = (typeof m.look === 'function' ? m.look() : m.look).clone().sub(hp), loc = to.applyQuaternion(rootQ.clone().invert());
-      m.lookW = approach(m.lookW, 1, 4, dt); lookYaw = lerp(lookYaw, clamp(Math.atan2(loc.x, loc.z), -1, 1), m.lookW); lookPitch = lerp(lookPitch, clamp(Math.atan2(-loc.y, Math.hypot(loc.x, loc.z)), -0.5, 0.7), m.lookW); }
+      m.lookW = approach(m.lookW, 1, 4, dt); lookYaw = lerp(lookYaw, clamp(Math.atan2(loc.x, loc.z), -1, 1), m.lookW); lookPitch = lerp(lookPitch, (p => p < 0 ? Math.max(-0.3, 0.5 * p) : Math.min(0.7, p))(Math.atan2(-loc.y, Math.hypot(loc.x, loc.z))), m.lookW); }      // (looking up, the eyes do much of it: the head tips back only part of the way)
     else m.lookW = approach(m.lookW, 0, 4, dt);
     r.neck.rotation.set(sp('nx', -0.8 * lean * (1 - crouch * 0.6) + lookPitch * (1 - lieW) - 0.25 * lieW - 0.03 * give, 11, 0.45), sp('ny', lookYaw * (1 - lieW) + 0.8 * hipYaw + 0.42 * lead, 10, 0.5), sp('nz', -0.6 * bank - 0.15 * hipTilt, 10, 0.45));
     r.head.rotation.set(0, 0, 0);

@@ -2,7 +2,7 @@
 // and over the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what she has on (skirt down or lifted,
 // drawers up or down), the implement, how many, and how hard.
 //
-//   const r = await Discipline.run(lap, 'firm', { say: text => …, sleep: ms => … })   →   { hits, peak, rose, tooHarsh, done }
+//   const r = await Discipline.run(lap, 'firm', { say: (text, kind) => …, sleep: ms => … })   (kind: start, stage, during, done, after, rose, harsh)   →   { hits, peak, rose, tooHarsh, done }
 //   (lap.end() from outside closes it quietly: nothing more is struck or said)
 //
 // The safe word is her own name. If she says "Rose" (lap.rose()) she's Rose again, a grown woman who needs a different kind of care: it ends at once,
@@ -51,21 +51,21 @@ async function run(lap, tier, env) {
   for (const s of script) {
     if (stopped()) break;
     lap.set({ skirt: s.skirt, drawers: s.drawers, implement: s.impl, strength: s.str });
-    const l = stageLine(prev, s); if (l) { say(l); await sleep(1600); }
+    const l = stageLine(prev, s); if (l) { say(l, prev ? 'stage' : 'start'); await sleep(1600); }
     if (stopped()) break;
     // The stage in runs, with a word from her between them.
     let left = s.n;
     while (left > 0 && !stopped()) {
       const n = Math.min(left, 4 + (chat % 3));
       lap.run(n); await idle(); left -= n;
-      if (left > 0 && !stopped()) { say(line('during', chat++)); await sleep(900); }
+      if (left > 0 && !stopped()) { say(line('during', chat), 'during', chat); chat++; await sleep(900); }
     }
     prev = s;
   }
   const rose = !!lap.st.rose, tooHarsh = !rose && !!lap.pain.tooHarsh, closed = !rose && !tooHarsh && lap.st.ended, done = !rose && !tooHarsh && !closed;
   if (closed) return { hits: lap.st.hits, peak: lap.st.peak, rose, tooHarsh, done };
-  say(rose ? line('rose') : tooHarsh ? line('harsh') : line('done'));
-  if (done) { await sleep(1800); say(line('after')); }
+  say(rose ? line('rose') : tooHarsh ? line('harsh') : line('done'), rose ? 'rose' : tooHarsh ? 'harsh' : 'done');
+  if (done) { await sleep(1800); say(line('after'), 'after'); }
   lap.end();
   return { hits: lap.st.hits, peak: lap.st.peak, rose, tooHarsh, done };
 }

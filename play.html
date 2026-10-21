@@ -10,6 +10,7 @@
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: Georgia, 'Times New Roman', serif; color: #f3ead8; touch-action: none; }
   #view { position: fixed; inset: 0; }
+  #fade { position: fixed; inset: 0; background: #0e0a0c; opacity: 0; transition: opacity .9s; pointer-events: none; z-index: 40; } #fade.on { opacity: 1; pointer-events: auto; }
   #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
   #card .go, #card button { display: inline-block; margin: 6px; padding: 8px 18px; border-radius: 10px; border: 2px solid #6b4a32; background: #8a2a2a; color: #fff; font: 16px Georgia, serif; text-decoration: none; cursor: pointer; }
   #card button { background: #fffaf0; color: #3a2a20; }
@@ -17,6 +18,7 @@
 </head>
 <body>
 <div id="view"></div>
+<div id="fade"></div>
 <div id="clothes"><div class="row"><label>Her skirt</label><div class="tabs"><button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div></div>
   <div class="row"><label>Her cloak</label><div class="tabs"><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div></div></div>
 <script src="vendor/three.min.js"></script>
@@ -29,14 +31,20 @@
 <script src="js/audio.js"></script>
 <script src="js/talk.js"></script>
 <script src="js/story.js"></script>
+<script src="js/pain.js"></script>
+<script src="js/lap.js"></script>
+<script src="js/discipline.js"></script>
+<script src="js/correction.js"></script>
 <script src="js/play.js"></script>
 <script src="js/hud.js"></script>
 <script>
-// At the end of the homecoming conversation her mother has told her to come here: a card leads on to the lap scene.
-const P = window.__play = Play.create(document.getElementById('view'), { after: scene => {
+// At the end of the homecoming conversation her mother has told her to come here: the correction, there in the room (js/correction.js), then the
+// two of them, as in the story.
+const fadeEl = document.getElementById('fade'), fade = on => new Promise(r => { fadeEl.classList.toggle('on', on); setTimeout(r, on ? 950 : 50); });
+const P = window.__play = Play.create(document.getElementById('view'), { after: async scene => {
   if (scene !== 'homecoming') return;
-  const c = document.createElement('div'); c.id = 'card'; c.innerHTML = '<p>Little Red slips off her cloak, lays it over the back of the chair, and goes to her mother.</p><a class="go" href="lap.html?scene=homecoming">Go to her</a> <button id="stay">Not yet</button>';
-  document.body.appendChild(c); document.getElementById('stay').onclick = () => c.remove();
+  const r = await Correction.run(P, { tier: 'light', fade });
+  await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
 } });
 // The controls and the menu (js/hud.js); her clothes are in the menu (and K steps through the skirt).
 const hud = Hud.create({ get: () => P, extra: document.getElementById('clothes'), extraTitle: 'Her clothes',

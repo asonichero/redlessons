@@ -34,7 +34,7 @@ Three scenes, one after the other:
 
 1. **Her grandmother's cabin** (`js/cabin.js`): a log cabin built hard against a great oak, the trunk the back corner of the room, roots and all, with shelves of jars cut into it and two of its limbs running in under the roof as beams hung with herbs. A stone hearth, a rocking chair, a round table laid for tea, a dresser, a box bed under a patchwork quilt, a braided rug, a round window. It opens with tea and cake and being fussed; her grandmother fetches a parcel from the dresser and gives it to her: a red cloak like the one she wore as a girl. She puts it on, turns round to show it, and her grandmother calls her Little Red. Then she's free about the cabin until she goes out of the door.
 2. **The wood** (`js/wood.js`): the long path home, a minute and a half's walk if she doesn't dawdle. Her thoughts come as she goes, without stopping her (the realisation, in her own words). She can stop to pick bluebells (and carry them), sit on the flat stone by the stream, find the R and P carved in the old beech, sit on the fallen tree. The light goes from late gold to dusk as she walks, faster when she stands about, faster still sitting. At the edge of the wood the trees give way to a meadow, and over it the village, its windows lit.
-3. **Home**, late in the dusk: her mother sees her face at once, and the homecoming conversation, and a card on to the lap scene.
+3. **Home**, late in the dusk: her mother sees her face at once, and the homecoming conversation. Then the correction, played there in the room (`js/correction.js`): a fade, the chair at the middle of the room and the lap scene in it, a Light correction scripted by `js/discipline.js`, her mother's lines in the conversation box over the smacks. The round camera button (or C) steps round the angles; the octagon, **ROSE** (or R), is her name, and stops it at once. Then the two of them by the fire, and the end of the chapter.
 
 The title screen can start at the wood or at home. Her grandmother, **Hulda**, is a third character: shorter and softer through the middle, grey all through her hair, a knitted shawl over her shoulders, laugh lines.
 
@@ -42,7 +42,7 @@ The title screen can start at the wood or at home. Her grandmother, **Hulda**, i
 
 Played the way *Mika and the Witch's Mountain* plays them: the two of them turn to each other, opened a little toward the camera as on a stage, and the camera settles on a view that holds both. The lines come up in a box at the foot of the screen with a portrait of whoever is speaking (her face, live, close up, with the expression the line calls for) and her name on a tab; Rose's on the left, the other speaker's on the right; narration is italic with no portrait. The words type out and are babbled in that voice. Click, Space, Enter or E finishes a line, then goes on; choices come up as buttons (or 1, 2, 3).
 
-**Chapter one, the homecoming** (a first draft): in the cottage, talk to her mother (E). Rose puts on her grandmother's cloak; the conversation runs from her mother noticing her face, through what's weighing on her, her mother offering to carry everything, Rose's memory of the winter after her father died, to the question of being held to account, and her mother introducing the safe word. It ends with "Cloak off, over the back of the chair, and come here", and a card leads to the lap scene for the correction it earned.
+**Chapter one, the homecoming** (a first draft): in the cottage, talk to her mother (E). Rose puts on her grandmother's cloak; the conversation runs from her mother noticing her face, through what's weighing on her, her mother offering to carry everything, Rose's memory of the winter after her father died, to the question of being held to account, and her mother introducing the safe word. It ends with "Cloak off, over the back of the chair, and come here", and the correction it earned follows there and then, in the same room (as in the story).
 
 ## Over the knee (`lap.html`, `js/lap.js`)
 
@@ -54,7 +54,7 @@ Her mother sits on a plain chair; Little Red lies face down across her lap, hips
 - **Clothes:** skirt down or lifted (gathered at her waist); with it lifted, drawers up or down (bunched above her knees). Cloth takes the edge off the sting.
 - **Marks:** colour comes up on each cheek with the smacks, and tender skin hurts more.
 - **Rose** (the button, or R): she says her name, and everything stops at once. Nothing more is struck, the arm comes back to rest, and her mother answers her as Rose.
-- From the story (`lap.html?scene=homecoming`): a card, then a Light correction, her cloak over the chair.
+- The story plays its correction in its own scene (`js/correction.js` embeds this one); `lap.html?scene=homecoming` still opens on a card, then a Light correction, for trying it on its own.
 - **Cameras:** Side, Behind, Her mother's view, Above, Her face. The camera glides between them, and you can drag to orbit.
 
 ## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)
@@ -113,7 +113,8 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
-| `js/story.js` | The story's conversations (chapter one: the homecoming) |
+| `js/story.js` | The story's conversations (chapter one: the homecoming, and after the correction) |
+| `js/correction.js` | A correction played in the story's own scene: the lap scene embedded at the middle of the room, the scripted tier, the camera and ROSE buttons, back to the room after |
 | `js/hud.js` | The controls and menus for the walking scenes: keys, the touch stick and buttons, the action chip, the camera button, the pause menu and settings, the controls sheet |
 | `js/play.js`, `play.html` | About the cottage: the controls, the following camera, what's in the way, the things to do |
 | `js/discipline.js` | The scripted correction: tiers, stages, her mother's lines |
