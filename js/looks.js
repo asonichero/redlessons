@@ -1,4 +1,4 @@
-// Red Lessons — how Red Riding Hood and Gerda look: the outfit each wears and the colours of their skin, hair, eyes and lips (and her cloak). The
+// Red Lessons — how Rose and her mother, Maren, look: the outfit each wears and the colours of their skin, hair, eyes and lips (and her cloak). The
 // character editor (editor.html) sets them; the lap scene (js/lap.js) builds the characters with them (js/toon.js). Kept in the browser.
 //
 //   const look = Looks.load()     → { red: { outfit, skin, hair, eyes, lips, cloak }, gerda: { outfit, skin, hair, eyes, lips } }
@@ -11,7 +11,7 @@ const DEFAULT = {
   gerda: { outfit: 'Work', skin: '#f6d3b8', hair: '#7a3a22', eyes: '#4f8a62', lips: '#a8525a' },
 };
 const OUTFITS = { red: ['Hood down', 'Hood up', 'No cloak'], gerda: ['Work', 'Fine'] };
-const NAMES = { red: 'Red Riding Hood (21)', gerda: 'Gerda (late thirties)' };
+const NAMES = { red: 'Rose (19)', gerda: 'Maren, her mother (late thirties)' };
 // Swatches the editor offers (any colour can be picked as well).
 const SWATCHES = {
   skin: ['#fbe0cc', '#f6d3b8', '#eec4a2', '#dcaa84', '#c08a62', '#94603e', '#6a4128'],

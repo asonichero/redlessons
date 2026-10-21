@@ -1,4 +1,4 @@
-// The scripted correction: every tier runs to its full count, clothes come off in order, Red stops it at once, and too harsh ends it.
+// The scripted correction: every tier runs to its full count, clothes come off in order, her name (Rose) stops it at once, and too harsh ends it.
 const test = require('node:test'), assert = require('node:assert/strict');
 const D = require('../js/discipline.js');
 const { createPain } = require('../js/pain.js');
@@ -10,8 +10,8 @@ function fakeLap(opts = {}) {
   return {
     pain, st, seen,
     set(o) { Object.assign(st, o); seen.push({ skirt: st.skirt, drawers: st.drawers, implement: st.implement }); },
-    run(n) { for (let i = 0; i < n && !st.ended && !pain.tooHarsh; i++) { pain.hit({ implement: st.implement, strength: st.strength * (opts.boost || 1) }); st.hits++; st.peak = Math.max(st.peak, pain.distress()); if (opts.redAt && st.hits >= opts.redAt) this.red(); } return true; },
-    busy: () => false, red() { st.red = true; st.ended = true; }, end() { st.ended = true; },
+    run(n) { for (let i = 0; i < n && !st.ended && !pain.tooHarsh; i++) { pain.hit({ implement: st.implement, strength: st.strength * (opts.boost || 1) }); st.hits++; st.peak = Math.max(st.peak, pain.distress()); if (opts.roseAt && st.hits >= opts.roseAt) this.rose(); } return true; },
+    busy: () => false, rose() { st.rose = true; st.ended = true; }, end() { st.ended = true; },
   };
 }
 const quick = { sleep: () => Promise.resolve() };
@@ -19,7 +19,7 @@ const quick = { sleep: () => Promise.resolve() };
 test('each tier lands its full count', async () => {
   for (const t of D.TIERS) {
     const lap = fakeLap(), r = await D.run(lap, t, quick);
-    assert.equal(r.hits, D.total(t), t); assert.ok(r.done && !r.red && !r.tooHarsh, t);
+    assert.equal(r.hits, D.total(t), t); assert.ok(r.done && !r.rose && !r.tooHarsh, t);
   }
 });
 
@@ -34,11 +34,11 @@ test('the tiers grow: more smacks, less on, the paddle last', () => {
   }
 });
 
-test('Red stops it at once and Gerda says the gentle line', async () => {
-  const lap = fakeLap({ redAt: 7 }), said = [];
+test('her name stops it at once and her mother says the gentle line', async () => {
+  const lap = fakeLap({ roseAt: 7 }), said = [];
   const r = await D.run(lap, 'severe', { sleep: quick.sleep, say: t => said.push(t) });
-  assert.ok(r.red && !r.done); assert.equal(r.hits, 7);
-  assert.equal(said[said.length - 1], D.LINES.red);
+  assert.ok(r.rose && !r.done); assert.equal(r.hits, 7);
+  assert.equal(said[said.length - 1], D.LINES.rose);
 });
 
 test('too harsh ends it with nothing more struck', async () => {
@@ -48,6 +48,7 @@ test('too harsh ends it with nothing more struck', async () => {
   assert.equal(said[said.length - 1], D.LINES.harsh);
 });
 
-test('Gerda never calls her by the safe word', () => {
-  for (const k in D.LINES) for (const l of [].concat(D.LINES[k])) if (k !== 'red') assert.ok(!/\bRed\b/.test(l), l);
+test('her mother never says the safe word, except to answer it', () => {
+  for (const k in D.LINES) for (const l of [].concat(D.LINES[k])) if (k !== 'rose') assert.ok(!/\bRose\b/.test(l), l);
+  assert.ok(/^Rose\b/.test(D.LINES.rose));
 });

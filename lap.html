@@ -27,6 +27,8 @@
   a { color: #c9a84c; }
   #line { position: fixed; left: 20px; right: 320px; bottom: 22px; text-align: center; font: 17px Georgia, serif; color: #fff; text-shadow: 0 1px 4px #000; opacity: 0; transition: opacity .3s; pointer-events: none; }
   #line.on { opacity: 1; }
+  #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
+  #card .sub { color: #6a5040; font-size: 13px; }
   @media (max-width: 700px) { #view { inset: 0 0 45% 0; } #panel { top: 55%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } #line { right: 20px; bottom: 47%; } }
 </style>
 </head>
@@ -34,7 +36,7 @@
 <div id="view"></div>
 <div id="panel">
   <h1>Over the knee</h1>
-  <div class="sub">Gerda seated, Red Riding Hood across her lap. Drag to orbit; the wheel zooms. Space smacks; R is Red. <a href="editor.html">Character editor</a> · <a href="play.html">About the cottage</a></div>
+  <div class="sub">Her mother seated, Little Red across her lap. Drag to orbit; the wheel zooms. Space smacks; R is Rose, the safe word. <a href="editor.html">Character editor</a> · <a href="play.html">About the cottage</a></div>
   <h3>Correction</h3>
   <div class="btns" id="tiers"></div>
   <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="paddle">Paddle</button></div>
@@ -49,8 +51,8 @@
   <div id="meter"><i></i><b title="the edge of resistance"></b></div>
   <div id="band">composed</div>
   <div id="info"></div>
-  <div class="btns" style="margin-top:10px"><button class="red" id="red">Red</button><button id="reset">Start again</button></div>
-  <h3>Camera</h3><div class="btns"><button data-view="side">Side</button><button data-view="behind">Behind</button><button data-view="giver">Gerda’s view</button><button data-view="top">Above</button><button data-view="face">Her face</button></div>
+  <div class="btns" style="margin-top:10px"><button class="red" id="red">Rose</button><button id="reset">Start again</button></div>
+  <h3>Camera</h3><div class="btns"><button data-view="side">Side</button><button data-view="behind">Behind</button><button data-view="giver">Her mother’s view</button><button data-view="top">Above</button><button data-view="face">Her face</button></div>
 </div>
 <div id="line"></div>
 <script src="vendor/three.min.js"></script>
@@ -67,14 +69,16 @@
 (function () {
   const $ = id => document.getElementById(id), A = window.GameAudio, all = sel => document.querySelectorAll(sel);
   let lap = null, session = 0, lineTimer = 0;
+  const scene = new URLSearchParams(location.search).get('scene');      // (come from the story: ?scene=homecoming)
   const st = { implement: 'hand', skirt: 'down', drawers: 'up', pace: 1, strength: 1 };
-  const showLine = t => { $('line').textContent = 'Gerda: ' + t; $('line').classList.add('on'); clearTimeout(lineTimer); lineTimer = setTimeout(() => $('line').classList.remove('on'), 3200); };
+  const showLine = t => { $('line').textContent = 'Mother: ' + t; $('line').classList.add('on'); clearTimeout(lineTimer); lineTimer = setTimeout(() => $('line').classList.remove('on'), 3200); };
   function build() {
     session++; $('line').classList.remove('on');
     if (lap) { lap.end(); lap.stop(); }
-    $('view').innerHTML = ''; lap = Lap.create($('view'), { looks: Looks.load() });
+    $('view').innerHTML = ''; const looks = Looks.load(); if (scene) looks.red.outfit = 'No cloak';      // (her cloak over the back of a chair)
+    lap = Lap.create($('view'), { looks });
     lap.set(Object.assign({}, st)); lap.view('side'); lap.start();
-    lap.on((type) => { if (type === 'tooHarsh') $('info').textContent = 'Too harsh: nothing more is struck.'; if (type === 'red') $('info').textContent = 'Red. Everything stopped at once.'; });
+    lap.on((type) => { if (type === 'tooHarsh') $('info').textContent = 'Too harsh: nothing more is struck.'; if (type === 'rose') $('info').textContent = 'Rose. Everything stopped at once.'; });
     tiers(false);
   }
   // A scripted correction: the panel's own controls are held while it runs (Red and Start again stay live).
@@ -87,7 +91,7 @@
       if (me !== session) return;
       Object.assign(st, { implement: lap.st.implement, skirt: lap.st.skirt, drawers: lap.st.drawers });
       all('[data-impl]').forEach(x => x.classList.toggle('on', x.dataset.impl === st.implement));
-      $('info').textContent = (r.red ? 'Red. ' : r.tooHarsh ? 'Too harsh. ' : Discipline.TIER_NAMES[t] + ', done. ') + r.hits + ' smacks.';
+      $('info').textContent = (r.rose ? 'Rose. ' : r.tooHarsh ? 'Too harsh. ' : Discipline.TIER_NAMES[t] + ', done. ') + r.hits + ' smacks.';
       tiers(false); all('#one, #ten').forEach(x => x.disabled = true);
     };
     $('tiers').appendChild(b);
@@ -104,14 +108,22 @@
   function label() { $('skirt').textContent = 'Skirt: ' + (st.skirt === 'down' ? 'down' : 'lifted'); $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = st.skirt === 'down'; }
   const wake = () => { if (A) A.init(); };
   $('one').onclick = () => { wake(); lap.smack(); }; $('ten').onclick = () => { wake(); lap.run(10); };
-  const red = () => { lap.red(); }; $('red').onclick = red;
+  const rose = () => { lap.rose(); }; $('red').onclick = rose;
   $('reset').onclick = () => { $('info').textContent = ''; Object.assign(st, { skirt: 'down', drawers: 'up' }); build(); };
   addEventListener('keydown', e => {
     if (e.key === ' ' && !$('one').disabled) { e.preventDefault(); wake(); lap.smack(); }
-    if (e.key === 'r' || e.key === 'R') red();
+    if (e.key === 'r' || e.key === 'R') rose();
   });
-  setInterval(() => { if (!lap) return; const d = lap.pain.distress(); $('meter').firstElementChild.style.width = Math.min(100, d / 1.5 * 100) + '%'; $('band').textContent = lap.band(); const t = $('info').textContent; if (!/^(Red|Too|Token|Light|Firm|Severe)/.test(t)) $('info').textContent = lap.st.hits + ' smacks'; }, 120);
+  setInterval(() => { if (!lap) return; const d = lap.pain.distress(); $('meter').firstElementChild.style.width = Math.min(100, d / 1.5 * 100) + '%'; $('band').textContent = lap.band(); const t = $('info').textContent; if (!/^(Rose|Too|Token|Light|Firm|Severe)/.test(t)) $('info').textContent = lap.st.hits + ' smacks'; }, 120);
   build(); label(); showOutfit(); window.__lap = () => lap;
+  // From the story: chapter one ends with her mother telling her to come here. A card, then the correction it earned (a light one: home late,
+  // through the wood, at dusk).
+  if (scene === 'homecoming') {
+    const card = document.createElement('div'); card.id = 'card';
+    card.innerHTML = '<p>Home late through the wood at dusk.<br>Her cloak over the back of the chair, Little Red goes to her mother.</p><button class="big" id="begin">Go to her</button><p class="sub">Say her name, <b>Rose</b> (the button, or R), and it stops at once.</p>';
+    document.body.appendChild(card);
+    $('begin').onclick = () => { card.remove(); document.querySelector('[data-tier="light"]').click(); };
+  }
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

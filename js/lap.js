@@ -1,4 +1,4 @@
-// Red Lessons — over the knee. Gerda sits on a plain chair; Red Riding Hood lies face down across her lap, hips over Gerda's right thigh, head
+// Red Lessons — over the knee. Her mother (Gerda's rig) sits on a plain chair; Rose — Red, Little Red in her cloak — lies face down across her lap, hips over her right thigh, head
 // and arms toward the floor on her left, legs on her right. The characters are js/toon.js's; the pain model is js/pain.js.
 //
 //  • A smack: Gerda's hand lifts (or the paddle), holds raised (the wait builds dread), swings down along an arc and lands with the palm (or the
@@ -7,11 +7,11 @@
 //    exactly wherever Red is, however she moves. Her left hand rests between Red's shoulder blades.
 //  • Red's body answers through springs: a kick of the legs on the side struck, a lift of the head, a wriggle that grows with her distress,
 //    and it all settles rather than snaps. Her face follows the bands of the pain model; her hair hangs and swings.
-//  • Clothes: her skirt down or lifted; with it lifted, her drawers up or down. The marks colour each cheek. Red (the safe word) stops it all.
+//  • Clothes: her skirt down or lifted; with it lifted, her drawers up or down. The marks colour each cheek. Her name, Rose (the safe word), stops it all.
 //
 //   const lap = Lap.create(view, { looks })                 // standalone: its own stage (js/stage.js)
 //   const lap = Lap.create(null, { external: { scene } })   // embedded: adds its stage group to another scene, which renders it
-//   lap.smack(); lap.run(n); lap.red(); lap.set({ implement, skirt, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
+//   lap.smack(); lap.run(n); lap.rose(); lap.set({ implement, skirt, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, S = root.Pain, L = root.Looks;
@@ -295,11 +295,12 @@ function create(view, opts) {
 
   const api = {
     stage, pain, st, VIEWS, IMPL, BANDS,
-    get redRig() { return red; }, get gerda() { return gerda; }, get rear() { return red.rear; }, get stg() { return st_; },      // (not "red": lap.red() is the safe word)
+    get redRig() { return red; }, get gerda() { return gerda; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
     smack,
     run(n) { st.runLeft = Math.max(0, (n || 1) - 1); return smack(); },
     // Red: everything stops at once. Nothing more is struck, whatever was queued; the arm comes back to rest.
-    red() { st.red = true; st.ended = true; st.runLeft = 0; if (st.swing && st.swing.phase !== 'contact') { st.swing.phase = 'back'; st.swing.t = 0; } say('red', { hits: st.hits }); },
+    // Her name, said under it: she's Rose again, and everything stops at once.
+    rose() { st.rose = true; st.ended = true; st.runLeft = 0; if (st.swing && st.swing.phase !== 'contact') { st.swing.phase = 'back'; st.swing.t = 0; } say('rose', { hits: st.hits }); },
     end() { st.ended = true; st.runLeft = 0; },
     set(o) { for (const k in o) st[k] = o[k]; if (st.skirt === 'down') st.drawers = 'up'; dirty = true; },       // (her drawers come down only with her skirt lifted)
     setLooks(l) { looks = L ? L.clean(l) : l; build(); },

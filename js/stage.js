@@ -42,12 +42,13 @@ function create(view, opts) {
     requestAnimationFrame(loop);
   }
   // A frame: first each figure's outer clothes as depth (so the parts under them show their colour only where they poke through), then the scene.
-  function draw() { if (T && T.clipPass) T.clipPass(renderer, scene, camera); renderer.render(scene, camera); }
+  // (and then anything drawn over it, such as a speaker's portrait: api.overlays, each fn(renderer, scene, camera))
+  function draw() { if (T && T.clipPass) T.clipPass(renderer, scene, camera); renderer.render(scene, camera); for (const f of api.overlays) f(renderer, scene, camera); }
   function stop() { running = false; root.removeEventListener('resize', resize); renderer.dispose(); }
   // Characters cast shadows (their outlines do not); they take none themselves, which keeps their shading clean.
   const cast = rig => { for (const m of rig.meshes) m.castShadow = true; };
   // (held: the loop idles, for stepping frames by hand)
-  const api = { renderer, scene, camera, controls, sun, resize, start, stop, go, cast, cottage, draw, held: false };
+  const api = { renderer, scene, camera, controls, sun, resize, start, stop, go, cast, cottage, draw, held: false, overlays: [] };
   return api;
 }
 

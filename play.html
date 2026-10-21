@@ -17,6 +17,10 @@
   #help .row button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
   #prompt { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); font: 17px Georgia, serif; color: #fff; background: rgba(22,18,20,0.75); border: 1px solid #554449; padding: 7px 16px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
   #prompt.on { opacity: 1; }
+  body.talking #stick, body.talking .tb, body.talking #help, body.talking #prompt { display: none !important; }
+  #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
+  #card .go, #card button { display: inline-block; margin: 6px; padding: 8px 18px; border-radius: 10px; border: 2px solid #6b4a32; background: #8a2a2a; color: #fff; font: 16px Georgia, serif; text-decoration: none; cursor: pointer; }
+  #card button { background: #fffaf0; color: #3a2a20; }
   #stick { position: fixed; left: 28px; bottom: 28px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); display: none; }
   #stick i { position: absolute; left: 40px; top: 40px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.35); }
   .tb { position: fixed; bottom: 34px; width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(60,40,44,0.6); color: #fff; font-size: 14px; display: none; }
@@ -39,9 +43,17 @@
 <script src="js/cottage.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/motion.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/talk.js"></script>
+<script src="js/story.js"></script>
 <script src="js/play.js"></script>
 <script>
-const P = window.__play = Play.create(document.getElementById('view'), { prompt: document.getElementById('prompt') });
+// At the end of the homecoming conversation her mother has told her to come here: a card leads on to the lap scene.
+const P = window.__play = Play.create(document.getElementById('view'), { prompt: document.getElementById('prompt'), after: scene => {
+  if (scene !== 'homecoming') return;
+  const c = document.createElement('div'); c.id = 'card'; c.innerHTML = '<p>Little Red slips off her cloak, lays it over the back of the chair, and goes to her mother.</p><a class="go" href="lap.html?scene=homecoming">Go to her</a> <button id="stay">Not yet</button>';
+  document.body.appendChild(c); document.getElementById('stay').onclick = () => c.remove();
+} });
 // Keys: held ones move her; E uses, Q lies down (on the bed).
 const held = new Set();
 const axes = () => { const k = c => held.has(c) ? 1 : 0; P.input.move.x = k('KeyD') + k('ArrowRight') - k('KeyA') - k('ArrowLeft'); P.input.move.z = k('KeyW') + k('ArrowUp') - k('KeyS') - k('ArrowDown'); P.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || runOn; };

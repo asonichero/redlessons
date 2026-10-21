@@ -132,8 +132,8 @@ function surface(fn, nu, nv, outward) {
 // headScale: the head (face, hair, hood) is drawn larger than life, for bigger expressions, on a grown-up body: about 5.6 heads tall in all.
 const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.1, ua: 5.0, fa: 4.4, neckY: 8.15, headY: 0.9, headC: 2.0, headScale: 1.34 };
 const SPECS = {
-  red: { name: 'Red Riding Hood', age: 21, scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
-  gerda: { name: 'Gerda', age: 'late thirties', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'boots', skirtLen: 13.6 },
+  red: { name: 'Rose', age: 19, scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
+  gerda: { name: 'Maren', age: 'late thirties', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'boots', skirtLen: 13.6 },
 };
 
 // ── Tuning: every number the figures are built from, adjustable in the editor (editor.html) and kept in the browser, so the lap scene uses them
@@ -145,9 +145,9 @@ const TUNE = [
   ['shX', 'Proportions', 'Shoulder width', 3.1, 2.4, 3.8, 0.01], ['ua', 'Proportions', 'Upper arm length', 5.0, 4, 6, 0.05],
   ['fa', 'Proportions', 'Forearm length', 4.4, 3.5, 5.5, 0.05], ['neckY', 'Proportions', 'Neck base height', 8.15, 7.8, 9.4, 0.05],
   ['headY', 'Proportions', 'Neck length', 0.9, 0.4, 1.8, 0.05], ['headScale', 'Proportions', 'Head size', 1.34, 1, 1.7, 0.01],
-  ['redScale', 'Characters', 'Red Riding Hood: overall size', 0.85, 0.7, 1.12, 0.01], ['gerdaScale', 'Characters', 'Gerda: overall size', 1.04, 0.85, 1.15, 0.01],
-  ['redBust', 'Characters', 'Red Riding Hood: bust', 1, 0, 1.8, 0.01], ['gerdaBust', 'Characters', 'Gerda: bust', 1.12, 0, 1.8, 0.01],
-  ['redSkirt', 'Characters', 'Red Riding Hood: skirt length', 6, 3, 14, 0.1], ['gerdaSkirt', 'Characters', 'Gerda: skirt length', 13.6, 8, 14.4, 0.1],
+  ['redScale', 'Characters', 'Rose: overall size', 0.85, 0.7, 1.12, 0.01], ['gerdaScale', 'Characters', 'Maren: overall size', 1.04, 0.85, 1.15, 0.01],
+  ['redBust', 'Characters', 'Rose: bust', 1, 0, 1.8, 0.01], ['gerdaBust', 'Characters', 'Maren: bust', 1.12, 0, 1.8, 0.01],
+  ['redSkirt', 'Characters', 'Rose: skirt length', 6, 3, 14, 0.1], ['gerdaSkirt', 'Characters', 'Maren: skirt length', 13.6, 8, 14.4, 0.1],
   ['hipWidth', 'Body', 'Hip width', 1, 0.8, 1.3, 0.01], ['waistWidth', 'Body', 'Waist width', 1, 0.75, 1.3, 0.01], ['chestWidth', 'Body', 'Chest width', 1, 0.8, 1.3, 0.01],
   ['bodyDepth', 'Body', 'Body depth (front to back)', 1, 0.8, 1.25, 0.01], ['armGirth', 'Body', 'Arm thickness', 1, 0.7, 1.4, 0.01], ['legGirth', 'Body', 'Leg thickness', 1, 0.7, 1.4, 0.01],
   ['neckGirth', 'Body', 'Neck thickness', 1.3, 0.7, 1.5, 0.01], ['handSize', 'Body', 'Hand size', 1.3, 0.7, 1.5, 0.01], ['footSize', 'Body', 'Foot size', 1.3, 0.7, 1.5, 0.01],

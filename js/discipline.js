@@ -1,11 +1,13 @@
-// Red Lessons — a correction, scripted: Gerda takes Red Riding Hood across her lap (js/lap.js) and works through the stages of a tier, talking between and over
-// the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what she has on (skirt down or lifted, drawers
-// up or down), the implement, how many, and how hard. Gerda never calls her "Red": that word is the safe word.
+// Red Lessons — a correction, scripted: her mother takes Little Red across her lap (js/lap.js) and works through the stages of a tier, talking between
+// and over the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what she has on (skirt down or lifted,
+// drawers up or down), the implement, how many, and how hard.
 //
-//   const r = await Discipline.run(lap, 'firm', { say: text => …, sleep: ms => … })   →   { hits, peak, red, tooHarsh, done }
+//   const r = await Discipline.run(lap, 'firm', { say: text => …, sleep: ms => … })   →   { hits, peak, rose, tooHarsh, done }
 //   (lap.end() from outside closes it quietly: nothing more is struck or said)
 //
-// Red (lap.red()) ends it at once, wherever it is, and her closing line is the gentle one. At "too harsh" nothing more is struck and she stops.
+// The safe word is her own name. If she says "Rose" (lap.rose()) she's Rose again, a grown woman who needs a different kind of care: it ends at once,
+// wherever it is, and her mother's closing line is the gentle one, to Rose. Her mother calls her Red, or Little Red, and never Rose while it lasts.
+// At "too harsh" nothing more is struck and she stops.
 (function (root) {
 'use strict';
 const TIERS = ['token', 'light', 'firm', 'severe'];
@@ -16,16 +18,16 @@ const SCRIPTS = {
   firm:   [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', impl: 'hand', n: 12, str: 1 }],
   severe: [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', impl: 'hand', n: 12, str: 1.05 }, { skirt: 'up', drawers: 'down', impl: 'paddle', n: 10, str: 1 }],
 };
-// What Gerda says: practical, warm, and she means it.
+// What her mother says: practical, warm, and she means it.
 const LINES = {
-  start: 'Over my knee, young lady. You know what this is for.',
+  start: 'Over my knee, Little Red. You know what this is for.',
   skirt: 'Skirt up. No, don’t give me that look. Up.',
   drawers: 'And these down. We’re not finished, and you know it.',
   paddle: 'The paddle now. Then we’re square, you and I.',
-  during: ['Hold still.', 'You’ll take this better than you took my good nature.', 'Breathe. I’m not going anywhere, and neither are you.', 'Nearly there.', 'Every one of these is earned, and you know it.'],
+  during: ['Hold still.', 'You’ll take this better than you took my good sense.', 'Breathe, Red. I’m not going anywhere, and neither are you.', 'Nearly there.', 'Every one of these is earned, and you know it.'],
   done: 'There. That’s done, and it stays done.',
-  after: 'Up you get, slowly. Come here. We’re all right.',
-  red: 'Red. All right, love, that’s it. It’s over. Up you come, gently.',
+  after: 'Up you get, slowly, my Little Red. Come here. We’re all right.',
+  rose: 'Rose. All right, love. It’s over, all of it. Sit up with me, slowly. Talk to me.',
   harsh: 'That’s enough. More than enough. Up you get.',
 };
 const line = (k, i) => { const v = LINES[k]; return Array.isArray(v) ? v[(i || 0) % v.length] : v; };
@@ -43,8 +45,8 @@ async function run(lap, tier, env) {
   const script = SCRIPTS[tier]; if (!script) throw new Error('Discipline: unknown tier ' + tier);
   env = env || {};
   const say = env.say || (() => {}), sleep = env.sleep || (ms => new Promise(r => setTimeout(r, ms)));
-  const stopped = () => lap.st.red || lap.st.ended || lap.pain.tooHarsh;      // (ended: the scene was closed under it)
-  const idle = async () => { while (lap.busy() && !lap.st.red && !lap.st.ended) await sleep(50); };
+  const stopped = () => lap.st.rose || lap.st.ended || lap.pain.tooHarsh;      // (ended: the scene was closed under it)
+  const idle = async () => { while (lap.busy() && !lap.st.rose && !lap.st.ended) await sleep(50); };
   let prev = null, chat = 0;
   for (const s of script) {
     if (stopped()) break;
@@ -60,12 +62,12 @@ async function run(lap, tier, env) {
     }
     prev = s;
   }
-  const red = !!lap.st.red, tooHarsh = !red && !!lap.pain.tooHarsh, closed = !red && !tooHarsh && lap.st.ended, done = !red && !tooHarsh && !closed;
-  if (closed) return { hits: lap.st.hits, peak: lap.st.peak, red, tooHarsh, done };
-  say(red ? line('red') : tooHarsh ? line('harsh') : line('done'));
+  const rose = !!lap.st.rose, tooHarsh = !rose && !!lap.pain.tooHarsh, closed = !rose && !tooHarsh && lap.st.ended, done = !rose && !tooHarsh && !closed;
+  if (closed) return { hits: lap.st.hits, peak: lap.st.peak, rose, tooHarsh, done };
+  say(rose ? line('rose') : tooHarsh ? line('harsh') : line('done'));
   if (done) { await sleep(1800); say(line('after')); }
   lap.end();
-  return { hits: lap.st.hits, peak: lap.st.peak, red, tooHarsh, done };
+  return { hits: lap.st.hits, peak: lap.st.peak, rose, tooHarsh, done };
 }
 
 const api = { TIERS, TIER_NAMES, SCRIPTS, LINES, total, stageLine, run };

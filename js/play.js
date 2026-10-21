@@ -1,4 +1,4 @@
-// Red Lessons — Red Riding Hood about the cottage (play.html): walk or run her round the room (js/motion.js moves her), the camera following;
+// Red Lessons — Rose about the cottage (play.html): walk or run her round the room (js/motion.js moves her), the camera following;
 // open and shut the door and the chest, take things down, carry them and set them down, sit on a stool or the bed, lie down on it.
 //
 //   const p = Play.create(view, { prompt: el })      p.input.move / p.input.run (set by the page's keys and touch stick); p.use() does the action offered
@@ -13,7 +13,7 @@ function create(view, opts) {
   let look = (root.Looks && Looks.load ? Looks.load() : {}).red;
   let rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig);
   const sc = rig.scaleW, R = 3.2 * sc;
-  rig.root.position.set(-8, 0, 14); rig.root.rotation.y = Math.PI;
+  rig.root.position.set(4, 0, 2); rig.root.rotation.y = Math.PI;
   let dress = { skirt: 'down' };
 
   // What's in her way: the walls, and the furniture (boxes and round things), as a circle of radius r pushed clear of each. The door, open, is a
@@ -37,6 +37,20 @@ function create(view, opts) {
   }
   let m = Motion.create(rig, { collide });
 
+  // ── Her mother, at home: standing by the hearth, keeping an eye on the room. She's in Rose's way like the furniture is, and Rose can talk to
+  // her. (Her own collisions are only the room's.)
+  const momLook = (root.Looks && Looks.load ? Looks.load() : {}).gerda;
+  const mom = Toon.make('gerda', momLook); st.scene.add(mom.root); st.cast(mom);
+  mom.root.position.set(-12, 0, 20); mom.root.rotation.y = Math.PI;
+  const mm = Motion.create(mom, { collide: (p, r) => p });
+  const momR = 3.6;
+  W.obstacles.push({ get x() { return mm.pos.x; }, get z() { return mm.pos.z; }, r: momR });
+  // ── Conversations (js/talk.js, js/story.js): Rose on the left, her mother on the right.
+  const talk = root.Talk ? Talk.create(st, { cast: {
+    red: { rig, name: 'Red', side: 'left', voice: 'red', tint: '#9a1a26', bg: '#f1d9cf' },
+    mother: { rig: mom, name: 'Mother', side: 'right', voice: 'gerda', tint: '#6a3a4a', bg: '#e6d8e6' },
+  }, turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw) }) : null;
+
   // ── The camera: behind and above her, following; drag to look round her, the wheel to come in or go out.
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
   const camT = chest();
@@ -58,6 +72,7 @@ function create(view, opts) {
     const out = [], me = flat(m.pos), f = fwd();
     const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
+    if (talk && !sitting) add({ label: 'Talk to Mother', run: () => talkToMother() }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: sitting.kind === 'bed' && !m.carry ? 'Lie down / Get up' : 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, score: 0 }];
     // The door, and the chest.
     { const d = W.door, p = wp(d.latch); add({ label: (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }
@@ -78,7 +93,7 @@ function create(view, opts) {
     }
     return out.sort((a, b) => a.score - b.score);
   }
-  const busy = () => !!doing || !!m.auto;
+  const busy = () => !!doing || !!m.auto || !!(talk && talk.playing);
   // Run one action: nothing else starts until it's done; moving off isn't possible while she's about it (the keys wait).
   function act(fn) { if (doing) return; doing = Promise.resolve().then(fn).catch(e => console.error(e)).finally(() => { doing = null; }); }
   // Pauses in an action run on the scene's own clock (so they keep pace with her however fast the frames come).
@@ -167,6 +182,20 @@ function create(view, opts) {
   async function lieDown() { await m.lie(sitting); lying = true; }
   async function getUp() { await m.stand(); sitting = null; lying = false; }
 
+  // Talking to her mother: Rose goes to stand before her, a little apart, and they turn to each other; the camera settles on the two of them and
+  // the conversation plays. At its end she's to come to her mother: the page is told (opts.after), and can go on to the lap scene.
+  async function talkToMother() {
+    // (she came home in her grandmother's cloak)
+    if (look.outfit === 'No cloak') setOutfit('Hood down', true);
+    const away = flat(m.pos).sub(flat(mm.pos)); if (away.lengthSq() < 1) away.set(0, 0, -1); away.normalize();
+    const at = collide(flat(mm.pos).addScaledVector(away, 10), R);
+    await m.goTo(at, yawTo(at, mm.pos));
+    mm.face(yawTo(mm.pos, m.pos)); await wait(0.5);
+    talk.cast.red.rig = rig;
+    const picks = await talk.play(Story.homecoming());
+    setOutfit('No cloak', true);      // (cloak off, over the back of the chair, as she's told)
+    if (opts.after) opts.after('homecoming', picks);
+  }
   let offer = [];
   function use(alt) { if (busy()) return; const o = offer[0]; if (!o) return; act(alt && o.alt ? o.alt : o.run); }
 
@@ -177,7 +206,7 @@ function create(view, opts) {
     // Keys move her relative to the camera.
     const cf = flat(st.controls.target.clone().sub(st.camera.position)).normalize(), cr = new V3(-cf.z, 0, cf.x);
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
-    m.update(dt, { move: mv, run: input.run }); rig.tick(dt);
+    m.update(dt, { move: mv, run: input.run }); rig.tick(dt); mm.update(dt, null); mom.tick(dt);
     // The camera keeps its place relative to her, easing after her.
     const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
     st.controls.target.add(d); st.camera.position.add(d);
@@ -188,17 +217,17 @@ function create(view, opts) {
   // What she wears: the skirt (on, lifted or off), and her outfit (her cloak, with the hood down or up, or none). The outfit is part of how she's
   // built, so changing it builds her again where she stands, carrying whatever she was carrying; it's kept with her looks, for every page.
   function setDress(d) { dress = Object.assign({}, dress, d); rig.setDress(dress); }
-  function setOutfit(outfit) {
-    if (doing || !root.Looks) return;
+  function setOutfit(outfit, force) {
+    if ((doing && !force) || !root.Looks) return;
     const all = Looks.load(); all.red.outfit = outfit; look = Looks.save(all).red;
     if (sitting || lying) { sitting = null; lying = false; }
     const at = m.pos.clone(), yaw = m.yaw, carry = m.carry, style = m.carryStyle;
     st.scene.remove(rig.root);
     rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig); rig.root.position.copy(at); rig.root.rotation.y = yaw;
     m = Motion.create(rig, { collide }); if (carry) m.hold(carry, style);
-    rig.setDress(dress);
+    rig.setDress(dress); if (talk) talk.cast.red.rig = rig;
   }
-  return { stage: st, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  return { stage: st, mother: mom, talk, talkToMother, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };
