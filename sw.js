@@ -1,6 +1,6 @@
 // Service worker: caches the game on first load so it installs and plays offline. Bump VERSION whenever the files change, so installed copies refresh.
 const APP = '0.8.0';
-const VERSION = 'red-lessons-v080-2';
+const VERSION = 'red-lessons-v080-3';
 const FILES = [
   'lap.html', 'editor.html', 'play.html', 'manifest.webmanifest',
   'js/toon.js', 'js/cottage.js', 'js/stage.js', 'js/looks.js', 'js/audio.js', 'js/pain.js', 'js/lap.js', 'js/discipline.js', 'js/motion.js', 'js/play.js',

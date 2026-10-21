@@ -625,6 +625,28 @@ function make(id, look, opts) {
   // cheek has turned to, so the colour stays round the marks however her legs are set.
   const tq_ = new THREE.Quaternion(), tp_ = new V3(), mNow = { L: new V3(), R: new V3() }, rotKey = { v: '' };
   const moved = (b, p) => p.clone().sub(b.position).applyQuaternion(b.quaternion).add(b.position);
+  // Skin that's covered (under the skirt, the drawers, the bodice, inside the boots) is coloured as what covers it, so that where a limb pushes
+  // through the cloth as it moves, it reads as the cloth, not as skin showing through. It follows what she's wearing: bare skin is skin.
+  // (Worked out from each point's place at rest, in the hips' space, where the thigh's joint is at y 0 and the leg hangs straight down.)
+  const dress = { skirt: 'down', drawers: 'up' }, CC = {}, cc = k => CC[k] || (CC[k] = srgb(P[k]));
+  const bootTop = -(D.thigh + 0.507 * D.shin);
+  function coverAt(t, p) {
+    const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
+    if (t.bone === rig.thighL || t.bone === rig.thighR) {
+      if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w]; }
+      if (down) return [cc('skirt'), ss(-S.skirtLen + 0.4, -S.skirtLen + 1.0, y)];
+      if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y)];
+      return null;
+    }
+    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? [cc('skirt'), 1] : drawersOn ? [cc('drawers'), 1] : null;
+    if (!t.bone) {      // (the hips: the bodice over the top of them, and under it the skirt, or the drawers)
+      const wb = ss(0.85, 1.15, y); if (wb >= 1) return [cc('bodice'), 1];
+      const under = down ? cc('skirt') : drawersOn ? cc('drawers') : null;
+      if (!under) return wb > 0 ? [cc('bodice'), wb] : null;
+      return [under.clone().lerp(cc('bodice'), wb), 1];
+    }
+    return null;
+  }
   function bleed(force) {
     const key = [rig.seatPivot.L, rig.seatPivot.R, rig.thighL, rig.thighR].map(b => b.quaternion.toArray().map(x => x.toFixed(2)).join()).join('|');
     if (!force && key === rotKey.v) return; rotKey.v = key;
@@ -633,6 +655,7 @@ function make(id, look, opts) {
       for (let i = 0; i < t.at.length; i++) {
         tc.copy(t.base); const q = !t.bone ? t.at[i] : t.follow ? t.at[i].clone().lerp(moved(t.bone, t.at[i]), t.follow[i]) : moved(t.bone, t.at[i]);
         for (const s of ['L', 'R']) { const m = marks[s]; if (m <= 0.005) continue; const w = Math.exp(-q.distanceToSquared(mNow[s]) / (2 * 1.5 * 1.5)); tc.lerp(pinkL, Math.min(0.75, 0.95 * Math.sqrt(m) * w)); tc.lerp(redL, Math.min(0.62, 0.8 * m * m * w * w)); }
+        const cv = coverAt(t, t.at[i]); if (cv && cv[1] > 0) tc.lerp(cv[0], cv[1]);
         t.col[i * 3] = tc.r; t.col[i * 3 + 1] = tc.g; t.col[i * 3 + 2] = tc.b;
       }
       t.geo.attributes.color.needsUpdate = true;
@@ -647,10 +670,11 @@ function make(id, look, opts) {
       for (const m of [skirt, hemBand, apron]) if (m) show(m, down);
       roll.visible = sk === 'up'; waist.visible = sk !== 'off';
       drawers.forEach(m => show(m, !bare)); drawersDown.forEach(m => show(m, bare));
+      if (sk !== dress.skirt || (d.drawers || 'up') !== dress.drawers) { dress.skirt = sk; dress.drawers = d.drawers || 'up'; rig._recolour = true; }
     }
     const mk_ = d.marks || { L: 0, R: 0 };
     let any = false; for (const s of ['L', 'R']) { const m = Math.round((mk_[s] || 0) * 100) / 100; if (m !== marks[s]) { marks[s] = m; any = true; } }
-    if (any) bleed(true);
+    if (any || rig._recolour) { rig._recolour = false; bleed(true); }
   };
 
   // ── Each frame: the face eases toward its expression, she blinks, breathes, and the long hair hangs with gravity and swings as she moves. ──
@@ -705,7 +729,7 @@ function make(id, look, opts) {
   rig.penetration = (pW, r) => { if (!rig.solids.length) return 0; const sc = root_.getWorldScale(new V3()).x, q = rig.hips.worldToLocal(pW.clone()); let pen = 0; for (const f of rig.solids) pen = Math.max(pen, f(q, r / sc)); return pen * sc; };
   rig.eyesOpen = () => F.open * (1 - blink);      // (how open the eyes are now, blinks included)
   rig.meshes = shadowy;
-  rig.setExpr('calm'); Object.assign(F, target); rig.setDress({}); applyFace(true);
+  rig.setExpr('calm'); Object.assign(F, target); rig.setDress({}); bleed(true); applyFace(true);
   return rig;
 }
 
