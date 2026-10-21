@@ -86,7 +86,7 @@ function create(view, opts) {
     const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
     if (talk && mm && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother() }, mm.pos.clone().setY(18));
-    if (sitting) return [{ label: sitting.kind === 'bed' && !m.carry ? 'Lie down / Get up' : 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, score: 0 }];
+    if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
     for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run }, a.at);
@@ -246,7 +246,7 @@ function create(view, opts) {
     st.controls.target.add(d); st.camera.position.add(d);
     if (st.camera.position.y < 3) st.camera.position.y = 3;
     offer = busy() ? [] : options();
-    if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  Get up   ·   Q  Lie down' : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
+    if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  ' + o.label + '   ·   Q  ' + o.altLabel : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }
   st.start(frame);
   // What she wears: the skirt (on, lifted or off), and her outfit (her cloak, with the hood down or up, or none). The outfit is part of how she's
@@ -266,8 +266,8 @@ function create(view, opts) {
   // Seated already, as a scene opens: Rose (who 'red') or the other, on a seat, there and then.
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
-  function dispose() { st.stop(); if (talk) talk.el.remove(); }
-  return { stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  function dispose() { st.stop(); if (talk) talk.destroy(); }
+  return { stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };

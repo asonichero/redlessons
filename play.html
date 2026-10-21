@@ -8,34 +8,17 @@
 <meta name="theme-color" content="#1a0f10">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; touch-action: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: Georgia, 'Times New Roman', serif; color: #f3ead8; touch-action: none; }
   #view { position: fixed; inset: 0; }
-  #help { position: fixed; top: 10px; left: 12px; font-size: 12px; line-height: 1.6; color: #d8ccd0; background: rgba(22,18,20,0.7); padding: 8px 12px; border-radius: 6px; }
-  #help b { color: #fff; } a { color: #c9a84c; }
-  #help .row { margin-top: 5px; display: flex; gap: 4px; align-items: center; }
-  #help .row button { background: #33282c; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
-  #help .row button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
-  #prompt { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); font: 17px Georgia, serif; color: #fff; background: rgba(22,18,20,0.75); border: 1px solid #554449; padding: 7px 16px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
-  #prompt.on { opacity: 1; }
-  body.talking #stick, body.talking .tb, body.talking #help, body.talking #prompt { display: none !important; }
   #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
   #card .go, #card button { display: inline-block; margin: 6px; padding: 8px 18px; border-radius: 10px; border: 2px solid #6b4a32; background: #8a2a2a; color: #fff; font: 16px Georgia, serif; text-decoration: none; cursor: pointer; }
   #card button { background: #fffaf0; color: #3a2a20; }
-  #stick { position: fixed; left: 28px; bottom: 28px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); display: none; }
-  #stick i { position: absolute; left: 40px; top: 40px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.35); }
-  .tb { position: fixed; bottom: 34px; width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(60,40,44,0.6); color: #fff; font-size: 14px; display: none; }
-  #use { right: 28px; } #run { right: 104px; } #alt { right: 28px; bottom: 110px; } .tb.on { background: #6b2a2a; }
-  @media (pointer: coarse) { #stick, .tb { display: block; } #prompt { bottom: 170px; } #help .keys { display: none; } }
 </style>
 </head>
 <body>
 <div id="view"></div>
-<div id="help"><b>About the cottage</b><br><span class="keys">WASD or arrows to walk · Shift to run · E to use · Q to lie down · K for her skirt<br></span>Drag to look round · wheel to zoom · <a href="story.html">Chapter one</a> · <a href="lap.html">Over the knee</a> · <a href="editor.html">Editor</a>
-  <div class="row">Skirt <button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div>
-  <div class="row">Cloak <button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div></div>
-<div id="prompt"></div>
-<div id="stick"><i></i></div>
-<button class="tb" id="run">Run</button><button class="tb" id="use">Use</button><button class="tb" id="alt">Lie</button>
+<div id="clothes"><div class="row"><label>Her skirt</label><div class="tabs"><button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div></div>
+  <div class="row"><label>Her cloak</label><div class="tabs"><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div></div></div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
 <script src="js/toon.js"></script>
@@ -47,30 +30,18 @@
 <script src="js/talk.js"></script>
 <script src="js/story.js"></script>
 <script src="js/play.js"></script>
+<script src="js/hud.js"></script>
 <script>
 // At the end of the homecoming conversation her mother has told her to come here: a card leads on to the lap scene.
-const P = window.__play = Play.create(document.getElementById('view'), { prompt: document.getElementById('prompt'), after: scene => {
+const P = window.__play = Play.create(document.getElementById('view'), { after: scene => {
   if (scene !== 'homecoming') return;
   const c = document.createElement('div'); c.id = 'card'; c.innerHTML = '<p>Little Red slips off her cloak, lays it over the back of the chair, and goes to her mother.</p><a class="go" href="lap.html?scene=homecoming">Go to her</a> <button id="stay">Not yet</button>';
   document.body.appendChild(c); document.getElementById('stay').onclick = () => c.remove();
 } });
-// Keys: held ones move her; E uses, Q lies down (on the bed).
-const held = new Set();
-const axes = () => { const k = c => held.has(c) ? 1 : 0; P.input.move.x = k('KeyD') + k('ArrowRight') - k('KeyA') - k('ArrowLeft'); P.input.move.z = k('KeyW') + k('ArrowUp') - k('KeyS') - k('ArrowDown'); P.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || runOn; };
-let runOn = false;
-addEventListener('keydown', e => { if (e.repeat) return; held.add(e.code); if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') P.use(); if (e.code === 'KeyQ') P.use(true); if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault(); axes(); });
-addEventListener('keyup', e => { held.delete(e.code); axes(); });
-addEventListener('blur', () => { held.clear(); axes(); });
-// Touch: a stick, and buttons.
-const stick = document.getElementById('stick'), knob = stick.querySelector('i'); let sid = null;
-const stickAt = t => { const r = stick.getBoundingClientRect(), x = (t.clientX - r.left - 60) / 50, y = (t.clientY - r.top - 60) / 50, l = Math.max(1, Math.hypot(x, y)); P.input.move.x = x / l; P.input.move.z = -y / l; knob.style.transform = `translate(${x / l * 40}px, ${y / l * 40}px)`; };
-stick.addEventListener('pointerdown', e => { sid = e.pointerId; stick.setPointerCapture(sid); stickAt(e); e.stopPropagation(); });
-stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickAt(e); });
-const stickEnd = () => { sid = null; P.input.move.x = P.input.move.z = 0; knob.style.transform = ''; };
-stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
-document.getElementById('use').addEventListener('pointerdown', e => { e.stopPropagation(); P.use(); });
-document.getElementById('alt').addEventListener('pointerdown', e => { e.stopPropagation(); P.use(true); });
-const runB = document.getElementById('run'); runB.addEventListener('pointerdown', e => { e.stopPropagation(); runOn = !runOn; runB.classList.toggle('on', runOn); axes(); });
+// The controls and the menu (js/hud.js); her clothes are in the menu (and K steps through the skirt).
+const hud = Hud.create({ get: () => P, extra: document.getElementById('clothes'), extraTitle: 'Her clothes',
+  links: [{ label: 'Chapter one', href: 'story.html' }, { label: 'Over the knee', href: 'lap.html' }, { label: 'Character editor', href: 'editor.html' }] });
+hud.objective('About the cottage: walk her round, and try things.'); setTimeout(() => hud.objective(''), 6000);
 // Her skirt: on, lifted (gathered at her waist) or off, to see how she moves under it. Remembered in this browser.
 const SKIRTS = ['down', 'up', 'off'], skirtBtns = [...document.querySelectorAll('[data-skirt]')];
 let skirt = 'down'; try { skirt = localStorage.getItem('red-lessons:play-skirt') || 'down'; } catch (e) {}

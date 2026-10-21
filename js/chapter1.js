@@ -7,7 +7,7 @@
 //     of the wood the village comes into sight, and with it, everything she left there.
 //  3. Home, late in the dusk: her mother sees her face at once, and the conversation (js/story.js, the homecoming), and a card on to the lap scene.
 //
-//   const ch = Chapter1.create(view, { prompt, objective, fade, card })   ch.start(scene?)   ch.P: the scene being played (js/play.js)
+//   const ch = Chapter1.create(view, { objective, fade, card })   ch.start(scene?)   ch.P: the scene being played (js/play.js)
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE.Vector3;
@@ -20,7 +20,7 @@ function create(view, ui) {
   async function go(name) {
     if (ui.fade) await ui.fade(true, { cabin: 'Grandmother’s', wood: 'The wood', home: 'Home' }[name]);
     if (P) { P.dispose(); P = null; }
-    scene = name; say('');
+    scene = name; say(''); try { localStorage.setItem('little-red:scene', name); } catch (e) { /* no storage */ }      // (for Continue, on the title)
     await ({ cabin, wood: walk, home })[name]();
     if (ui.fade) await ui.fade(false);
   }
@@ -65,7 +65,7 @@ function create(view, ui) {
     if (root.Looks) { const l = Looks.load(); if (l.red.outfit === 'No cloak') { l.red.outfit = 'Hood down'; Looks.save(l); } }      // (in her new cloak)
     P = Play.create(view, { set: s => (wood = Wood.build(s)), npc: null, light: dusk, followCam: true, prompt: ui.prompt,
       start: { at: [-12, 52], yaw: 0 }, camTurn: Math.PI, camBack: [78, 30], actions: () => actions(), onExit: () => go('home'), onFrame: dt => frame(dt) });
-    say('Home, along the path. (Shift to run.)');
+    say('Home, along the path.');
     const sp = wood.spots, m = () => P.motion, think = (face, text) => P.talk.muse(text, { face });
     const spotSay = k => { for (const [f, t] of Story.SPOTS[k]) think(f, t); };
     // The things she can stop for (the stone and the fallen tree are seats, and come up on their own).

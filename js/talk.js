@@ -134,17 +134,21 @@ function create(stage, opts) {
 
   // ── Lines ──
   let typing = null, waiting = null, voice = null;
-  const CPS = 42;      // (letters a second)
+  const CPS = () => 42 * ((root.Hud && Hud.settings.text) || 1);      // (letters a second; the settings can quicken or slow it)
+  let autoT = null;
   function show(line) {
     const c = speaker(line.who);
     if (c) face(line.who, line.face);
     if (line.listen) for (const k in line.listen) face(k, line.listen[k]);
-    const text = line.text, secs = Math.max(0.4, text.length / CPS);
+    const text = line.text, cps = CPS(), secs = Math.max(0.4, text.length / cps);
     if (voice) voice.stop(); voice = c && A && A.speak ? A.speak(c.voice || line.who, text, secs * 0.92) : null;
     return new Promise(res => {
       let i = 0; const t0 = performance.now();
-      typing = { done: () => { i = text.length; textEl.textContent = text; typing = null; moreEl.style.visibility = 'visible'; waiting = res; if (voice) { voice.stop(); voice = null; } } };
-      const step = () => { if (!typing) return; i = Math.min(text.length, Math.floor((performance.now() - t0) / 1000 * CPS)); textEl.textContent = text.slice(0, i); if (i >= text.length) typing.done(); else requestAnimationFrame(step); };
+      typing = { done: () => { i = text.length; textEl.textContent = text; typing = null; moreEl.style.visibility = 'visible'; waiting = res; if (voice) { voice.stop(); voice = null; }
+        // (if the settings say so, the line goes on by itself once it's had time to be read)
+        if (root.Hud && Hud.settings.auto) { clearTimeout(autoT); const go = () => { if (waiting !== res) return; if (document.querySelector('.hScreen.on')) { autoT = setTimeout(go, 500); return; } next(); };      // (not while a menu's up)
+          autoT = setTimeout(go, Math.max(1400, text.length * 55)); } } };
+      const step = () => { if (!typing) return; i = Math.min(text.length, Math.floor((performance.now() - t0) / 1000 * cps)); textEl.textContent = text.slice(0, i); if (i >= text.length) typing.done(); else requestAnimationFrame(step); };
       textEl.textContent = ''; requestAnimationFrame(step);
     });
   }
@@ -220,7 +224,9 @@ function create(stage, opts) {
     }));
     return museQ.then(() => n);
   }
-  return { play, settle, next, muse, face, relax, get playing() { return playing; }, el, cast };
+  // (done with: its box, its keys)
+  function destroy() { root.removeEventListener('keydown', keys, true); el.remove(); clearTimeout(autoT); for (const k in rest) clearTimeout(rest[k]); if (voice) voice.stop(); if (playing) document.body.classList.remove('talking'); playing = false; }
+  return { play, settle, next, muse, face, relax, destroy, get playing() { return playing; }, el, cast };
 }
 
 root.Talk = { create };

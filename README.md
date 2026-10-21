@@ -59,7 +59,9 @@ Her mother sits on a plain chair; Little Red lies face down across her lap, hips
 
 ## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)
 
-Rose at home in the cottage, her mother by the hearth. **WASD** or the arrows walk her (relative to the camera), **Shift** runs, **E** does whatever's offered (shown at the bottom), **Q** lies down when she's sitting on the bed. Drag to look round her; the camera follows. On a phone: a stick, Run, Use and Lie.
+Rose at home in the cottage, her mother by the hearth. **WASD** or the arrows walk her (relative to the camera), **Shift** runs, **E** does whatever's offered (in the gold chip at the bottom, which can be clicked too), **Q** lies down when she's sitting on the bed, **C** brings the camera in or takes it out, **Esc** opens the menu (settings, the controls, her clothes, the other pages). Drag to look round her; the camera follows.
+
+The controls and menus (`js/hud.js`) are the same in every walking scene and follow Climbing Toward Consequence's: round glass buttons with line icons, and on a touch screen a stick under the left thumb, the action button under the right (labelled with what it'll do, greyed when there's nothing), the other action beside it and Run (held) above. The menu and the camera sit top right. Settings: the volumes, how quickly the words appear in a conversation, and whether lines go on by themselves.
 
 - **Walking and running** (`js/motion.js`, written for any of the figures): a cycle played in place, in her own frame, as on a treadmill, timed to her speed. Each foot lands on its heel, rolls flat and up onto its ball to push off, then swings through; a foot on the ground goes back under her at exactly the speed she goes forward, and is held where it touched down until it lifts (however she turns over it), so nothing slides. The hips sit as high as the planted feet allow with those legs all but straight, easing down into each step as the heel takes the weight; they tilt toward the swinging leg, sway over the standing one and turn with the steps, and the spine levels and counter-turns the shoulders. The arms hang on springs, trailing and following through. Running is nearly three times walking pace, with time in the air: the heel tucks up, the knee drives through, the arms pump bent, she leans in. Turning on the spot she steps round; stopping, she steps her feet in under her.
 - **Standing:** her weight on one straight leg, the hip on that side up and the other knee easy, that foot a little forward and turned out, the shoulders tilted back the other way; it changes legs every twelve seconds or so (the editor's figures stand the same way).
@@ -112,6 +114,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
 | `js/story.js` | The story's conversations (chapter one: the homecoming) |
+| `js/hud.js` | The controls and menus for the walking scenes: keys, the touch stick and buttons, the action chip, the camera button, the pause menu and settings, the controls sheet |
 | `js/play.js`, `play.html` | About the cottage: the controls, the following camera, what's in the way, the things to do |
 | `js/discipline.js` | The scripted correction: tiers, stages, her mother's lines |
 | `js/pain.js` | The pain model |
