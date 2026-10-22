@@ -12,6 +12,10 @@ Wolfe is the main story, and every other quest line feeds it. The game runs in t
 
 The principle running through all three acts: every authority over Red is one she chose, and her name, Rose, stops any of them at once. Wolfe is the only figure who earns trust in private rather than in front of others, and that difference is what the player learns to read.
 
+### Setting and voices
+
+The village is somewhere in the north of England, in a time when few people travel far. Villagers speak the local Northern English, most broadly the old ones. **Old Halloran** is the place to enjoy it: *aye*, *nay*, *nowt* and *owt*, *summat*, *lass*, *happen* ("perhaps"), *mind*, *reckon*, the odd *thee* and *tha*, *gradely* ("fine, proper"), *mardy* ("sulky"). He's still always formal with her: "Miss Rose". **The Barrows** aren't local, and it shows the moment they speak. They're Scots from not far over the Border: *aye*, *ken*, *wee*, *bairn*, *dinnae*, *cannae*, *hame*, *hen*. That puts the two dialects side by side, near each other but plainly not the same.
+
 ## Systems the quest lines rely on
 
 Four systems gate and colour the quests: reputation, openness, time, and the safe word.
@@ -149,10 +153,20 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 
 ### The Barrows
 
+**Backstory.** Mother and Father Barrow have been together a long time. Where they came from, they were as free as that place let them be: hushed meetings with like-minded neighbours, careful not to ruffle feathers. Wee Barrow (22) may not be the first little they've shared, nor even the youngest, but he's been theirs for a few years now. Once they found him they knew there'd never be anyone else, and they came south and moved deep into the wood to live as they are, with no one watching. That's also why their home can be a safe house later: they know what it is to need one.
+
+**Wee Barrow** has fully taken up his role. It's the life Red is only dipping her toes into, and he's committed to it. He's shy, but eloquent when it comes to why he lives this way. He's small and cared for, but not diminished by it. And it was never really a choice, except the choice between hiding it and living it. He's the one who can put into words what Red hasn't yet, which makes him a good voice for the conversation in step 4, and a mirror for her own path. (The draft lines below are a starting point.)
+
+> "Folk think it makes me less. It doesnae. I'm still me, the whole of me. I just dinnae have to hold it all up by myself."
+>
+> "I didnae choose it, no really. The only choosing was whether I'd keep squashing it down or let it be. I tried the first one for years. This is better."
+>
+> "Bein' wee isnae the same as bein' nothing. They'd tell ye that themselves, an' they'd tan me if I ever said otherwise."
+
 1. **2.1** Bo Peep's strays, a favour to a neighbour, draw Red deep into the wood. She finds the Barrows' house empty and unlocked, and helps herself: porridge, chairs, a bed.
 2. **2.1** Found out. Mother Barrow corrects her, with Red's consent.
 3. **2.1** Father Barrow then corrects Mother Barrow for leaving the house unsecured, and Wee Barrow for distracting her from securing it on their way out.
-4. **2.1** An open conversation, all four of them. Red understands that accountability runs every way in their household.
+4. **2.1** An open conversation, all four of them. Red understands that accountability runs every way in their household. Mother and Father tell why they left where they came from. Wee Barrow, shy at first, explains why he lives as he does (see above), and Red hears her own half-formed thoughts put plainly.
 5. **2.2** Return visits show more configurations: Mother Barrow correcting Wee Barrow for brattiness; on another visit, correcting Father Barrow for not upholding his role as head of household. Feeds Peter's line.
 6. **3.2** Called back: they've seen Wolfe, and their home is a safe house.
 

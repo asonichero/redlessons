@@ -13,7 +13,9 @@
 // Everyone in the story. All of them are adults; those who are ever taken in hand are grown women and men, there by their own choosing.
 // The village's grown men go by Master and their surname (Holt aside); Tom and Georgie are 'young Master …' when someone means business (stern).
 // The Barrows aren't a family but a household of three, a hierarchical polycule: Father Barrow heads it, and Wee Barrow takes the little role, the
-// way Mother and Father stand in for mommy and daddy; the two of them call him their wee cub, or little cub (pet). Any or all of them can be Scots.
+// way Mother and Father stand in for mommy and daddy; the two of them call him their wee cub, or little cub (pet). They're Scots from over the
+// Border, not local (the village is in the north of England, and talks like it: Halloran most of all). Mother and Father have been together
+// a long time; they found him a few years ago and moved deep into the wood to live as they are, unwatched. See docs/quest-plan.md.
 const PEOPLE = {
   red: { name: 'Rose', called: 'Red', age: 19 }, maren: { name: 'Maren', called: 'Mother', age: 38 }, hulda: { name: 'Hulda', called: 'Grandmother', age: 71 },
   peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', stern: 'young Master Ferrier', age: 20 }, smith: { name: 'Master Ferrier', called: 'the smith', age: 46 },
