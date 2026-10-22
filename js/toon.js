@@ -996,19 +996,7 @@ function makeChair(seatY) {
   g.penetration = (pW, r) => { const q = g.worldToLocal(pW.clone()); let pen = 0; for (const b of boxes) { const dx = b.h.x + r - Math.abs(q.x - b.c.x), dy = b.h.y + r - Math.abs(q.y - b.c.y), dz = b.h.z + r - Math.abs(q.z - b.c.z); if (dx > 0 && dy > 0 && dz > 0) pen = Math.max(pen, Math.min(dx, dy, dz)); } return pen; };
   return g;
 }
-// The paddle, held in the hand: the handle in the fist, the blade beyond, its faces along the hand's x (the palm's way). Blade middle at BLADE_AT.
-const PADDLE = { at: 4.7, half: 0.18 };
-function makePaddle() {
-  const g = new THREE.Group();
-  const h = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 2.6, 10), mat('#7a4e26')); h.position.y = -1.3 - 0.2; g.add(h);
-  h.add(new THREE.Mesh(hullGeo(h.geometry, 0.05), INKM[0]));
-  const bl = new THREE.Mesh(ell(PADDLE.half, 2.2, 1.35, 20, 12), mat('#b07a44')); bl.position.y = -PADDLE.at; g.add(bl);
-  bl.add(new THREE.Mesh(hullGeo(bl.geometry, 0.06), INKM[0]));
-  g.traverse(o => { if (o.isMesh && o.material !== INKM[0]) o.castShadow = true; });
-  return g;
-}
-
 setTune(loadTune(), false);
-const Toon = { make, clipPass, idle, stance, sit, seatFor, makeChair, makePaddle, PADDLE, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
+const Toon = { make, clipPass, idle, stance, sit, seatFor, makeChair, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
 root.Toon = Toon;
 })(typeof window !== 'undefined' ? window : globalThis);

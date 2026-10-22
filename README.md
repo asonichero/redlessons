@@ -59,7 +59,7 @@ Played the way *Mika and the Witch's Mountain* plays them: the two of them turn 
 
 Her mother sits on a plain chair; Little Red lies face down across her lap, hips over her mother's right thigh, head and arms toward the floor on one side, legs on the other.
 
-- **A smack:** her mother's hand lifts, holds raised (the wait builds dread), swings down along an arc, and lands with the palm flat on the middle of the cheek struck. It stays a moment on the skin, then comes back up for the next one or returns to rest above the small of her back. Her arm is solved every frame (shoulder and elbow bring the wrist into place, and the hand is turned flat to the skin), so it lands exactly wherever Little Red is, however she moves. With the **paddle**, the blade lands flat instead. Her mother's left hand rests between Little Red's shoulder blades.
+- **A smack:** her mother's hand lifts, holds raised (the wait builds dread), swings down along an arc, and lands with the palm flat on the middle of the cheek struck. It stays a moment on the skin, then comes back up for the next one or returns to rest above the small of her back. Her arm is solved every frame (shoulder and elbow bring the wrist into place, and the hand is turned flat to the skin), so it lands exactly wherever Little Red is, however she moves. With an implement (on the test page, **her hairbrush**), its face lands flat instead. Her mother's left hand rests between Little Red's shoulder blades.
 - **Controls:** Smack, Run of 10, Pace and Strength. Space smacks.
 - **Her reactions** go through springs: a kick of the legs on the side struck, a lift of the head, and a wriggle that grows with her distress. Her face follows the pain model's bands (calm, wince, gritted, crying), and her voice is synthesised.
 - **Clothes:** skirt down or lifted (gathered at her waist); with it lifted, drawers up or down (bunched above her knees). Cloth takes the edge off the sting.
@@ -82,18 +82,31 @@ The controls and menus (`js/hud.js`) are the same in every walking scene and fol
   - **take** a basket off its peg, or the jug, the bowl or the loaf off the table; carry it (a basket or the jug hangs from one hand, the bowl and the loaf in both); **put it** on the table, on the closed chest, in the open chest, back on an empty peg (baskets), or down on the floor;
   - **sit** on either stool or on the bed, **lie down** on the bed, and get up again.
 
+## Corrections, generalised (`js/correction.js`, `js/correctors.js`, `js/implements.js`)
+
+Anyone can take anyone in hand, in the room where the story is. `Correction.run(play, { corrector, turns, watchers, context, player })`:
+
+- **The corrector** (`js/correctors.js`): who they are (a figure), their seat, the stat they mind, their lines in their own voice (drafts, to be written as the story is), and their own implement. Correctors use their hand, or their own second implement; there's no standard one. Which, and from when, is the story's to say (a turn's `implement`, `implementFrom`), never the tier's.
+- **The implements** (`js/implements.js`, their pain in `js/pain.js`): Maren's hairbrush, Mistress Pennock's baker's paddle, Master Ferrier's strap, Mistress Abney's wooden spoon, Willie Winkie's slipper, Holt's switch, Mother Barrow's spurtle, Father Barrow's tawse, Mother Brannock's birch. Each is held in the hand, strikes with its own face, and marks and stings in its own way.
+- **Turns**: subjects in turn across the lap, each with their tier; after a turn, to **the corner** if the story says (facing into it, hands on head, skirt as the story says), until their next turn or the end, then corner time, and the corrector's last word.
+- **Watchers**: others in the room, seated on one of its seats or standing.
+- **Safe words**, per subject and context: Red's is her own name, Rose (the octagon, or R), there only on her own turn; at the Shoe she's Rose, her word is Red, and the house's traffic lights add AMBER (or A), a check-in the corrector answers before going gentler. No corrector says the word except to answer it (a test holds every corrector's lines to it).
+- The camera button steps round the lap's angles, the whole room, and whoever's in the corner.
+
+The cottage page's menu has **Try a correction**: how much, her mother's hairbrush (not at all, at the end, throughout), her grandmother sitting or standing by, the corner after (skirt down or up).
+
 ## Discipline (`js/discipline.js`)
 
-The **Correction** buttons run a scripted correction in four tiers. Her mother talks before each stage and between the runs:
+The **Correction** buttons run a scripted correction in four tiers. The corrector talks before each stage and between the runs. A tier says only what's on and how many; the implement is the story's (the hand, or the corrector's own from the stage the story chooses):
 
 | Tier | Stages | Smacks |
 |---|---|---|
-| Token | hand, over her skirt | 6 |
+| Token | over her skirt | 6 |
 | Light | + skirt lifted | 20 |
 | Firm | + drawers down | 34 |
-| Severe | + the paddle to finish | 44 |
+| Severe | + a longer, harder last stage | 46 |
 
-Her name, Rose, ends it there and then, and her mother's last line is the gentle one, to Rose. At "too harsh" she stops. `Discipline.run(lap, tier, { say, sleep })` returns `{ hits, peak, rose, tooHarsh, done }`.
+The subject's safe word (Red's is Rose) ends it there and then, and the corrector's last line is the gentle one, answering it. At "too harsh" they stop. `Discipline.run(lap, tier, { corrector, subject, context, implement, implementFrom, corner, say, sleep })` returns `{ hits, peak, stopped, tooHarsh, done, implement }`.
 
 ## The pain model (`js/pain.js`)
 
@@ -115,7 +128,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 
 | File | What it is |
 |---|---|
-| `js/toon.js` | The characters: the rig (bones), bodies, faces and expressions, hair, clothes, skinned skirts, marks; the chair and the paddle |
+| `js/toon.js` | The characters: the rig (bones), bodies, faces and expressions, hair, clothes, skinned skirts, marks; the chair |
 | `js/stage.js` | Renderer, lights and shadows, the camera and its glides |
 | `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
 | `js/lap.js`, `lap.html` | Over the knee: the session, her mother's arm solving, Little Red's reactions, the cameras; its page |
@@ -128,8 +141,9 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
+| `js/correction.js` | A correction in the story's own scene: any corrector, subjects in turn, watchers, the corner, the safe word by context |
+| `js/correctors.js`, `js/implements.js` | Correctors and subjects (lines, implements, safe words, names, contexts); each corrector's own implement, its model and its marks |
 | `js/story.js` | The story's conversations (chapter one: the homecoming, and after the correction) |
-| `js/correction.js` | A correction played in the story's own scene: the lap scene embedded at the middle of the room, the scripted tier, the camera and ROSE buttons, back to the room after |
 | `js/hud.js` | The controls and menus for the walking scenes: keys, the touch stick and buttons, the action chip, the camera button, the pause menu and settings, the controls sheet |
 | `js/play.js`, `play.html` | About the cottage: the controls, the following camera, what's in the way, the things to do |
 | `js/discipline.js` | The scripted correction: tiers, stages, her mother's lines |

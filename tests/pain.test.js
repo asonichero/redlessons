@@ -4,7 +4,7 @@ const { PAIN, createPain } = require('../js/pain.js');
 
 test('a smack adds distress, and a heavier implement adds more', () => {
   const a = createPain(), b = createPain();
-  a.hit({ implement: 'hand' }); b.hit({ implement: 'paddle' });
+  a.hit({ implement: 'hand' }); b.hit({ implement: 'bakersPaddle' });
   assert.ok(a.distress() > 0 && b.distress() > a.distress());
 });
 
@@ -21,7 +21,7 @@ test('clothing cuts the sting but not the ache', () => {
 
 test('the bands rise with distress and too much sets tooHarsh', () => {
   const p = createPain(); assert.equal(p.band(), 'composed');
-  let guard = 0; while (!p.tooHarsh && guard++ < 500) p.hit({ implement: 'paddle', strength: 1 });
+  let guard = 0; while (!p.tooHarsh && guard++ < 500) p.hit({ implement: 'bakersPaddle', strength: 1 });
   assert.ok(p.tooHarsh); assert.equal(p.band(), 'too harsh'); assert.equal(p.receptivity(), 0);
 });
 

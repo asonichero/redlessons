@@ -39,7 +39,7 @@
   <div class="sub">Her mother seated, Little Red across her lap. Drag to orbit; the wheel zooms. Space smacks; R is Rose, the safe word. <a href="story.html">Chapter one</a> · <a href="editor.html">Character editor</a> · <a href="play.html">About the cottage</a></div>
   <h3>Correction</h3>
   <div class="btns" id="tiers"></div>
-  <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="paddle">Paddle</button></div>
+  <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="hairbrush">Her hairbrush</button></div>
   <h3>Clothes</h3>
   <div class="btns"><button id="skirt">Skirt: down</button><button id="drawers">Drawers: up</button></div>
   <div class="btns" style="margin-top:6px"><span>Cloak</span><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div>
@@ -64,6 +64,8 @@
 <script src="js/audio.js"></script>
 <script src="js/pain.js"></script>
 <script src="js/lap.js"></script>
+<script src="js/implements.js"></script>
+<script src="js/correctors.js"></script>
 <script src="js/discipline.js"></script>
 <script>
 (function () {
@@ -87,7 +89,7 @@
     const b = document.createElement('button'); b.textContent = Discipline.TIER_NAMES[t]; b.dataset.tier = t; b.title = Discipline.total(t) + ' smacks';
     b.onclick = async () => {
       wake(); build(); const me = session; tiers(true);
-      const r = await Discipline.run(lap, t, { say: showLine });
+      const r = await Discipline.run(lap, t, { say: showLine, implement: st.implement !== 'hand' ? st.implement : null });      // (her own implement, if it's chosen: for the last stage)
       if (me !== session) return;
       Object.assign(st, { implement: lap.st.implement, skirt: lap.st.skirt, drawers: lap.st.drawers });
       all('[data-impl]').forEach(x => x.classList.toggle('on', x.dataset.impl === st.implement));

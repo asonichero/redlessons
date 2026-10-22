@@ -5,7 +5,13 @@
 'use strict';
 const PAIN = {
   // base: pain of a full-strength smack at standard speed; sting: the share that is sharp (fades fast).
-  implement: { hand: { base: 0.8, sting: 0.55 }, paddle: { base: 1.65, sting: 0.3 }, birch: { base: 1.35, sting: 0.82 } },   // (the birch is all bite: most of what it does is the sharp part)
+  // (the hand, and each corrector's own implement, js/implements.js: the wood and the broad leather mostly ache, the thin and the many-tailed
+  // mostly bite)
+  implement: {
+    hand: { base: 0.8, sting: 0.55 }, hairbrush: { base: 1.45, sting: 0.5 }, bakersPaddle: { base: 1.7, sting: 0.32 }, strap: { base: 1.55, sting: 0.6 },
+    spoon: { base: 1.15, sting: 0.72 }, slipper: { base: 1.05, sting: 0.45 }, switch: { base: 1.2, sting: 0.88 }, spurtle: { base: 1.25, sting: 0.7 },
+    tawse: { base: 1.6, sting: 0.62 }, birch: { base: 1.35, sting: 0.82 },
+  },
   TAU_STING: 3.0, TAU_ACHE: 120,         // seconds for the sting and the ache to fall by 1/e, at resilience 0.5
   RESIST: 0.5,                          // resilience takes up to this share off every smack
   SPEED_EXP: 1.0,                        // pain ∝ speed ^ this
@@ -49,7 +55,7 @@ function createPain(stats = {}) {
     const reaction = Math.max(0, Math.min(1, 0.2 + 0.8 * (0.5 * eff / (0.3 * P.capacity()) + 0.35 * Math.min(1, P.distress()) + 0.15 * (antic / PAIN.ANTIC_MAX))));
     return { pain: eff, reaction, cushion };
   };
-  // Every frame. `onSkin`: the hand or paddle is still on the skin from the last smack.
+  // Every frame. `onSkin`: the hand or the implement is still on the skin from the last smack.
   P.update = (dt, onSkin = false) => {
     if (onSkin && P.last && P.dwell < PAIN.DWELL_MAX) {
       const d = Math.min(dt, PAIN.DWELL_MAX - P.dwell);

@@ -1,7 +1,7 @@
 // Little Red’s Lessons — over the knee. Her mother (Gerda's rig) sits on a plain chair; Rose — Red, Little Red in her cloak — lies face down across her lap, hips over her right thigh, head
 // and arms toward the floor on her left, legs on her right. The characters are js/toon.js's; the pain model is js/pain.js.
 //
-//  • A smack: Gerda's hand lifts (or the paddle), holds raised (the wait builds dread), swings down along an arc and lands with the palm (or the
+//  • A smack: her hand lifts (or her own implement in it), holds raised (the wait builds dread), swings down along an arc and lands with the palm (or the
 //    blade) flat on the middle of the cheek struck, stays a moment on the skin, and comes back up, or back to rest above the small of her back.
 //    Her arm is solved every frame (shoulder and elbow to bring the wrist where it must be, the hand turned flat to the skin), so it lands
 //    exactly wherever Red is, however she moves. Her left hand rests between Red's shoulder blades.
@@ -9,9 +9,9 @@
 //    and it all settles rather than snaps. Her face follows the bands of the pain model; her hair hangs and swings.
 //  • Clothes: her skirt down or lifted; with it lifted, her drawers up or down. The marks colour each cheek. Her name, Rose (the safe word), stops it all.
 //
-//   const lap = Lap.create(view, { looks })                 // standalone: its own stage (js/stage.js)
+//   const lap = Lap.create(view, { looks, giver: 'gerda', subject: 'red', pitch })   // standalone: its own stage (js/stage.js); giver and subject: rigs (js/toon.js)
 //   const lap = Lap.create(null, { external: { scene } })   // embedded: adds its stage group to another scene, which renders it
-//   lap.smack(); lap.run(n); lap.rose(); lap.set({ implement, skirt, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
+//   lap.smack(); lap.run(n); lap.rose() (the safe word); lap.amber() (a check-in); lap.set({ implement, skirt, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, S = root.Pain, L = root.Looks;
@@ -21,7 +21,8 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, t) => a + 
 const PITCH = -0.12;                 // her body tipped head-down from the hips
 const HOVER = 1.6;                   // at rest the hand hovers this far above the small of her back
 const TIMES = { lift: 0.5, hold: 0.16, strike: 0.11, contact: 0.3, back: 0.42 };
-const IMPL = { hand: { name: 'Hand', mark: 1 }, paddle: { name: 'Paddle', mark: 8 / 3, paddle: true } };
+// What's in the hand: the hand alone, or a corrector's own implement (js/implements.js: its model, how far its face is from the wrist, how fast it marks).
+const IMPL_HAND = { name: 'the hand', mark: 1 }, implOf = id => (root.Implements && root.Implements.LIST[id]) || IMPL_HAND;
 // Gerda's torso (radians: x lean forward, y turn, z roll): leaning in a little over her, upright as the arm goes up, into the strike, turning for the far cheek.
 const TORSO = { rest: [0.1, 0, 0], raised: [-0.04, -0.08, -0.02], contactL: [0.16, 0, 0], contactR: [0.14, 0.16, 0.08] };
 const BANDS = ['composed', 'flinching', 'struggling', 'close to the edge of resistance', 'past the edge of resistance', 'too harsh'];
@@ -60,9 +61,10 @@ function create(view, opts) {
   const ext = opts.external || null, st_ = ext ? null : root.Stage.create(view, { fov: 34 });
   const scene = ext ? ext.scene : st_.scene;
   const stage = new THREE.Group(); scene.add(stage);
-  const seatY = T.seatFor('gerda'), chair = T.makeChair(seatY), FLOOR = 0; stage.add(chair);
+  const GIVER = opts.giver || 'gerda', SUBJ = opts.subject || 'red';
+  const seatY = T.seatFor(GIVER), chair = T.makeChair(seatY), FLOOR = 0; stage.add(chair);
   let looks = L ? L.clean(opts.looks || L.load()) : { red: {}, gerda: {} };
-  let gerda = null, red = null, frame = null, paddle = null, base = new V3();
+  let gerda = null, red = null, frame = null, held = null, base = new V3();      // (gerda: whoever's giving it; red: whoever's across the lap)
 
   // ── The session ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   const pain = S.createPain({ tolerance: 0.9, resilience: 0.65 });
@@ -78,12 +80,12 @@ function create(view, opts) {
   const bandIndex = () => { const d = pain.distress(); return d < 0.3 ? 0 : d < 0.6 ? 1 : d < 0.9 ? 2 : d < 1 ? 3 : d < 1.5 ? 4 : 5; };
   const canStrike = () => !st.ended && !pain.tooHarsh;
   const thwack = power => { if (st.sound && root.GameAudio) root.GameAudio.thwack(power, st.skirt === 'down' || st.drawers === 'up'); };
-  const voice = (power, band) => { if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false, 1, 215); };
+  const voice = (power, band) => { if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false, 1, opts.pitch || 215); };
 
   function smack() { if (!canStrike() || st.swing) return false; st.swing = { phase: 'lift', t: 0, side: pickSide(), waited: 0 }; return true; }
   function pickSide() { const s = st.side === 'alt' ? st.nextSide : st.side; if (st.side === 'alt') st.nextSide = st.nextSide === 'R' ? 'L' : 'R'; return s; }
   function impact(sw) {
-    const impl = IMPL[st.implement], tender = (st.marks.L + st.marks.R) / 2;
+    const impl = implOf(st.implement), tender = (st.marks.L + st.marks.R) / 2;
     const hit = pain.hit({ implement: st.implement, strength: st.strength, speed: st.pace, raised: sw.waited, tender, cushion: cushion() });
     const gain = 0.01875 * impl.mark * st.strength;
     st.marks[sw.side] = 1 - (1 - st.marks[sw.side]) * (1 - gain);
@@ -125,9 +127,9 @@ function create(view, opts) {
   const springs = {};
   function build() {
     if (gerda) stage.remove(gerda.root); if (frame) stage.remove(frame);
-    gerda = T.make('gerda', looks.gerda, { seated: true }); T.sit(gerda, seatY); stage.add(gerda.root);
-    paddle = T.makePaddle(); paddle.position.y = -0.5; paddle.visible = false; gerda.handR.add(paddle);
-    red = T.make('red', looks.red, { lying: true }); frame = new THREE.Group(); frame.add(red.root); stage.add(frame);
+    gerda = T.make(GIVER, looks[GIVER] || {}, { seated: true }); T.sit(gerda, seatY); stage.add(gerda.root);
+    held = null; hold();
+    red = T.make(SUBJ, looks[SUBJ] || {}, { lying: true }); frame = new THREE.Group(); frame.add(red.root); stage.add(frame);
     red.root.position.y = -T.DIM.hipY * red.scaleW;              // (her hip joint at the frame's origin)
     const qx = new Q().setFromAxisAngle(new V3(1, 0, 0), Math.PI / 2), qy = new Q().setFromAxisAngle(new V3(0, 1, 0), Math.PI / 2), qz = new Q().setFromAxisAngle(new V3(0, 0, 1), PITCH);
     frame.quaternion.copy(qz).multiply(qy).multiply(qx);          // her head along world +x, her front facing down, tipped head-down
@@ -144,6 +146,13 @@ function create(view, opts) {
     poseRed(0, true);
   }
 
+  // What's in the giver's hand: the implement's model, made when it's first wanted.
+  function hold() {
+    const want = st.implement !== 'hand' && implOf(st.implement) !== IMPL_HAND ? st.implement : null;
+    if (held && held.userData.id === want) return;
+    if (held) { gerda.handR.remove(held); held = null; }
+    if (want) { held = root.Implements.model(want, gerda.palm.R); held.userData.id = want; held.position.y = -0.5; gerda.handR.add(held); }
+  }
   // ── Red: hanging off the edge of the lap; the last smack (k), her distress (d) and her wriggle (w) work on her through springs. ──
   // ── Keeping her arms out of things ─────────────────────────────────────────────────────────────────────────────────────────────────────────
   const armOff = {};
@@ -215,7 +224,7 @@ function create(view, opts) {
   // ── Gerda: the torso by the swing, the left hand on Red's back, the right arm through its poses. ──
   const world = o => o.getWorldPosition(new V3());
   const intoSkin = () => new V3(0, 0, 1).applyQuaternion(red.seat.getWorldQuaternion(new Q())).normalize();
-  // A hand (or the paddle in it) laid flat on a point: where its wrist must be and how it is turned.
+  // A hand (or the implement in it) laid flat on a point: where its wrist must be and how it is turned.
   function handOn(Tp, nIn, dir, reach, half) {
     const sc = gerda.scaleW, d = dir.clone().addScaledVector(nIn, -dir.dot(nIn)).normalize();
     return { W: Tp.clone().addScaledVector(nIn, -half * sc).addScaledVector(d, -reach * sc), q: basis(nIn.clone().multiplyScalar(gerda.palm.R), d.clone().negate()) };
@@ -236,7 +245,7 @@ function create(view, opts) {
     crowns[side] = c; return { p: c.p.clone(), n: c.n.clone() };
   }
   function armPose(name) {
-    const impl = IMPL[st.implement], reach = impl.paddle ? 0.5 + T.PADDLE.at : 0.85, half = impl.paddle ? T.PADDLE.half : 0.28;
+    const impl = implOf(st.implement), reach = impl.at ? 0.5 + impl.at : 0.85, half = impl.at ? impl.half : 0.28;
     const nIn = intoSkin(), dir = new V3(0.75, 0, 0.66);
     if (name === 'raised') {
       const sh = world(gerda.armR), sc = gerda.scaleW;
@@ -263,7 +272,7 @@ function create(view, opts) {
     if (ph.arc) W.add(new V3(-0.6, 1.6, -0.2).multiplyScalar(4 * e * (1 - e) * g.scaleW));
     armIK(g, 'R', W, A.pole.clone().lerp(B.pole, e).normalize());
     setWorldQuat(g.handR, A.q.clone().slerp(B.q, e));
-    paddle.visible = !!IMPL[st.implement].paddle && st.armed;
+    hold(); if (held) held.visible = st.armed;
   }
 
   function repaint() {
@@ -294,14 +303,16 @@ function create(view, opts) {
   }
 
   const api = {
-    stage, pain, st, VIEWS, IMPL, BANDS,
-    get redRig() { return red; }, get gerda() { return gerda; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
+    stage, pain, st, VIEWS, BANDS, implOf,
+    get redRig() { return red; }, get gerda() { return gerda; }, get giverRig() { return gerda; }, get subjectRig() { return red; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
     smack,
     run(n) { st.runLeft = Math.max(0, (n || 1) - 1); return smack(); },
     // Red: everything stops at once. Nothing more is struck, whatever was queued; the arm comes back to rest.
     // Her name, said under it: she's Rose again, and everything stops at once.
     rose() { st.rose = true; st.ended = true; st.runLeft = 0; if (st.swing && st.swing.phase !== 'contact') { st.swing.phase = 'back'; st.swing.t = 0; } say('rose', { hits: st.hits }); },
     end() { st.ended = true; st.runLeft = 0; },
+    // A check-in (amber, where the house uses traffic lights): taken up by the script between runs (js/discipline.js).
+    amber() { if (!st.ended) { st.amber = true; say('amber', { hits: st.hits }); } },
     set(o) { for (const k in o) st[k] = o[k]; if (st.skirt === 'down') st.drawers = 'up'; dirty = true; },       // (her drawers come down only with her skirt lifted)
     setLooks(l) { looks = L ? L.clean(l) : l; build(); },
     get looks() { return looks; },
@@ -317,5 +328,5 @@ function create(view, opts) {
   return api;
 }
 
-root.Lap = { create, IMPL, BANDS };
+root.Lap = { create, BANDS, implOf };
 })(typeof window !== 'undefined' ? window : globalThis);

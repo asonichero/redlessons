@@ -1,76 +1,82 @@
-// Little Red’s Lessons — a correction, scripted: her mother takes Little Red across her lap (js/lap.js) and works through the stages of a tier, talking between
-// and over the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. Each stage says what she has on (skirt down or lifted,
-// drawers up or down), the implement, how many, and how hard.
+// Little Red’s Lessons — a correction, scripted: whoever takes her (or him) in hand (js/correctors.js) works through the stages of a tier across
+// their lap (js/lap.js), talking between and over the smacks. The tiers are Climbing Toward Consequence's: Token, Light, Firm, Severe. A tier says
+// only what they have on at each stage (skirt down or lifted, drawers up or down), how many, and how hard. The implement isn't the tier's: the
+// hand, unless the story brings out the corrector's own (env.implement), from a stage it chooses (env.implementFrom; the last, by default).
 //
-//   const r = await Discipline.run(lap, 'firm', { say: (text, kind) => …, sleep: ms => … })   (kind: start, stage, during, done, after, rose, harsh)   →   { hits, peak, rose, tooHarsh, done }
+//   const r = await Discipline.run(lap, 'firm', { corrector: 'maren', subject: 'red', context, implement: true | 'hairbrush', implementFrom: 2,
+//     stages: [...] (in place of the tier's), say: (text, kind, i) => …, sleep: ms => … })
+//   → { hits, peak, stopped, rose (the same), tooHarsh, done, implement }      (kind: start, stage, implement, during, amber, done, after or corner
+//   (env.corner: they're going to the corner after), stop, harsh)
 //   (lap.end() from outside closes it quietly: nothing more is struck or said)
 //
-// The safe word is her own name. If she says "Rose" (lap.rose()) she's Rose again, a grown woman who needs a different kind of care: it ends at once,
-// wherever it is, and her mother's closing line is the gentle one, to Rose. Her mother calls her Red, or Little Red, and never Rose while it lasts.
-// At "too harsh" nothing more is struck and she stops.
+// The safe word is the subject's (Red's is her own name, Rose; at the Shoe it's Red). Said at any point (lap.rose()), it ends at once, wherever
+// it is, and the corrector's closing line answers it: the only line that says it. Where the house uses traffic lights, amber (lap.amber()) is a
+// check-in: the corrector answers it, and goes gentler. At "too harsh" nothing more is struck and it stops.
 (function (root) {
 'use strict';
+const C = root.Correctors || (typeof require === 'function' ? require('./correctors.js') : null);
 const TIERS = ['token', 'light', 'firm', 'severe'];
 const TIER_NAMES = { token: 'Token', light: 'Light', firm: 'Firm', severe: 'Severe' };
 const SCRIPTS = {
-  token:  [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 6, str: 0.7 }],
-  light:  [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 0.85 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 10, str: 0.85 }],
-  firm:   [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', impl: 'hand', n: 12, str: 1 }],
-  severe: [{ skirt: 'down', drawers: 'up', impl: 'hand', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', impl: 'hand', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', impl: 'hand', n: 12, str: 1.05 }, { skirt: 'up', drawers: 'down', impl: 'paddle', n: 10, str: 1 }],
+  token:  [{ skirt: 'down', drawers: 'up', n: 6, str: 0.7 }],
+  light:  [{ skirt: 'down', drawers: 'up', n: 10, str: 0.85 }, { skirt: 'up', drawers: 'up', n: 10, str: 0.85 }],
+  firm:   [{ skirt: 'down', drawers: 'up', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', n: 12, str: 1 }],
+  severe: [{ skirt: 'down', drawers: 'up', n: 10, str: 1 }, { skirt: 'up', drawers: 'up', n: 12, str: 1 }, { skirt: 'up', drawers: 'down', n: 12, str: 1.05 }, { skirt: 'up', drawers: 'down', n: 12, str: 1.1 }],
 };
-// What her mother says: practical, warm, and she means it.
-const LINES = {
-  start: 'Over my knee, Little Red. You know what this is for.',
-  skirt: 'Skirt up. No, don’t give me that look. Up.',
-  drawers: 'And these down. We’re not finished, and you know it.',
-  paddle: 'The paddle now. Then we’re square, you and I.',
-  during: ['Hold still.', 'You’ll take this better than you took my good sense.', 'Breathe, Red. I’m not going anywhere, and neither are you.', 'Nearly there.', 'Every one of these is earned, and you know it.'],
-  done: 'There. That’s done, and it stays done.',
-  after: 'Up you get, slowly, my Little Red. Come here. We’re all right.',
-  rose: 'Rose. All right, love. It’s over, all of it. Sit up with me, slowly. Talk to me.',
-  harsh: 'That’s enough. More than enough. Up you get.',
-};
-const line = (k, i) => { const v = LINES[k]; return Array.isArray(v) ? v[(i || 0) % v.length] : v; };
-// The stage's line as it begins: what changes from the stage before (the first stage opens with the start line).
-function stageLine(prev, s) {
-  if (!prev) return line('start');
-  if (s.impl === 'paddle' && prev.impl !== 'paddle') return line('paddle');
-  if (s.drawers === 'down' && prev.drawers !== 'down') return line('drawers');
-  if (s.skirt === 'up' && prev.skirt !== 'up') return line('skirt');
+// (her mother's lines, as they were: the default corrector's)
+const LINES = C ? C.CORRECTORS.maren.lines : {};
+const total = tier => (SCRIPTS[tier] || []).reduce((a, s) => a + s.n, 0);
+// The stage's line as it begins: what changes from the stage before (the first opens with the start line).
+function stageKey(prev, s, implNow, implPrev) {
+  if (!prev) return 'start';
+  if (implNow && !implPrev) return 'implement';
+  if (s.drawers === 'down' && prev.drawers !== 'down') return 'drawers';
+  if (s.skirt === 'up' && prev.skirt !== 'up') return 'skirt';
   return null;
 }
-const total = tier => (SCRIPTS[tier] || []).reduce((a, s) => a + s.n, 0);
 
 async function run(lap, tier, env) {
-  const script = SCRIPTS[tier]; if (!script) throw new Error('Discipline: unknown tier ' + tier);
   env = env || {};
+  const script = env.stages || SCRIPTS[tier]; if (!script) throw new Error('Discipline: unknown tier ' + tier);
+  const c = typeof env.corrector === 'object' ? env.corrector : C.corrector(env.corrector || 'maren');
+  const s = typeof env.subject === 'object' ? env.subject : C.subject(env.subject || 'red', env.context);
+  const own = env.implement === true ? c.implement : env.implement || null, from = env.implementFrom == null ? script.length - 1 : env.implementFrom;
   const say = env.say || (() => {}), sleep = env.sleep || (ms => new Promise(r => setTimeout(r, ms)));
+  const line = (k, i) => C.line(c, s, k, i);
+  const tell = (k, i) => { const t = line(k, i); if (t) say(t, k, i || 0); return t; };
   const stopped = () => lap.st.rose || lap.st.ended || lap.pain.tooHarsh;      // (ended: the scene was closed under it)
   const idle = async () => { while (lap.busy() && !lap.st.rose && !lap.st.ended) await sleep(50); };
-  let prev = null, chat = 0;
-  for (const s of script) {
+  let ease = 1;
+  // (a check-in, where the house has one: answered, and gentler from then on)
+  const checkIn = async () => { if (!lap.st.amber) return; lap.st.amber = false; ease *= 0.75; tell('amber'); await sleep(1800); };
+  let prev = null, chat = 0, used = false;
+  for (let k = 0; k < script.length; k++) {
+    const st = script[k]; if (stopped()) break;
+    const implNow = !!own && k >= from, implPrev = !!own && k - 1 >= from && k > 0;
+    lap.set({ skirt: st.skirt, drawers: st.drawers, implement: implNow ? own : 'hand', strength: st.str * ease });
+    if (implNow) used = true;
+    const key = stageKey(prev, st, implNow, implPrev); if (key) { tell(key); await sleep(1600); }
     if (stopped()) break;
-    lap.set({ skirt: s.skirt, drawers: s.drawers, implement: s.impl, strength: s.str });
-    const l = stageLine(prev, s); if (l) { say(l, prev ? 'stage' : 'start'); await sleep(1600); }
-    if (stopped()) break;
-    // The stage in runs, with a word from her between them.
-    let left = s.n;
+    // The stage in runs, with a word between them.
+    let left = st.n;
     while (left > 0 && !stopped()) {
       const n = Math.min(left, 4 + (chat % 3));
       lap.run(n); await idle(); left -= n;
-      if (left > 0 && !stopped()) { say(line('during', chat), 'during', chat); chat++; await sleep(900); }
+      await checkIn(); lap.set({ strength: st.str * ease });
+      if (left > 0 && !stopped()) { tell('during', chat); chat++; await sleep(900); }
     }
-    prev = s;
+    prev = st;
   }
-  const rose = !!lap.st.rose, tooHarsh = !rose && !!lap.pain.tooHarsh, closed = !rose && !tooHarsh && lap.st.ended, done = !rose && !tooHarsh && !closed;
-  if (closed) return { hits: lap.st.hits, peak: lap.st.peak, rose, tooHarsh, done };
-  say(rose ? line('rose') : tooHarsh ? line('harsh') : line('done'), rose ? 'rose' : tooHarsh ? 'harsh' : 'done');
-  if (done) { await sleep(1800); say(line('after'), 'after'); }
+  const word = !!lap.st.rose, tooHarsh = !word && !!lap.pain.tooHarsh, closed = !word && !tooHarsh && lap.st.ended, done = !word && !tooHarsh && !closed;
+  const out = { hits: lap.st.hits, peak: lap.st.peak, stopped: word, rose: word, tooHarsh, done, implement: used ? own : null };
+  if (closed) return out;
+  tell(word ? 'stop' : tooHarsh ? 'harsh' : 'done');
+  if (done) { await sleep(1800); tell(env.corner ? 'corner' : 'after'); }      // (or to the corner, first, when the story sends them there)
   lap.end();
-  return { hits: lap.st.hits, peak: lap.st.peak, rose, tooHarsh, done };
+  return out;
 }
 
-const api = { TIERS, TIER_NAMES, SCRIPTS, LINES, total, stageLine, run };
+const api = { TIERS, TIER_NAMES, SCRIPTS, LINES, total, stageKey, run };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.Discipline = api;
 })(typeof window !== 'undefined' ? window : globalThis);

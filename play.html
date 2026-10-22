@@ -19,8 +19,14 @@
 <body>
 <div id="view"></div>
 <div id="fade"></div>
-<div id="clothes"><div class="row"><label>Her skirt</label><div class="tabs"><button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div></div>
-  <div class="row"><label>Her cloak</label><div class="tabs"><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div></div></div>
+<div id="clothes"><h3>Her clothes</h3><div class="row"><label>Her skirt</label><div class="tabs"><button data-skirt="down">On</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div></div>
+  <div class="row"><label>Her cloak</label><div class="tabs"><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div></div>
+  <h3>Try a correction</h3>
+  <div class="row"><label>How much</label><div class="tabs" id="tTier"><button data-v="token">Token</button><button data-v="light" class="on">Light</button><button data-v="firm">Firm</button><button data-v="severe">Severe</button></div></div>
+  <div class="row"><label>Her hairbrush</label><div class="tabs" id="tImpl"><button data-v="no" class="on">Not at all</button><button data-v="last">At the end</button><button data-v="all">Throughout</button></div></div>
+  <div class="row"><label>Grandmother</label><div class="tabs" id="tWatch"><button data-v="no" class="on">Not there</button><button data-v="seat">Sitting by</button><button data-v="stand">Standing by</button></div></div>
+  <div class="row"><label>The corner after</label><div class="tabs" id="tCorner"><button data-v="no" class="on">No</button><button data-v="down">Skirt down</button><button data-v="up">Skirt up</button></div></div>
+  <button id="tGo" class="primary">Over her mother’s knee</button></div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
 <script src="js/toon.js"></script>
@@ -33,6 +39,8 @@
 <script src="js/story.js"></script>
 <script src="js/pain.js"></script>
 <script src="js/lap.js"></script>
+<script src="js/implements.js"></script>
+<script src="js/correctors.js"></script>
 <script src="js/discipline.js"></script>
 <script src="js/correction.js"></script>
 <script src="js/play.js"></script>
@@ -47,7 +55,7 @@ const P = window.__play = Play.create(document.getElementById('view'), { after: 
   await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
 } });
 // The controls and the menu (js/hud.js); her clothes are in the menu (and K steps through the skirt).
-const hud = Hud.create({ get: () => P, extra: document.getElementById('clothes'), extraTitle: 'Her clothes',
+const hud = Hud.create({ get: () => P, extra: document.getElementById('clothes'),
   links: [{ label: 'Chapter one', href: 'story.html' }, { label: 'Over the knee', href: 'lap.html' }, { label: 'Character editor', href: 'editor.html' }] });
 hud.objective('About the cottage: walk her round, and try things.'); setTimeout(() => hud.objective(''), 6000);
 // Her skirt: on, lifted (gathered at her waist) or off, to see how she moves under it. Remembered in this browser.
@@ -62,6 +70,19 @@ const outfitBtns = [...document.querySelectorAll('[data-outfit]')];
 const showOutfit = () => outfitBtns.forEach(b => b.classList.toggle('on', b.dataset.outfit === P.outfit));
 outfitBtns.forEach(b => b.addEventListener('click', () => { P.setOutfit(b.dataset.outfit); showOutfit(); }));
 showOutfit();
+// Trying a correction (js/correction.js): how much, her mother's hairbrush or not, her grandmother watching, the corner after.
+const pick = id => document.querySelector('#' + id + ' .on').dataset.v;
+for (const id of ['tTier', 'tImpl', 'tWatch', 'tCorner']) document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b)); });
+document.getElementById('tGo').onclick = () => {
+  hud.pause(false); if (P.busy) return;
+  const impl = pick('tImpl'), w = pick('tWatch'), cn = pick('tCorner');
+  P.act(async () => {
+    const r = await Correction.run(P, { fade, corrector: 'maren',
+      turns: [{ subject: 'red', tier: pick('tTier'), implement: impl === 'no' ? null : true, implementFrom: impl === 'all' ? 0 : undefined, corner: cn !== 'no', cornerDress: { skirt: cn === 'up' ? 'up' : 'down' } }],
+      watchers: w === 'no' ? [] : [w === 'seat' ? { who: 'gran', seat: 'the stool', face: 'shy' } : { who: 'gran', at: [-26, 16], face: 'shy' }] });
+    await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
+  });
+};
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>

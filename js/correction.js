@@ -6,7 +6,17 @@
 // The player has the camera (the round button, or C, steps round the angles; a drag looks about) and her name: the octagon, ROSE (or R). Said
 // at any point, everything stops at once, and her mother's closing words are the gentle ones, to Rose.
 //
-//   const r = await Correction.run(play, { tier: 'light', fade: (on, text) => … })   →   Discipline.run's result: { hits, peak, rose, tooHarsh, done }
+// Anyone can take anyone in hand (js/correctors.js): the corrector on their seat with their own implement, if the story brings it out; subjects in
+// turn, each across the lap; others in the room watching, seated or standing; and the corner, after (or between) a turn, facing the wall, hands on
+// head. The stop button is the player's own subject's word, there only on their turn (ROSE; at the Shoe, RED, with AMBER beside it to check in).
+//
+//   const r = await Correction.run(play, {
+//     corrector: 'maren', context, player: 'red', fade: (on, text) => …,
+//     turns: [{ subject: 'red', tier: 'light', implement: true | 'id', implementFrom, corner: true, cornerDress: { skirt: 'up' } }, …],
+//     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z] }],      (who: a rig; seated on a seat of the room, or standing)
+//     cornerTime: 20 })      (seconds, at the end, for those in the corner)
+//   → the first turn's result (Discipline.run's: { hits, peak, stopped, rose, tooHarsh, done, implement }), and turns: every turn's
+//   (still: Correction.run(play, { tier: 'light', fade }) — her mother, Red, the one turn)
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE.Vector3;
@@ -19,6 +29,9 @@ const CSS = `
 #corrRose { position: relative; width: 70px; height: 70px; margin: 0; padding: 0; border: 0; background: #fff; cursor: pointer; clip-path: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%); filter: drop-shadow(0 2px 6px #000); }
 #corrRose::before { content: ''; position: absolute; inset: 4px; background: #c4141c; clip-path: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%); }
 #corrRose span { position: relative; color: #fff; font: bold 16px Georgia, serif; letter-spacing: .06em; } #corrRose:hover::before { background: #e01c26; }
+#corrRose[hidden], #corrAmber[hidden] { display: none; }
+#corrAmber { width: 58px; height: 58px; margin: 0; padding: 0; border-radius: 50%; border: 3px solid #fff; background: #e09a1c; cursor: pointer; color: #fff; font: bold 12px Georgia, serif; letter-spacing: .05em; filter: drop-shadow(0 2px 6px #000); }
+#corrAmber:hover { background: #f0aa2c; }
 #corrHint { position: fixed; right: 12px; top: 84px; z-index: 36; max-width: 260px; font: italic 13px/1.4 Georgia, serif; color: #f3ead8; background: rgba(16,10,12,0.78); border: 1px solid #c9a84c;
   border-radius: 8px; padding: 6px 12px; opacity: 0; transition: opacity .6s; pointer-events: none; }
 #corrHint.on { opacity: 1; }
@@ -31,64 +44,134 @@ function ui() {
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
   uiEl = document.createElement('div'); uiEl.id = 'corrUI';
   uiEl.innerHTML = '<button id="corrCam" title="Another angle (C)" aria-label="Camera"><svg viewBox="0 0 24 24"><path d="M3 8h4l1.6-2.4h6.8L17 8h4v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>' +
-    '<button id="corrRose" title="Her name: it stops at once (R)" aria-label="Rose: stop"><span>ROSE</span></button>';
+    '<button id="corrAmber" title="Amber: a check-in (A)" aria-label="Amber" hidden>AMBER</button><button id="corrRose" title="Her name: it stops at once (R)" aria-label="Stop"><span>ROSE</span></button>';
   document.body.appendChild(uiEl);
   const hint = document.createElement('div'); hint.id = 'corrHint'; hint.textContent = 'Her name stops it, at any moment: the sign, or R.'; document.body.appendChild(hint);
   return uiEl;
 }
 
-// Her mother's face for each kind of line (see js/discipline.js).
-const FACES = { start: 'stern', stage: 'stern', during: ['calm', 'stern'], done: 'calm', after: 'smile', rose: 'shy', harsh: 'surprised' };
-const ANGLES = ['side', 'behind', 'face', 'top'];
+// The corrector's face for each kind of line (see js/discipline.js).
+const FACES = { start: 'stern', stage: 'stern', implement: 'stern', during: ['calm', 'stern'], amber: 'shy', done: 'calm', after: 'smile', stop: 'shy', harsh: 'surprised' };
+const ANGLES = ['side', 'behind', 'face', 'top', 'room', 'corner'];
+const yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+
+// Someone else in the room: a figure of their own, moved by js/motion.js, going with the scene (seated on one of its seats, or standing).
+function figure(P, id, look) {
+  const T = root.Toon, rig = T.make(id, look || {}); P.stage.scene.add(rig.root); if (P.stage.cast) P.stage.cast(rig);
+  const m = root.Motion.create(rig, {}), untick = P.tick(dt => { m.update(dt, null); rig.tick(dt); });
+  return { id, rig, m, remove() { untick(); P.stage.scene.remove(rig.root); } };
+}
+// (a figure in a corner, facing into it, hands on her head)
+function toCorner(f, c) {
+  f.m.warp(c.at, c.yaw); f.rig.root.position.copy(c.at); f.m.face(c.yaw);
+  const top = s => () => { const h = f.rig.headGroup.getWorldPosition(new V3()), sc = f.rig.scaleW, y = f.m.yaw, side = new V3(Math.cos(y), 0, -Math.sin(y)), back = new V3(-Math.sin(y), 0, -Math.cos(y));
+    return h.add(new V3(0, 1.9 * sc, 0)).addScaledVector(side, (s === 'L' ? 1 : -1) * 0.9 * sc).addScaledVector(back, 0.35 * sc); };
+  f.m.reach('L', top('L')); f.m.reach('R', top('R'));
+  f.rig.setExpr('shy');
+}
 
 async function run(P, o) {
   o = o || {};
-  const st = P.stage, talk = P.talk, fade = o.fade || (async () => {}), wait = s => P.wait(s), A = root.GameAudio;
-  const el = ui(), hint = document.getElementById('corrHint');
+  const st = P.stage, talk = P.talk, fade = o.fade || (async () => {}), wait = s => P.wait(s), A = root.GameAudio, Cs = root.Correctors;
+  const el = ui(), hint = document.getElementById('corrHint'), looks = root.Looks ? root.Looks.load() : {};
+  const c = Cs.corrector(o.corrector || 'maren'), player = o.player || 'red';
+  const turns = o.turns || [{ subject: 'red', tier: o.tier || 'light', implement: o.implement, implementFrom: o.implementFrom }];
   await fade(true);
-  // (the two of them as they walk about, put aside; the lap scene in their place, at the middle of the room)
-  const lap = root.Correction.current = root.Lap.create(null, { external: { scene: st.scene }, looks: root.Looks ? root.Looks.load() : undefined });      // (current: for a look in from outside)
-  const walkers = [P.rig.root, P.npc.root]; walkers.forEach(r => { r.visible = false; });
-  const untick = P.tick(dt => lap.update(dt));
-  const motherRig = talk.cast.mother.rig; talk.cast.mother.rig = lap.gerda;
+  // The two of them as they walk about, put aside; whoever watches, set in the room; the lap scene at the middle of it.
+  const walkers = [P.rig.root, P.npc && P.npc.root].filter(Boolean); walkers.forEach(r => { r.visible = false; });
+  const figs = [], cornerOf = {}, corners = (P.world.corners || []).slice();
+  for (const w of o.watchers || []) {
+    const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
+    const seat = w.seat && P.world.seats.find(x => x.name === w.seat);
+    if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, new V3())); f.rig.root.position.copy(at); }
+    f.rig.setExpr(w.face || 'shy'); figs.push(f);
+  }
   document.body.classList.add('correcting');
-  let angle = 0;
-  const view = (name, ms) => { const v = lap.VIEWS[name](); st.go(v.pos, v.look, ms); };
-  view(ANGLES[angle], 0);
-  const camBtn = el.querySelector('#corrCam'), roseBtn = el.querySelector('#corrRose');
-  const next = () => { angle = (angle + 1) % ANGLES.length; view(ANGLES[angle], 700); };
-  const rose = () => { if (!lap.st.ended) lap.rose(); };
+  const castKey = c.id === 'maren' && talk.cast.mother ? 'mother' : 'corrector', castWas = talk.cast[castKey];
+  const camBtn = el.querySelector('#corrCam'), stopBtn = el.querySelector('#corrRose'), amberBtn = el.querySelector('#corrAmber');
+  let lap = null, angle = 0, untick = null;
+  // (the lap's own angles; the room, from beyond its front wall; and whoever's in a corner, from the room behind them)
+  const cornered = () => Object.values(cornerOf)[0];
+  const view = (name, ms) => {
+    if (name === 'room') return st.go(new V3(-14, 48, 98), new V3(6, 6, -8), ms);
+    if (name === 'corner') { const f = cornered(); if (!f) return; const c = f.corner.at, back = new V3(-Math.sin(f.corner.yaw), 0, -Math.cos(f.corner.yaw)); return st.go(c.clone().addScaledVector(back, 46).setY(30), c.clone().setY(15), ms); }
+    if (lap) { const v = lap.VIEWS[name](); st.go(v.pos, v.look, ms); }
+  };
+  const next = () => { do angle = (angle + 1) % ANGLES.length; while ((ANGLES[angle] === 'corner' && !cornered()) || (!lap && ANGLES[angle] !== 'room' && ANGLES[angle] !== 'corner')); view(ANGLES[angle], 700); };
+  let sub = null;
+  const stop = () => { if (lap && sub && sub.id === player && !lap.st.ended) lap.rose(); };
+  const amber = () => { if (lap && sub && sub.id === player && sub.lights) lap.amber(); };
   camBtn.onclick = e => { e.stopPropagation(); next(); };
-  roseBtn.onclick = e => { e.stopPropagation(); if (A && A.init) A.init(); rose(); };
-  const keys = e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyR') rose(); if (e.code === 'KeyC') next(); };
+  stopBtn.onclick = e => { e.stopPropagation(); if (A && A.init) A.init(); stop(); };
+  amberBtn.onclick = e => { e.stopPropagation(); amber(); };
+  const keys = e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyR') stop(); if (e.code === 'KeyA') amber(); if (e.code === 'KeyC') next(); };
   addEventListener('keydown', keys);
-  await wait(0.3); await fade(false);
-  el.classList.add('on'); hint.classList.add('on'); setTimeout(() => hint.classList.remove('on'), 7000);
-  let r;
+  const results = []; let stoppedAll = false;
   try {
-    r = await root.Discipline.run(lap, o.tier || 'light', {
-      say: (text, kind, k) => { const f = FACES[kind]; talk.caption('mother', text, { face: Array.isArray(f) ? f[(k || 0) % f.length] : f, wait }); },
-      sleep: ms => wait(ms / 1000),
-    });
-    await wait(r.rose || r.tooHarsh ? 4.5 : 3.5);
+    for (let i = 0; i < turns.length && !stoppedAll; i++) {
+      const t = turns[i]; sub = Cs.subject(t.subject || 'red', o.context);
+      if (i > 0) await fade(true);
+      // (whoever's turn it is comes out of the corner for it)
+      if (cornerOf[sub.id]) { cornerOf[sub.id].remove(); corners.push(cornerOf[sub.id].corner); delete cornerOf[sub.id]; }
+      if (lap) { untick(); lap.end(); st.scene.remove(lap.stage); }
+      lap = root.Correction.current = root.Lap.create(null, { external: { scene: st.scene }, looks, giver: c.rig || 'gerda', subject: sub.rig || 'red', pitch: sub.pitch });      // (current: for a look in from outside)
+      untick = P.tick(dt => lap.update(dt));
+      talk.cast[castKey] = Object.assign({ name: c.name, side: 'right', voice: c.voice, tint: '#6a3a4a', bg: '#e6d8e6' }, castWas || {}, { rig: lap.giverRig });
+      view(ANGLES[angle], 0);
+      // (the stop button: the player's own word, on their own turn; amber beside it where the house has traffic lights)
+      const mine = sub.id === player; stopBtn.hidden = !mine; amberBtn.hidden = !(mine && sub.lights);
+      stopBtn.querySelector('span').textContent = sub.word.toUpperCase();
+      hint.textContent = mine ? (sub.lights ? 'Red stops it, at any moment; amber checks in: the buttons, or R and A.' : 'Her name stops it, at any moment: the sign, or R.') : '';
+      await wait(0.3); await fade(false);
+      el.classList.add('on'); if (mine && i === 0) { hint.classList.add('on'); setTimeout(() => hint.classList.remove('on'), 7000); }
+      const r = await root.Discipline.run(lap, t.tier || 'light', {
+        corrector: c, subject: sub, implement: t.implement, implementFrom: t.implementFrom, corner: !!(t.corner && corners.length),
+        say: (text, kind, k) => { const f = FACES[kind]; talk.caption(castKey, text, { face: Array.isArray(f) ? f[(k || 0) % f.length] : f, wait }); },
+        sleep: ms => wait(ms / 1000),
+      });
+      r.subject = sub.id; r.marks = Object.assign({}, lap.st.marks); results.push(r);
+      if (r.stopped || r.tooHarsh) { stoppedAll = true; break; }
+      // To the corner, after the turn (until their next, or the end), marks and all.
+      if (t.corner && corners.length) {
+        await wait(2.5); await fade(true);
+        const f = figure(P, sub.rig || 'red', looks[sub.rig || 'red']), cn = corners.shift(); f.corner = cn; f.turn = t; f.sub = sub;
+        f.rig.setDress(Object.assign({ skirt: 'down', drawers: 'up' }, t.cornerDress || {}, { marks: r.marks })); toCorner(f, cn);
+        cornerOf[sub.id] = f; figs.push(f);
+        lap.subjectRig.root.parent.visible = false;      // (off the lap: she's in the corner now; the corrector stays in her chair)
+        if (i === turns.length - 1) { angle = ANGLES.indexOf('corner'); view('corner', 0); }
+        await wait(0.4); await fade(false);
+      }
+    }
+    // Corner time at the end, for whoever's still there.
+    if (!stoppedAll && Object.keys(cornerOf).length) {
+      stopBtn.hidden = amberBtn.hidden = true;
+      await wait(o.cornerTime == null ? 12 : o.cornerTime);
+      // (and out of it: the corrector's last word)
+      const last = cornered(); if (last) { const l = Cs.line(c, last.sub, 'after'); if (l) await talk.caption(castKey, l, { face: 'smile', wait }); }
+    } else await wait(results.length && (results[results.length - 1].stopped || results[results.length - 1].tooHarsh) ? 4.5 : 3.5);
   } finally {
     el.classList.remove('on'); hint.classList.remove('on'); removeEventListener('keydown', keys);
     await fade(true);
-    talk.captionOff(); untick(); lap.end(); st.scene.remove(lap.stage);
-    talk.cast.mother.rig = motherRig; walkers.forEach(r => { r.visible = true; });
+    talk.captionOff(); if (untick) untick(); if (lap) { lap.end(); st.scene.remove(lap.stage); }
+    for (const f of figs) f.remove();
+    if (castWas) talk.cast[castKey] = castWas; else delete talk.cast[castKey];
+    walkers.forEach(r => { r.visible = true; });
     document.body.classList.remove('correcting');
   }
-  // The room again: Rose on her feet before her mother, beside the chair, the marks under her skirt.
-  const mo = P.npcMotion, me = P.motion, at = P.collide(new V3(-6, 0, 2), 3.6), to = P.collide(new V3(7, 0, 4), 3.4);
-  mo.warp(at, Math.atan2(to.x - at.x, to.z - at.z)); me.warp(to, Math.atan2(at.x - to.x, at.z - to.z));
-  P.setDress({ skirt: 'down', drawers: 'up', marks: Object.assign({}, lap.st.marks) });
-  P.rig.setExpr(r.rose ? 'shy' : 'crying'); P.npc.setExpr(r.rose ? 'shy' : 'calm');
-  P.talk.settle(['red', 'mother']);
-  for (let i = 0; i < 90; i++) P.frame(1 / 60);      // (a moment passes in the dark: they've turned to each other, and her hair has settled after the move)
+  // The room again: the player on her feet before her mother (when it's them), beside the chair, the marks under her skirt.
+  const mine = results.find(r => r.subject === player), first = results[0] || {};
+  if (P.npc && P.npcMotion) {
+    const mo = P.npcMotion, me = P.motion, at = P.collide(new V3(-6, 0, 2), 3.6), to = P.collide(new V3(7, 0, 4), 3.4);
+    mo.warp(at, Math.atan2(to.x - at.x, to.z - at.z)); me.warp(to, Math.atan2(at.x - to.x, at.z - to.z));
+    if (mine) P.setDress({ skirt: 'down', drawers: 'up', marks: mine.marks });
+    P.rig.setExpr(first.stopped ? 'shy' : 'crying'); P.npc.setExpr(first.stopped ? 'shy' : 'calm');
+    P.talk.settle(['red', P.talk.cast.mother ? 'mother' : Object.keys(P.talk.cast).find(k => k !== 'red')]);
+  }
+  for (let i = 0; i < 90; i++) P.frame(1 / 60);      // (a moment passes in the dark: they've turned to each other, and hair has settled after the move)
   await wait(0.3);
   await fade(false);
-  return r;
+  return Object.assign({}, first, { turns: results });
 }
 
-root.Correction = { run, ui };
+root.Correction = { run, ui, figure, toCorner };
 })(typeof window !== 'undefined' ? window : globalThis);
