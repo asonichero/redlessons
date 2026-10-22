@@ -66,7 +66,7 @@ const grandmother = ctx => [
   { who: 'red', face: 'cheeky', text: 'Grandmother, that’s my third.' },
   { who: 'gran', face: 'cheeky', listen: { red: 'smile' }, text: 'And who’s counting? Not me. My eyes are going.' },
   { who: 'red', face: 'smile', text: 'Your eyes miss nothing, and you know it.' },
-  { who: 'gran', face: 'smile', text: 'They miss nothing that matters. Now. The village. Is the miller’s boy still mooning after the Thatcher girl?' },
+  { who: 'gran', face: 'smile', text: 'They miss nothing that matters. Now. The village. Is the miller’s lad still mooning after the Thatcher girl?' },
   { who: 'red', face: 'cheeky', listen: { gran: 'surprised' }, text: 'Worse. He’s written her a poem. He rhymed “Agnes” with “magnets”.' },
   { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Magnets! Lord preserve us. I hope she let him down gently.' },
   { who: 'gran', face: 'calm', text: 'And your mother? Working herself to the bone, I suppose.' },

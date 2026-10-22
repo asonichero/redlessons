@@ -49,7 +49,7 @@ Rose, Maren and Hulda exist. Nineteen more figures are needed, each a look in `j
 | Abney's daughter | 1.1 | Sat up with; her confinement in 2.2 | No |
 | Old Halloran | 1.1 | Farmer; Rose's quests | No |
 | Willie Winkie (William Dunn) | 1.3 | The Watchman, on his rounds at night; Georgie's father. Red thinks of him as Master William, from when she and Georgie were close as children, and calls him Sir, for his office | Yes, from his second catch |
-| Georgie Dunn | 1.1 | Miller's boy (he works at the mill), village colour; the Watchman's son | No |
+| Georgie Dunn | 1.1 | The miller's lad, apprenticed at the mill; village colour; the Watchman's son | No |
 | Agnes Thatcher | 1.1 | Village colour, a confidante | No |
 | Holt | 1.3 | The Woodsman | Yes, after his trust gate |
 | Wolfe | 1.3 | The antagonist | No |
