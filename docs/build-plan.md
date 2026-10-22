@@ -60,7 +60,7 @@ Rose, Maren and Hulda exist. Nineteen more figures are needed, each a look in `j
 | Mother Brannock | 2.2 | Runs the Shoe | Yes, at the Shoe, as Rose |
 | Kitty Fisher | 2.2 | Longest resident of the Shoe (optional) | No |
 
-The smith still needs a first name. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
+The smith is Mr. Ferrier, as the other village adults go by their surnames. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
 
 ## New locations
 

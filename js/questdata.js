@@ -13,8 +13,8 @@
 // Everyone in the story. All of them are adults; those who are ever taken in hand are grown women and men, there by their own choosing.
 const PEOPLE = {
   red: { name: 'Rose', called: 'Red', age: 19 }, maren: { name: 'Maren', called: 'Mother', age: 38 }, hulda: { name: 'Hulda', called: 'Grandmother', age: 71 },
-  peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', age: 20 }, smith: { name: 'Ferrier', called: 'the smith', age: 46 },
-  pennock: { name: 'Mistress Pennock', age: 44 }, baker: { name: 'Master Pennock', called: 'the baker', age: 47 },
+  peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', age: 20 }, smith: { name: 'Mr. Ferrier', called: 'the smith', age: 46 },
+  pennock: { name: 'Mistress Pennock', age: 44 }, baker: { name: 'Mr. Pennock', called: 'the baker', age: 47 },
   abney: { name: 'Mistress Abney', age: 52 }, abneyDaughter: { name: 'Bess Abney', age: 26 }, halloran: { name: 'Old Halloran', age: 66 },
   willie: { name: 'Willie Winkie', called: 'the night crier', age: 40 }, georgie: { name: 'Georgie Dunn', age: 19 }, agnes: { name: 'Agnes Thatcher', age: 19 },
   holt: { name: 'Holt', called: 'the woodsman', age: 41 }, wolfe: { name: 'Wolfe', age: 36 },
