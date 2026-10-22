@@ -27,6 +27,8 @@
   .num input:focus { outline: none; border-color: #c9a84c; }
   .gbtn { font-size: 11px; padding: 3px 8px; margin-top: 4px; }
   details.who > summary { font-size: 14px; font-weight: 600; color: #c9a84c; margin: 10px 0 2px; }
+  .pick { display: flex; gap: 8px; margin-top: 10px; } .pick label { flex: 1; font-size: 11px; color: #a8969a; display: flex; flex-direction: column; gap: 3px; }
+  .pick select { background: #120e10; color: #f0ebe8; border: 1px solid #554449; border-radius: 4px; padding: 5px; font-size: 12px; }
   @media (max-width: 700px) { #view { inset: 0 0 50% 0; } #panel { top: 50%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } }
 </style>
 </head>
@@ -34,12 +36,13 @@
 <div id="view"></div>
 <div id="panel">
   <h1>Character editor</h1>
-  <div class="sub">Rose and her mother, Maren: what they wear, and the colours of their skin, hair, eyes and lips. Changes are kept in this browser and used by <a href="story.html">chapter one</a>, <a href="lap.html">the lap scene</a> and <a href="play.html">the cottage</a>. Drag to orbit.</div>
+  <div class="sub">Everyone in the story, any two at a time: what they wear, and the colours of their skin, hair, eyes and lips. Changes are kept in this browser and used by <a href="story.html">the game</a>, <a href="lap.html">the lap scene</a> and <a href="play.html">the cottage</a>. Drag to orbit.</div>
+  <div class="pick"><label>Left <select id="whoA"></select></label><label>Right <select id="whoB"></select></label></div>
   <div class="btns" style="margin-top:8px"><button data-view="front" class="on">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="faces">Faces</button><button id="spin">Turn</button></div>
-  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Skirts</span><button data-skirt="down" class="on">Down</button><button data-skirt="up">Lifted</button><button data-skirt="off">Off</button></div>
-  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Pose</span><button data-pose="stand" class="on">Standing</button><button data-pose="lap">Over the knee</button></div>
-  <details class="who" open><summary>Rose (19)</summary><div id="red"></div><h3>Her face</h3><div class="btns" id="faces"></div></details>
-  <details class="who" open><summary>Maren, her mother (late thirties)</summary><div id="gerda"></div></details>
+  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Skirts, trousers</span><button data-skirt="down" class="on">On</button><button data-skirt="up">Lifted, down</button><button data-skirt="off">Off</button></div>
+  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Pose</span><button data-pose="stand" class="on">Standing</button><button data-pose="lap">Over the knee</button><span class="sub" style="margin-left:4px">(the right one across the left one’s knee)</span></div>
+  <details class="who" open><summary id="nameA"></summary><div id="boxA"></div></details>
+  <details class="who" open><summary id="nameB"></summary><div id="boxB"></div></details>
   <div class="btns" style="margin-top:16px"><button id="reset">Back to their own colours</button><span id="saved"></span></div>
   <h2>Shapes and proportions</h2>
   <div class="sub">Every number the figures are built from (js/toon.js). Use the arrows (or ↑ ↓; hold Shift for ten steps) or type a value. Kept in this browser and used by the lap scene too; values you've changed are in gold.</div>
@@ -53,49 +56,70 @@
 <script src="js/cottage.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/pain.js"></script>
+<script src="js/implements.js"></script>
 <script src="js/lap.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id), L = Looks, V3 = THREE.Vector3;
-  let look = L.load(), face = 'calm', spin = false, t = 0, skirtView = 'down';      // (skirtView: the skirts down, lifted, or off, to see the figures' proportions)
-  const st = Stage.create($('view'), { fov: 30 });
+  let look = L.load(), spin = false, t = 0, skirtView = 'down';      // (skirtView: skirts and trousers on, lifted or down, or off, to see the figures' proportions)
+  // Any two of the cast, side by side, on a plain floor against a plain wall of colour: nothing else in the way.
+  const st = Stage.create($('view'), { fov: 30, room: false });
+  st.scene.background = new THREE.Color('#d8cfc4').convertSRGBToLinear();
+  { const floor = new THREE.Mesh(new THREE.CircleGeometry(60, 48), Toon.mat('#bfb3a4')); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; st.scene.add(floor); }
   const turn = new THREE.Group(); st.scene.add(turn);
-  const rigs = {}, X = { red: -9, gerda: 9 };
+  let saved0 = {}; try { saved0 = JSON.parse(localStorage.getItem('red-lessons:editor-pair') || '{}'); } catch (e) {}
+  const who = { A: L.CAST.includes(saved0.A) ? saved0.A : 'red', B: L.CAST.includes(saved0.B) ? saved0.B : 'gerda' }, rigs = {}, faces = { A: 'calm', B: 'calm' }, X = { A: -9, B: 9 };
   // Each change rebuilds the character (it takes a moment, and keeps the code that builds them in one place).
-  let build = function (who) {
-    if (rigs[who]) turn.remove(rigs[who].root);
-    const r = rigs[who] = Toon.make(who, look[who]); r.root.position.x = X[who]; r.root.rotation.y = who === 'red' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);
-    if (who === 'red') r.setExpr(face); else r.setExpr('calm');
-    r.setDress({ skirt: skirtView });
-  }
+  let build = function (side) {
+    if (rigs[side]) turn.remove(rigs[side].root);
+    const id = who[side], r = rigs[side] = Toon.make(id, look[id] || {}); r.root.position.x = X[side]; r.root.rotation.y = side === 'A' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);
+    r.setExpr(faces[side]); r.setDress({ skirt: skirtView });
+  };
   const VIEWS = { front: [[0, 20, 88], [0, 15, 0]], side: [[88, 20, 0], [0, 15, 0]], back: [[0, 20, -88], [0, 15, 0]], faces: [[0, 28.5, 34], [0, 28, 0]] };
   // (the faces view looks at their heads wherever their sizes put them)
   const headsAt = () => { const p = new V3(); for (const w in rigs) p.add(rigs[w].headGroup.getWorldPosition(new V3())); return p.multiplyScalar(0.5); };
   const view = (name, ms) => { if (pose === 'lap' && lap) return lapView(name, ms); if (name === 'faces') { const h = headsAt(); st.go(new V3(h.x, h.y + 0.3, h.z + 40), h.clone().add(new V3(0, -0.6, 0)), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); return; }
     st.go(new V3(...VIEWS[name][0]), new V3(...VIEWS[name][1]), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
   let savedT = 0;
-  function changed(who) { look = L.save(look); build(who); sync(); $('saved').textContent = 'Saved'; clearTimeout(savedT); savedT = setTimeout(() => $('saved').textContent = '', 1200); }
+  function changed(side) { look = L.save(look); for (const s of ['A', 'B']) if (s === side || who[s] === who[side]) build(s); sync(); $('saved').textContent = 'Saved'; clearTimeout(savedT); savedT = setTimeout(() => $('saved').textContent = '', 1200); }
 
-  // The panel: an outfit row and a colour row per feature, for each of them.
-  const FEATURES = { red: [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips'], ['cloak', 'Cloak']], gerda: [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips']] };
-  const syncers = [];
-  for (const who of ['red', 'gerda']) {
-    const box = $(who); box.innerHTML = '<h3>Outfit</h3>';
-    const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
-    for (const o of L.OUTFITS[who]) { const b = document.createElement('button'); b.textContent = o; b.onclick = () => { look[who].outfit = o; changed(who); }; row.appendChild(b); syncers.push(() => b.classList.toggle('on', look[who].outfit === o)); }
-    for (const [k, name] of FEATURES[who]) {
+  // Choosing who: any of the cast, on either side.
+  for (const side of ['A', 'B']) {
+    const sel = $('who' + side);
+    for (const id of L.CAST) { const o = document.createElement('option'); o.value = id; o.textContent = L.NAMES[id]; sel.appendChild(o); }
+    sel.value = who[side];
+    sel.onchange = () => { who[side] = sel.value; faces[side] = 'calm'; try { localStorage.setItem('red-lessons:editor-pair', JSON.stringify(who)); } catch (e) {} panel(side); build(side); if (lap) buildLap(); sync(); };
+  }
+  // The panel for each of them: an outfit row (where they have outfits), a colour row per feature, and their face.
+  const FEATURES = [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips'], ['cloak', 'Cloak']];
+  let syncers = { A: [], B: [] };
+  const lookOf = id => (look[id] = look[id] || {});
+  // (the colour in force: the one set here, or their own)
+  const colourOf = (id, k) => lookOf(id)[k] || (Toon.palette(id, {})[k]);
+  function panel(side) {
+    const id = who[side], box = $('box' + side); box.innerHTML = ''; syncers[side] = [];
+    $('name' + side).textContent = L.NAMES[id];
+    if (L.OUTFITS[id]) {
+      box.insertAdjacentHTML('beforeend', '<h3>Outfit</h3>'); const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
+      for (const o of L.OUTFITS[id]) { const b = document.createElement('button'); b.textContent = o; b.onclick = () => { lookOf(id).outfit = o; changed(side); }; row.appendChild(b); syncers[side].push(() => b.classList.toggle('on', lookOf(id).outfit === o)); }
+    }
+    for (const [k, name] of FEATURES) {
+      if (k === 'cloak' && id !== 'red') continue;
       const h = document.createElement('h3'); h.textContent = name; box.appendChild(h);
       const r = document.createElement('div'); r.className = 'btns'; box.appendChild(r);
-      for (const c of L.SWATCHES[k]) { const b = document.createElement('button'); b.className = 'sw'; b.style.background = c; b.title = c; b.onclick = () => { look[who][k] = c; changed(who); }; r.appendChild(b); syncers.push(() => b.classList.toggle('on', look[who][k] === c)); }
-      const pick = document.createElement('input'); pick.type = 'color'; pick.title = 'Any colour'; pick.onchange = () => { look[who][k] = pick.value; changed(who); }; r.appendChild(pick);
-      syncers.push(() => { pick.value = look[who][k]; });
+      for (const c of L.SWATCHES[k]) { const b = document.createElement('button'); b.className = 'sw'; b.style.background = c; b.title = c; b.onclick = () => { lookOf(id)[k] = c; changed(side); }; r.appendChild(b); syncers[side].push(() => b.classList.toggle('on', colourOf(id, k) === c)); }
+      const pick = document.createElement('input'); pick.type = 'color'; pick.title = 'Any colour'; pick.onchange = () => { lookOf(id)[k] = pick.value; changed(side); }; r.appendChild(pick);
+      syncers[side].push(() => { pick.value = colourOf(id, k); });
     }
+    const own = document.createElement('button'); own.className = 'gbtn'; own.textContent = 'Back to their own colours';
+    own.onclick = () => { if (id === 'red' || id === 'gerda') { const keep = lookOf(id).outfit; look[id] = Object.assign({}, L.DEFAULT[id], { outfit: keep }); } else delete look[id]; changed(side); };
+    box.appendChild(own);
+    box.insertAdjacentHTML('beforeend', '<h3>Face</h3>'); const fr = document.createElement('div'); fr.className = 'btns'; box.appendChild(fr);
+    for (const f of Object.keys(Toon.EXPRS)) { const b = document.createElement('button'); b.textContent = f; b.onclick = () => { faces[side] = f; rigs[side].setExpr(f); if (lap) (side === 'B' ? lap.subjectRig : lap.giverRig).setExpr(f); sync(); }; fr.appendChild(b); syncers[side].push(() => b.classList.toggle('on', faces[side] === f)); }
   }
-  for (const f of Object.keys(Toon.EXPRS)) {
-    const b = document.createElement('button'); b.textContent = f; b.onclick = () => { face = f; rigs.red.setExpr(f); if (lap) lap.redRig.setExpr(f); sync(); }; $('faces').appendChild(b); syncers.push(() => b.classList.toggle('on', face === f));
-  }
-  const sync = () => syncers.forEach(f => f());
-  $('reset').onclick = () => { look = L.reset(); build('red'); build('gerda'); sync(); };
+  const sync = () => { for (const s of ['A', 'B']) syncers[s].forEach(f => f()); };
+  panel('A'); panel('B');
+  $('reset').onclick = () => { look = L.reset(); build('A'); build('B'); sync(); };
   document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view, 700));
   document.querySelectorAll('[data-skirt]').forEach(b => b.onclick = () => { skirtView = b.dataset.skirt; document.querySelectorAll('[data-skirt]').forEach(x => x.classList.toggle('on', x === b)); for (const w in rigs) rigs[w].setDress({ skirt: skirtView }); if (lap) lap.set({ skirt: skirtView, drawers: 'up' }); });
   $('spin').onclick = () => { spin = !spin; $('spin').classList.toggle('on', spin); if (!spin) turn.rotation.y = 0; };
@@ -104,7 +128,7 @@
   const DEF = Object.fromEntries(Toon.TUNE.map(t => [t[0], t[3]])), boxes = {};
   let tune = Toon.getTune(), tuneT = 0;
   const decimals = step => Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
-  function tuneChanged() { clearTimeout(tuneT); tuneT = setTimeout(() => { tune = Toon.setTune(tune); build('red'); build('gerda'); }, 120); markChanged(); }
+  function tuneChanged() { clearTimeout(tuneT); tuneT = setTimeout(() => { tune = Toon.setTune(tune); build('A'); build('B'); }, 120); markChanged(); }
   function markChanged() { for (const k in boxes) boxes[k].row.classList.toggle('changed', Math.abs(tune[k] - DEF[k]) > 1e-9); }
   const groups = {};
   for (const [k, g, label, def, min, max, step] of Toon.TUNE) {
@@ -122,11 +146,11 @@
       tune[k] = Math.max(min, Math.min(max, +tune[k] + (e.key === 'ArrowUp' ? 10 : -10) * step)); input.value = (+tune[k]).toFixed(decimals(step)); tuneChanged(); });
   }
   for (const g in groups) groups[g].appendChild(groups[g].rb);
-  $('tuneReset').onclick = () => { tune = Toon.resetTune(); for (const k in boxes) boxes[k].input.value = (+tune[k]).toFixed(decimals(Toon.TUNE.find(t => t[0] === k)[6])); markChanged(); build('red'); build('gerda'); };
+  $('tuneReset').onclick = () => { tune = Toon.resetTune(); for (const k in boxes) boxes[k].input.value = (+tune[k]).toFixed(decimals(Toon.TUNE.find(t => t[0] === k)[6])); markChanged(); build('A'); build('B'); };
   $('tuneCopy').onclick = () => {
     // Everything you've changed: the shapes, and each character's outfit and colours.
     const changed = Object.fromEntries(Object.entries(tune).filter(([k, v]) => Math.abs(v - DEF[k]) > 1e-9)), looks = {};
-    for (const w of ['red', 'gerda']) for (const k in L.DEFAULT[w]) if (look[w][k] !== L.DEFAULT[w][k]) (looks[w] = looks[w] || {})[k] = look[w][k];
+    for (const w in look) for (const k in look[w]) if (!L.DEFAULT[w] || look[w][k] !== L.DEFAULT[w][k]) (looks[w] = looks[w] || {})[k] = look[w][k];
     if (Object.keys(looks).length) changed.looks = looks;
     const text = JSON.stringify(changed, null, 2);
     const done = ok => { $('tuneMsg').textContent = ok ? 'Copied (the shapes, outfits and colours you changed).' : text; setTimeout(() => $('tuneMsg').textContent = '', 4000); };
@@ -140,9 +164,9 @@
   function buildLap() {
     if (lap) { st.scene.remove(lap.stage); lap = null; }
     if (pose !== 'lap') return;
-    lap = Lap.create(null, { external: { scene: st.scene }, looks: look });
-    lap.set({ sound: false, skirt: skirtView, drawers: 'up' }); lap.redRig.setExpr(face);
-    for (const r of [lap.redRig, lap.gerda]) st.cast(r);
+    lap = Lap.create(null, { external: { scene: st.scene }, looks: look, giver: who.A, subject: who.B });
+    lap.set({ sound: false, skirt: skirtView, drawers: 'up' }); lap.subjectRig.setExpr(faces.B); lap.giverRig.setExpr(faces.A);
+    for (const r of [lap.subjectRig, lap.giverRig]) st.cast(r);
   }
   const lapView = (name, ms) => { const v = lap.view(LAPVIEW[name] || 'side'); st.go(v.pos, v.look, ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
   document.querySelectorAll('[data-pose]').forEach(b => b.onclick = () => {
@@ -151,10 +175,10 @@
     const on = document.querySelector('[data-view].on'); (pose === 'lap' ? lapView : view)(on ? on.dataset.view : 'front', 700);
   });
   // (the rest of the editor's changes reach the lap too)
-  const build0 = build; build = who => { build0(who); if (lap) buildLap(); };
+  const build0 = build; build = side => { build0(side); if (lap) buildLap(); };
 
-  build('red'); build('gerda'); view('front'); sync();
-  st.start(dt => { t += dt; if (lap) { lap.update(dt); return; } if (spin) turn.rotation.y += dt * 0.5; Toon.idle(rigs.red, t); Toon.idle(rigs.gerda, t + 2.1); rigs.red.tick(dt); rigs.gerda.tick(dt); });
+  build('A'); build('B'); view('front'); sync();
+  st.start(dt => { t += dt; if (lap) { lap.update(dt); return; } if (spin) turn.rotation.y += dt * 0.5; Toon.idle(rigs.A, t); Toon.idle(rigs.B, t + 2.1); rigs.A.tick(dt); rigs.B.tick(dt); });
   window.__rigs = rigs; window.__st = st;
 })();
 </script>

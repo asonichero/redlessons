@@ -8,8 +8,11 @@ test('a missing or broken look falls back to the defaults', () => {
   assert.equal(c.red.outfit, L.DEFAULT.red.outfit); assert.equal(c.red.skin, L.DEFAULT.red.skin); assert.equal(c.red.hair, '#123456'); assert.equal(c.gerda.outfit, 'Fine');
 });
 
-test('only Red Riding Hood and Gerda are kept', () => {
+test('only the cast is kept, and for the rest of them only what’s been changed', () => {
   assert.deepEqual(Object.keys(L.clean({ jack: { outfit: 'Outdoor' } })).sort(), ['gerda', 'red']);
+  const c = L.clean({ peter: { hair: '#123456', outfit: 'x', skin: 'pink' }, holt: {} });
+  assert.deepEqual(c.peter, { hair: '#123456' }); assert.equal(c.holt, undefined);
+  assert.equal(L.CAST.length, 22); assert.ok(L.CAST.includes('weeBarrow') && L.CAST.includes('willie'));
 });
 
 test('every outfit and swatch is valid', () => {

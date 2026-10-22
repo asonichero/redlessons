@@ -114,15 +114,19 @@ Each smack adds a sharp **sting** (fading in seconds) and a deep **ache** (fadin
 
 ## Character editor (`editor.html`, `js/looks.js`)
 
-Rose and her mother stand side by side in the room, idling and blinking. You can pick:
+Any two of the cast stand side by side on a plain floor against a plain backdrop, idling and blinking: choose each from the **Left** and **Right** lists (the pair is remembered). All twenty-two are built: Rose, Maren and Hulda; Peter; Tom and Master Ferrier; Mistress and Master Pennock; Mistress Abney and Bess; Master Halloran; William Dunn, the Watchman (nightgown, nightcap and slippers) and Georgie, the miller's lad; Agnes; Holt; Wolfe (amber eyes, a long dark coat); Mother, Father and Wee Barrow; Lucy Locket; Mother Brannock and Kitty Fisher, of the Shoe. Each is built from a spec in `js/toon.js` (`SPECS`): sex, size and build, hair and beard, hat, top, waistcoat, jerkin or coat, sleeves, skirt, trousers or gown, apron, shawl, footwear, and their colours.
 
-- **Outfit:** hers is No cloak (the default), Hood down or Hood up; her mother's is Work or Fine.
-- **Colours:** skin, hair, eyes and lips for both, and the colour of her cloak. Choose from a row of swatches or pick any colour.
-- **Her face:** preview each expression.
+For each of the two you can pick:
+
+- **Outfit:** Rose's is No cloak (the default), Hood down or Hood up; her mother's is Work or Fine.
+- **Colours:** skin, hair, eyes and lips for anyone, and the colour of Rose's cloak. Choose from a row of swatches or pick any colour. **Back to their own colours** resets that one.
+- **Face:** preview each expression.
+
+**Skirts, trousers:** on, lifted (skirts) and down (trousers), or off. **Pose:** standing, or over the knee: the right one across the left one's knee, as the lap scene builds it.
 
 **Shapes and proportions:** every number the figures are built from, in groups (proportions, each character's size, bust and skirt length, body widths, bust, seat, face, hair, clothes, outline and shading), as number boxes with step arrows (↑ ↓, Shift for ten steps). Changed values show in gold; each group resets on its own, and **Copy values** copies the ones you changed. They're kept in the browser and the lap scene uses them.
 
-Views: front, side, back, faces, or turning. Changes are saved in the browser straight away, and the lap scene uses them. **Back to their own colours** resets both.
+Views: front, side, back, faces, or turning. Changes are saved in the browser straight away, and every scene uses them.
 
 ## Files
 

@@ -154,13 +154,59 @@ function surface(fn, nu, nv, outward) {
 // Joint positions for a figure of scale 1 (about 31 tall, the head 5.5 of it). Each character is this figure scaled.
 // headScale: the head (face, hair, hood) is drawn larger than life, for bigger expressions, on a grown-up body: about 5.6 heads tall in all.
 const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.1, ua: 5.0, fa: 4.4, neckY: 8.15, headY: 0.9, headC: 2.0, headScale: 1.34 };
+// Each character: their size and build (multipliers on the shared proportions below), how they're dressed, their hair, and their colours.
+//   sex 'f' or 'm'; bust (0 for none); build: shoulders, chest, waist, hips, arms, legs, neck; face: jaw, nose, eyes (size), lash (0..1, how
+//   heavy the lashes), brow (how thick the brows), lips (how much colour). Dress: top ('blouse' or 'shirt'; sleeves 'elbow', 'long' or 'rolled';
+//   puff), bodice (laced, over the blouse), vest ('waistcoat', 'jerkin', 'coat': over the shirt), lower ('skirt', 'trousers', 'gown' to the
+//   floor), smock (a long shirt over the trousers), skirtLen, apron ('cloth', 'leather', 'white'), shawl, hat ('mob', 'nightcap', 'bakers',
+//   'flatcap', 'felt'), feet ('boots', 'bare', 'slippers'). Hair: 'long', 'bun', 'short', 'tousled', 'curly', 'tail', 'braid', 'bald'; beard
+//   'full', 'short', 'moustache', 'pointed', 'stubble'. pal: their colours (skin, hair, eyes and lips can be changed in the editor).
 const SPECS = {
-  red: { name: 'Rose', age: 19, scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
-  gerda: { name: 'Maren', age: 'late thirties', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'boots', skirtLen: 13.6 },
+  red: { name: 'Rose', age: 19, sex: 'f', scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
+  gerda: { name: 'Maren', age: 38, sex: 'f', scale: 1.04, bust: 1.12, hair: 'bun', feet: 'boots', skirtLen: 13.6 },
   // (her grandmother: shorter, softer through the middle, grey all through her hair, a knitted shawl over her shoulders, and a face that's laughed a lot)
-  gran: { name: 'Hulda', age: 'past seventy', scale: 0.93, bust: 1.18, hair: 'bun', feet: 'boots', skirtLen: 14, waist: 1.22, grey: true, shawl: true, old: true },
+  gran: { name: 'Hulda', age: 71, sex: 'f', scale: 0.93, bust: 1.18, hair: 'bun', feet: 'boots', skirtLen: 14, waist: 1.22, grey: true, shawl: true, old: true },
+  // ── The village's women.
+  pennock: { name: 'Mistress Pennock', age: 44, sex: 'f', scale: 0.97, bust: 1.25, waist: 1.25, hips: 1.08, arms: 1.12, hair: 'bun', hat: 'mob', apron: 'white', feet: 'boots', skirtLen: 13.4, sleeves: 'rolled',
+    pal: { skin: '#f8d6bc', hair: '#a8784a', eyes: '#5f7f95', lips: '#c4686a', top: '#f2ece0', bodice: '#5a6a8a', skirt: '#6a7aa0', skirtDk: '#4e5c80', hem: '#4e5c80', apron: '#fbf8f2', apronDk: '#e2dcd0' } },
+  abney: { name: 'Mistress Abney', age: 52, sex: 'f', scale: 1.0, bust: 1.18, waist: 1.18, hips: 1.05, hair: 'bun', grey: true, feet: 'boots', skirtLen: 13.6, apron: 'cloth', old: true,
+    pal: { skin: '#f2cfb2', hair: '#5a4034', eyes: '#6a4a2a', lips: '#b06068', top: '#efe6d4', bodice: '#3a4a34', skirt: '#4a5a3e', skirtDk: '#38462e', hem: '#38462e', apron: '#ece2c8', apronDk: '#d4c8aa' } },
+  abneyDaughter: { name: 'Bess Abney', age: 26, sex: 'f', scale: 0.93, bust: 1.1, waist: 1.08, hair: 'braid', feet: 'boots', skirtLen: 13.2,
+    pal: { skin: '#f4d0b4', hair: '#6a4430', eyes: '#6a4a2a', lips: '#c46a70', top: '#f4ecdc', bodice: '#5a7a9a', skirt: '#86a4c0', skirtDk: '#6a88a6', hem: '#6a88a6' } },
+  agnes: { name: 'Agnes Thatcher', age: 19, sex: 'f', scale: 0.86, bust: 0.95, hair: 'long', feet: 'boots', skirtLen: 9,
+    pal: { skin: '#fbe0cc', hair: '#e8c070', eyes: '#4a70b0', lips: '#d0707a', top: '#fbf4e4', bodice: '#a86a3a', skirt: '#d8a840', skirtDk: '#b88a2c', hem: '#fbf4e4' } },
+  lucy: { name: 'Lucy Locket', age: 20, sex: 'f', scale: 0.87, bust: 1.0, hair: 'curly', feet: 'boots', skirtLen: 9.5,
+    pal: { skin: '#eec4a2', hair: '#2a1c16', eyes: '#6a4a2a', lips: '#c4585e', top: '#ece4d4', bodice: '#5a5a62', skirt: '#9ab0c4', skirtDk: '#7a90a6', hem: '#7a90a6' } },
+  kitty: { name: 'Kitty Fisher', age: 24, sex: 'f', scale: 0.9, bust: 1.05, hair: 'long', feet: 'boots', skirtLen: 11,
+    pal: { skin: '#f6d3b8', hair: '#16110f', eyes: '#2e6a40', lips: '#a8525a', top: '#f0e8d8', bodice: '#2e4a3a', skirt: '#3e6a4e', skirtDk: '#2e523c', hem: '#2e523c' } },
+  brannock: { name: 'Mother Brannock', age: 58, sex: 'f', scale: 1.0, bust: 1.1, waist: 1.1, hair: 'bun', grey: true, hat: 'mob', feet: 'boots', skirtLen: 14, old: true, sleeves: 'long',
+    pal: { skin: '#f0cdb0', hair: '#8a8580', eyes: '#5a5a62', lips: '#a06068', top: '#f4f0e8', bodice: '#2a2628', skirt: '#2e2a2c', skirtDk: '#201c1e', hem: '#201c1e' } },
+  motherBarrow: { name: 'Mother Barrow', age: 45, sex: 'f', scale: 1.0, bust: 1.22, waist: 1.2, hips: 1.08, arms: 1.1, hair: 'bun', feet: 'boots', skirtLen: 13.4, apron: 'cloth', shawl: true,
+    pal: { skin: '#f2c8a6', hair: '#8a4a2a', eyes: '#6a4a2a', lips: '#b8606a', top: '#efe2cc', bodice: '#6a3a24', skirt: '#8a5a32', skirtDk: '#6a4224', hem: '#6a4224', apron: '#e8d8b8', apronDk: '#cfbe9a', cloak: '#3a6a4a' } },
+  // ── The village's men.
+  peter: { name: 'Peter', age: 21, sex: 'm', scale: 1.0, shoulders: 1.1, chest: 1.06, waist: 0.96, hips: 0.92, arms: 1.06, neck: 1.08, jaw: 1.08, hair: 'curly', feet: 'boots', vest: 'waistcoat', sleeves: 'rolled',
+    pal: { skin: '#f2c8a6', hair: '#6a4430', eyes: '#5f7f95', lips: '#c08878', top: '#f0e8d6', vest: '#4a5a3a', trousers: '#6a5a46', boots: '#5a3a22', bootsDk: '#3e2614' } },
+  tom: { name: 'Tom Ferrier', age: 20, sex: 'm', scale: 0.98, shoulders: 1.12, chest: 1.08, waist: 0.98, hips: 0.92, arms: 1.12, neck: 1.1, jaw: 1.06, hair: 'tousled', feet: 'boots', apron: 'leather', sleeves: 'rolled',
+    pal: { skin: '#eec09a', hair: '#2a1c16', eyes: '#6a4a2a', lips: '#b88070', top: '#e6dcc8', trousers: '#4a4440', apron: '#6a4428', apronDk: '#4a2e1a' } },
+  smith: { name: 'Master Ferrier', age: 46, sex: 'm', scale: 1.12, shoulders: 1.22, chest: 1.18, waist: 1.12, hips: 1.0, arms: 1.3, legs: 1.12, neck: 1.2, jaw: 1.16, hair: 'short', beard: 'full', feet: 'boots', apron: 'leather', sleeves: 'rolled',
+    pal: { skin: '#e8b890', hair: '#2a2420', eyes: '#5a5a62', lips: '#a87060', top: '#dcd2c0', trousers: '#3a3634', apron: '#5a3a22', apronDk: '#3e2614' } },
+  baker: { name: 'Master Pennock', age: 47, sex: 'm', scale: 1.02, shoulders: 1.08, chest: 1.12, waist: 1.35, hips: 1.12, arms: 1.1, neck: 1.15, jaw: 1.12, hair: 'bald', beard: 'moustache', hat: 'bakers', feet: 'boots', apron: 'white', sleeves: 'rolled',
+    pal: { skin: '#f6d0b4', hair: '#8a6a4a', eyes: '#5f7f95', lips: '#c07870', top: '#f6f2ea', trousers: '#5a5248', apron: '#fbf8f2', apronDk: '#e2dcd0', hat: '#fbf8f2' } },
+  halloran: { name: 'Master Halloran', age: 66, sex: 'm', scale: 0.98, shoulders: 1.06, chest: 1.04, waist: 1.12, hips: 0.98, neck: 1.05, jaw: 1.1, hair: 'short', grey: true, beard: 'short', hat: 'felt', smock: true, feet: 'boots', old: true, sleeves: 'long',
+    pal: { skin: '#e4b48c', hair: '#c8c4bc', eyes: '#5f7f95', lips: '#a87068', top: '#e8dcc0', trousers: '#5a4a38', hat: '#6a5a44' } },
+  willie: { name: 'William Dunn', age: 42, sex: 'm', scale: 1.0, shoulders: 1.04, chest: 1.0, waist: 1.0, hips: 0.95, neck: 1.05, jaw: 1.06, hair: 'short', beard: 'stubble', hat: 'nightcap', lower: 'gown', skirtLen: 14.2, feet: 'slippers', sleeves: 'long',
+    pal: { skin: '#f0caa8', hair: '#6a5040', eyes: '#4a70b0', lips: '#b07a6e', top: '#f6f2e6', skirt: '#f6f2e6', skirtDk: '#e2dccc', hem: '#e2dccc', hat: '#d8e0f0', slippers: '#6a2a3a' } },
+  georgie: { name: 'Georgie Dunn', age: 19, sex: 'm', scale: 0.95, shoulders: 1.04, chest: 1.0, waist: 0.95, hips: 0.92, neck: 1.04, jaw: 1.02, hair: 'tousled', hat: 'flatcap', feet: 'boots', sleeves: 'rolled', flour: true,
+    pal: { skin: '#fbe0cc', hair: '#d0a050', eyes: '#4a70b0', lips: '#c08878', top: '#ece6d8', trousers: '#8a7a62', hat: '#5a5048' } },
+  holt: { name: 'Holt', age: 41, sex: 'm', scale: 1.1, shoulders: 1.2, chest: 1.14, waist: 1.02, hips: 0.98, arms: 1.22, legs: 1.08, neck: 1.18, jaw: 1.14, hair: 'tail', beard: 'short', feet: 'boots', vest: 'jerkin', sleeves: 'long',
+    pal: { skin: '#dca880', hair: '#5a3a24', eyes: '#4f8a62', lips: '#a06a5a', top: '#c8b898', vest: '#4a3a28', trousers: '#3e4a34', boots: '#3e2a1a', bootsDk: '#2a1a0e' } },
+  wolfe: { name: 'Wolfe', age: 36, sex: 'm', scale: 1.08, shoulders: 1.12, chest: 1.06, waist: 0.95, hips: 0.92, arms: 1.06, neck: 1.08, jaw: 1.1, nose: 1.15, hair: 'short', beard: 'pointed', feet: 'boots', vest: 'coat', sleeves: 'long',
+    pal: { skin: '#eccbb0', hair: '#2e2a2a', eyes: '#c88a2a', lips: '#9a6a62', top: '#e8e2d8', vest: '#2a2a30', trousers: '#2e2c30', boots: '#1e1a1a', bootsDk: '#141010' } },
+  fatherBarrow: { name: 'Father Barrow', age: 48, sex: 'm', scale: 1.14, shoulders: 1.24, chest: 1.22, waist: 1.3, hips: 1.08, arms: 1.28, legs: 1.15, neck: 1.22, jaw: 1.18, hair: 'curly', beard: 'full', feet: 'boots', vest: 'waistcoat', sleeves: 'rolled',
+    pal: { skin: '#e8bc94', hair: '#6a3a1e', eyes: '#6a4a2a', lips: '#a87060', top: '#e8dcc4', vest: '#7a3a2a', trousers: '#5a3e26' } },
+  weeBarrow: { name: 'Wee Barrow', age: 22, sex: 'm', scale: 0.92, shoulders: 1.02, chest: 1.04, waist: 1.08, hips: 1.0, arms: 1.04, neck: 1.04, jaw: 1.0, hair: 'curly', feet: 'boots', sleeves: 'long', top: 'jumper',
+    pal: { skin: '#f4cca8', hair: '#a86a3a', eyes: '#6a4a2a', lips: '#c08070', top: '#d8a85a', trousers: '#6a4a30' } },
 };
-
 // ── Tuning: every number the figures are built from, adjustable in the editor (editor.html) and kept in the browser, so the lap scene uses them
 // too. [key, group, label, default, min, max, step]. Lengths are in the figure's units (a figure stands about 31 tall); the rest are multipliers.
 const TUNE = [
@@ -205,13 +251,25 @@ function setTune(o, keep) {
 const getTune = () => Object.assign({}, K);
 function resetTune() { try { root.localStorage && root.localStorage.removeItem(TUNE_KEY); } catch (e) { /* no storage */ } return setTune({}, false); }
 // Palettes: the look's colours (js/looks.js), and each outfit's clothes.
+// The shine on hair: lighter, but on very dark hair a warm lift rather than a grey one.
+function hairShine(hex) {
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255], lum = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  if (lum > 70) return shade(hex, 0.28);
+  return '#' + c.map((v, i) => Math.round(v + ([122, 92, 74][i] - v) * 0.45).toString(16).padStart(2, '0')).join('');
+}
 function palette(id, look) {
-  const l = look || {}, P = {};
-  P.skin = l.skin || '#f6d3b8'; P.skinSh = shade(P.skin, -0.12);
-  P.hair = l.hair || (id === 'red' ? '#b0582a' : id === 'gran' ? '#d6d0c8' : '#7a3a22'); P.hairHi = shade(P.hair, 0.28); P.hairDk = shade(P.hair, -0.32);
-  P.eyes = l.eyes || (id === 'red' ? '#4f8a62' : '#4f8a62'); P.lips = l.lips || (id === 'red' ? '#d49080' : id === 'gran' ? '#b8807a' : '#a8525a');
-  P.blush = shade(P.lips, 0.35);
-  if (id === 'red') {
+  const l = look || {}, P = {}, S = SPECS[id] || {}, sp = S.pal || {};
+  P.skin = l.skin || sp.skin || '#f6d3b8'; P.skinSh = shade(P.skin, -0.12);
+  P.hair = l.hair || sp.hair || (id === 'red' ? '#b0582a' : id === 'gran' ? '#d6d0c8' : '#7a3a22'); P.hairHi = hairShine(P.hair); P.hairDk = shade(P.hair, -0.32);
+  P.eyes = l.eyes || sp.eyes || '#4f8a62'; P.lips = l.lips || sp.lips || (id === 'red' ? '#d49080' : id === 'gran' ? '#b8807a' : '#a8525a');
+  P.blush = shade(P.lips, 0.35); P.beard = sp.beard || P.hair;
+  if (S.pal) {      // (everyone else: their own colours, from their spec)
+    const top = sp.top || '#efe8d8', skirt = sp.skirt || '#6b4a3a', apron = sp.apron || (S.apron === 'leather' ? '#5a3a22' : S.apron === 'white' ? '#fbf8f2' : '#ebe2cc');
+    Object.assign(P, { blouse: top, bodice: sp.bodice || shade(top, -0.55), lace: sp.lace || '#e6d7b0', skirt, skirtDk: sp.skirtDk || shade(skirt, -0.2), hem: sp.hem || sp.skirtDk || shade(skirt, -0.2),
+      apron: S.apron ? apron : null, apronDk: sp.apronDk || shade(apron, -0.12), boots: sp.boots || '#4a2f1c', bootsDk: sp.bootsDk || '#33200f', drawers: '#f4eee2', drawersDk: '#ddd3c0',
+      trousers: sp.trousers || '#5a4a3a', vest: sp.vest || '#4a3a2a', hat: sp.hat || '#f4f0e8', slippers: sp.slippers || '#6a2a3a', belt: '#3a2618',
+      cloak: sp.cloak || '#7d6a8c', cloakDk: shade(sp.cloak || '#7d6a8c', -0.3), lining: '#e2d8c8' });
+  } else if (id === 'red') {
     const cloak = l.cloak || '#a01828';
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: cloak, skirtDk: shade(cloak, -0.3),      // (her skirt the red of her cloak)
      
@@ -228,9 +286,19 @@ function palette(id, look) {
   return P;
 }
 
+// The shared tuning made this character's: their build and face on top of it.
+function tuneFor(S) {
+  const k = Object.assign({}, K), by = (key, f) => { if (f != null) k[key] = K[key] * f; };
+  by('hipWidth', S.hips); by('chestWidth', S.chest); by('armGirth', S.arms); by('legGirth', S.legs); by('neckGirth', S.neck); by('jaw', S.jaw); by('noseSize', S.nose);
+  if (S.eyes) { k.eyeW *= S.eyes; k.eyeH *= S.eyes; }
+  if (S.sex === 'm') { k.eyeH *= 0.88; k.eyeW *= 0.96; k.iris *= 0.94; k.mouthSize *= 0.92; k.cheekW *= 0.88; k.cheekD *= 0.88; k.cheekH *= 0.92; k.handSize *= 1.08; k.footSize *= 1.08; k.earSize *= 1.05; k.fringe *= 0.78; }
+  return k;
+}
+
 function make(id, look, opts) {
   opts = opts || {};
   const S = SPECS[id]; if (!S) throw new Error('Toon: unknown character ' + id);
+  const K = tuneFor(S), MAN = S.sex === 'm';
   look = look || {}; const P = palette(id, look), D = DIM;
   const rig = { id, spec: S, look, P, scaleW: S.scale, solids: [] };
   rig.clipId = liveId++; rig.clipSrc = [[], [], [], []]; rig.clipRT = [0, 1, 2, 3].map(() => new THREE.WebGLRenderTarget(4, 4, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter }));
@@ -242,7 +310,7 @@ function make(id, look, opts) {
   const bone = (name, parent, x, y, z, order) => { const b = new THREE.Bone(); b.name = name; b.position.set(x, y, z); if (order) b.rotation.order = order; parent.add(b); bones.push(b); rig[name] = b; return b; };
   bone('hips', root_, 0, D.hipY, 0); bone('torso', rig.hips, 0, D.torsoY, 0, 'YXZ'); bone('neck', rig.torso, 0, D.neckY, 0, 'YXZ'); bone('head', rig.neck, 0, D.headY, 0, 'YXZ');
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
-    bone('arm' + s, rig.torso, sx * D.shX, D.shY, 0, 'ZXY'); bone('elbow' + s, rig['arm' + s], 0, -D.ua, 0); bone('hand' + s, rig['elbow' + s], 0, -D.fa, 0);
+    bone('arm' + s, rig.torso, sx * D.shX * (S.shoulders || 1), D.shY, 0, 'ZXY'); bone('elbow' + s, rig['arm' + s], 0, -D.ua, 0); bone('hand' + s, rig['elbow' + s], 0, -D.fa, 0);
     bone('seatPivot' + s, rig.hips, sx * D.hipX, 0, 0);      // (each cheek of the seat turns about this with its thigh: see followThighs)
     bone('thigh' + s, rig.hips, sx * D.hipX, 0, 0, 'ZXY'); bone('knee' + s, rig['thigh' + s], 0, -D.thigh, 0); bone('ankle' + s, rig['knee' + s], 0, -D.shin, 0);
   }
@@ -384,7 +452,7 @@ function make(id, look, opts) {
   rig.upperBack = mk(new V3(0, 6.2, -1.95 * TD * K.chestWidth), rig.torso);
   // The bust is sculpted into the front of the torso (and the bodice under it), not set on it, so the chest is one smooth form.
   const bust = g => {
-    const p = g.attributes.position, q = new V3(), A = K.bustAmt * S.bust, W = K.bustW;
+    const p = g.attributes.position, q = new V3(), A = K.bustAmt * (S.bust || 0), W = K.bustW;
     for (let i = 0; i < p.count; i++) {
       q.fromBufferAttribute(p, i); if (q.z <= 0) continue;
       const dx = Math.abs(q.x) - K.bustX, dy = q.y - K.bustY, f = Math.exp(-(dx * dx) / (2 * W * W) - (dy * dy) / (2 * (dy < 0 ? 0.65 * W : W) ** 2));
@@ -392,12 +460,27 @@ function make(id, look, opts) {
     }
     g.computeVertexNormals(); return g;
   };
-  skinnedOn(rig.hips, bust(lathe(wide(dense([[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]], 44), trunkW), 0.68 * TD, 32)), top, torsoW, { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] });   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
+  // (a man's trunk runs straighter, with no waist drawn in; a woman's goes in at the waist and out over the bust)
+  const TORSO = MAN ? [[0, 0.3], [2.9, 0.4], [2.86, 1.5], [2.74, 2.9], [2.76, 3.8], [2.9, 4.9], [3.06, 6.2], [3.14, 7.4], [3.02, 8.4], [2.36, 9.2], [1.2, 9.7], [0, 9.85]]
+    : [[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]];
+  const BODICE = !MAN && S.lower !== 'gown' && S.bodice !== false, VEST = MAN && S.vest;
+  // (where the shirt is under the vest: a waistcoat to the waist, a jerkin and a coat over the hips)
+  const vestFrom = S.vest === 'waistcoat' ? 1.0 : -1.2;
+  skinnedOn(rig.hips, bust(lathe(wide(dense(TORSO, 44), trunkW), 0.68 * TD, 32)), top, torsoW, BODICE ? { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] } : VEST ? { cover: p => [cc('vest'), ss(8.6, 8.2, p.y) * ss(vestFrom - 0.2, vestFrom + 0.2, p.y), 'bodice'] } : {});   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
+  // A man's vest: a waistcoat (buttoned, to the waist), a leather jerkin (laced, over the hips), or a long coat (over the hips, its tails to the knee).
+  if (VEST) {
+    const vp = TORSO.filter(([r, y]) => y >= vestFrom - 0.1 && y <= 8.6).map(([r, y]) => [r + 0.14, y]); vp.unshift([TORSO[1][0] + 0.16, vestFrom]); if (vestFrom < 0) vp.unshift([3.2, vestFrom - 0.05]);
+    clipSrc('bodice', skinnedOn(rig.hips, lathe(wide(dense(vp.sort((a, b) => a[1] - b[1]), 26), y => y < 0.6 ? K.hipWidth : trunkW(y)), 0.71 * TD, 32), P.vest, torsoW, { ink: 0.05 }));
+    const zAt = y => { let r = vp[0][0]; for (const [rr, yy] of vp) if (yy <= y) r = rr; return r * 0.71 * TD * trunkW(Math.max(0.6, y)) + 0.05; };
+    if (S.vest === 'waistcoat') for (let i = 0; i < 5; i++) { const y = 1.6 + i * 1.3; piece(new THREE.SphereGeometry(0.14, 8, 6), '#c8b070', rig.torso, 0, y - D.torsoY, zAt(y), { ink: 0.02 }); }
+    else if (S.vest === 'jerkin') for (let i = 0; i < 4; i++) { const y = 2.4 + i * 1.4; for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.7, 0.1, 0.08), '#2a1a10', rig.torso, 0, y - D.torsoY, zAt(y), { rot: [0, 0, sx * 0.5], ink: 0 }); }
+    else { piece(new THREE.BoxGeometry(0.3, 7.6, 0.12), shade(P.vest, -0.3), rig.torso, 0, 4.2 - D.torsoY, zAt(4.2), { ink: 0 }); }
+  }
   // The bodice: laced, from the hips to under the bust.
-  clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 }));      // (flaring at the bottom over the hips, which never show through it)
-  clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 }));      // its bound hem, a neat edge over the join with whatever is below
+  if (BODICE) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 }));      // (flaring at the bottom over the hips, which never show through it)
+  if (BODICE) clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 }));      // its bound hem, a neat edge over the join with whatever is below
   // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
-  { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
+  if (BODICE) { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
     // (from above the skirt's waistband to just under the bust)
     for (let i = 0; i < 4; i++) { const yh = 2.95 + i * 0.78, z = rAt(yh) * 0.74 * TD + 0.06;
       for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.95, 0.14, 0.1), P.lace, rig.torso, 0, yh - D.torsoY, z, { rot: [0, 0, sx * 0.55], ink: 0 });
@@ -411,10 +494,18 @@ function make(id, look, opts) {
     const arm = rig['arm' + s], elbow = rig['elbow' + s], hand = rig['hand' + s];
     const AG = K.armGirth, E = -D.ua, Wr = -D.ua - D.fa, HS = K.handSize;
     if (id === 'red') piece(ell(1.08 * AG, 1.15 * AG, 1.02 * AG), top, arm, sx * 0.05, -0.75, 0, { ink: 0.05 });     // her puffed sleeve
-    // One arm from the shoulder to the wrist: the sleeve to the elbow, its rolled cuff, the bare forearm, all bending together.
-    skinnedOn(arm, lathe(wide([[0, 0.75], [0.8, 0.45], [0.88, -0.3], [0.8, -2.6], [0.7, E + 0.6], [0.66, E - 0.25]], AG), 1, 18), top, armW(s));
-    skinnedOn(arm, lathe(wide([[0.7, E + 0.55], [0.8, E + 0.05], [0.68, E - 0.45]], AG), 1, 18), shade(top, -0.06), armW(s), { ink: 0.04 });
-    skinnedOn(arm, lathe(wide([[0.6, E + 0.3], [0.62, E - 0.5], [0.6, E - 1.4], [0.5, lerp(E, Wr, 0.72)], [0.42, Wr + 0.1], [0.36, Wr - 0.3], [0, Wr - 0.55]], AG), 1, 18), P.skin, armW(s));
+    // One arm from the shoulder to the wrist: the sleeve (to the elbow, rolled above it, or to the wrist), its cuff, the bare forearm, all bending together.
+    const SL = S.vest === 'coat' || S.top === 'jumper' ? 'long' : S.sleeves || 'elbow', sleeveC = S.vest === 'coat' ? P.vest : top;
+    if (SL === 'long') {
+      skinnedOn(arm, lathe(wide([[0, 0.75], [0.8, 0.45], [0.88, -0.3], [0.82, -2.6], [0.74, E + 0.3], [0.7, E - 0.4], [0.66, lerp(E, Wr, 0.6)], [0.6, Wr + 0.5]], AG), 1, 18), sleeveC, armW(s));
+      skinnedOn(arm, lathe(wide([[0.6, Wr + 0.75], [0.7, Wr + 0.45], [0.6, Wr + 0.15]], AG), 1, 18), shade(sleeveC, -0.12), armW(s), { ink: 0.04 });
+      skinnedOn(arm, lathe(wide([[0.46, Wr + 0.5], [0.42, Wr + 0.1], [0.36, Wr - 0.3], [0, Wr - 0.55]], AG), 1, 18), P.skin, armW(s));
+    } else {
+      const cE = SL === 'rolled' ? E + 0.9 : E;      // (rolled up above the elbow, in a thick roll)
+      skinnedOn(arm, lathe(wide([[0, 0.75], [0.8, 0.45], [0.88, -0.3], [0.8, -2.6], [0.7, cE + 0.6], [0.66, cE - 0.25]], AG), 1, 18), top, armW(s));
+      skinnedOn(arm, lathe(wide(SL === 'rolled' ? [[0.7, cE + 0.6], [0.9, cE + 0.15], [0.92, cE - 0.3], [0.72, cE - 0.6]] : [[0.7, cE + 0.55], [0.8, cE + 0.05], [0.68, cE - 0.45]], AG), 1, 18), shade(top, -0.06), armW(s), { ink: 0.04 });
+      skinnedOn(arm, lathe(wide([[0.6, cE + 0.3], [0.64, E - 0.2], [0.62, E - 0.5], [0.6, E - 1.4], [0.5, lerp(E, Wr, 0.72)], [0.42, Wr + 0.1], [0.36, Wr - 0.3], [0, Wr - 0.55]], AG), 1, 18), P.skin, armW(s));
+    }
     if (P.gold) piece(new THREE.TorusGeometry(0.45 * AG, 0.08, 6, 16).rotateX(Math.PI / 2), P.gold, elbow, 0, -D.fa + 0.5, 0, { ink: 0 });
     // The hand: a palm, the fingers together in a soft, slightly curled block, and the thumb.
     piece(ell(0.3 * HS, 0.66 * HS, 0.6 * HS), P.skin, hand, 0, -0.55 * HS, 0, { ink: 0.035 });
@@ -434,6 +525,9 @@ function make(id, look, opts) {
       clipSrc('boots', skinnedOn(thigh, lathe(wide([[0.88, sh(0.507)], [1.04, sh(0.536)], [1.0, sh(0.586)]], LG), 1, 18), P.bootsDk, legW(s), { ink: 0.04 }));
       clipSrc('boots', piece(flatFoot(ell(0.78 * FS, 0.62, 1.55 * FS), 0.5), P.boots, ankle, 0, -0.22, 0.62 * FS));
       clipSrc('boots', piece(flatFoot(ell(0.82 * FS, 0.2, 1.62 * FS), 0.12), P.bootsDk, ankle, 0, -0.62, 0.62 * FS, { ink: 0.04 }));      // (the sole)
+    } else if (S.feet === 'slippers') {      // (carpet slippers: a felt sole, and a soft upper over the foot)
+      piece(flatFoot(ell(0.74 * FS, 0.56, 1.5 * FS), 0.45), P.slippers, ankle, 0, -0.3, 0.62 * FS);
+      piece(flatFoot(ell(0.8 * FS, 0.16, 1.58 * FS), 0.1), '#3a2a24', ankle, 0, -0.66, 0.62 * FS, { ink: 0.03 });
     } else {
       piece(flatFoot(ell(0.62 * FS, 0.5, 1.45 * FS), 0.4), P.skin, ankle, 0, -0.35, 0.62 * FS);
       if (P.gold) piece(new THREE.TorusGeometry(0.62 * LG, 0.08, 6, 16).rotateX(Math.PI / 2), P.gold, knee, 0, -D.shin + 0.6, 0, { ink: 0 });
@@ -441,17 +535,23 @@ function make(id, look, opts) {
   }
 
   // ── The skirt (skinned to the legs), a band at its hem, Gerda's apron; her drawers, the skirt gathered up, the drawers down at her knees. ──
-  const L_ = S.skirtLen;
+  // What's worn below: a skirt, a gown to the floor, or trousers (with a smock over them, for some).
+  const LOWER = S.lower || (MAN ? 'trousers' : 'skirt'), TROUSERS = LOWER === 'trousers', SKIRTED = !TROUSERS || !!S.smock;
+  const L_ = S.smock ? 5 : S.skirtLen || 12;
+  if (S.smock) { P.skirt = top; P.skirtDk = shade(top, -0.12); P.hem = shade(top, -0.12); }
   const SW = y => (y > 0.6 ? trunkW(y) : K.hipWidth) * (y < 0 ? lerp(1, K.skirtFull, ss(0, -4, y)) : 1);       // (it widens with the hips, and flares with its fullness)
   const skirtProfile = wide([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]], SW);
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
   let skirt = null, hemBand = null, apron = null;
-  const waist = clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 }));
+  const waist = SKIRTED ? clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 })) : new THREE.Group();
   // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
   // (the part under her seat isn't tilted with the lap: tilted, its front rises through the bodice, or the apron)
   const drapeG = new THREE.Group(), seatG = new THREE.Group(); rig.hips.add(drapeG, seatG); drapeG.visible = seatG.visible = !!opts.seated; let drapeShape = null;
-  seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5, opts.seated ? rig.hips : seatG);
-  if (!opts.seated) {
+  if (SKIRTED) seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : L_ + 1.5, opts.seated ? rig.hips : seatG);
+  // (over trousers, an apron or a long coat's tails sit the same way: the apron laid along the lap and over the knees, the coat open over it)
+  const TAP = TROUSERS && (!!S.apron || S.vest === 'coat');
+  if (TAP) seatedDrape(opts.seated ? rig.hips : drapeG, opts.seated ? null : 99, null, S.apron ? 'apron' : 'coat');
+  if (!opts.seated && SKIRTED) {
     // (lying, its front, the side toward the lap she lies on, is drawn in close over her legs rather than standing out as a bell)
     // (drawn in, but never closer than a cloth's thickness outside the front of her thighs)
     const thighFront = (x, y) => { const rt = lerp(1.75, 1.2, clamp(-y / D.thigh, 0, 1)) * K.legGirth + 0.55; let z = 0; for (const c of [D.hipX, -D.hipX]) z = Math.max(z, Math.sqrt(Math.max(0, rt * rt - (x - c) ** 2))); return z; };
@@ -460,7 +560,7 @@ function make(id, look, opts) {
     // where it's in front of the apron, wherever the apron is)
     skirt = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt, P.apron ? { cover: p => [cc('apron'), ss(1.05, 0.88, Math.abs(Math.atan2(p.x, p.z))) * ss(1.2, 0.8, p.y), 'apron'] } : {}));
     hemBand = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 }));
-    if (P.apron) {
+    if (P.apron && !TROUSERS) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
       apron = clipSrc('apron', skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 }));
     }
@@ -468,10 +568,10 @@ function make(id, look, opts) {
   // Seated (Gerda in the lap scene) the skirt is its own drape, in the hips' space with the thighs level along +z: a tube over the lap, turned
   // round the knees, then hanging to the hem, with the apron laid along the top of it. (Skinning a skirt through a right-angled knee folds it.)
   // (len: how far the drape runs from the back of the seat, when it's shorter than the lap and over the knees to the floor)
-  function seatedDrape(parent, len, under) {
+  function seatedDrape(parent, len, under, only) {
     const Tk = D.thigh, full = Tk + 1.5 + 2.2 * Math.PI / 2 + D.shin + 0.2, L = len == null ? full : Math.min(len, full);
     const lapL = Math.min(Tk + 1.5, L), arcL = Math.min(2.2 * Math.PI / 2, L - lapL), drop = Math.max(0.001, L - lapL - arcL), total = lapL + arcL + drop;
-    drapeShape = { Tk, lapL, arcL, drop };
+    if (!only) drapeShape = { Tk, lapL, arcL, drop };
     // What the drape is, for anything that must not pass through it (js/lap.js keeps arms out): over the lap, an elliptic tube along the thighs;
     // below the knees, one standing to the floor. In the hips' space; returns how far a ball of radius r at q is inside.
     if (len == null) rig.solids.push((q, r) => {
@@ -488,14 +588,16 @@ function make(id, look, opts) {
     };
     const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u); return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
     const outward = p => new V3(p.x, p.z < Tk ? p.y + 0.1 : Math.max(0, p.y + 0.1), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
+    if (only === 'apron') { clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.04, S.apron === 'leather' ? 0.74 : 0.8, -0.35), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 })); return; }
+    if (only === 'coat') { clipSrc('apron', piece(surface(tube(0.75, Math.PI * 2 - 0.75, 0, 0.66, -0.25), 22, 22, outward), P.vest, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 })); return; }
     clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0, 1, 0), 28, 30, outward), P.skirt, parent, 0, 0, 0, { side: THREE.DoubleSide }));
     clipSrc('skirt', piece(lathe(wide([[2.66, 2.1], [3.45, 0.6], [3.9, -0.4], [3.6, -1.6], [3.1, -2.35], [0, -2.6]], SW), 0.9 * TD, 24), P.skirt, under));      // (closed under her seat)
     clipSrc('skirt', piece(surface(tube(-Math.PI, Math.PI, 0.965, 1, 0.06), 28, 2, outward), P.hem, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.04 }));
-    if (P.apron) clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 }));
+    if (P.apron && !TROUSERS) clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.06, 0.78, 0.12), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 }));
   }
   // (under the skirt; and in front, where an apron hangs over the skirt, under that, the outermost: what pushes through there pushes through both)
   const skirtOver = p => P.apron && p.z > 0 && p.y > -9.2 && Math.abs(Math.atan2(p.x, p.z)) < 0.78 ? [cc('apron'), 1, 'apron'] : [cc('skirt'), 1, 'skirt'];
-  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt === 'down' && inSkirt(rest, now) ? skirtOver(rest) : null;      // (the drawers: the skirt's colour while it's down over them)
+  const drawers = [], drawersDown = [], underSkirt = (rest, now) => dress.skirt !== 'down' ? null : TROUSERS ? [cc('trousers'), 1, 'skirt'] : inSkirt(rest, now) ? skirtOver(rest) : null;      // (the drawers: the skirt's colour while it's down over them)
   if (!opts.seated) {      // (both wear them: hers show across the lap, Gerda's only in the editor with her skirt lifted or off; seated, they're under the drape)
     // (closed underneath, following the hips' own shape a little outside it, so nothing hangs down between the legs)
     // (up over the whole seat to the waist, tucked under the bodice: fuller at the back only low down, under the cheeks; above them it follows the
@@ -520,6 +622,40 @@ function make(id, look, opts) {
       const gg = surface((u, v) => { const a = u * Math.PI * 2, x = Math.cos(a) * ax * v, z = Math.sin(a) * 1.5 * K.legGirth * v; return new V3(x, yb - 0.7 * (1 - ss(0, 1.8, Math.abs(x))) - 0.35 * (1 - v * v), z); }, 40, 8, p => new V3(0, -1, 0));
       drawersDown.push(clipSrc('drawers', skinnedOn(rig.hips, gg, P.drawers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0 }))); }
   }
+  // ── Trousers: over the seat and down each leg, tucked into the boots, a belt at the waist. Across a lap they come down to the knees (the
+  // skirt 'up'), a bundle round them, as a skirt is lifted; 'off', gone. The smallclothes under them are the drawers above.
+  const trousers = [], trousersDown = [], tails = [], shirtTail = [];      // (tails: the standing apron over trousers, or a coat's tails; seated, the drape's)
+  if (TROUSERS) {
+    const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, sh = f => -Lk - f * D.shin, bootTop_ = -(D.thigh + 0.507 * D.shin);
+    const inBoots = p => S.feet === 'boots' ? [cc('boots'), ss(bootTop_ + 0.1, bootTop_ - 0.3, p.y), 'boots'] : null;
+    { const g = lathe(wide(dense([[0, -2.75], [1.6, -2.6], [2.98, -1.8], [3.46, -0.4], [3.4, 0.4], [3.24, 1.2], [3.1, 2.4], [3.02, 2.62]], 24), trunkW), 0.77 * TD, 32), pp = g.attributes.position;
+      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(-1.3, -0.4, pp.getY(i)))); }
+      g.computeVertexNormals(); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, torsoW, { ink: 0.05 }))); }
+    for (const [s_, sx] of [['L', 1], ['R', -1]]) {
+      { const g = blendIntoHips(ell(CHEEK.rx * 1.1, CHEEK.ry * 1.08, CHEEK.rz * 1.14), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatW(rig.seatPivot[s_]), { ink: 0.05 }))); }
+      trousers.push(clipSrc('skirt', skinnedOn(rig['thigh' + s_], lathe(wide(dense([[2.0, 0.5], [2.04, -1.4], [1.9, -Lk * 0.68], [1.56, -Lk + 0.6], [1.46, -Lk - 0.2], [1.42, sh(0.25)], [1.3, sh(0.55)], [1.14, -La + 0.6], [1.08, -La + 0.1]], 30), LG), 1, 22), P.trousers, legW(s_), { cover: inBoots, ink: 0.05 })));
+      // (down: a bundle of cloth round each knee)
+      trousersDown.push(clipSrc('skirt', piece(new THREE.TorusGeometry(1.5 * LG, 0.55, 8, 20).rotateX(Math.PI / 2), P.trousers, rig['thigh' + s_], 0, -D.thigh * 0.82, 0, { ink: 0.05 })));
+    }
+    // (and between the knees, the seat of them hanging)
+    { const yb = -D.thigh * 0.84, ax = (D.hipX + 1.5 * K.legGirth), gg = surface((u, v) => { const a = u * Math.PI * 2, x = Math.cos(a) * ax * v, z = Math.sin(a) * 1.6 * K.legGirth * v; return new V3(x, yb - 1.0 * (1 - ss(0, 1.8, Math.abs(x))) - 0.5 * (1 - v * v), z); }, 40, 8, p => new V3(0, -1, 0));
+      trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, gg, P.trousers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0 }))); }
+    // (the tail of the shirt, tucked in: it shows only with the trousers down or off, hanging over the top of the drawers)
+    shirtTail.push(skinnedOn(rig.hips, lathe(wide(dense([[3.4, -0.1], [3.42, 0.4], [3.26, 1.3], [3.08, 2.3]], 12), trunkW), 0.77 * TD, 32), top, torsoW, { side: THREE.DoubleSide, ink: 0.04 }));
+    // The belt, and its buckle.
+    trousers.push(piece(lathe(wide([[3.08, 2.0], [3.14, 2.3], [3.06, 2.62]], trunkW), 0.79 * TD, 28), P.belt, rig.hips, 0, 0, 0, { ink: 0.03 }));
+    trousers.push(piece(new THREE.BoxGeometry(0.9, 0.62, 0.18), '#b8a060', rig.hips, 0, 2.3, 3.08 * trunkW(2.3) * 0.79 * TD + 0.08, { ink: 0.02 }));
+    // An apron over them: the smith's leather one or the baker's white, a bib over the chest on a strap round the neck, down past the knees.
+    if (S.apron) {
+      const ap = [[3.3, 2.6], [3.55, 0.4], [3.7, -2.4], [3.6, -6.4], [3.4, -9.4]], ink = S.apron === 'leather' ? 0.05 : 0.04;
+      if (!opts.seated) tails.push(clipSrc('apron', skinned(lathe(ap.map(([r, y]) => [r * K.hipWidth, y]), 0.92, 14, -1.0, 2.0), P.apron, { ink })));
+      const zc = y => 3.1 * trunkW(y) * 0.68 * TD + 0.22;
+      piece(new THREE.BoxGeometry(4.0 * trunkW(5), 4.4, 0.2), P.apron, rig.torso, 0, 4.8 - D.torsoY, zc(5.6), { ink, rot: [-0.06, 0, 0] });
+      for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.34, 2.6, 0.12), P.apronDk, rig.torso, sx * 1.6, 8.0 - D.torsoY, zc(8.0) - 0.4, { rot: [-0.5, 0, sx * 0.35], ink: 0 });
+    }
+  }
+  // A long coat's tails: open down the front, to the knee, over the trousers.
+  if (S.vest === 'coat' && !opts.seated) tails.push(clipSrc('apron', skinned(lathe([[3.3, 1.0], [3.62, 0.0], [3.9, -2.4], [4.2, -6.0], [4.35, -8.6]].map(([r, y]) => [r * K.hipWidth, y]), 0.9, 24, 0.55, Math.PI * 2 - 1.1), P.vest, { ink: 0.05 })));
   // The skirt lifted: gathered in a roll across the small of her back.
   const roll = new THREE.Group(); rig.hips.add(roll); roll.visible = false;
   // (an oval ring hugging the back and sides of her waist, the hem's band showing along its lower edge, and the cloth bunched at each hip)
@@ -598,8 +734,9 @@ function make(id, look, opts) {
     }
     // The lashes: the upper arch of the eye (a touch flatter), moved down as it closes, and the flick at its outer end.
     const ly = -0.5 * shut * K.eyeH, ar = 0.4 * K.eyeW, br = 0.4 * 0.72 * K.eyeH;
-    fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineWidth = 0.1 * U;
+    fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineWidth = (MAN ? 0.065 : 0.1) * U;
     fx.beginPath(); fx.ellipse(px(cx), py(cy + ly), ar * U, br * U, 0, Math.PI + 0.15, 2 * Math.PI - 0.15); fx.stroke();
+    if (MAN) return;      // (a man's lashes: the line of the lid, without the flick)
     const wx = sx * 0.42 * K.eyeW, wy = (0.13 - 0.55 * shut) * K.eyeH, wl = 0.11 * K.eyeW, wa = sx * 0.45;
     fx.lineWidth = 0.07 * U; fx.beginPath(); fx.moveTo(...E(wx - Math.cos(wa) * wl, wy - Math.sin(wa) * wl)); fx.lineTo(...E(wx + Math.cos(wa) * wl, wy + Math.sin(wa) * wl)); fx.stroke();
   }
@@ -607,7 +744,7 @@ function make(id, look, opts) {
     const by = K.browY + F.browY, inX = sx * (K.eyeX - 0.3 * K.eyeW), outX = sx * (K.eyeX + 0.42 * K.eyeW), inY = by + F.brow * 0.3, outY = by - 0.06 - F.brow * 0.08;
     fx.strokeStyle = P.hairDk; fx.lineCap = 'round';
     for (let k = 0; k < 6; k++) { const t0 = k / 6, t1 = (k + 1) / 6, at = t => [lerp(inX, outX, t), lerp(inY, outY, t) + 0.09 * Math.sin(Math.PI * t)];
-      const [x0, y0] = at(t0), [x1, y1] = at(t1); fx.lineWidth = lerp(0.105, 0.045, t1) * U; fx.beginPath(); fx.moveTo(px(x0), py(y0)); fx.lineTo(px(x1), py(y1)); fx.stroke(); }
+      const [x0, y0] = at(t0), [x1, y1] = at(t1); fx.lineWidth = lerp(0.105, 0.045, t1) * U * (MAN ? 1.55 : 1); fx.beginPath(); fx.moveTo(px(x0), py(y0)); fx.lineTo(px(x1), py(y1)); fx.stroke(); }
   }
   function drawMouth(F) {
     const s_ = F.ms * K.mouthSize, w = F.mw * s_, cy = -1.2 + K.mouthY, c = F.mc, o = F.mo * s_, l = -w / 2, r = w / 2, cornerY = cy + c * 0.12;
@@ -622,7 +759,7 @@ function make(id, look, opts) {
     } else {
       fx.strokeStyle = lipsDk; fx.lineCap = 'round'; fx.lineWidth = 0.045 * U;
       fx.beginPath(); fx.moveTo(px(l), py(cornerY)); fx.quadraticCurveTo(px(0), py(upMid + (upMid - cornerY)), px(r), py(cornerY)); fx.stroke();
-      fx.fillStyle = P.lips; fx.globalAlpha = 0.75; fx.beginPath(); fx.ellipse(px(0), py(cy - 0.08 - c * 0.03), w * 0.22 * U, 0.045 * U, 0, 0, 7); fx.fill(); fx.globalAlpha = 1;
+      fx.fillStyle = P.lips; fx.globalAlpha = MAN ? 0.3 : 0.75; fx.beginPath(); fx.ellipse(px(0), py(cy - 0.08 - c * 0.03), w * 0.22 * U, 0.045 * U, 0, 0, 7); fx.fill(); fx.globalAlpha = 1;
     }
   }
   function paintFace(F, open) {
@@ -632,6 +769,8 @@ function make(id, look, opts) {
       g.addColorStop(0, `rgba(240,120,120,${0.55 * F.blush})`); g.addColorStop(1, 'rgba(240,120,120,0)');
       fx.save(); fx.translate(bx, byp); fx.scale(1, 0.55); fx.translate(-bx, -byp); fx.fillStyle = g; fx.fillRect(bx - r, byp - r, 2 * r, 2 * r); fx.restore();
     }
+    // Stubble: a shadow of beard over the jaw, the chin and the upper lip.
+    if (S.beard === 'stubble') { fx.save(); fx.globalAlpha = 0.22; fx.fillStyle = P.beard; fx.beginPath(); fx.ellipse(px(0), py(-1.55), 1.35 * U, 0.75 * U, 0, 0, 7); fx.fill(); fx.beginPath(); fx.ellipse(px(0), py(K.noseY - 0.42), 0.55 * U, 0.16 * U, 0, 0, 7); fx.fill(); fx.restore(); }
     // The nose's shadow, a short soft curve under its tip.
     fx.strokeStyle = shade(P.skin, -0.3); fx.lineWidth = 0.035 * U; fx.lineCap = 'round'; fx.beginPath(); fx.arc(px(0.02), py(K.noseY - 0.12 * K.noseSize), 0.1 * K.noseSize * U, Math.PI * 0.15, Math.PI * 0.75); fx.stroke();
     for (const sx of [-1, 1]) { drawEye(sx, F, open); drawBrow(sx, F); }
@@ -660,13 +799,22 @@ function make(id, look, opts) {
   { const p = cap.attributes.position, q = new V3();
     for (let i = 0; i < p.count; i++) { q.fromBufferAttribute(p, i); const front = q.z / 2.02, line = lerp(0.15, 1.05, ss(0.25, 0.85, front)); if (front > 0.2 && q.y + 0.1 < line) { q.multiplyScalar(0.8); p.setXYZ(i, q.x, q.y, q.z); } }
     cap.computeVertexNormals(); }
-  const HV = K.hairVol; cap.scale(HV, HV, HV);
-  hair(cap, 0, 0.1, -0.04, [0, 0, 0]);
-  hair(ell(1.62 * HV, 1.85 * HV, 1.3 * HV), 0, 0.15, -0.55);
+  const HAIR = S.hair || 'bun', SHORT = ['short', 'tousled', 'curly', 'tail', 'bald'].includes(HAIR) && (MAN || HAIR !== 'curly');
+  // (short hair has less at the back; the cap itself stays whole over the crown, so the scalp never shows through it)
+  const HV = K.hairVol * (SHORT ? 0.96 : 1), HAT = !!S.hat && S.hat !== 'mob'; cap.scale(K.hairVol, K.hairVol, K.hairVol);
+  // (under a hat, nothing stands up out of the crown or lies over the forehead)
+  const underHat = y => HAT && y > 1.0;
+  if (HAIR !== 'bald') {
+    hair(cap, 0, 0.1, -0.04, [0, 0, 0]);
+    hair(SHORT ? ell(1.5 * HV, 1.62 * HV, 1.12 * HV) : ell(1.62 * HV, 1.85 * HV, 1.3 * HV), 0, SHORT ? 0.3 : 0.15, SHORT ? -0.62 : -0.55);
+  } else {      // (bald on top: hair round the back and sides, above the ears)
+    hair(new THREE.TorusGeometry(1.72, 0.36, 8, 24, Math.PI * 1.25).rotateX(Math.PI / 2).rotateY(-Math.PI * 0.125 + Math.PI), 0, 0.2, -0.15);
+  }
+
   // A fringe: soft swoops across the forehead, parted a little off centre.
-  for (const [x, y, rz, w, len, hex] of [[0.6, 1.2, -0.85, 1.05, 0.62, P.hair], [-0.5, 1.16, 0.75, 0.95, 0.58, P.hairHi], [-1.3, 0.78, 1.3, 0.62, 0.52, P.hair], [1.32, 0.78, -1.3, 0.62, 0.52, P.hair], [0.05, 1.32, 0.1, 0.7, 0.45, P.hair]])
-    if (K.fringe > 0.02) hair(ell(w * K.fringe, len * K.fringe, 0.34), x, y, (1.72 - Math.abs(x) * 0.4) * HV, [-0.45, Math.sign(x) * 0.35, rz], hex);
-  { const s = new THREE.Mesh(arc(1.4, 0.08, Math.PI * 0.18, Math.PI * 0.62), mat(P.hairHi)); s.position.set(0.1, 1.7, 0.35); s.rotation.set(-1.25, 0, 0.35); head.add(s); }       // (a band of shine across the crown)
+  if (HAIR !== 'bald') for (const [x, y, rz, w, len, hex] of [[0.6, 1.2, -0.85, 1.05, 0.62, P.hair], [-0.5, 1.16, 0.75, 0.95, 0.58, MAN ? P.hair : P.hairHi], [-1.3, 0.78, 1.3, 0.62, 0.52, P.hair], [1.32, 0.78, -1.3, 0.62, 0.52, P.hair], [0.05, 1.32, 0.1, 0.7, 0.45, P.hair]])
+    if (K.fringe > 0.02 && !underHat(y)) hair(ell(w * K.fringe, len * K.fringe, 0.34), x, y, (1.72 - Math.abs(x) * 0.4) * K.hairVol, [-0.45, Math.sign(x) * 0.35, rz], hex);
+  if (HAIR !== 'bald' && HAIR !== 'curly' && !HAT) { const s = new THREE.Mesh(arc(1.4, 0.08, Math.PI * 0.18, Math.PI * 0.62), mat(P.hairHi)); s.position.set(0.1, 1.7, 0.35); s.rotation.set(-1.25, 0, 0.35); head.add(s); }       // (a band of shine across the crown)
   // Long hair falls from swinging pivots: two side locks by the face and the back of it to her shoulder blades. They hang with gravity (see tick).
   rig.dangles = [];
   // A chain of segments [[length, rx, rz], …] from a pivot on the head; each hangs from the end of the one before.
@@ -679,16 +827,43 @@ function make(id, look, opts) {
       rig.dangles.push(Object.assign({ g, ax: 0, az: 0, vx: 0, vz: 0, len, seg: i }, o)); parent = g;
     });
   };
-  if (S.hair === 'long') {
+  // (the short styles: tufts standing up at the front; a head of curls; or tied back at the nape)
+  if (HAIR === 'tousled') for (const [x, z, rx, rz, sz] of [[0.5, 1.2, -0.7, -0.3, 1], [-0.4, 1.3, -0.8, 0.35, 0.9], [0.05, 0.6, -0.4, 0.05, 1.1], [0.9, 0.3, -0.3, -0.7, 0.85], [-0.95, 0.4, -0.3, 0.7, 0.85], [0, -0.5, 0.2, 0, 1]])
+    if (!underHat(1.85 - Math.abs(x) * 0.25)) hair(ell(0.42 * sz, 0.7 * sz, 0.36 * sz), x, 1.85 - Math.abs(x) * 0.25 - Math.max(0, -z) * 0.2, z, [rx, 0, rz]);
+  // (curls all over, but none over the face: those in front sit at the hairline or above it)
+  if (HAIR === 'curly') { const n = MAN ? 16 : 22; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 * 2.618, u = (i + 0.5) / n, el = lerp(1.1, -0.35, u), r = Math.cos(el), x = Math.sin(a) * r * 1.85, y = Math.sin(el) * 1.9 + 0.35, z = Math.cos(a) * r * 1.95 - 0.15;
+    if ((z > 0.5 && y < 1.55 && Math.abs(x) < 1.45) || underHat(y)) continue; hair(new THREE.SphereGeometry(0.46 + 0.08 * (i % 3), 10, 8), x, y, z, [0, 0, 0], i % 4 ? P.hair : P.hairHi); } }
+  if (HAIR === 'tail') { dangle(0, 0.15, -1.75, [[2.0, 0.42, 0.38], [1.5, 0.32, 0.28]], { min: -0.05, max: 1.0, side: 0.4, grav: 0.85 }); hair(new THREE.TorusGeometry(0.34, 0.1, 6, 12), 0, 0.1, -1.72, [0.2, 0, 0], '#3a2618'); }
+  if (HAIR === 'braid') { dangle(0, -0.1, -1.55, [[1.9, 0.5, 0.46], [1.7, 0.44, 0.4], [1.5, 0.38, 0.34]], { min: -0.05, max: 1.0, side: 0.4, grav: 0.85 }); for (const sx of [-1, 1]) hair(ell(0.42, 1.1, 0.45), sx * 1.42, -0.2, 0.35, [0, 0, sx * 0.1]); }
+  if (HAIR === 'curly' && !MAN) for (const sx of [-1, 1]) dangle(sx * 1.45, 0.4, 0.1, [[1.6, 0.6, 0.55], [1.3, 0.5, 0.45]], { min: -0.3, max: 1.1, side: 0.35, grav: 0.85, sx });
+  if (HAIR === 'long') {
     dangle(0, 0.3, -1.05, [[3.2, 1.55, 0.6], [2.6, 1.3, 0.5]], { min: -0.05, max: 1.2, side: 0.5, grav: 0.85 });
     // The front strands spring from the outer edges of the fringe, beside her face (framing it, never over it), and hang a little forward, over the
     // front of the cloak rather than off her shoulders.
     for (const sx of [-1, 1]) dangle(sx * 1.55, 0.75, 0.55, [[2.2, 0.44, 0.42], [1.8, 0.38, 0.34]], { min: -0.4, max: 1.3, side: 0.35, grav: 0.9, sx, front: true });
-  } else {
-    hair(ell(1.0, 0.95, 0.95), 0, 0.8, -1.7);                                            // the bun
-    hair(new THREE.TorusGeometry(0.75, 0.16, 6, 16), 0, 0.8, -1.35, [0, 0, 0], P.hairHi);
-    if (!S.grey) hair(ell(0.3, 0.75, 0.22), 1.02, 1.25, 1.12, [-0.6, 0.45, -0.6], '#b8b0a6');           // grey at the temple
+  } else if (HAIR === 'bun') {
+    if (S.hat !== 'mob') { hair(ell(1.0, 0.95, 0.95), 0, 0.8, -1.7); hair(new THREE.TorusGeometry(0.75, 0.16, 6, 16), 0, 0.8, -1.35, [0, 0, 0], P.hairHi); }      // the bun (under a cap, tucked away)
+    if (id === 'gerda') hair(ell(0.3, 0.75, 0.22), 1.02, 1.25, 1.12, [-0.6, 0.45, -0.6], '#b8b0a6');           // grey at the temple
     for (const sx of [-1, 1]) hair(ell(0.42, 1.1, 0.45), sx * 1.42, -0.2, 0.35, [0, 0, sx * 0.1]);
+  }
+  // Sideburns, for the men with short hair.
+  if (MAN && HAIR !== 'bald') for (const sx of [-1, 1]) hair(ell(0.22, 0.62, 0.32), sx * (headAt(0).w - 0.05), 0.1, 0.55, [0, 0, 0]);
+  // ── Beards: a moustache under the nose; a full or short beard round the jaw and chin; a pointed beard at the chin. (Stubble is painted.) ──
+  { const B = S.beard, bc = P.beard, f = B === 'short' ? 0.82 : 1, bk = (geo, x, y, z, rot) => piece(geo, bc, head, x, y, z, { rot, ink: 0.045 });
+    if (B && B !== 'stubble') for (const sx of [-1, 1]) bk(ell(B === 'moustache' ? 0.55 : 0.46, 0.15, 0.24), sx * 0.3, K.noseY - 0.46, faceZ(0.3, K.noseY - 0.46) - 0.02, [0, sx * 0.25, sx * (B === 'moustache' ? 0.42 : 0.28)]);
+    if (B === 'full' || B === 'short') {
+      bk(ell(1.24 * f, 0.86 * f, 0.92 * f), 0, -2.0, 0.62);
+      for (const sx of [-1, 1]) bk(ell(0.48 * f, 0.92 * f, 0.78 * f), sx * 1.18, -1.32, 0.3, [0, 0, -sx * 0.15]);
+    }
+    if (B === 'pointed') bk(ell(0.34, 0.62, 0.36), 0, -2.18, 0.98, [0.35, 0, 0]);
+  }
+  // ── Hats and caps. ──
+  { const H = S.hat, hc = P.hat, hp = (geo, x, y, z, rot, hex) => piece(geo, hex || hc, head, x, y, z, { rot, ink: 0.05 });
+    if (H === 'mob') { hp(ell(2.08, 1.3, 2.12), 0, 1.25, -0.28); hp(new THREE.TorusGeometry(1.98, 0.24, 8, 28), 0, 0.62, -0.2, [Math.PI / 2 - 0.22, 0, 0]); }      // (a puffed linen cap, its frill round the face)
+    if (H === 'nightcap') { const g = new THREE.Group(); g.position.set(0, 1.0, -0.3); g.rotation.set(-1.05, 0, 0.35); head.add(g); piece(new THREE.CylinderGeometry(0.16, 2.12, 4.2, 18).translate(0, 2.1, 0), hc, g, 0, 0, 0, { ink: 0.05 }); piece(new THREE.SphereGeometry(0.42, 10, 8), '#f4f0e6', g, 0, 4.25, 0, { ink: 0.04 }); hp(new THREE.TorusGeometry(2.04, 0.22, 8, 28), 0, 0.82, -0.25, [Math.PI / 2 - 0.25, 0, 0], shade(hc, -0.1)); }
+    if (H === 'bakers') { hp(new THREE.CylinderGeometry(1.62, 1.78, 1.5, 22), 0, 1.75, -0.15); hp(ell(2.05, 1.05, 2.05), 0, 2.75, -0.15); }
+    if (H === 'flatcap') { hp(ell(2.08, 0.86, 2.18), 0, 1.6, -0.05); hp(ell(1.35, 0.16, 0.95), 0, 1.12, 1.72, [0.28, 0, 0]); }
+    if (H === 'felt') { hp(new THREE.CylinderGeometry(1.45, 1.66, 1.7, 22), 0, 2.15, -0.1); hp(new THREE.CylinderGeometry(3.1, 3.1, 0.14, 28), 0, 1.38, -0.1); hp(new THREE.CylinderGeometry(1.67, 1.68, 0.36, 22), 0, 1.62, -0.1, [0, 0, 0], '#3a2a1e'); }
   }
 
   // ── Her cloak: a scarlet capelet over the shoulders, longest at the back, with the hood down on her back or up over her hair. ──
@@ -781,13 +956,14 @@ function make(id, look, opts) {
     const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
     if (t.bone === rig.thighL || t.bone === rig.thighR) {
       if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w, 'boots']; }
-      if (down) return inSkirt(p, now) ? skirtOver(p) : null;
+      if (down) return TROUSERS ? [cc('trousers'), 1, 'skirt'] : inSkirt(p, now) ? skirtOver(p) : null;
       if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y), 'drawers'];
       return null;
     }
-    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (inSkirt(p, now) ? skirtOver(p) : null) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
+    if (t.bone === rig.seatPivot.L || t.bone === rig.seatPivot.R) return down ? (TROUSERS ? [cc('trousers'), 1, 'skirt'] : inSkirt(p, now) ? skirtOver(p) : null) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
     if (!t.bone) {      // (the hips: the bodice over the top of them, and under it the skirt, or the drawers)
-      const wb = ss(0.85, 1.15, y); if (wb >= 0.5) return [cc('bodice'), 1, 'bodice'];
+      if (TROUSERS) return down ? [cc('trousers'), 1, 'skirt'] : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
+      const wb = ss(0.85, 1.15, y); if (wb >= 0.5 && BODICE) return [cc('bodice'), 1, 'bodice'];
       return down ? skirtOver(p) : drawersOn ? [cc('drawers'), 1, 'drawers'] : null;
     }
     return null;
@@ -832,8 +1008,10 @@ function make(id, look, opts) {
     {
       const sk = d.skirt || 'down', down = sk === 'down', bare = !down && d.drawers === 'down';
       for (const m of [skirt, hemBand, apron]) if (m) show(m, down && !seatedNow);
-      drapeG.visible = seatG.visible = !!opts.seated || (down && seatedNow);
-      roll.visible = sk === 'up'; waist.visible = sk !== 'off';
+      drapeG.visible = seatG.visible = (SKIRTED || (TAP && down)) && (!!opts.seated || (down && seatedNow));
+      tails.forEach(m => show(m, (down || S.vest === 'coat') && !seatedNow)); shirtTail.forEach(m => show(m, !down));
+      roll.visible = SKIRTED && sk === 'up'; waist.visible = sk !== 'off';
+      trousers.forEach(m => show(m, down)); trousersDown.forEach(m => show(m, sk === 'up'));      // (trousers: on, down at the knees, or off)
       drawers.forEach(m => show(m, !bare && !(down && seatedNow))); drawersDown.forEach(m => show(m, bare));      // (seated, the drape is over them: drawn, they'd only poke through it)
       // (under a skirt that's down, their outline is never rightly seen: where they push through it they take its colour, and an ink line round
       // that would only draw the shape of what's underneath)
