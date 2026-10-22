@@ -19,7 +19,8 @@ const PEOPLE = {
   peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', stern: 'young Master Ferrier', age: 20 }, smith: { name: 'Master Ferrier', called: 'the smith', age: 46 },
   pennock: { name: 'Mistress Pennock', age: 44 }, baker: { name: 'Master Pennock', called: 'the baker', age: 47 },
   abney: { name: 'Mistress Abney', age: 52 }, abneyDaughter: { name: 'Bess Abney', age: 26 }, halloran: { name: 'Master Halloran', called: 'Old Halloran', age: 66 },
-  willie: { name: 'Willie Winkie', called: 'the night crier', age: 40 }, georgie: { name: 'Georgie Dunn', stern: 'young Master Dunn', age: 19 }, agnes: { name: 'Agnes Thatcher', age: 19 },
+  willie: { name: 'William Dunn', called: 'Willie Winkie', title: 'the Watchman', red: { thinks: 'Master William', says: 'Sir' }, age: 42 },      // (Georgie's father; Red and Georgie were close as children)
+  georgie: { name: 'Georgie Dunn', stern: 'young Master Dunn', father: 'willie', age: 19 }, agnes: { name: 'Agnes Thatcher', age: 19 },
   holt: { name: 'Holt', called: 'the woodsman', age: 41 }, wolfe: { name: 'Wolfe', age: 36 },
   motherBarrow: { name: 'Mother Barrow', age: 45 }, fatherBarrow: { name: 'Father Barrow', age: 48 }, weeBarrow: { name: 'Wee Barrow', pet: ['wee cub', 'little cub'], age: 22 },
   lucy: { name: 'Lucy Locket', age: 20 }, brannock: { name: 'Mother Brannock', age: 58 }, kitty: { name: 'Kitty Fisher', age: 24 },
