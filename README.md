@@ -57,7 +57,7 @@ Played the way *Mika and the Witch's Mountain* plays them: the two of them turn 
 
 ## Over the knee (`lap.html`, `js/lap.js`)
 
-Her mother sits on a plain chair; Little Red lies face down across her lap, hips over her mother's right thigh, head and arms toward the floor on one side, legs on the other.
+Her mother sits on a plain chair; Little Red lies face down across her lap, hips over her mother's right thigh, head and arms toward the floor on one side, legs on the other. Each cheek rolls round with its thigh while the hips stay put, so across the lap the back of the hips (and the drawers or trousers over it) is drawn in between the cheeks and the waist, and nothing stands up there like a tailbone (the Seat group's **Small of the back, over a lap** sets how far).
 
 - **A smack:** her mother's hand lifts, holds raised (the wait builds dread), swings down along an arc, and lands with the palm flat on the middle of the cheek struck. It stays a moment on the skin, then comes back up for the next one or returns to rest above the small of her back. Her arm is solved every frame (shoulder and elbow bring the wrist into place, and the hand is turned flat to the skin), so it lands exactly wherever Little Red is, however she moves. With an implement (on the test page, **her hairbrush**), its face lands flat instead. Her mother's left hand rests between Little Red's shoulder blades.
 - **Controls:** Smack, Run of 10, Pace and Strength. Space smacks.
@@ -124,7 +124,7 @@ For each of the two you can pick:
 
 **Skirts, trousers:** on, lifted (skirts) and down (trousers), or off. **Pose:** standing, or over the knee: the right one across the left one's knee, as the lap scene builds it.
 
-**Shapes and proportions:** every number the figures are built from, in groups (proportions, each character's size, bust and skirt length, body widths, bust, seat, face, hair, clothes, outline and shading), as number boxes with step arrows (↑ ↓, Shift for ten steps). Changed values show in gold; each group resets on its own, and **Copy values** copies the ones you changed. They're kept in the browser and the lap scene uses them.
+**Shapes and proportions:** every number the figures are built from, in groups (proportions, body widths, bust, seat, face, hair, clothes, outline and shading). These are everyone's baseline. **Characters** shows how each of the two on show differs from it: overall size, bust and skirt length where they have them, and shoulder, chest, waist and hip width, arm, leg and neck thickness, jaw, nose and eye size as multipliers (1 is the baseline); **Back to their own shape** undoes one character's changes. All of them are number boxes with step arrows (↑ ↓, Shift for ten steps). Changed values show in gold; each group resets on its own, and **Copy values** copies the ones you changed. They're kept in the browser and the lap scene uses them.
 
 Views: front, side, back, faces, or turning. Changes are saved in the browser straight away, and every scene uses them.
 

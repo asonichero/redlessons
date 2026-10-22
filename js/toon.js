@@ -216,9 +216,6 @@ const TUNE = [
   ['shX', 'Proportions', 'Shoulder width', 3.1, 2.4, 3.8, 0.01], ['ua', 'Proportions', 'Upper arm length', 5.0, 4, 6, 0.05],
   ['fa', 'Proportions', 'Forearm length', 4.4, 3.5, 5.5, 0.05], ['neckY', 'Proportions', 'Neck base height', 8.15, 7.8, 9.4, 0.05],
   ['headY', 'Proportions', 'Neck length', 0.9, 0.4, 1.8, 0.05], ['headScale', 'Proportions', 'Head size', 1.34, 1, 1.7, 0.01],
-  ['redScale', 'Characters', 'Rose: overall size', 0.85, 0.7, 1.12, 0.01], ['gerdaScale', 'Characters', 'Maren: overall size', 1.04, 0.85, 1.15, 0.01],
-  ['redBust', 'Characters', 'Rose: bust', 1, 0, 1.8, 0.01], ['gerdaBust', 'Characters', 'Maren: bust', 1.12, 0, 1.8, 0.01],
-  ['redSkirt', 'Characters', 'Rose: skirt length', 6, 3, 14, 0.1], ['gerdaSkirt', 'Characters', 'Maren: skirt length', 13.6, 8, 14.4, 0.1],
   ['hipWidth', 'Body', 'Hip width', 1, 0.8, 1.3, 0.01], ['waistWidth', 'Body', 'Waist width', 1, 0.75, 1.3, 0.01], ['chestWidth', 'Body', 'Chest width', 1, 0.8, 1.3, 0.01],
   ['bodyDepth', 'Body', 'Body depth (front to back)', 1, 0.8, 1.25, 0.01], ['armGirth', 'Body', 'Arm thickness', 1, 0.7, 1.4, 0.01], ['legGirth', 'Body', 'Leg thickness', 1, 0.7, 1.4, 0.01],
   ['neckGirth', 'Body', 'Neck thickness', 1.3, 0.7, 1.5, 0.01], ['handSize', 'Body', 'Hand size', 1.3, 0.7, 1.5, 0.01], ['footSize', 'Body', 'Foot size', 1.3, 0.7, 1.5, 0.01],
@@ -226,6 +223,7 @@ const TUNE = [
   ['cheekX', 'Seat', 'Spacing', 1.05, 0.6, 2, 0.01], ['cheekY', 'Seat', 'Height', -0.85, -3, 0, 0.01], ['cheekZ', 'Seat', 'Depth', -1.15, -2, -0.6, 0.01],
   ['cheekW', 'Seat', 'Width', 2.28, 1.2, 2.3, 0.01], ['cheekH', 'Seat', 'Height of each cheek', 1.75, 1.3, 2.5, 0.01], ['cheekD', 'Seat', 'Roundness', 1.5, 0.9, 2, 0.01],
   ['tilt', 'Seat', 'Where smacks land (lower ↔ higher)', 0.35, 0, 0.9, 0.01], ['cheekFollow', 'Seat', 'Follows the thigh (0 hips ↔ 1 thigh)', 1, 0, 1, 0.01],
+  ['sacrum', 'Seat', 'Small of the back, over a lap (flatter ↔ fuller)', 0.85, 0.6, 1, 0.01],
   ['eyeX', 'Face', 'Eye spacing', 0.66, 0.45, 0.85, 0.01], ['eyeY', 'Face', 'Eye height', 0, -0.25, 0.45, 0.01], ['eyeW', 'Face', 'Eye width', 0.95, 0.7, 1.4, 0.01],
   ['eyeH', 'Face', 'Eye height (size)', 1, 0.7, 1.5, 0.01], ['iris', 'Face', 'Iris size', 1, 0.7, 1.35, 0.01], ['jaw', 'Face', 'Jaw width', 0.88, 0.7, 1.15, 0.01], ['browY', 'Face', 'Brow height', 0.4, 0.2, 0.9, 0.01],
   ['noseY', 'Face', 'Nose height', -0.4, -0.9, -0.2, 0.01], ['noseSize', 'Face', 'Nose size', 1, 0.5, 1.8, 0.01], ['mouthY', 'Face', 'Mouth height', 0.1, -0.3, 0.3, 0.01],
@@ -243,13 +241,50 @@ function setTune(o, keep) {
   Object.assign(K, tuneDefaults(), o || {});
   for (const [k, , , , lo, hi] of TUNE) K[k] = clamp(+K[k], lo, hi);
   for (const k of ['hipY', 'hipX', 'thigh', 'shin', 'torsoY', 'shY', 'shX', 'ua', 'fa', 'neckY', 'headY', 'headScale']) DIM[k] = K[k];
-  Object.assign(SPECS.red, { scale: K.redScale, bust: K.redBust, skirtLen: K.redSkirt }); Object.assign(SPECS.gerda, { scale: K.gerdaScale, bust: K.gerdaBust, skirtLen: K.gerdaSkirt });
   if (RAMP) { RAMP.image.data.set([K.shadow, K.shadow, K.shadow, 255, K.shadowMid, K.shadowMid, K.shadowMid, 255]); RAMP.needsUpdate = true; }
   if (keep !== false) try { root.localStorage && root.localStorage.setItem(TUNE_KEY, JSON.stringify(K)); } catch (e) { /* no storage */ }
   return Object.assign({}, K);
 }
 const getTune = () => Object.assign({}, K);
 function resetTune() { try { root.localStorage && root.localStorage.removeItem(TUNE_KEY); } catch (e) { /* no storage */ } return setTune({}, false); }
+
+// ── Each character's variations on the shared shape above (which is everyone's baseline): their size, bust and skirt length, and their build and
+// face as multipliers on it (1 is the baseline). Their own are in SPECS; the editor changes them, kept in the browser by character.
+//   [field, label, baseline, min, max, step, whom it applies to]
+const VARY = [
+  ['scale', 'Overall size', 1, 0.7, 1.3, 0.01], ['bust', 'Bust', 0, 0, 1.8, 0.01, S => S.sex === 'f'],
+  ['skirtLen', 'Skirt length', 12, 3, 14.4, 0.1, S => S.sex === 'f' || S.lower === 'gown'],
+  ['shoulders', 'Shoulder width', 1, 0.8, 1.4, 0.01], ['chest', 'Chest width', 1, 0.8, 1.4, 0.01], ['waist', 'Waist width', 1, 0.8, 1.45, 0.01],
+  ['hips', 'Hip width', 1, 0.8, 1.35, 0.01], ['arms', 'Arm thickness', 1, 0.8, 1.45, 0.01], ['legs', 'Leg thickness', 1, 0.8, 1.35, 0.01],
+  ['neck', 'Neck thickness', 1, 0.8, 1.35, 0.01], ['jaw', 'Jaw width', 1, 0.8, 1.3, 0.01], ['nose', 'Nose size', 1, 0.6, 1.5, 0.01], ['eyes', 'Eye size', 1, 0.75, 1.3, 0.01],
+].map(([f, label, base, lo, hi, step, applies]) => ({ f, label, base, lo, hi, step, applies: applies || (() => true) }));
+const SHAPES_KEY = 'red-lessons:shapes';
+// (their own, as built: what the editor's changes are measured from)
+const SPEC0 = Object.fromEntries(Object.entries(SPECS).map(([id, S]) => [id, Object.fromEntries(VARY.map(v => [v.f, S[v.f] == null ? v.base : S[v.f]]))]));
+const varies = id => VARY.filter(v => v.applies(SPECS[id]));
+let SHAPES = {};
+// Put each character's changes in force (anything not changed is their own) and, unless told not to, keep them in the browser.
+function setShapes(o, keep) {
+  SHAPES = {};
+  for (const id in SPECS) for (const v of VARY) {
+    const x = o && o[id] && +o[id][v.f], own = SPEC0[id][v.f];
+    SPECS[id][v.f] = isFinite(x) && o[id][v.f] !== null ? clamp(x, v.lo, v.hi) : own;
+    if (Math.abs(SPECS[id][v.f] - own) > 1e-9) (SHAPES[id] = SHAPES[id] || {})[v.f] = SPECS[id][v.f];
+  }
+  if (keep !== false) try { root.localStorage && root.localStorage.setItem(SHAPES_KEY, JSON.stringify(SHAPES)); } catch (e) { /* no storage */ }
+  return JSON.parse(JSON.stringify(SHAPES));
+}
+function loadShapes() {
+  try {
+    const st = root.localStorage, v = st && st.getItem(SHAPES_KEY); if (v) return JSON.parse(v);
+    // (Rose's and Maren's size, bust and skirt were kept with the shared shape once: brought over from there)
+    const old = JSON.parse((st && st.getItem(TUNE_KEY)) || '{}'), o = {}, from = { red: ['redScale', 'redBust', 'redSkirt'], gerda: ['gerdaScale', 'gerdaBust', 'gerdaSkirt'] };
+    for (const id in from) from[id].forEach((k, i) => { if (old[k] != null) (o[id] = o[id] || {})[['scale', 'bust', 'skirtLen'][i]] = old[k]; });
+    return o;
+  } catch (e) { return {}; }
+}
+const getShapes = () => JSON.parse(JSON.stringify(SHAPES));
+function resetShapes() { try { root.localStorage && root.localStorage.removeItem(SHAPES_KEY); } catch (e) { /* no storage */ } return setShapes({}, false); }
 // Palettes: the look's colours (js/looks.js), and each outfit's clothes.
 // The shine on hair: lighter, but on very dark hair a warm lift rather than a grey one.
 function hairShine(hex) {
@@ -365,7 +400,7 @@ function make(id, look, opts) {
     // (o.inkAt: how much of the outline to draw at each point, 0..1, by where it is in the frame's space; none where the shape meets another)
     const inkW = (o.ink || 0.07) * K.ink, inkAt = o.inkAt ? Array.from({ length: n }, (_, i) => inkW * o.inkAt(p.fromBufferAttribute(pos, i))) : inkW;
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rootInv, frame.matrixWorld));      // (into the root's space, where the bones' rest frames were taken)
-    const m = new THREE.SkinnedMesh(geo, o.material || mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
+    const m = new THREE.SkinnedMesh(geo, o.material || mat(hex, { skin: true, side: o.side || THREE.FrontSide })); m.frustumCulled = false; m.name = String(hex); root_.add(m); m.updateMatrixWorld(true); m.bind(skel, m.matrixWorld);
     if (o.ink !== 0 && K.ink > 0) {
       // (something that can be covered has an outline that knows it: it shares the cover each point has, as that changes, and isn't drawn where it pushes through)
       const hg = hullGeo(geo, inkAt), covered = !!geo.attributes.cover; if (covered) { hg.setAttribute('cover', geo.attributes.cover); hg.setAttribute('coverKind', geo.attributes.coverKind); }
@@ -408,7 +443,10 @@ function make(id, look, opts) {
 
   // ── Torso: hips and seat, the waist, the ribcage and shoulders; the bust. The torso's own space starts DIM.torsoY above the hips. ──
   const top = P.blouse;
-  skinnedOn(rig.hips, lathe(wide(dense([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 36), trunkW), 0.72 * TD, 48), P.skin, torsoW, { tint: true });      // the hips
+  // (lying across a lap, the back of the hips between the cheeks and the waist is drawn in, and the drawers or trousers over it with it: the cheeks
+  // roll down with her legs and the hips stay where they are, so left full, the middle of it stands up above them like a tailbone)
+  const flatWaist = g => { if (!opts.lying) return g; const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1, K.sacrum, ss(2.3, 1.5, pp.getY(i)))); } g.computeVertexNormals(); return g; };
+  skinnedOn(rig.hips, flatWaist(lathe(wide(dense([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 36), trunkW), 0.72 * TD, 48)), P.skin, torsoW, { tint: true });      // the hips
   // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
   const CHEEK = { x: K.cheekX, y: K.cheekY, z: K.cheekZ * TD, rx: K.cheekW, ry: K.cheekH, rz: K.cheekD };      // (low enough that the tops melt into the small of the back and the undersides meet the thighs in a crease)
   // Each cheek hangs from a pivot at its own hip joint that turns with that thigh by a share (cheekFollow), so as the legs swing forward (sitting,
@@ -604,7 +642,7 @@ function make(id, look, opts) {
     // small of her back, so it never stands proud of the cheeks as they roll round with her legs)
     { const g = lathe(wide(dense([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.26, 0.4], [3.08, 0.85], [2.95, 1.05]], 24), trunkW), 0.75 * TD, 32), pp = g.attributes.position;
       for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.1, 1, ss(-1.3, -0.4, pp.getY(i)))); }
-      g.computeVertexNormals(); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, torsoW, { cover: underSkirt }))); }
+      flatWaist(g); g.computeVertexNormals(); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, torsoW, { cover: underSkirt }))); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07, cover: underSkirt }))); }
       drawers.push(clipSrc('drawers', skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s), { cover: underSkirt })));
@@ -630,7 +668,7 @@ function make(id, look, opts) {
     const inBoots = p => S.feet === 'boots' ? [cc('boots'), ss(bootTop_ + 0.1, bootTop_ - 0.3, p.y), 'boots'] : null;
     { const g = lathe(wide(dense([[0, -2.75], [1.6, -2.6], [2.98, -1.8], [3.46, -0.4], [3.4, 0.4], [3.24, 1.2], [3.1, 2.4], [3.02, 2.62]], 24), trunkW), 0.77 * TD, 32), pp = g.attributes.position;
       for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(-1.3, -0.4, pp.getY(i)))); }
-      g.computeVertexNormals(); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, torsoW, { ink: 0.05 }))); }
+      flatWaist(g); g.computeVertexNormals(); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, torsoW, { ink: 0.05 }))); }
     for (const [s_, sx] of [['L', 1], ['R', -1]]) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.1, CHEEK.ry * 1.08, CHEEK.rz * 1.14), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatW(rig.seatPivot[s_]), { ink: 0.05 }))); }
       trousers.push(clipSrc('skirt', skinnedOn(rig['thigh' + s_], lathe(wide(dense([[2.0, 0.5], [2.04, -1.4], [1.9, -Lk * 0.68], [1.56, -Lk + 0.6], [1.46, -Lk - 0.2], [1.42, sh(0.25)], [1.3, sh(0.55)], [1.14, -La + 0.6], [1.08, -La + 0.1]], 30), LG), 1, 22), P.trousers, legW(s_), { cover: inBoots, ink: 0.05 })));
@@ -1174,7 +1212,7 @@ function makeChair(seatY) {
   g.penetration = (pW, r) => { const q = g.worldToLocal(pW.clone()); let pen = 0; for (const b of boxes) { const dx = b.h.x + r - Math.abs(q.x - b.c.x), dy = b.h.y + r - Math.abs(q.y - b.c.y), dz = b.h.z + r - Math.abs(q.z - b.c.z); if (dx > 0 && dy > 0 && dz > 0) pen = Math.max(pen, Math.min(dx, dy, dz)); } return pen; };
   return g;
 }
-setTune(loadTune(), false);
-const Toon = { make, clipPass, idle, stance, sit, seatFor, makeChair, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
+setTune(loadTune(), false); setShapes(loadShapes(), false);
+const Toon = { make, clipPass, idle, stance, sit, seatFor, makeChair, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, VARY, SPEC0, varies, getShapes, setShapes, resetShapes, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
 root.Toon = Toon;
 })(typeof window !== 'undefined' ? window : globalThis);

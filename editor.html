@@ -80,7 +80,7 @@
   const headsAt = () => { const p = new V3(); for (const w in rigs) p.add(rigs[w].headGroup.getWorldPosition(new V3())); return p.multiplyScalar(0.5); };
   const view = (name, ms) => { if (pose === 'lap' && lap) return lapView(name, ms); if (name === 'faces') { const h = headsAt(); st.go(new V3(h.x, h.y + 0.3, h.z + 40), h.clone().add(new V3(0, -0.6, 0)), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); return; }
     st.go(new V3(...VIEWS[name][0]), new V3(...VIEWS[name][1]), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
-  let savedT = 0;
+  let savedT = 0, shapePanelHook = null;
   function changed(side) { look = L.save(look); for (const s of ['A', 'B']) if (s === side || who[s] === who[side]) build(s); sync(); $('saved').textContent = 'Saved'; clearTimeout(savedT); savedT = setTimeout(() => $('saved').textContent = '', 1200); }
 
   // Choosing who: any of the cast, on either side.
@@ -88,7 +88,7 @@
     const sel = $('who' + side);
     for (const id of L.CAST) { const o = document.createElement('option'); o.value = id; o.textContent = L.NAMES[id]; sel.appendChild(o); }
     sel.value = who[side];
-    sel.onchange = () => { who[side] = sel.value; faces[side] = 'calm'; try { localStorage.setItem('red-lessons:editor-pair', JSON.stringify(who)); } catch (e) {} panel(side); build(side); if (lap) buildLap(); sync(); };
+    sel.onchange = () => { who[side] = sel.value; faces[side] = 'calm'; try { localStorage.setItem('red-lessons:editor-pair', JSON.stringify(who)); } catch (e) {} panel(side); build(side); if (lap) buildLap(); sync(); if (shapePanelHook) shapePanelHook(); };
   }
   // The panel for each of them: an outfit row (where they have outfits), a colour row per feature, and their face.
   const FEATURES = [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips'], ['cloak', 'Cloak']];
@@ -146,14 +146,46 @@
       tune[k] = Math.max(min, Math.min(max, +tune[k] + (e.key === 'ArrowUp' ? 10 : -10) * step)); input.value = (+tune[k]).toFixed(decimals(step)); tuneChanged(); });
   }
   for (const g in groups) groups[g].appendChild(groups[g].rb);
-  $('tuneReset').onclick = () => { tune = Toon.resetTune(); for (const k in boxes) boxes[k].input.value = (+tune[k]).toFixed(decimals(Toon.TUNE.find(t => t[0] === k)[6])); markChanged(); build('A'); build('B'); };
+
+  // ── Characters: the shape above is everyone's baseline; each of the two shown has their own variations on it (size, bust and skirt length, and
+  // their build and face as multipliers, 1 being the baseline). Changing them rebuilds that one; they're kept in the browser by character.
+  let shapes = Toon.getShapes(), shapeT = 0;
+  const chars = document.createElement('details'); chars.innerHTML = '<summary>Characters</summary><div class="sub" style="margin:2px 0 6px">The two shown: how each differs from the shared shape (1 is the baseline). Gold: changed from their own.</div><div id="charBox"></div>';
+  { const g0 = groups['Proportions']; g0.parentNode.insertBefore(chars, g0.nextSibling); }
+  const own = (id, f) => Toon.SPEC0[id][f];
+  function shapeChanged(id) { clearTimeout(shapeT); shapeT = setTimeout(() => { shapes = Toon.setShapes(shapes); for (const s of ['A', 'B']) if (who[s] === id) build(s); }, 120); }
+  function shapePanel() {
+    const box = $('charBox'); box.innerHTML = '';
+    for (const id of [...new Set([who.A, who.B])]) {
+      const h = document.createElement('h3'); h.textContent = L.NAMES[id]; box.appendChild(h);
+      const rows = [];
+      for (const v of Toon.varies(id)) {
+        const row = document.createElement('label'); row.className = 'num'; row.title = `${v.lo} to ${v.hi} (their own ${own(id, v.f)}; the baseline ${v.base})`;
+        const input = document.createElement('input'), cur = () => Toon.SPECS[id][v.f];
+        Object.assign(input, { type: 'number', min: v.lo, max: v.hi, step: v.step, value: (+cur()).toFixed(decimals(v.step)) });
+        row.innerHTML = `<span>${v.label}</span>`; row.appendChild(input); box.appendChild(row);
+        const mark = () => row.classList.toggle('changed', Math.abs(cur() - own(id, v.f)) > 1e-9);
+        const put = x => { (shapes[id] = shapes[id] || {})[v.f] = Math.max(v.lo, Math.min(v.hi, x)); Toon.SPECS[id][v.f] = shapes[id][v.f]; mark(); shapeChanged(id); };
+        input.addEventListener('input', () => { const x = parseFloat(input.value); if (isFinite(x)) put(x); });
+        input.addEventListener('change', () => { input.value = (+cur()).toFixed(decimals(v.step)); });
+        input.addEventListener('keydown', e => { if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return; e.preventDefault(); put(+cur() + (e.key === 'ArrowUp' ? 10 : -10) * v.step); input.value = (+cur()).toFixed(decimals(v.step)); });
+        mark(); rows.push(() => { input.value = (+cur()).toFixed(decimals(v.step)); mark(); });
+      }
+      const rb = document.createElement('button'); rb.className = 'gbtn'; rb.textContent = 'Back to their own shape';
+      rb.onclick = () => { delete shapes[id]; shapes = Toon.setShapes(shapes); rows.forEach(f => f()); for (const s of ['A', 'B']) if (who[s] === id) build(s); };
+      box.appendChild(rb);
+    }
+  }
+  shapePanel(); shapePanelHook = shapePanel;
+  $('tuneReset').onclick = () => { tune = Toon.resetTune(); shapes = Toon.resetShapes(); shapePanel(); for (const k in boxes) boxes[k].input.value = (+tune[k]).toFixed(decimals(Toon.TUNE.find(t => t[0] === k)[6])); markChanged(); build('A'); build('B'); };
   $('tuneCopy').onclick = () => {
     // Everything you've changed: the shapes, and each character's outfit and colours.
     const changed = Object.fromEntries(Object.entries(tune).filter(([k, v]) => Math.abs(v - DEF[k]) > 1e-9)), looks = {};
     for (const w in look) for (const k in look[w]) if (!L.DEFAULT[w] || look[w][k] !== L.DEFAULT[w][k]) (looks[w] = looks[w] || {})[k] = look[w][k];
     if (Object.keys(looks).length) changed.looks = looks;
+    if (Object.keys(shapes).length) changed.characters = shapes;
     const text = JSON.stringify(changed, null, 2);
-    const done = ok => { $('tuneMsg').textContent = ok ? 'Copied (the shapes, outfits and colours you changed).' : text; setTimeout(() => $('tuneMsg').textContent = '', 4000); };
+    const done = ok => { $('tuneMsg').textContent = ok ? 'Copied (the shapes, each character\u2019s variations, outfits and colours you changed).' : text; setTimeout(() => $('tuneMsg').textContent = '', 4000); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); else done(false);
   };
   markChanged();
