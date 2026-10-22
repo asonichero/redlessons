@@ -26,7 +26,7 @@ Today `js/discipline.js` and `js/correction.js` assume Maren is the one taking R
 
 - **Any corrector:** `Discipline.run` takes a corrector profile: who (a figure from `looks.js`), their seat (chair, stool, bench, a log in the wood), their lines per tier and stage, and the stat they weigh most.
 - **Any subject:** the lap scene in `js/lap.js` works for whoever is across the lap, so Tom, Lucy and the Barrows can be corrected too, with their own reactions and voices.
-- **Two at once:** the bakery (Tom and Red), the forge, the Shoe (Lucy then Red) and the Barrows (Mother Barrow, then Father Barrow correcting her and Master Barrow). One corrector, subjects in turn, the other watching from a set position. A queue of `{ subject, tier }` in one scene.
+- **Two at once:** the bakery (Tom and Red), the forge, the Shoe (Lucy then Red) and the Barrows (Mother Barrow, then Father Barrow correcting her and Wee Barrow). One corrector, subjects in turn, the other watching from a set position. A queue of `{ subject, tier }` in one scene.
 - **Witnessed scenes:** Red watching Holt with Maren, or the Barrows with each other. The same scene with the player as onlooker, no Rose button for Red.
 - **Safe words per context:**
   - Default: Red says "Rose"; everything stops and the corrector answers her as Rose.
@@ -55,12 +55,12 @@ Rose, Maren and Hulda exist. Nineteen more figures are needed, each a look in `j
 | Wolfe | 1.3 | The antagonist | No |
 | Mother Barrow | 2.1 | The Barrows | Yes, at the trespass |
 | Father Barrow | 2.1 | The Barrows | No; corrects the others |
-| Master Barrow | 2.1 | The Barrows | No |
+| Wee Barrow | 2.1 | The Barrows; the household's little (Mother and Father call him their wee cub, or little cub) | No |
 | Lucy Locket | 2.1 | Friend at the Shoe | No; corrected beside her |
 | Mother Brannock | 2.2 | Runs the Shoe | Yes, at the Shoe, as Rose |
 | Kitty Fisher | 2.2 | Longest resident of the Shoe (optional) | No |
 
-The smith is Mr. Ferrier, as the other village adults go by their surnames. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
+The village's grown men go by Master and their surname (Master Ferrier the smith, Master Pennock the baker, Master Halloran), Holt aside; other adults call Tom and Georgie "young Master Ferrier" and "young Master Dunn" when they mean business. The Barrows are a household of three, a hierarchical polycule, not a family; any or all of them can speak as Scots. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
 
 ## New locations
 

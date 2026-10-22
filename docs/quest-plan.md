@@ -151,9 +151,9 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 
 1. **2.1** Bo Peep's strays, a favour to a neighbour, draw Red deep into the wood. She finds the Barrows' house empty and unlocked, and helps herself: porridge, chairs, a bed.
 2. **2.1** Found out. Mother Barrow corrects her, with Red's consent.
-3. **2.1** Father Barrow then corrects Mother Barrow for leaving the house unsecured, and Master Barrow for distracting her from securing it on their way out.
+3. **2.1** Father Barrow then corrects Mother Barrow for leaving the house unsecured, and Wee Barrow for distracting her from securing it on their way out.
 4. **2.1** An open conversation, all four of them. Red understands that accountability runs every way in their household.
-5. **2.2** Return visits show more configurations: Mother Barrow correcting Master Barrow for brattiness; on another visit, correcting Father Barrow for not upholding his role as head of household. Feeds Peter's line.
+5. **2.2** Return visits show more configurations: Mother Barrow correcting Wee Barrow for brattiness; on another visit, correcting Father Barrow for not upholding his role as head of household. Feeds Peter's line.
 6. **3.2** Called back: they've seen Wolfe, and their home is a safe house.
 
 ### The Shoe (Lucy Locket, Mother Brannock)

@@ -11,14 +11,17 @@
 'use strict';
 
 // Everyone in the story. All of them are adults; those who are ever taken in hand are grown women and men, there by their own choosing.
+// The village's grown men go by Master and their surname (Holt aside); Tom and Georgie are 'young Master …' when someone means business (stern).
+// The Barrows aren't a family but a household of three, a hierarchical polycule: Father Barrow heads it, and Wee Barrow takes the little role, the
+// way Mother and Father stand in for mommy and daddy; the two of them call him their wee cub, or little cub (pet). Any or all of them can be Scots.
 const PEOPLE = {
   red: { name: 'Rose', called: 'Red', age: 19 }, maren: { name: 'Maren', called: 'Mother', age: 38 }, hulda: { name: 'Hulda', called: 'Grandmother', age: 71 },
-  peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', age: 20 }, smith: { name: 'Mr. Ferrier', called: 'the smith', age: 46 },
-  pennock: { name: 'Mistress Pennock', age: 44 }, baker: { name: 'Mr. Pennock', called: 'the baker', age: 47 },
-  abney: { name: 'Mistress Abney', age: 52 }, abneyDaughter: { name: 'Bess Abney', age: 26 }, halloran: { name: 'Old Halloran', age: 66 },
-  willie: { name: 'Willie Winkie', called: 'the night crier', age: 40 }, georgie: { name: 'Georgie Dunn', age: 19 }, agnes: { name: 'Agnes Thatcher', age: 19 },
+  peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', stern: 'young Master Ferrier', age: 20 }, smith: { name: 'Master Ferrier', called: 'the smith', age: 46 },
+  pennock: { name: 'Mistress Pennock', age: 44 }, baker: { name: 'Master Pennock', called: 'the baker', age: 47 },
+  abney: { name: 'Mistress Abney', age: 52 }, abneyDaughter: { name: 'Bess Abney', age: 26 }, halloran: { name: 'Master Halloran', called: 'Old Halloran', age: 66 },
+  willie: { name: 'Willie Winkie', called: 'the night crier', age: 40 }, georgie: { name: 'Georgie Dunn', stern: 'young Master Dunn', age: 19 }, agnes: { name: 'Agnes Thatcher', age: 19 },
   holt: { name: 'Holt', called: 'the woodsman', age: 41 }, wolfe: { name: 'Wolfe', age: 36 },
-  motherBarrow: { name: 'Mother Barrow', age: 45 }, fatherBarrow: { name: 'Father Barrow', age: 48 }, masterBarrow: { name: 'Master Barrow', age: 22 },
+  motherBarrow: { name: 'Mother Barrow', age: 45 }, fatherBarrow: { name: 'Father Barrow', age: 48 }, weeBarrow: { name: 'Wee Barrow', pet: ['wee cub', 'little cub'], age: 22 },
   lucy: { name: 'Lucy Locket', age: 20 }, brannock: { name: 'Mother Brannock', age: 58 }, kitty: { name: 'Kitty Fisher', age: 24 },
 };
 
