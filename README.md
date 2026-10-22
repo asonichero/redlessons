@@ -28,15 +28,26 @@ npm test             # the pain model, the discipline scripts and the looks
 - **Motion:** blinking, breathing, a standing idle (weight shifting from foot to foot, the head wandering), and springs on everything that reacts, so movement eases and settles instead of snapping.
 - **The cottage** (`js/cottage.js`): one modest room. Wattle-and-daub walls limewashed white in an oak frame (sill, posts, rail, braces, wall plate), on a low stone foundation, under a thick thatch roof seen from inside (rafters, purlins, ridge beam, tie beams), with a gable at each end. A planked door with strap hinges, a shuttered window letting a shaft of sun across the floor. A trestle table (jug, bowl, loaf) and two low stools; an iron-bound oak chest; a peg rail hung with dried herbs, lavender and wicker baskets; a stone hearth on the front wall, across from the pegs (a log fire on iron fire-dogs, its flames flickering and throwing a warm, wavering light across the room; an iron pot on a swinging crane, a kettle and fire irons on the hearthstone, a candlestick and jug on the mantel, logs stacked beside it, the chimney breast rising into the thatch); a raised bed nook with a straw mattress in ticking, a heavy woollen blanket, a patchwork quilt turned down, a bolster, and a curtain tied back. Walls, roof slopes and floor aren't drawn while the camera is outside them (each with whatever stands against it), so the room is open to the camera from any side, above or below.
 
+## The world (`js/world.js`, `js/save.js`, `js/calendar.js`, `js/reputation.js`, `js/quests.js`, `js/questdata.js`)
+
+The game is an open world with a saved game, following the quest plan (`docs/quest-plan.md`) and the build plan (`docs/build-plan.md`). So far the places are the cottage, the wood and her grandmother's cabin: the cottage door gives onto the wood's village end (until the village is built), the wood's far end leads back to the cabin door, and each way out is a way in somewhere else.
+
+- **The saved game** (`js/save.js`): where she is and when, every quest step done and on which day, her reputation, trust and openness with each figure, what she's told Wolfe, what she carries. Kept in the browser on every change; **Continue** on the title takes it up where it was left.
+- **The calendar** (`js/calendar.js`): the day and the time of day (dawn, morning, afternoon, evening, dusk, night), the light that goes with it, and the curfew bell at nine. A game minute passes for each second she's out and about (not while she's talking, or busy); sleeping (the bed, at home, from the evening on) moves on to the next morning. The day and time are top left, with the phase of the story.
+- **Her reputation** (`js/reputation.js`): wilful, mischievous and naughty; trust and openness with each figure (0 doesn't know, 1 she's told them what being Little Red means, 2 she's asked them to take her in hand); how far it's known in the village; what she's told Wolfe, never shown.
+- **The quests** (`js/quests.js`, the plan as data in `js/questdata.js`): every quest line's steps, the nine phases of the three acts, and the gates. A step is offered when its line has come to it, its phase is reached, its condition holds and its gate is open; going into a place plays the scene for the step on offer there. The pause menu's **Her days** shows where each line has got to. Every figure in the story is an adult (their ages are in the data, and a test holds to it).
+
+So far chapter one (phase 1.1) is played through the world, and phase 1.2 opens the next morning with her mother agreeing her chores and the curfew. The rest of the plan's steps are in the data, waiting for their places and scenes.
+
 ## Chapter one: The Red Cloak (`story.html`, `js/chapter1.js`)
 
-Three scenes, one after the other:
+Three scenes, played by the world as their steps come up:
 
 1. **Her grandmother's cabin** (`js/cabin.js`): a log cabin built hard against a great oak, the trunk the back corner of the room, roots and all, with shelves of jars cut into it and two of its limbs running in under the roof as beams hung with herbs. A stone hearth, a rocking chair, a round table laid for tea, a dresser, a box bed under a patchwork quilt, a braided rug, a round window. It opens with tea and cake and being fussed; her grandmother fetches a parcel from the dresser and gives it to her: a red cloak like the one she wore as a girl. She puts it on, turns round to show it, and her grandmother calls her Little Red. Then she's free about the cabin until she goes out of the door.
 2. **The wood** (`js/wood.js`): the long path home, a minute and a half's walk if she doesn't dawdle. Her thoughts come as she goes, without stopping her (the realisation, in her own words). She can stop to pick bluebells (and carry them), sit on the flat stone by the stream, find the R and P carved in the old beech, sit on the fallen tree. The light goes from late gold to dusk as she walks, faster when she stands about, faster still sitting. At the edge of the wood the trees give way to a meadow, and over it the village, its windows lit.
-3. **Home**, late in the dusk: her mother sees her face at once, and the homecoming conversation. Then the correction, played there in the room (`js/correction.js`): a fade, the chair at the middle of the room and the lap scene in it, a Light correction scripted by `js/discipline.js`, her mother's lines in the conversation box over the smacks. The round camera button (or C) steps round the angles; the octagon, **ROSE** (or R), is her name, and stops it at once. Then the two of them by the fire, and the end of the chapter.
+3. **Home**, late in the dusk: her mother sees her face at once, and the homecoming conversation. Then the correction, played there in the room (`js/correction.js`): a fade, the chair at the middle of the room and the lap scene in it, a Light correction scripted by `js/discipline.js`, her mother's lines in the conversation box over the smacks. The round camera button (or C) steps round the angles; the octagon, **ROSE** (or R), is her name, and stops it at once. Then the two of them by the fire, the end of the chapter, and on to the next morning.
 
-The title screen can start at the wood or at home. Her grandmother, **Hulda**, is a third character: shorter and softer through the middle, grey all through her hair, a knitted shawl over her shoulders, laugh lines.
+The title screen can begin again, continue, or start chapter one at the wood or at home. Her grandmother, **Hulda**, is a third character: shorter and softer through the middle, grey all through her hair, a knitted shawl over her shoulders, laugh lines.
 
 ## Conversations (`js/talk.js`, `js/story.js`)
 
@@ -109,7 +120,11 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
 | `js/lap.js`, `lap.html` | Over the knee: the session, her mother's arm solving, Little Red's reactions, the cameras; its page |
 | `js/motion.js` | Movement for any figure: walking and running with planted feet, turning, reaching, crouching, carrying, sitting, lying |
-| `story.html`, `js/chapter1.js` | Chapter one: the cabin, the wood, home |
+| `story.html`, `js/chapter1.js` | The game's page; chapter one's scenes (the cabin, the wood, home) |
+| `js/world.js` | The places, the ways between them, and playing each step's scene; time, light and her place kept as she goes |
+| `js/save.js`, `js/calendar.js`, `js/reputation.js` | The saved game; the day and time, curfew and light; her reputation, trust and openness |
+| `js/quests.js`, `js/questdata.js` | The quest engine; the quest plan as data (people, phases, lines and steps, gates) |
+| `docs/quest-plan.md`, `docs/build-plan.md` | The story's quest lines by phase; what they need from the code, and the milestones |
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |

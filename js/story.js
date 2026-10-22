@@ -146,5 +146,37 @@ const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
   { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Somebody always will. Now: soup, and bed. And that cloak hangs by the door, where I can see it.' },
 ];
 
-root.Story = { homecoming, afterCorrection, grandmother, granAgain, WALK, SPOTS };
+// Phase 1.2, the morning after: what's hers to do, agreed between them, nothing too grown. Mary's garden, small errands, and home by the curfew bell.
+const chores = () => [
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, Little Red. Sleep?' },
+  { who: 'red', face: 'shy', text: 'Like a stone.' },
+  { who: 'mother', face: 'calm', text: 'Good. Now, what we said last night. The Hallorans’ calving and the mending can go back to being mine. But you’ll not sit idle either.' },
+  { who: 'mother', face: 'calm', text: 'Mary’s garden, each morning: weeds, water, and whatever’s ready to pick. Errands when I ask, and done when I ask.' },
+  { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'And home by the curfew bell. Nine o’clock, and not a minute past it.' },
+  { choose: [
+    { text: 'Yes, Mama.', then: [{ who: 'mother', face: 'smile', text: 'That’s my girl.' }] },
+    { text: 'Nine? Agnes is allowed out till ten.', then: [
+      { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'Agnes Thatcher isn’t Little Red. Nine.' },
+      { who: 'red', face: 'pout', text: '…Yes, Mama.' },
+    ] },
+  ] },
+  { who: 'mother', face: 'calm', text: 'And if anyone in the village asks after you, you tell them what you like, and only what you like. Who knows is yours to choose.' },
+];
+// Her mother, any other time: a word, by the time of day. (part: the calendar's)
+const marenIdle = part => ({
+  morning: [{ who: 'mother', face: 'smile', text: 'The garden won’t weed itself, love.' }],
+  afternoon: [{ who: 'mother', face: 'calm', text: 'Back already? There’s bread on the board if you want it.' }],
+  evening: [{ who: 'mother', face: 'calm', text: 'Supper soon. Wash your hands.' }],
+  dusk: [{ who: 'mother', face: 'calm', text: 'Lamps soon. Are you in for the night?' }],
+  night: [{ who: 'mother', face: 'smile', text: 'Bed, Little Red. It’s late.' }],
+  dawn: [{ who: 'mother', face: 'surprised', text: 'Up before the birds? Who are you, and what have you done with my daughter?' }],
+})[part] || [{ who: 'mother', face: 'calm', text: 'Yes, love?' }];
+// Home after the curfew bell, against what was agreed.
+const lateHome = () => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Past the bell. What did we agree?' },
+  { who: 'red', face: 'shy', text: 'Home by nine.' },
+  { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
+];
+
+root.Story = { homecoming, afterCorrection, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -196,7 +196,12 @@ function build(scene, opts) {
     return p;
   };
   const progress = p => nearest(p).i / N;
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, constrain, exits: [{ name: 'the village', at: S[N].clone(), r: 18 }], bounds: null };
+  // (the ways out: the village at the far end; back in at her grandmother's door. And where she comes in: from the cabin's door, or from the
+  // village end, a little way in, facing along the path into the wood)
+  const inAt = S[N - 80], inTo = S[N - 110];      // (far enough in that the camera behind her is among the trees, not the village's houses)
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, constrain, bounds: null,
+    exits: [{ name: 'the village', at: S[N].clone(), r: 18 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5 }],
+    entries: { cabin: { at: [-12, 52], yaw: 0, camTurn: Math.PI }, village: { at: [inAt.x, inAt.z], yaw: Math.atan2(inTo.x - inAt.x, inTo.z - inAt.z) } } };
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);
 
   // ── Light: the sky through the leaves, the fog closing in, the village windows lighting up, the sun's shadows following her.

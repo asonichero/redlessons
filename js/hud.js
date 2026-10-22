@@ -75,6 +75,14 @@ const CSS = `
 #hObj { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); max-width: min(620px, calc(100vw - 150px)); text-align: center; font: italic clamp(13px, 1.9vw, 16px)/1.4 Georgia, serif;
   background: rgba(16,10,12,0.7); border: 1px solid #4a3a3c; border-radius: 8px; padding: 7px 16px; opacity: 0; transition: opacity .5s; }
 #hObj.on { opacity: 1; }
+/* (the day and the time, top left; the phase of the story under it) */
+#hClock { position: absolute; top: 12px; left: 12px; font: 13px/1.3 Georgia, serif; color: #f3ead8; background: rgba(16,10,12,0.62); border: 1px solid #4a3a3c; border-radius: 8px; padding: 5px 11px; display: none; }
+#hClock.on { display: block; } body.talking #hClock, body.correcting #hClock { opacity: 0; } #hClock i { display: block; font-size: 11px; color: #c9a88c; letter-spacing: .06em; }
+@media (max-width: 640px) { #hClock { font-size: 11.5px; padding: 4px 8px; } #hObj { top: 52px; max-width: calc(100vw - 80px); } }
+/* (the journal, in the pause menu) */
+.hCard .journal .ph { font-size: 13px; color: #c9a88c; margin: 2px 0 6px; } .hCard .journal .q { margin: 7px 0; font-size: 14px; line-height: 1.4; }
+.hCard .journal .q b { color: #f3e4b0; font-weight: normal; } .hCard .journal .q.main b { color: #e8504a; } .hCard .journal .q small { display: block; color: #c9b8a8; font-style: italic; }
+.hCard .journal .q.paused, .hCard .journal .q.done { opacity: .55; } .hCard .journal .q .st { float: right; font-size: 11px; color: #a89888; letter-spacing: .05em; }
 body.talking #hud .hb.t, body.talking #hStick, body.talking #hPrompt, body.talking #hHelp, body.talking #hObj { opacity: 0 !important; pointer-events: none !important; }
 body.talking #hCam { opacity: .35; pointer-events: none; }
 /* (on a touch screen her thoughts come up at the top, clear of the thumbs) */
@@ -109,7 +117,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hClock"></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera (C)" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -130,7 +138,7 @@ function create(opts) {
   // ── The pause menu, settings, the controls sheet ──
   const screen = (id, html) => { const s = document.createElement('div'); s.className = 'hScreen'; s.id = id; s.innerHTML = '<div class="hCard">' + html + '</div>'; document.body.appendChild(s); return s; };
   const pauseEl = screen('hPause', '<h2>Paused</h2><button class="primary" data-k="resume">Resume</button><button data-k="settings">Settings</button><button data-k="controls">Controls</button>' +
-    '<div class="scenes"></div><div class="extra"></div><div class="links"></div><button data-k="title">Back to the title</button>');
+    '<div class="journal"></div><div class="scenes"></div><div class="extra"></div><div class="links"></div><button data-k="title">Back to the title</button>');
   const pc = pauseEl.querySelector('.hCard');
   if (opts.scenes && opts.scenes.length) { const d = pc.querySelector('.scenes'); d.innerHTML = '<h3>Chapter one</h3>'; opts.scenes.forEach(s => { const b = document.createElement('button'); b.textContent = s.label; b.onclick = () => { pause(false); s.run(); }; d.appendChild(b); }); }
   if (opts.extra) { const d = pc.querySelector('.extra'); if (opts.extraTitle) d.innerHTML = '<h3>' + opts.extraTitle + '</h3>'; d.appendChild(opts.extra); }
@@ -143,7 +151,17 @@ function create(opts) {
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
     '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold).</p><div class="x">Click anywhere or press Esc to close</div>');
   let paused = false, wasHeld = false, audioWas = null;
+  // The journal (opts.journal() → { phase, clock, lines: [{ name, main, state, step: { title, hint }, done, total }] }): where each line has got to.
+  const STATE = { offered: '', waiting: 'waiting', gated: 'not yet', later: 'later', paused: 'paused', done: 'done' };
+  function drawJournal() {
+    const d = pc.querySelector('.journal'); if (!opts.journal) return; const j = opts.journal(); if (!j) { d.innerHTML = ''; return; }
+    const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    d.innerHTML = '<h3>Her days</h3><div class="ph">' + esc(j.clock) + (j.phase ? ' · Act ' + j.phase.act + ', ' + esc(j.phase.name) : '') + '</div>' +
+      j.lines.map(l => '<div class="q ' + (l.main ? 'main ' : '') + l.state + '"><span class="st">' + (STATE[l.state] || '') + '</span><b>' + esc(l.name) + '</b>' +
+        (l.step && l.state !== 'done' ? ' — ' + esc(l.step.title) + (l.step.hint && l.state === 'offered' ? '<small>' + esc(l.step.hint) + '</small>' : '') : '') + '</div>').join('');
+  }
   function pause(on) {
+    if (on) drawJournal();
     if (on === paused) return; paused = on; const p = P(), st = p && p.stage;
     pauseEl.classList.toggle('on', on); if (!on) { setEl.classList.remove('on'); sheet.classList.remove('on'); }
     if (st) { if (on) { wasHeld = st.held; st.held = true; } else st.held = wasHeld; }
@@ -252,6 +270,7 @@ function create(opts) {
     el, settings, pause, openSettings, settingsCard, stepCam,
     get paused() { return paused; },
     objective(t) { if (t) objEl.textContent = t; objEl.classList.toggle('on', !!t); },
+    clock(t, phase) { const c = $('hClock'); c.innerHTML = t ? t + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },
     show(on) { el.classList.toggle('hide', !on); if (!on) pause(false); },
   };
 }

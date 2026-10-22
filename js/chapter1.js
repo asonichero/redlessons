@@ -1,38 +1,27 @@
-// Little Red’s Lessons — chapter one, The Red Cloak (story.html): three scenes, one after the other.
+// Little Red’s Lessons — chapter one, The Red Cloak (phase 1.1 of the quest plan), as scenes the world plays (js/world.js) when their steps come up.
 //
-//  1. Her grandmother's cabin, late afternoon: tea and cake and being fussed; the gift of the cloak; "Little Red". Then she's free to look about,
-//     until she goes out of the door for home.
-//  2. The wood: the long path home, hers to walk (or run, or dawdle). Her thoughts come as she goes; she can stop to pick bluebells, sit by the
-//     stream, find the carving on the old beech, sit on the fallen tree. The light goes as she walks, and faster when she dawdles. At the edge
-//     of the wood the village comes into sight, and with it, everything she left there.
-//  3. Home, late in the dusk: her mother sees her face at once, and the conversation (js/story.js, the homecoming); the correction, played there in
-//     the room (js/correction.js), and after it the two of them; the end of the chapter.
-//
-//   const ch = Chapter1.create(view, { objective, fade, card })   ch.start(scene?)   ch.P: the scene being played (js/play.js)   (card: the chapter's end)
+//  ch1.tea (Hulda's line: the red cloak), at her grandmother's, late afternoon: tea and cake and being fussed; the gift of the cloak; "Little
+//     Red". Then she's free to look about, until she goes out of the door for home.
+//  ch1.walk (Maren's: home before dark), the wood: the long path home, hers to walk (or run, or dawdle). Her thoughts come as she goes; she can
+//     stop to pick bluebells, sit by the stream, find the carving on the old beech (Peter's line: the R and P), sit on the fallen tree. The time
+//     goes as she walks, and faster when she dawdles; at the edge of the wood the village comes into sight, and with it, everything she left there.
+//  ch1.homecoming (Maren's: the homecoming), home, late in the dusk: her mother sees her face at once, and the conversation (js/story.js); the
+//     correction, there in the room (js/correction.js), and after it the two of them; the end of the chapter, and on to the next morning.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE.Vector3;
 const flat = v => v.clone().setY(0), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+const outfit = (o, onlyIf) => { if (!root.Looks) return; const l = Looks.load(); if (!onlyIf || l.red.outfit === onlyIf) { l.red.outfit = o; Looks.save(l); } };
 
-function create(view, ui) {
-  let P = null, wood = null, dusk = 0.3, scene = null;
-  const say = t => ui.objective && ui.objective(t);
-  const wait = s => new Promise(r => setTimeout(r, s * 1000));
-  async function go(name) {
-    if (ui.fade) await ui.fade(true, { cabin: 'Grandmother’s', wood: 'The wood', home: 'Home' }[name]);
-    if (P) { P.dispose(); P = null; }
-    scene = name; say(''); try { localStorage.setItem('little-red:scene', name); } catch (e) { /* no storage */ }      // (for Continue, on the title)
-    await ({ cabin, wood: walk, home })[name]();
-    if (ui.fade) await ui.fade(false);
-  }
-
-  // ── 1. Her grandmother's.
-  async function cabin() {
-    if (root.Looks) { const l = Looks.load(); l.red.outfit = 'No cloak'; Looks.save(l); }      // (she came without it)
-    P = Play.create(view, { set: s => Cabin.build(s), light: 0.3, prompt: ui.prompt,
-      npc: { id: 'gran', key: 'gran', name: 'Grandmother', at: [-2, -15], yaw: 0, voice: 'gran', tint: '#5a6a3a', bg: '#e4e8d6' },
-      start: { at: [-2, 7], yaw: Math.PI }, talk: () => Story.granAgain(),
-      onExit: () => go('wood') });
+// ── Her grandmother's: at the table, the two of them sat; the tea, the gift, the cloak.
+World.scene('ch1.tea', {
+  ownObjective: true,
+  prepare(o) {
+    outfit('No cloak');      // (she came without it)
+    return Object.assign(o, { npc: { id: 'gran', key: 'gran', name: 'Grandmother', at: [-2, -15], yaw: 0, voice: 'gran', tint: '#5a6a3a', bg: '#e4e8d6' }, start: { at: [-2, 7], yaw: Math.PI } });
+  },
+  run(P, w) {
+    w.objective('');
     const W = P.world, stool = W.seats.find(s => s.name === 'the stool'), chair = W.seats.find(s => s.name === 'the chair');
     P.seatNow(stool); P.seatNow(chair, 'npc');
     P.act(async () => {
@@ -56,64 +45,79 @@ function create(view, ui) {
         seeOff: async () => { },
       };
       await P.converse(Story.grandmother(ctx), { shot: ['red', 'gran'] });
-      say('Home before dark. Out through the door, and straight along the path.');
+      w.complete('hulda.cloak');
+      w.objective('Home before dark. Out through the door, and straight along the path.');
     });
-  }
+  },
+});
 
-  // ── 2. The wood.
-  async function walk() {
-    let far = 0, picked = false, carved = false; const mused = new Set(), sat = new Set();
-    if (root.Looks) { const l = Looks.load(); if (l.red.outfit === 'No cloak') { l.red.outfit = 'Hood down'; Looks.save(l); } }      // (in her new cloak)
-    P = Play.create(view, { set: s => (wood = Wood.build(s)), npc: null, light: dusk, followCam: true, prompt: ui.prompt,
-      start: { at: [-12, 52], yaw: 0 }, camTurn: Math.PI, camBack: [78, 30], actions: () => actions(), onExit: () => go('home'), onFrame: dt => frame(dt) });
-    say('Home, along the path.');
-    const sp = wood.spots, m = () => P.motion, think = (face, text) => P.talk.muse(text, { face });
-    const spotSay = k => { for (const [f, t] of Story.SPOTS[k]) think(f, t); };
+// ── The wood: the walk home, the light going as she goes.
+World.scene('ch1.walk', {
+  ownObjective: true,
+  prepare(o, w) {
+    outfit('Hood down', 'No cloak');      // (in her new cloak)
+    let far = 0, picked = false, carved = w.q.done('peter.beech'), extra = 0, P = null, wood = null; const mused = new Set(), sat = new Set();
+    const set0 = o.set; o.set = s => (wood = set0(s));
+    const m = () => P.motion, think = (face, text) => P.talk.muse(text, { face });
+    const sp = () => wood.spots, spotSay = k => { for (const [f, t] of Story.SPOTS[k]) think(f, t); };
+    // The time: as far as she's come along the path (from a quarter to five to the last of the light), and more for dawdling.
+    w.time(false);
+    const start = Math.max(w.cal.minute, 16 * 60 + 45);
+    o.place0 = o.place; o.place = P_ => { P = P_; if (o.place0) o.place0(P_); };
     // The things she can stop for (the stone and the fallen tree are seats, and come up on their own).
-    function actions() {
-      const a = [];
-      if (!picked && !m().carry) a.push({ label: sp.bluebells.label, at: sp.bluebells.reach, run: async () => {
-        const p = sp.bluebells.reach.clone(); await m().goTo(flat(p).addScaledVector(flat(m().pos).sub(flat(p)).normalize(), 4), yawTo(m().pos, p));
-        m().lookAt(p); await m().reach('R', p.clone().add(new V3(0, -1.2, 0))); picked = true; m().hold(posy(), 'hang'); await m().release('R'); m().lookAt(null);
-        spotSay('bluebells'); dusk += 0.05; } });
-      if (!carved) a.push({ label: sp.beech.label, at: sp.beech.reach, run: async () => {
-        const p = sp.beech.reach.clone(); await m().goTo(flat(p).addScaledVector(sp.beech.side3, -6), yawTo(flat(p).addScaledVector(sp.beech.side3, -6), p));
-        m().lookAt(p); await m().reach('L', p.clone().addScaledVector(sp.beech.side3, -0.4)); spotSay('beech'); await P.wait(4.5); await m().release('L'); m().lookAt(null); carved = true; dusk += 0.05; } });
+    o.actions = () => {
+      const a = [], s = sp();
+      if (!picked && !m().carry) a.push({ label: s.bluebells.label, at: s.bluebells.reach, run: async () => {
+        const p = s.bluebells.reach.clone(); await m().goTo(flat(p).addScaledVector(flat(m().pos).sub(flat(p)).normalize(), 4), yawTo(m().pos, p));
+        m().lookAt(p); await m().reach('R', p.clone().add(new V3(0, -1.2, 0))); picked = true; m().hold(posy(P), 'hang'); await m().release('R'); m().lookAt(null);
+        spotSay('bluebells'); extra += 12; w.save.change(st => { if (!st.items.includes('bluebells')) st.items.push('bluebells'); }); w.rep.add('mischievous', 0.5, 'dawdling for bluebells'); } });
+      if (!carved) a.push({ label: s.beech.label, at: s.beech.reach, run: async () => {
+        const p = s.beech.reach.clone(); await m().goTo(flat(p).addScaledVector(s.beech.side3, -6), yawTo(flat(p).addScaledVector(s.beech.side3, -6), p));
+        m().lookAt(p); await m().reach('L', p.clone().addScaledVector(s.beech.side3, -0.4)); spotSay('beech'); await P.wait(4.5); await m().release('L'); m().lookAt(null); carved = true; extra += 12; w.complete('peter.beech'); } });
       return a;
-    }
-    // A posy of bluebells, to carry.
-    function posy() {
-      const g = new THREE.Group(); P.stage.scene.add(g);
-      for (let k = 0; k < 7; k++) { const a = k / 7 * 6.3, tip = new V3(Math.cos(a) * 0.5, 2.6 + (k % 3) * 0.3, Math.sin(a) * 0.5);
-        const st = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, tip.length(), 4), Toon.mat('#4e7a36')); st.position.copy(tip).multiplyScalar(0.5); st.quaternion.setFromUnitVectors(new V3(0, 1, 0), tip.clone().normalize()); g.add(st);
-        const h = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), Toon.mat(k % 2 ? '#5a6ad8' : '#7a7ae8')); h.position.copy(tip); g.add(h); }
-      return { obj: g, name: 'the bluebells', grip: new V3(0, 0.6, 0), radius: 1 };
-    }
-    function frame(dt) {
+    };
+    o.onFrame = dt => {
+      if (!P) return;
       const pr = wood.progress(m().pos); far = Math.max(far, pr);
-      // The light: with how far she's come, and more when she stands about (more still sitting); the posy and the carving cost a little each.
       const still = m().speed < 1 && !P.talk.playing, seated = P.sitting;
-      dusk = Math.min(1, Math.max(dusk, 0.3 + 0.45 * far) + (still ? dt * (seated ? 0.006 : 0.0018) : 0));
-      P.stage.setLight(dusk);
+      if (still) extra += dt * (seated ? 1.6 : 0.5);
+      const want = start + far * 170 + extra; if (want - w.cal.minute >= 1 && w.cal.day === 1) w.cal.advance(Math.floor(want - w.cal.minute));
       for (const [at, face, text] of Story.WALK) if (far >= at && !mused.has(at)) { mused.add(at); think(face, text); }
-      for (const k of ['stream', 'log']) if (seated && seated === sp[k].seat && !sat.has(k)) { sat.add(k); spotSay(k); }
-    }
-  }
-
-  // ── 3. Home, at dusk: in through the door, her mother by the hearth; she sees Rose's face, and they talk. Then the correction she's earned (a
-  // light one: home late through the wood, at dusk), there in the room (js/correction.js), and after it, the two of them; the end of the chapter.
-  async function home() {
-    P = Play.create(view, { light: Math.max(0.82, dusk), start: { at: [-44, 31], yaw: Math.PI / 2 },
-      after: async sc => { if (sc !== 'homecoming') return; const p = P;
-        const r = await Correction.run(p, { tier: 'light', fade: on => ui.fade ? ui.fade(on) : null });
-        if (p !== P) return; await p.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
-        try { localStorage.setItem('little-red:scene', 'end'); } catch (e) { /* no storage */ }
-        if (ui.card) ui.card(r); } });
-    P.act(async () => { await P.wait(1.4); await P.talkToMother(); });
-  }
-
-  return { start: name => go(name || 'cabin'), get P() { return P; }, get scene() { return scene; }, get dusk() { return dusk; }, set dusk(v) { dusk = v; } };
+      for (const k of ['stream', 'log']) if (seated && seated === sp()[k].seat && !sat.has(k)) { sat.add(k); spotSay(k); }
+    };
+    // Out of the wood at the village end: home.
+    o.leaving = ex => { if (ex.name === 'the village') w.complete('maren.walk'); };
+    return o;
+  },
+  run(P, w) { w.objective('Home, along the path.'); },
+});
+// A posy of bluebells, to carry.
+function posy(P) {
+  const g = new THREE.Group(); P.stage.scene.add(g);
+  for (let k = 0; k < 7; k++) { const a = k / 7 * 6.3, tip = new V3(Math.cos(a) * 0.5, 2.6 + (k % 3) * 0.3, Math.sin(a) * 0.5);
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, tip.length(), 4), Toon.mat('#4e7a36')); st.position.copy(tip).multiplyScalar(0.5); st.quaternion.setFromUnitVectors(new V3(0, 1, 0), tip.clone().normalize()); g.add(st);
+    const h = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), Toon.mat(k % 2 ? '#5a6ad8' : '#7a7ae8')); h.position.copy(tip); g.add(h); }
+  return { obj: g, name: 'the bluebells', grip: new V3(0, 0.6, 0), radius: 1 };
 }
 
-root.Chapter1 = { create };
+// ── Home, at dusk: in through the door, her mother by the hearth; she sees Rose's face, and they talk. Then the correction she's earned (a light
+// one: home late through the wood, at dusk), there in the room, and after it, the two of them; the end of the chapter.
+World.scene('ch1.homecoming', {
+  ownObjective: true,
+  prepare(o, w) {
+    delete o.talk; delete o.actions;
+    o.after = async kind => {
+      if (kind !== 'homecoming') return; const P = w.P;
+      w.rep.add('wilful', 1, 'home through the wood at dusk, after being told');
+      const r = await Correction.run(P, { tier: 'light', fade: on => w.fade(on) });
+      if (P !== w.P) return;
+      await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
+      w.rep.settle('wilful'); if (r.rose) w.save.flag('rose-said', w.cal.day);
+      w.complete('maren.homecoming');
+      if (w.ui.card) w.ui.card(r);
+    };
+    return o;
+  },
+  run(P, w) { w.objective(''); P.act(async () => { await P.wait(1.4); await P.talkToMother(); }); },
+});
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -44,7 +44,7 @@
 <div id="view"></div>
 <div id="fade"></div>
 <div id="title"><h1>Little <b>Red</b>’s Lessons</h1><h2>Chapter One: The Red Cloak</h2>
-  <nav><button id="begin" class="primary">Begin</button><button id="cont" hidden>Continue</button>
+  <nav><button id="cont" class="primary" hidden>Continue</button><button id="begin" class="primary">Begin</button>
     <button id="pick">Choose a scene</button><div class="scenes"><button data-at="cabin">Grandmother’s cabin</button><button data-at="wood">The wood</button><button data-at="home">Home</button></div>
     <button id="sets">Settings</button></nav>
   <div class="else"><a href="lap.html">Over the knee</a><a href="play.html">About the cottage</a><a href="editor.html">Character editor</a></div></div>
@@ -65,34 +65,38 @@
 <script src="js/discipline.js"></script>
 <script src="js/correction.js"></script>
 <script src="js/play.js"></script>
+<script src="js/save.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/reputation.js"></script>
+<script src="js/questdata.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/world.js"></script>
 <script src="js/chapter1.js"></script>
 <script src="js/hud.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-const NAMES = { cabin: 'Grandmother’s cabin', wood: 'The wood', home: 'Home' };
-// The fade between scenes, with the name of the next.
+// The fade between places, with the name of the next.
 const fade = (on, text) => new Promise(r => { if (on) $('fade').textContent = text || ''; $('fade').classList.toggle('on', on); setTimeout(r, on ? 950 : 50); });
-// The end of the chapter: a card, over the room (as Consequence closes its chapters).
+// The end of the chapter: a card over the room (as Consequence closes its chapters), and on to the next morning.
 const card = () => { hud.show(false); const c = document.createElement('div'); c.id = 'endcard';
-  c.innerHTML = '<div class="num">The end of chapter one</div><i></i><div class="name">The Red Cloak</div><nav><button id="again">Play it again</button><button id="totitle" class="primary">Back to the title</button></nav>';
+  c.innerHTML = '<div class="num">The end of chapter one</div><i></i><div class="name">The Red Cloak</div><nav><button id="totitle">Back to the title</button><button id="goon" class="primary">The next morning</button></nav>';
   document.body.appendChild(c); requestAnimationFrame(() => c.classList.add('on'));
-  $('again').onclick = () => { c.remove(); hud.show(true); ch.start('cabin'); }; $('totitle').onclick = () => location.reload(); };
-// The controls and menus (js/hud.js): they go to whichever scene is being played.
-const hud = Hud.create({ get: () => ch.P, title: () => location.reload(),
-  scenes: Object.keys(NAMES).map(k => ({ label: NAMES[k], run: () => ch.start(k) })),
+  $('goon').onclick = async () => { c.remove(); hud.show(true); await world.morning(); }; $('totitle').onclick = () => location.reload(); };
+// The world (js/world.js), and the controls and menus (js/hud.js) for whichever place she's in.
+const hud = Hud.create({ get: () => world.P, title: () => location.reload(), journal: () => world.journal(),
   links: [{ label: 'Over the knee', href: 'lap.html' }, { label: 'About the cottage', href: 'play.html' }, { label: 'Character editor', href: 'editor.html' }] });
 hud.show(false);
-const ch = window.__ch = Chapter1.create($('view'), { objective: t => hud.objective(t), fade, card });
-// (where she'd got to, last time: the chapter remembers the scene)
-let saved = null; try { saved = localStorage.getItem('little-red:scene'); } catch (e) {}
-if (saved && NAMES[saved] && saved !== 'cabin') { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>' + NAMES[saved] + '</small>'; }
-const begin = at => { if (window.GameAudio) GameAudio.init(); $('title').remove(); hud.show(true); ch.start(at); };
-$('begin').onclick = () => begin();
-$('cont').onclick = () => begin(saved);
+const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), clock: (t, ph) => hud.clock(t, ph), fade, card });
+// Continue, if there's a game to take up again: where she was, and when.
+const saved = world.save.exists() && world.save.state.area;
+if (saved) { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>Day ' + world.cal.day + ', ' + world.cal.clock + ' · ' + world.AREAS[world.save.state.area].name + '</small>'; $('begin').classList.remove('primary'); $('begin').textContent = 'Begin again'; }
+const start = f => { if (window.GameAudio) GameAudio.init(); $('title').remove(); hud.show(true); f(); };
+$('begin').onclick = () => { if (saved && !confirm('Begin again, from the start? The game you have now will be lost.')) return; start(() => world.newGame()); };
+$('cont').onclick = () => start(() => world.resume());
 $('pick').onclick = () => $('title').querySelector('.scenes').classList.toggle('on');
-document.querySelectorAll('[data-at]').forEach(a => a.onclick = () => begin(a.dataset.at));
+document.querySelectorAll('[data-at]').forEach(a => a.onclick = () => start(() => a.dataset.at === 'cabin' ? world.newGame() : world.startAt(a.dataset.at)));
 $('sets').onclick = () => hud.openSettings();
-$('begin').focus();
+(saved ? $('cont') : $('begin')).focus();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>

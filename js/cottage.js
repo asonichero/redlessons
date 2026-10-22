@@ -204,6 +204,8 @@ function build(scene) {
     solid(leaf, new THREE.TorusGeometry(0.9, 0.18, 6, 12), '#3a3634', 4.6, 0, 1.2, { ink: 0.05 });
     const latch = new THREE.Object3D(); latch.position.set(4.6, 0, 1.6); leaf.add(latch);
     world.door = { pivot: hinge, latch, open: 0, target: 0, swing: -1.75, name: 'the door' };
+    // (out through it, once it's open: the doorway, a step inside it)
+    world.exits = world.exits || []; world.exits.push({ name: 'the door', get at() { return d.getWorldPosition(new V3()).setY(0).add(new V3(3, 0, 0)); }, r: 4, when: () => world.door.open > 0.6 });
     box(d, 15.6, 1.6, 1.6, 0, 28.8, 0.8, oak, { shadow: false }); for (const sx of [-1, 1]) box(d, 1.4, 29, 1.6, sx * 7.4, 14, 0.8, oak, { shadow: false });
     box(d, 16, 1.2, 3, 0, 0.6, 1.5, stone, { shadow: false }); }      // (the stone threshold)
 

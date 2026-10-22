@@ -3,7 +3,8 @@
 //
 // Each step: id, phase (where in the story it can first come up), title (the journal's), hint (the objective shown while it's on offer), where
 // (the area it happens in: js/world.js), who (the figure it's with), scene (what js/world.js plays for it, when there is one yet), and optionally
-// when (a condition: see js/quests.js), gate (a gate that must be open), optional (the line goes on without it).
+// when (a condition: see js/quests.js), gate (a gate that must be open), optional (the line goes on without it), talk (it's played by talking to
+// who, in the place: js/world.js handles it).
 // Areas: home (the cottage), cabin (Hulda's), wood, village, garden, bakery, inn, forge, farm, charcoal (the charcoal-burners'), barrows, shoe,
 // hideout (where Hulda hides), green (where the village gathers).
 (function (root) {
@@ -49,7 +50,7 @@ const lines = [
   { id: 'maren', name: 'Maren', steps: [
     s('walk', '1.1', 'Home before dark', 'wood', 'maren', { hint: 'Home, along the path.', scene: 'ch1.walk' }),
     s('homecoming', '1.1', 'The homecoming', 'home', 'maren', { hint: 'Home. Her mother is waiting.', scene: 'ch1.homecoming' }),
-    s('chores', '1.2', 'Chores agreed', 'home', 'maren', { hint: 'Talk to her mother about what’s hers to do.' }),
+    s('chores', '1.2', 'Chores agreed', 'home', 'maren', { hint: 'Talk to her mother about what’s hers to do.', talk: true }),
     s('willie', '1.3', 'Willie Winkie’s blessing', 'home', 'maren', { when: { flag: 'willie-catch-1' } }),
     s('mending', '2.2', 'The mending for the Shoe', 'home', 'maren'),
     s('confinement', '2.2', 'Weeks at the Abneys’', 'inn', 'maren'),
