@@ -72,7 +72,7 @@ function armIK(r, s, W, pole) {
 
 // ── Tuning (in the figure's own units, multiplied by its size) ───────────────────────────────────────────────────────────────────────────────
 const GAIT = {
-  walk: 21, run: 60,                       // top speeds, world units a second at size 1 (her legs are about 14 long)
+  walk: 28, run: 64,                       // top speeds, world units a second at size 1 (her legs are about 14 long): a brisk walk, quicker than life, as games walk
   accel: 7, decel: 9, yawRate: 5, yawRateWalk: 3.2, yawRateRun: 2.4,      // (turning, radians a second at most: standing, walking, running) // how quickly she gets up to speed, slows, and turns (per second)
   duty: [0.62, 0.3],                      // the share of each stride a foot is on the ground: walking, running
   stride: [1.25, 0.95],                     // stride length (by leg length, and the square root of speed by leg length): walking, running
