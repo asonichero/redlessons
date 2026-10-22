@@ -211,7 +211,7 @@
 
   build('A'); build('B'); view('front'); sync();
   st.start(dt => { t += dt; if (lap) { lap.update(dt); return; } if (spin) turn.rotation.y += dt * 0.5; Toon.idle(rigs.A, t); Toon.idle(rigs.B, t + 2.1); rigs.A.tick(dt); rigs.B.tick(dt); });
-  window.__rigs = rigs; window.__st = st;
+  window.__rigs = rigs; window.__st = st; window.__lapEd = () => lap;
 })();
 </script>
 </body>

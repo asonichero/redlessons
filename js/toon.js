@@ -207,6 +207,8 @@ const SPECS = {
   weeBarrow: { name: 'Wee Barrow', age: 22, sex: 'm', scale: 0.92, shoulders: 1.02, chest: 1.04, waist: 1.08, hips: 1.0, arms: 1.04, neck: 1.04, jaw: 1.0, hair: 'curly', feet: 'boots', sleeves: 'long', top: 'jumper',
     pal: { skin: '#f4cca8', hair: '#a86a3a', eyes: '#6a4a2a', lips: '#c08070', top: '#d8a85a', trousers: '#6a4a30' } },
 };
+// (a man's seat: narrower, shallower and less round than a woman's, sitting within his narrower hips)
+for (const S of Object.values(SPECS)) if (S.sex === 'm') { if (S.seatW == null) S.seatW = 0.84; if (S.seatH == null) S.seatH = 0.9; if (S.seatD == null) S.seatD = 0.78; if (S.seatX == null) S.seatX = 0.92; }
 // ── Tuning: every number the figures are built from, adjustable in the editor (editor.html) and kept in the browser, so the lap scene uses them
 // too. [key, group, label, default, min, max, step]. Lengths are in the figure's units (a figure stands about 31 tall); the rest are multipliers.
 const TUNE = [
@@ -257,6 +259,7 @@ const VARY = [
   ['shoulders', 'Shoulder width', 1, 0.8, 1.4, 0.01], ['chest', 'Chest width', 1, 0.8, 1.4, 0.01], ['waist', 'Waist width', 1, 0.8, 1.45, 0.01],
   ['hips', 'Hip width', 1, 0.8, 1.35, 0.01], ['arms', 'Arm thickness', 1, 0.8, 1.45, 0.01], ['legs', 'Leg thickness', 1, 0.8, 1.35, 0.01],
   ['neck', 'Neck thickness', 1, 0.8, 1.35, 0.01], ['jaw', 'Jaw width', 1, 0.8, 1.3, 0.01], ['nose', 'Nose size', 1, 0.6, 1.5, 0.01], ['eyes', 'Eye size', 1, 0.75, 1.3, 0.01],
+  ['seatX', 'Seat: spacing', 1, 0.7, 1.4, 0.01], ['seatW', 'Seat: width', 1, 0.6, 1.3, 0.01], ['seatH', 'Seat: height', 1, 0.6, 1.3, 0.01], ['seatD', 'Seat: roundness', 1, 0.6, 1.3, 0.01],
 ].map(([f, label, base, lo, hi, step, applies]) => ({ f, label, base, lo, hi, step, applies: applies || (() => true) }));
 const SHAPES_KEY = 'red-lessons:shapes';
 // (their own, as built: what the editor's changes are measured from)
@@ -325,6 +328,8 @@ function palette(id, look) {
 function tuneFor(S) {
   const k = Object.assign({}, K), by = (key, f) => { if (f != null) k[key] = K[key] * f; };
   by('hipWidth', S.hips); by('chestWidth', S.chest); by('armGirth', S.arms); by('legGirth', S.legs); by('neckGirth', S.neck); by('jaw', S.jaw); by('noseSize', S.nose);
+  by('cheekX', S.seatX); by('cheekW', S.seatW); by('cheekH', S.seatH); by('cheekD', S.seatD);
+  k.seatBack = (k.cheekD - k.cheekZ) / (K.cheekD - K.cheekZ);      // (how far the seat stands out behind, against the baseline's: the drawers and trousers over it follow)
   if (S.eyes) { k.eyeW *= S.eyes; k.eyeH *= S.eyes; }
   if (S.sex === 'm') { k.eyeH *= 0.88; k.eyeW *= 0.96; k.iris *= 0.94; k.mouthSize *= 0.92; k.cheekW *= 0.88; k.cheekD *= 0.88; k.cheekH *= 0.92; k.handSize *= 1.08; k.footSize *= 1.08; k.earSize *= 1.05; k.fringe *= 0.78; }
   return k;
@@ -641,7 +646,7 @@ function make(id, look, opts) {
     // (up over the whole seat to the waist, tucked under the bodice: fuller at the back only low down, under the cheeks; above them it follows the
     // small of her back, so it never stands proud of the cheeks as they roll round with her legs)
     { const g = lathe(wide(dense([[0, -2.64], [1.5, -2.48], [2.82, -1.7], [3.32, -0.4], [3.26, 0.4], [3.08, 0.85], [2.95, 1.05]], 24), trunkW), 0.75 * TD, 32), pp = g.attributes.position;
-      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.1, 1, ss(-1.3, -0.4, pp.getY(i)))); }
+      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z < 0) pp.setZ(i, z * lerp(1.1, 1, ss(-1.3, -0.4, y)) * lerp(1, K.seatBack, ss(1.2, 0.2, y))); }
       flatWaist(g); g.computeVertexNormals(); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, torsoW, { cover: underSkirt }))); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07, cover: underSkirt }))); }
@@ -667,7 +672,7 @@ function make(id, look, opts) {
     const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, sh = f => -Lk - f * D.shin, bootTop_ = -(D.thigh + 0.507 * D.shin);
     const inBoots = p => S.feet === 'boots' ? [cc('boots'), ss(bootTop_ + 0.1, bootTop_ - 0.3, p.y), 'boots'] : null;
     { const g = lathe(wide(dense([[0, -2.75], [1.6, -2.6], [2.98, -1.8], [3.46, -0.4], [3.4, 0.4], [3.24, 1.2], [3.1, 2.4], [3.02, 2.62]], 24), trunkW), 0.77 * TD, 32), pp = g.attributes.position;
-      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(-1.3, -0.4, pp.getY(i)))); }
+      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(-1.3, -0.4, y)) * lerp(1, K.seatBack, ss(1.2, 0.2, y))); }
       flatWaist(g); g.computeVertexNormals(); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, torsoW, { ink: 0.05 }))); }
     for (const [s_, sx] of [['L', 1], ['R', -1]]) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.1, CHEEK.ry * 1.08, CHEEK.rz * 1.14), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatW(rig.seatPivot[s_]), { ink: 0.05 }))); }
@@ -679,7 +684,14 @@ function make(id, look, opts) {
     { const yb = -D.thigh * 0.84, ax = (D.hipX + 1.5 * K.legGirth), gg = surface((u, v) => { const a = u * Math.PI * 2, x = Math.cos(a) * ax * v, z = Math.sin(a) * 1.6 * K.legGirth * v; return new V3(x, yb - 1.0 * (1 - ss(0, 1.8, Math.abs(x))) - 0.5 * (1 - v * v), z); }, 40, 8, p => new V3(0, -1, 0));
       trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, gg, P.trousers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0 }))); }
     // (the tail of the shirt, tucked in: it shows only with the trousers down or off, hanging over the top of the drawers)
-    shirtTail.push(skinnedOn(rig.hips, lathe(wide(dense([[3.4, -0.1], [3.42, 0.4], [3.26, 1.3], [3.08, 2.3]], 12), trunkW), 0.77 * TD, 32), top, torsoW, { side: THREE.DoubleSide, ink: 0.04 }));
+    // (shorter at the back, where it ends above the seat rather than letting the tops of the cheeks through it)
+    // (its top drawn in to lie on the shirt above it, never standing off it)
+    // (just outside the drawers, and drawn in at the back with them: over a lap, with the seat under it drawn in, it lies on it)
+    { const g = lathe(wide(dense([[3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3]], 14), trunkW), TD, 32), pp = g.attributes.position, top0 = CHEEK.y + CHEEK.ry + 0.25;
+      for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i); pp.setZ(i, z * lerp(0.77, 0.7, ss(0.8, 2.3, y)) * (z < 0 ? lerp(1, K.seatBack, ss(1.2, 0.2, y)) : 1)); }
+      flatWaist(g);
+      for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i), back = ss(0.55, -0.15, z / (3.4 * 0.77 * TD)); if (y < top0) pp.setY(i, lerp(y, top0 + (y + 0.1) * 0.3, back)); }
+      g.computeVertexNormals(); shirtTail.push(skinnedOn(rig.hips, g, top, torsoW, { side: THREE.DoubleSide, ink: 0.04 })); }
     // The belt, and its buckle.
     trousers.push(piece(lathe(wide([[3.08, 2.0], [3.14, 2.3], [3.06, 2.62]], trunkW), 0.79 * TD, 28), P.belt, rig.hips, 0, 0, 0, { ink: 0.03 }));
     trousers.push(piece(new THREE.BoxGeometry(0.9, 0.62, 0.18), '#b8a060', rig.hips, 0, 2.3, 3.08 * trunkW(2.3) * 0.79 * TD + 0.08, { ink: 0.02 }));
