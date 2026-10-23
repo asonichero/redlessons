@@ -6,7 +6,7 @@
 // when (a condition: see js/quests.js), gate (a gate that must be open), optional (the line goes on without it), talk (it's played by talking to
 // who, in the place: js/world.js handles it).
 // Areas: home (the cottage), cabin (Hulda's), wood, village, garden, bakery, inn, forge, farm, charcoal (the charcoal-burners'), barrows, shoe,
-// hideout (where Hulda hides), green (where the village gathers).
+// hideout (where Hulda hides), green (where the village gathers), smallholding (the Fowlers', at the meadow's edge).
 (function (root) {
 'use strict';
 
@@ -79,6 +79,8 @@ const lines = [
     s('friends', '1.2', 'Meetings at the beech', 'wood', 'peter'),
     s('notices', '1.3', 'He notices she’s changed', 'village', 'peter'),
     s('equals', '2.2', 'Holding each other to account', 'wood', 'peter', { gate: 'peter' }),
+    // (later, and not the first time he holds her to account: the two of them exploring it as Peter and Rose, with his ropes and knots)
+    s('rope', '2.3', 'As Peter and Rose', 'smallholding', 'peter', { optional: true, when: { done: 'peter.equals' } }),
     s('uneasy', '2.3', 'Uneasy about the stranger', 'village', 'peter'),
     s('silence', '3.2', 'Something wrong with Hulda’s silence', 'village', 'peter'),
     s('stands', '3.3', 'Stands with her', 'green', 'peter'),

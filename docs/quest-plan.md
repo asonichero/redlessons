@@ -111,9 +111,10 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 3. **1.3** Notices she's changed. Asks, and she decides how much to tell him.
 4. **2.1** Paused until she's met the Barrows.
 5. **2.2** Their first try at holding each other to account as equals, modelled on what she saw at the Barrows'.
-6. **2.3** Uneasy about the stranger in the wood, and says so.
-7. **3.2** The first to say something is wrong with Hulda's silence: his grandfather has noticed she's stopped coming by.
-8. **3.3** Stands with her, and helps lay the trap: he knows snares, nets and rope. Epilogue: their agreement, in their own words.
+6. **2.3** Optional, and only after step 5: later, the two of them exploring it as **Peter and Rose**, not Little Red. Peter's deftness with ropes and knots, the fowler's trade, becomes part of how they experiment. It's careful and agreed between them, and true to him: steady hands, knots that come loose with one pull, a knife always within reach, and her word stopping it at once. They may want a word of their own for it; *Beech*, for the R and P on the tree, would fit. At the Shoe, by contrast, her word is the house's own, Red.
+7. **2.3** Uneasy about the stranger in the wood, and says so.
+8. **3.2** The first to say something is wrong with Hulda's silence: his grandfather has noticed she's stopped coming by.
+9. **3.3** Stands with her, and helps lay the trap: he knows snares, nets and rope. If step 6 happened, Rose knows his knots too, and ties one herself. It's the same rope as before, this time used against the one figure who never asked. Epilogue: their agreement, in their own words.
 
 ### Tom and the smith
 
