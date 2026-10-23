@@ -199,7 +199,7 @@ const SPECS = {
     pal: { skin: '#e4b48c', hair: '#c8c4bc', eyes: '#5f7f95', lips: '#a87068', top: '#e8dcc0', trousers: '#5a4a38', hat: '#6a5a44' } },
   // (the Watchman: "in his nightgown" read as his night watchman's garb, a short cape over his shoulders that leaves his arms free, set aside when
   // he sits to take someone in hand, and a tricorn hat)
-  willie: { name: 'William Dunn', age: 42, sex: 'm', scale: 1.0, shoulders: 1.04, chest: 1.0, waist: 1.0, hips: 0.95, neck: 1.05, jaw: 1.06, hair: 'short', beard: 'stubble', hat: 'tricorn', cape: true, feet: 'boots', vest: 'waistcoat', sleeves: 'long',
+  willie: { name: 'William Dunn', age: 42, sex: 'm', scale: 1.05, shoulders: 1.14, chest: 1.0, waist: 1.0, hips: 0.95, neck: 1.05, jaw: 1.06, hair: 'short', beard: 'stubble', hat: 'tricorn', cape: true, feet: 'boots', vest: 'waistcoat', sleeves: 'long',
     pal: { skin: '#f0caa8', hair: '#6a5040', eyes: '#4a70b0', lips: '#b07a6e', top: '#ece6da', vest: '#3a3c48', trousers: '#3a3632', boots: '#2e241c', bootsDk: '#1e1610', hat: '#29272c', cloak: '#2e3a4e', lace: '#56657c' } },
   georgie: { name: 'Georgie Dunn', age: 19, sex: 'm', scale: 0.91, shoulders: 1.04, chest: 1.0, waist: 0.95, hips: 0.92, neck: 1.04, jaw: 1.02, hair: 'tousled', hat: 'flatcap', feet: 'boots', sleeves: 'rolled', flour: true,
     pal: { skin: '#fbe0cc', hair: '#d0a050', eyes: '#4a70b0', lips: '#c08878', top: '#ece6d8', trousers: '#8a7a62', hat: '#5a5048' } },
@@ -939,11 +939,11 @@ function make(id, look, opts) {
   if ((id === 'red' && look.outfit !== 'No cloak') || S.shawl || (S.cape && !opts.seated)) {
     const prof = [[9.15, 1.32], [8.75, 2.6], [8.1, 3.7], [7.2, 4.05], [6.0, 4.15], [4.0, 4.2]];
     const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
-    const DEP = 0.8, PH0 = 0.42, PH1 = Math.PI * 2 - 0.42;
-    const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 9.15 - (3.05 + 2.3 * Math.pow(b, 1.4)) * K.cloakLen * (S.shawl ? 0.78 : 1); };
+    const DEP = 0.8, PH0 = 0.42, PH1 = Math.PI * 2 - 0.42, SHW = S.shoulders || 1;      // (SHW: as wide as the shoulders it hangs from)
+    const hem = phi => { const b = (1 - Math.cos(phi)) / 2; return 9.15 - (3.05 + 2.3 * Math.pow(b, 1.4)) * K.cloakLen * (S.shawl ? 0.78 : S.cape ? 1.75 : 1); };      // (a shawl shorter than her cloak; his cape longer, past his hips)
     const fn = (u, v) => { const phi = lerp(PH0, PH1, u), y = lerp(9.15, hem(phi), v), r = (rAt(y) + 0.12 * Math.sin(u * Math.PI * 9) * v) * Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95);
       const dep = lerp(DEP, 0.6, Math.max(0, Math.cos(phi)));      // (the front panels lie close over the bust; the back stands off the shoulder blades)
-      const P0 = new V3(Math.sin(phi) * r, y, Math.cos(phi) * r * dep * TD);
+      const P0 = new V3(Math.sin(phi) * r * SHW, y, Math.cos(phi) * r * dep * TD);
       if (!opts.lying) return P0;
       // Lying face down across a lap, it lies along the line of her back instead of standing off it as a bell: the back of it follows her back a
       // cloth's thickness off it, and the sides fall away round her flanks toward the floor.
