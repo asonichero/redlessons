@@ -212,8 +212,9 @@ const SPECS = {
   weeBarrow: { name: 'Wee Barrow', age: 22, sex: 'm', scale: 0.82, shoulders: 1.02, chest: 1.04, waist: 1.08, hips: 1.0, arms: 1.04, neck: 1.04, jaw: 1.0, hair: 'curly', feet: 'boots', sleeves: 'long', top: 'jumper',
     pal: { skin: '#f4cca8', hair: '#a86a3a', eyes: '#6a4a2a', lips: '#c08070', top: '#d8a85a', trousers: '#6a4a30' } },
 };
-// (a man's seat: narrower, shallower and less round than a woman's, sitting within his narrower hips)
-for (const S of Object.values(SPECS)) if (S.sex === 'm') { if (S.seatW == null) S.seatW = 0.84; if (S.seatH == null) S.seatH = 0.9; if (S.seatD == null) S.seatD = 0.78; if (S.seatX == null) S.seatX = 0.92; }
+// (a man's seat: narrower, shallower and less round than a woman's, sitting within his narrower hips. Seat height (seatY) is moved in units,
+// 0 being the baseline's; the rest are multipliers)
+for (const S of Object.values(SPECS)) if (S.sex === 'm') { if (S.seatW == null) S.seatW = 0.74; if (S.seatH == null) S.seatH = 0.83; if (S.seatD == null) S.seatD = 0.69; if (S.seatX == null) S.seatX = 0.92; }
 // ── Tuning: every number the figures are built from, adjustable in the editor (editor.html) and kept in the browser, so the lap scene uses them
 // too. [key, group, label, default, min, max, step]. Lengths are in the figure's units (a figure stands about 31 tall); the rest are multipliers.
 const TUNE = [
@@ -264,7 +265,8 @@ const VARY = [
   ['shoulders', 'Shoulder width', 1, 0.8, 1.4, 0.01], ['chest', 'Chest width', 1, 0.8, 1.4, 0.01], ['waist', 'Waist width', 1, 0.8, 1.45, 0.01],
   ['hips', 'Hip width', 1, 0.8, 1.35, 0.01], ['arms', 'Arm thickness', 1, 0.8, 1.45, 0.01], ['legs', 'Leg thickness', 1, 0.8, 1.35, 0.01],
   ['neck', 'Neck thickness', 1, 0.8, 1.35, 0.01], ['jaw', 'Jaw width', 1, 0.8, 1.3, 0.01], ['nose', 'Nose size', 1, 0.6, 1.5, 0.01], ['eyes', 'Eye size', 1, 0.75, 1.3, 0.01],
-  ['seatX', 'Seat: spacing', 1, 0.7, 1.4, 0.01], ['seatW', 'Seat: width', 1, 0.6, 1.3, 0.01], ['seatH', 'Seat: height', 1, 0.6, 1.3, 0.01], ['seatD', 'Seat: roundness', 1, 0.6, 1.3, 0.01],
+  ['seatX', 'Seat: spacing', 1, 0.7, 1.4, 0.01], ['seatY', 'Seat: height (lower ↔ higher)', 0, -1, 1, 0.01], ['seatZ', 'Seat: depth', 1, 0.6, 1.5, 0.01],
+  ['seatW', 'Seat: width', 1, 0.6, 1.3, 0.01], ['seatH', 'Seat: height of each cheek', 1, 0.6, 1.3, 0.01], ['seatD', 'Seat: roundness', 1, 0.6, 1.3, 0.01],
 ].map(([f, label, base, lo, hi, step, applies]) => ({ f, label, base, lo, hi, step, applies: applies || (() => true) }));
 const SHAPES_KEY = 'red-lessons:shapes';
 // (their own, as built: what the editor's changes are measured from)
@@ -333,10 +335,11 @@ function palette(id, look) {
 function tuneFor(S) {
   const k = Object.assign({}, K), by = (key, f) => { if (f != null) k[key] = K[key] * f; };
   by('hipWidth', S.hips); by('chestWidth', S.chest); by('armGirth', S.arms); by('legGirth', S.legs); by('neckGirth', S.neck); by('jaw', S.jaw); by('noseSize', S.nose);
-  by('cheekX', S.seatX); by('cheekW', S.seatW); by('cheekH', S.seatH); by('cheekD', S.seatD);
+  by('cheekX', S.seatX); by('cheekZ', S.seatZ); by('cheekW', S.seatW); by('cheekH', S.seatH); by('cheekD', S.seatD);
+  if (S.seatY) k.cheekY = K.cheekY + S.seatY;      // (the seat's height is moved, not scaled: up or down from the baseline's)
   k.seatBack = (k.cheekD - k.cheekZ) / (K.cheekD - K.cheekZ);      // (how far the seat stands out behind, against the baseline's: the drawers and trousers over it follow)
   if (S.eyes) { k.eyeW *= S.eyes; k.eyeH *= S.eyes; }
-  if (S.sex === 'm') { k.eyeH *= 0.88; k.eyeW *= 0.96; k.iris *= 0.94; k.mouthSize *= 0.92; k.cheekW *= 0.88; k.cheekD *= 0.88; k.cheekH *= 0.92; k.handSize *= 1.08; k.footSize *= 1.08; k.earSize *= 1.05; k.fringe *= 0.78; }
+  if (S.sex === 'm') { k.eyeH *= 0.88; k.eyeW *= 0.96; k.iris *= 0.94; k.mouthSize *= 0.92; k.handSize *= 1.08; k.footSize *= 1.08; k.earSize *= 1.05; k.fringe *= 0.78; }
   return k;
 }
 
