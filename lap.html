@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Over the Knee</title>
+<title>Correction Test</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1a0f10">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; }
-  #view { position: fixed; inset: 0 300px 0 0; }
-  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
+  #view { position: fixed; inset: 0 320px 0 0; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
   h1 { font-size: 15px; margin: 0 0 4px; } .sub { color: #9a8a8e; font-size: 11px; line-height: 1.5; }
   h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #a8969a; margin: 14px 0 6px; border-bottom: 1px solid #3a2c30; padding-bottom: 3px; }
   .btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -19,40 +19,54 @@
   button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
   button.big { font-size: 14px; padding: 9px 16px; background: #4a3a1c; border-color: #c9a84c; }
   button.red { background: #8a1a22; border-color: #f08080; font-weight: bold; }
-  input[type=range] { width: 100%; }
+  input[type=number] { width: 48px; background: #1c1418; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 5px; }
+  .pick { display: flex; flex-direction: column; gap: 6px; } .pick label { font-size: 11px; color: #a8969a; display: flex; flex-direction: column; gap: 3px; }
+  .pick select { background: #120e10; color: #f0ebe8; border: 1px solid #554449; border-radius: 4px; padding: 5px; font-size: 12px; }
+  .stepper { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .stepper span.l { width: 64px; color: #c9c0c2; } .stepper span.v { width: 40px; text-align: center; color: #c9a84c; font-variant-numeric: tabular-nums; }
   #meter { position: relative; height: 14px; background: #1c1418; border: 1px solid #554449; border-radius: 4px; overflow: hidden; }
   #meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #4a7a4a, #c9a84c 60%, #c24850); }
   #meter b { position: absolute; top: 0; bottom: 0; left: 66.7%; width: 2px; background: #fff; opacity: .7; }
-  #band { margin-top: 5px; } #info { margin-top: 6px; font-size: 12px; color: #b9a9ae; line-height: 1.5; }
+  #band { margin-top: 5px; font-size: 12px; } #band b { color: #c9a84c; font-variant-numeric: tabular-nums; }
+  #end { margin-top: 8px; padding: 8px 10px; border: 1px solid #554449; border-radius: 4px; background: #1c1418; font-size: 12px; line-height: 1.5; }
   a { color: #c9a84c; }
-  #line { position: fixed; left: 20px; right: 320px; bottom: 22px; text-align: center; font: 17px Georgia, serif; color: #fff; text-shadow: 0 1px 4px #000; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #line { position: fixed; left: 20px; right: 340px; bottom: 22px; text-align: center; font: 17px Georgia, serif; color: #fff; text-shadow: 0 1px 4px #000; opacity: 0; transition: opacity .3s; pointer-events: none; }
   #line.on { opacity: 1; }
-  #card { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 40px)); background: #f6ecd8; color: #3a2a20; border: 3px solid #6b4a32; border-radius: 16px; padding: 18px 22px; font: 17px/1.5 Georgia, serif; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45); z-index: 30; }
-  #card .sub { color: #6a5040; font-size: 13px; }
-  @media (max-width: 700px) { #view { inset: 0 0 45% 0; } #panel { top: 55%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } #line { right: 20px; bottom: 47%; } }
+  @media (max-width: 760px) { #view { inset: 0 0 45% 0; } #panel { top: 55%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } #line { right: 20px; bottom: 47%; } }
 </style>
 </head>
 <body>
 <div id="view"></div>
 <div id="panel">
-  <h1>Over the knee</h1>
-  <div class="sub">Her mother seated, Little Red across her lap. Drag to orbit; the wheel zooms. Space smacks; R is Rose, the safe word. <a href="story.html">Chapter one</a> · <a href="editor.html">Character editor</a> · <a href="play.html">About the cottage</a></div>
-  <h3>Correction</h3>
-  <div class="btns" id="tiers"></div>
-  <h3>Implement</h3><div class="btns"><button data-impl="hand" class="on">Hand</button><button data-impl="hairbrush">Her hairbrush</button></div>
+  <h1>Correction test</h1>
+  <div class="sub">Over the knee: any of the cast across any other's lap. Drag to orbit; the wheel zooms. Space smacks; R is the safe word. <a href="story.html">The game</a> · <a href="editor.html">Character editor</a> · <a href="play.html">The cottage</a></div>
+  <h3>Who</h3>
+  <div class="pick"><label>Corrector <select id="whoA"></select></label><label>Across the lap <select id="whoB"></select></label></div>
+  <h3>The correction</h3>
+  <div class="btns"><button id="smack" class="big">Smack</button><button id="run">Run</button><input id="runN" type="number" min="1" max="60" value="10"><button id="halt">Stop</button></div>
+  <div class="btns" style="margin-top:6px"><button id="endBtn">End the correction</button><button id="word" class="red">Rose</button></div>
+  <div class="stepper" style="margin-top:8px"><span class="l">Pace</span><button data-s="pace" data-d="-1">−</button><span class="v" id="paceV">1.0×</span><button data-s="pace" data-d="1">+</button></div>
+  <div class="stepper"><span class="l">Strength</span><button data-s="strength" data-d="-1">−</button><span class="v" id="strengthV">1.0×</span><button data-s="strength" data-d="1">+</button></div>
+  <h3 id="subjH">Her distress</h3>
+  <div id="meter"><i id="fill"></i><b title="the edge of resistance"></b></div>
+  <div id="band"></div>
+  <div id="end" hidden></div>
+  <h3>Implement</h3>
+  <div class="btns" id="impl"></div>
+  <div class="sub" id="implNote" style="margin-top:4px"></div>
+  <h3>Side</h3>
+  <div class="btns" id="side"></div>
   <h3>Clothes</h3>
-  <div class="btns"><button id="skirt">Skirt: down</button><button id="drawers">Drawers: up</button></div>
-  <div class="btns" style="margin-top:6px"><span>Cloak</span><button data-outfit="No cloak">None</button><button data-outfit="Hood down">Hood down</button><button data-outfit="Hood up">Hood up</button></div>
-  <h3>Smacks</h3>
-  <div class="btns"><button class="big" id="one">Smack</button><button class="big" id="ten">Run of 10</button></div>
-  <div class="btns" style="margin-top:6px"><span>Pace</span><button data-pace="0.7">Slow</button><button data-pace="1" class="on">Steady</button><button data-pace="1.5">Brisk</button></div>
-  <div class="btns" style="margin-top:6px"><span>Strength</span><button data-str="0.6">Light</button><button data-str="1" class="on">Firm</button><button data-str="1.3">Hard</button></div>
-  <h3>Her distress</h3>
-  <div id="meter"><i></i><b title="the edge of resistance"></b></div>
-  <div id="band">composed</div>
-  <div id="info"></div>
-  <div class="btns" style="margin-top:10px"><button class="red" id="red">Rose</button><button id="reset">Start again</button></div>
-  <h3>Camera</h3><div class="btns"><button data-view="side">Side</button><button data-view="behind">Behind</button><button data-view="giver">Her mother’s view</button><button data-view="top">Above</button><button data-view="face">Her face</button></div>
+  <div class="btns"><button id="lower"></button><button id="drawers"></button></div>
+  <div class="sub" style="margin-top:4px">Clothing over the seat cushions the sting, not the ache.</div>
+  <div id="wardrobe"></div>
+  <h3>Scripted</h3>
+  <div class="btns" id="tiers"></div>
+  <div class="sub" id="tierNote" style="margin-top:4px"></div>
+  <h3>Camera</h3>
+  <div class="btns" id="cams"></div>
+  <h3>Scene</h3>
+  <div class="btns"><button id="clear">Clear marks</button><button id="snd" class="on">Sound</button><button id="again">Start again</button></div>
 </div>
 <div id="line"></div>
 <script src="vendor/three.min.js"></script>
@@ -63,69 +77,139 @@
 <script src="js/stage.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/pain.js"></script>
-<script src="js/lap.js"></script>
 <script src="js/implements.js"></script>
+<script src="js/lap.js"></script>
 <script src="js/correctors.js"></script>
 <script src="js/discipline.js"></script>
 <script>
 (function () {
-  const $ = id => document.getElementById(id), A = window.GameAudio, all = sel => document.querySelectorAll(sel);
-  let lap = null, session = 0, lineTimer = 0;
-  const scene = new URLSearchParams(location.search).get('scene');      // (come from the story: ?scene=homecoming)
-  const st = { implement: 'hand', skirt: 'down', drawers: 'up', pace: 1, strength: 1 };
-  const showLine = t => { $('line').textContent = 'Mother: ' + t; $('line').classList.add('on'); clearTimeout(lineTimer); lineTimer = setTimeout(() => $('line').classList.remove('on'), 3200); };
+  const $ = id => document.getElementById(id), A = window.GameAudio, all = sel => document.querySelectorAll(sel), L = Looks, C = Correctors;
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+  let lap = null, session = 0, lineTimer = 0, scripted = false;
+  const PACE = [0.5, 0.7, 1, 1.4, 2], STR = [0.5, 0.75, 1, 1.25, 1.5], idx = { pace: 2, strength: 2 };
+  const st = { implement: 'hand', side: 'alt', skirt: 'down', drawers: 'up', pace: 1, strength: 1, sound: true };
+
+  // ── Who: any of the cast, as the editor has them, each side remembered. ──
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem('red-lessons:lap-pair') || '{}'); } catch (e) {}
+  const who = { A: L.CAST.includes(saved.A) ? saved.A : 'gerda', B: L.CAST.includes(saved.B) ? saved.B : 'red' };
+  for (const side of ['A', 'B']) {
+    const sel = $('who' + side);
+    for (const id of L.CAST) { const o = document.createElement('option'); o.value = id; o.textContent = L.NAMES[id]; sel.appendChild(o); }
+    sel.value = who[side];
+    sel.onchange = () => { who[side] = sel.value; try { localStorage.setItem('red-lessons:lap-pair', JSON.stringify(who)); } catch (e) {} build(); };
+  }
+  // The corrector for a figure (js/correctors.js), if they are one; their own implement, if so; and who they're taking in hand, as a subject.
+  const correctorOf = id => { for (const k in C.CORRECTORS) if (C.CORRECTORS[k].rig === id) return C.corrector(k); return null; };
+  const subjectOf = id => {
+    for (const k in C.SUBJECTS) if (C.SUBJECTS[k].rig === id) return C.subject(k);
+    const S = Toon.SPECS[id], first = L.NAMES[id].split(/[,(]/)[0].trim();
+    return { id, rig: id, pitch: S.sex === 'm' ? 140 : 215, word: 'Red', names: [first], lights: false };      // (no profile yet: the traffic light's red stops it)
+  };
+  const trousered = id => { const S = Toon.SPECS[id]; return S.sex === 'm' && S.lower !== 'gown'; };
+  const pron = id => Toon.SPECS[id].sex === 'm' ? 'His' : 'Her';
+
+  const showLine = (who_, t) => { $('line').textContent = who_ + ': ' + t; $('line').classList.add('on'); clearTimeout(lineTimer); lineTimer = setTimeout(() => $('line').classList.remove('on'), 3200); };
   function build() {
-    session++; $('line').classList.remove('on');
+    session++; scripted = false; $('line').classList.remove('on'); $('end').hidden = true;
     if (lap) { lap.end(); lap.stop(); }
-    $('view').innerHTML = ''; const looks = Looks.load(); if (scene) looks.red.outfit = 'No cloak';      // (her cloak over the back of a chair)
-    lap = Lap.create($('view'), { looks });
-    lap.set(Object.assign({}, st)); lap.view('side'); lap.start();
-    lap.on((type) => { if (type === 'tooHarsh') $('info').textContent = 'Too harsh: nothing more is struck.'; if (type === 'rose') $('info').textContent = 'Rose. Everything stopped at once.'; });
-    tiers(false);
+    $('view').innerHTML = '';
+    const sub = subjectOf(who.B), c = correctorOf(who.A);
+    if (!c || !Implements.LIST[c.implement]) st.implement = 'hand';
+    else if (st.implement !== 'hand' && st.implement !== c.implement) st.implement = 'hand';
+    lap = Lap.create($('view'), { looks: L.load(), giver: who.A, subject: who.B, pitch: sub.pitch });
+    lap.set(Object.assign({}, st)); lap.view(camNow || 'side'); lap.start();
+    const me = session;
+    lap.on((type, d) => {
+      if (me !== session) return;      // (a lap ended by building the next)
+      if (type === 'tooHarsh') ended('<b>Too harsh.</b> Nothing more is struck; end the correction.');
+      if (type === 'rose') ended('<b>“' + sub.word + '.”</b> Everything stopped at once. Nothing is held against ' + (Toon.SPECS[who.B].sex === 'm' ? 'him' : 'her') + '.');
+      if (type === 'end' && !scripted && !lap.st.rose && !lap.pain.tooHarsh) ended('<b>Done.</b> ' + d.hits + ' smack' + (d.hits === 1 ? '' : 's') + '; brought as far as <b>' + lap.BANDS[d.peak < 0.3 ? 0 : d.peak < 0.6 ? 1 : d.peak < 0.9 ? 2 : d.peak < 1 ? 3 : d.peak < 1.5 ? 4 : 5] + '</b>.');
+    });
+    $('word').textContent = sub.word; $('word').title = 'The safe word (R)';
+    $('subjH').textContent = pron(who.B) + ' distress';
+    implements(c); wardrobe(); tierButtons(c); label();
   }
-  // A scripted correction: the panel's own controls are held while it runs (Red and Start again stay live).
-  const tiers = busy => { all('[data-tier], [data-impl], [data-pace], [data-str], [data-outfit], #skirt, #drawers, #one, #ten').forEach(b => b.disabled = busy); if (!busy) label(); };
-  for (const t of Discipline.TIERS) {
-    const b = document.createElement('button'); b.textContent = Discipline.TIER_NAMES[t]; b.dataset.tier = t; b.title = Discipline.total(t) + ' smacks';
-    b.onclick = async () => {
-      wake(); build(); const me = session; tiers(true);
-      const r = await Discipline.run(lap, t, { say: showLine, implement: st.implement !== 'hand' ? st.implement : null });      // (her own implement, if it's chosen: for the last stage)
-      if (me !== session) return;
-      Object.assign(st, { implement: lap.st.implement, skirt: lap.st.skirt, drawers: lap.st.drawers });
-      all('[data-impl]').forEach(x => x.classList.toggle('on', x.dataset.impl === st.implement));
-      $('info').textContent = (r.rose ? 'Rose. ' : r.tooHarsh ? 'Too harsh. ' : Discipline.TIER_NAMES[t] + ', done. ') + r.hits + ' smacks.';
-      tiers(false); all('#one, #ten').forEach(x => x.disabled = true);
-    };
-    $('tiers').appendChild(b);
+  const ended = html => { const e = $('end'); e.hidden = false; e.innerHTML = html; };
+
+  // ── The implement: the hand, and the corrector's own, if they have one. ──
+  function implements(c) {
+    const box = $('impl'); box.innerHTML = '';
+    const ids = ['hand'].concat(c && Implements.LIST[c.implement] ? [c.implement] : []);
+    for (const id of ids) { const b = document.createElement('button'); b.textContent = cap(Implements.LIST[id].name); b.dataset.k = id; b.onclick = () => { st.implement = id; lap.set({ implement: id }); label(); }; box.appendChild(b); }
+    $('implNote').textContent = ids.length > 1 ? '' : L.NAMES[who.A].split(/[,(]/)[0].trim() + ' has no implement of ' + pron(who.A).toLowerCase() + ' own: the hand only.';
   }
-  all('[data-impl]').forEach(b => b.onclick = () => { st.implement = b.dataset.impl; all('[data-impl]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ implement: st.implement }); });
-  all('[data-pace]').forEach(b => b.onclick = () => { st.pace = +b.dataset.pace; all('[data-pace]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ pace: st.pace }); });
-  all('[data-str]').forEach(b => b.onclick = () => { st.strength = +b.dataset.str; all('[data-str]').forEach(x => x.classList.toggle('on', x === b)); lap.set({ strength: st.strength }); });
-  all('[data-view]').forEach(b => b.onclick = () => lap.view(b.dataset.view, 700));
-  $('skirt').onclick = () => { st.skirt = st.skirt === 'down' ? 'up' : 'down'; if (st.skirt === 'down') st.drawers = 'up'; lap.set({ skirt: st.skirt, drawers: st.drawers }); label(); };
+  // ── Side: alternate, or one cheek. ──
+  for (const [k, n] of [['alt', 'Alternate'], ['L', 'Left'], ['R', 'Right']]) { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { st.side = k; lap.set({ side: k }); label(); }; $('side').appendChild(b); }
+  // ── Wardrobe, for whichever of the two has outfits (Rose's cloak, Maren's work and fine): rebuilt in it, and kept with their looks. ──
+  function wardrobe() {
+    const box = $('wardrobe'); box.innerHTML = '';
+    for (const id of [...new Set([who.A, who.B])]) {
+      if (!L.OUTFITS[id]) continue;
+      const row = document.createElement('div'); row.className = 'btns'; row.style.marginTop = '6px';
+      row.innerHTML = '<span class="sub" style="margin-right:4px">' + L.NAMES[id].split(/[,(]/)[0].trim() + '</span>';
+      for (const o of L.OUTFITS[id]) { const b = document.createElement('button'); b.textContent = o; b.classList.toggle('on', lap.looks[id] && lap.looks[id].outfit === o); b.onclick = () => { if (lap.busy()) return; const l = L.load(); l[id].outfit = o; L.save(l); build(); }; row.appendChild(b); }
+      box.appendChild(row);
+    }
+  }
+  // ── Scripted: the corrector's own lines over a tier's stages (js/discipline.js), where the corrector has a profile. ──
+  function tierButtons(c) {
+    const box = $('tiers'); box.innerHTML = '';
+    for (const t of Discipline.TIERS) {
+      const b = document.createElement('button'); b.textContent = Discipline.TIER_NAMES[t]; b.dataset.tier = t; b.title = Discipline.total(t) + ' smacks'; b.disabled = !c;
+      b.onclick = async () => {
+        wake(); build(); const me = session; scripted = true; hold(true);
+        const r = await Discipline.run(lap, t, { corrector: c, subject: subjectOf(who.B), say: tx => showLine(c.name, tx), implement: st.implement !== 'hand' ? st.implement : null });
+        if (me !== session) return;
+        Object.assign(st, { implement: lap.st.implement, skirt: lap.st.skirt, drawers: lap.st.drawers }); hold(false);
+        ended((r.rose ? '<b>“' + subjectOf(who.B).word + '.”</b> ' : r.tooHarsh ? '<b>Too harsh.</b> ' : '<b>' + Discipline.TIER_NAMES[t] + ', done.</b> ') + r.hits + ' smacks.');
+      };
+      box.appendChild(b);
+    }
+    $('tierNote').textContent = c ? c.name + '’s own lines, over the tier’s stages; ' + (st.implement !== 'hand' ? 'the implement chosen above comes out for the last.' : 'choose the implement above to have it come out for the last.') : 'Only a corrector has lines to script with.';
+  }
+  const hold = busy => { scripted = busy; all('[data-tier], #impl button, #side button, #lower, #drawers, #smack, #run, #halt, #wardrobe button, select').forEach(b => b.disabled = busy); if (!busy) label(); };
+
+  // ── Clothes: a skirt down or lifted, or trousers up or down; then the drawers. ──
+  function label() {
+    const tr = trousered(who.B);
+    $('lower').textContent = tr ? 'Trousers: ' + (st.skirt === 'down' ? 'up' : 'down') : 'Skirt: ' + (st.skirt === 'down' ? 'down' : 'lifted');
+    $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = scripted || st.skirt === 'down';
+    all('#impl button').forEach(b => b.classList.toggle('on', b.dataset.k === st.implement));
+    all('#side button').forEach(b => b.classList.toggle('on', b.dataset.k === st.side));
+  }
+  $('lower').onclick = () => { st.skirt = st.skirt === 'down' ? 'up' : 'down'; if (st.skirt === 'down') st.drawers = 'up'; lap.set({ skirt: st.skirt, drawers: st.drawers }); label(); };
   $('drawers').onclick = () => { if (st.skirt === 'down') return; st.drawers = st.drawers === 'up' ? 'down' : 'up'; lap.set({ drawers: st.drawers }); label(); };
-  // Her cloak: none, hood down or hood up (kept with her looks, so the editor and the cottage wear the same); she's built again in it.
-  const showOutfit = () => all('[data-outfit]').forEach(b => b.classList.toggle('on', b.dataset.outfit === lap.looks.red.outfit));
-  all('[data-outfit]').forEach(b => b.onclick = () => { if (!lap || lap.busy()) return; const l = Looks.load(); l.red.outfit = b.dataset.outfit; lap.setLooks(Looks.save(l)); showOutfit(); });
-  function label() { $('skirt').textContent = 'Skirt: ' + (st.skirt === 'down' ? 'down' : 'lifted'); $('drawers').textContent = 'Drawers: ' + st.drawers; $('drawers').disabled = st.skirt === 'down'; }
+
+  // ── The correction. ──
   const wake = () => { if (A) A.init(); };
-  $('one').onclick = () => { wake(); lap.smack(); }; $('ten').onclick = () => { wake(); lap.run(10); };
-  const rose = () => { lap.rose(); }; $('red').onclick = rose;
-  $('reset').onclick = () => { $('info').textContent = ''; Object.assign(st, { skirt: 'down', drawers: 'up' }); build(); };
-  addEventListener('keydown', e => {
-    if (e.key === ' ' && !$('one').disabled) { e.preventDefault(); wake(); lap.smack(); }
-    if (e.key === 'r' || e.key === 'R') rose();
+  $('smack').onclick = () => { wake(); lap.smack(); };
+  $('run').onclick = () => { wake(); lap.run(Math.max(1, Math.min(60, +$('runN').value || 1))); };
+  $('halt').onclick = () => lap.halt();
+  $('endBtn').onclick = () => lap.end();
+  $('word').onclick = () => lap.rose();
+  all('.stepper button').forEach(b => b.onclick = () => {
+    const k = b.dataset.s, t = k === 'pace' ? PACE : STR;
+    idx[k] = Math.max(0, Math.min(t.length - 1, idx[k] + +b.dataset.d)); st[k] = t[idx[k]]; lap.set({ [k]: st[k] });
+    $(k + 'V').textContent = st[k].toFixed(1) + '×';
   });
-  setInterval(() => { if (!lap) return; const d = lap.pain.distress(); $('meter').firstElementChild.style.width = Math.min(100, d / 1.5 * 100) + '%'; $('band').textContent = lap.band(); const t = $('info').textContent; if (!/^(Rose|Too|Token|Light|Firm|Severe)/.test(t)) $('info').textContent = lap.st.hits + ' smacks'; }, 120);
-  build(); label(); showOutfit(); window.__lap = () => lap;
-  // From the story: chapter one ends with her mother telling her to come here. A card, then the correction it earned (a light one: home late,
-  // through the wood, at dusk).
-  if (scene === 'homecoming') {
-    const card = document.createElement('div'); card.id = 'card';
-    card.innerHTML = '<p>Home late through the wood at dusk.<br>Her cloak over the back of the chair, Little Red goes to her mother.</p><button class="big" id="begin">Go to her</button><p class="sub">Say her name, <b>Rose</b> (the button, or R), and it stops at once.</p>';
-    document.body.appendChild(card);
-    $('begin').onclick = () => { card.remove(); document.querySelector('[data-tier="light"]').click(); };
-  }
+  let camNow = 'side';
+  for (const [k, n] of [['side', 'Side'], ['behind', 'Behind'], ['giver', 'The corrector’s view'], ['top', 'Above'], ['face', 'The face']]) { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { camNow = k; lap.view(k, 700); all('#cams button').forEach(x => x.classList.toggle('on', x === b)); }; $('cams').appendChild(b); if (k === 'side') b.classList.add('on'); }
+  $('clear').onclick = () => lap.clearMarks();
+  $('snd').onclick = () => { st.sound = !st.sound; $('snd').classList.toggle('on', st.sound); lap.set({ sound: st.sound }); };
+  $('again').onclick = () => { Object.assign(st, { skirt: 'down', drawers: 'up' }); build(); };
+  addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.code === 'Space' && !$('smack').disabled) { e.preventDefault(); wake(); lap.smack(); }
+    if (e.key === 'r' || e.key === 'R') lap.rose();
+  });
+  setInterval(() => {
+    if (!lap) return; const d = lap.pain.distress();
+    $('fill').style.width = Math.min(100, d / 1.5 * 100) + '%';
+    $('band').innerHTML = 'Distress <b>' + d.toFixed(2) + '</b> — ' + lap.band() + ' · ' + lap.st.hits + ' smack' + (lap.st.hits === 1 ? '' : 's');
+    if (!scripted) { $('smack').disabled = !lap.canStrike() || lap.busy(); $('run').disabled = !lap.canStrike(); $('halt').disabled = !lap.running(); }
+    $('endBtn').disabled = lap.st.ended; $('word').disabled = lap.st.ended;
+  }, 120);
+  build(); window.__lap = () => lap;
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

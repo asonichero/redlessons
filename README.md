@@ -11,7 +11,7 @@ The look is a soft toon style (after *The Wind Waker HD* and *Mika and the Witch
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens chapter one (story.html); /lap.html is the lap scene; /play.html is the cottage to wander; /editor.html is the character editor
+npm run serve        # http://localhost:8123/ opens chapter one (story.html); /lap.html is the correction test; /play.html is the cottage to wander; /editor.html is the character editor
 npm test             # the pain model, the discipline scripts and the looks
 ```
 
@@ -55,17 +55,24 @@ Played the way *Mika and the Witch's Mountain* plays them: the two of them turn 
 
 **Chapter one, the homecoming** (a first draft): in the cottage, talk to her mother (E). Rose puts on her grandmother's cloak; the conversation runs from her mother noticing her face, through what's weighing on her, her mother offering to carry everything, Rose's memory of the winter after her father died, to the question of being held to account, and her mother introducing the safe word. It ends with "Cloak off, over the back of the chair, and come here", and the correction it earned follows there and then, in the same room (as in the story).
 
-## Over the knee (`lap.html`, `js/lap.js`)
+## Over the knee (`js/lap.js`), and the correction test (`lap.html`)
 
 Her mother sits on a plain chair; Little Red lies face down across her lap, hips over her mother's right thigh, head and arms toward the floor on one side, legs on the other. Each cheek rolls round with its thigh while the hips stay put, so across the lap the back of the hips (and the drawers or trousers over it) is drawn in between the cheeks and the waist, and nothing stands up there like a tailbone (the Seat group's **Small of the back, over a lap** sets how far).
 
 - **A smack:** her mother's hand lifts, holds raised (the wait builds dread), swings down along an arc, and lands with the palm flat on the middle of the cheek struck. It stays a moment on the skin, then comes back up for the next one or returns to rest above the small of her back. Her arm is solved every frame (shoulder and elbow bring the wrist into place, and the hand is turned flat to the skin), so it lands exactly wherever Little Red is, however she moves. With an implement (on the test page, **her hairbrush**), its face lands flat instead. Her mother's left hand rests between Little Red's shoulder blades.
-- **Controls:** Smack, Run of 10, Pace and Strength. Space smacks.
+- **The correction test** (`lap.html`), laid out like Climbing Toward Consequence's correction positions page, over the knee only:
+  - **Who:** a corrector and who's across the lap, each chosen from the whole cast, as in the editor (the pair is remembered).
+  - **The correction:** Smack, Run of any number, Stop, End the correction, and the safe word, named for whoever is across the lap (Rose for Red; their own where they have a profile; Red, the traffic light's, where they don't). Pace and strength step up and down. Space smacks; R is the safe word.
+  - **Distress:** the meter, the band and the count; a summary when it ends.
+  - **Implement:** the hand, and the corrector's own implement when they have one (Maren's hairbrush, Master Ferrier's strap, Red's own slipper for William, and so on). Anyone who isn't a corrector has the hand only.
+  - **Side** (alternate, left, right), **clothes** (a skirt down or lifted, or trousers up or down; then the drawers), and the **wardrobe** for whichever of the two has outfits.
+  - **Scripted:** a tier played with the corrector's own lines (js/discipline.js), the chosen implement coming out for the last stage.
+  - **Camera** and **scene** (clear marks, sound, start again).
 - **Her reactions** go through springs: a kick of the legs on the side struck, a lift of the head, and a wriggle that grows with her distress. Her face follows the pain model's bands (calm, wince, gritted, crying), and her voice is synthesised.
 - **Clothes:** skirt down or lifted (gathered at her waist); with it lifted, drawers up or down (bunched above her knees). Cloth takes the edge off the sting.
 - **Marks:** colour comes up on each cheek with the smacks, and tender skin hurts more.
 - **Rose** (the button, or R): she says her name, and everything stops at once. Nothing more is struck, the arm comes back to rest, and her mother answers her as Rose.
-- The story plays its correction in its own scene (`js/correction.js` embeds this one); `lap.html?scene=homecoming` still opens on a card, then a Light correction, for trying it on its own.
+- The story plays its corrections in its own scene (`js/correction.js` embeds this one).
 - **Cameras:** Side, Behind, Her mother's view, Above, Her face. The camera glides between them, and you can drag to orbit.
 
 ## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)
@@ -135,7 +142,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/toon.js` | The characters: the rig (bones), bodies, faces and expressions, hair, clothes, skinned skirts, marks; the chair |
 | `js/stage.js` | Renderer, lights and shadows, the camera and its glides |
 | `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
-| `js/lap.js`, `lap.html` | Over the knee: the session, her mother's arm solving, Little Red's reactions, the cameras; its page |
+| `js/lap.js`, `lap.html` | Over the knee: the session, the corrector's arm solving, the reactions of whoever is across the lap, the cameras; the correction test |
 | `js/motion.js` | Movement for any figure: walking and running with planted feet, turning, reaching, crouching, carrying, sitting, lying |
 | `story.html`, `js/chapter1.js` | The game's page; chapter one's scenes (the cabin, the wood, home) |
 | `js/world.js` | The places, the ways between them, and playing each step's scene; time, light and her place kept as she goes |

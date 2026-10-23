@@ -56,7 +56,7 @@ const P = window.__play = Play.create(document.getElementById('view'), { after: 
 } });
 // The controls and the menu (js/hud.js); her clothes are in the menu (and K steps through the skirt).
 const hud = Hud.create({ get: () => P, extra: document.getElementById('clothes'),
-  links: [{ label: 'Chapter one', href: 'story.html' }, { label: 'Over the knee', href: 'lap.html' }, { label: 'Character editor', href: 'editor.html' }] });
+  links: [{ label: 'Chapter one', href: 'story.html' }, { label: 'Correction test', href: 'lap.html' }, { label: 'Character editor', href: 'editor.html' }] });
 hud.objective('About the cottage: walk her round, and try things.'); setTimeout(() => hud.objective(''), 6000);
 // Her skirt: on, lifted (gathered at her waist) or off, to see how she moves under it. Remembered in this browser.
 const SKIRTS = ['down', 'up', 'off'], skirtBtns = [...document.querySelectorAll('[data-skirt]')];

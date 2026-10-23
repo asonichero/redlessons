@@ -12,6 +12,7 @@
 //   const lap = Lap.create(view, { looks, giver: 'gerda', subject: 'red', pitch })   // standalone: its own stage (js/stage.js); giver and subject: rigs (js/toon.js)
 //   const lap = Lap.create(null, { external: { scene } })   // embedded: adds its stage group to another scene, which renders it
 //   lap.smack(); lap.run(n); lap.rose() (the safe word); lap.amber() (a check-in); lap.set({ implement, skirt, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
+//   lap.halt() (stop a run); lap.end() (says 'end'); lap.clearMarks(); events: hit, tooHarsh, rest, rose, amber, end
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, S = root.Pain, L = root.Looks;
@@ -310,7 +311,10 @@ function create(view, opts) {
     // Red: everything stops at once. Nothing more is struck, whatever was queued; the arm comes back to rest.
     // Her name, said under it: she's Rose again, and everything stops at once.
     rose() { st.rose = true; st.ended = true; st.runLeft = 0; if (st.swing && st.swing.phase !== 'contact') { st.swing.phase = 'back'; st.swing.t = 0; } say('rose', { hits: st.hits }); },
-    end() { st.ended = true; st.runLeft = 0; },
+    end() { if (!st.ended) { st.ended = true; st.runLeft = 0; say('end', { hits: st.hits, peak: st.peak }); } },
+    halt() { st.runLeft = 0; },      // (a run stopped after the smack in hand)
+    clearMarks() { st.marks = { L: 0, R: 0 }; dirty = true; },
+    canStrike, running: () => st.runLeft > 0,
     // A check-in (amber, where the house uses traffic lights): taken up by the script between runs (js/discipline.js).
     amber() { if (!st.ended) { st.amber = true; say('amber', { hits: st.hits }); } },
     set(o) { for (const k in o) st[k] = o[k]; if (st.skirt === 'down') st.drawers = 'up'; dirty = true; },       // (her drawers come down only with her skirt lifted)
