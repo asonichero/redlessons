@@ -159,7 +159,7 @@ const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7
 //   heavy the lashes), brow (how thick the brows), lips (how much colour). Dress: top ('blouse' or 'shirt'; sleeves 'elbow', 'long' or 'rolled';
 //   puff), bodice (laced, over the blouse), vest ('waistcoat', 'jerkin', 'coat': over the shirt), lower ('skirt', 'trousers', 'gown' to the
 //   floor), smock (a long shirt over the trousers), skirtLen, apron ('cloth', 'leather', 'white'), shawl, hat ('mob', 'nightcap', 'bakers',
-//   'flatcap', 'felt'), feet ('boots', 'bare', 'slippers'). Hair: 'long', 'bun', 'short', 'tousled', 'curly', 'tail', 'braid', 'bald'; beard
+//   'flatcap', 'felt', 'tricorn'), cape (a short cape over the shoulders, not when seated), feet ('boots', 'bare', 'slippers'). Hair: 'long', 'bun', 'short', 'tousled', 'curly', 'tail', 'braid', 'bald'; beard
 //   'full', 'short', 'moustache', 'pointed', 'stubble'. pal: their colours (skin, hair, eyes and lips can be changed in the editor).
 const SPECS = {
   red: { name: 'Rose', age: 19, sex: 'f', scale: 0.85, bust: 1, hair: 'long', feet: 'boots', skirtLen: 6 },
@@ -184,8 +184,11 @@ const SPECS = {
   motherBarrow: { name: 'Mother Barrow', age: 45, sex: 'f', scale: 1.06, bust: 1.22, waist: 1.2, hips: 1.08, arms: 1.1, hair: 'bun', feet: 'boots', skirtLen: 13.4, apron: 'cloth', shawl: true,
     pal: { skin: '#f2c8a6', hair: '#8a4a2a', eyes: '#6a4a2a', lips: '#b8606a', top: '#efe2cc', bodice: '#6a3a24', skirt: '#8a5a32', skirtDk: '#6a4224', hem: '#6a4224', apron: '#e8d8b8', apronDk: '#cfbe9a', cloak: '#3a6a4a' } },
   // ── The village's men.
-  peter: { name: 'Peter', age: 21, sex: 'm', scale: 0.92, shoulders: 1.1, chest: 1.06, waist: 0.96, hips: 0.92, arms: 1.06, neck: 1.08, jaw: 1.08, hair: 'curly', feet: 'boots', vest: 'waistcoat', sleeves: 'rolled',
+  peter: { name: 'Peter Fowler', age: 21, sex: 'm', scale: 0.92, shoulders: 1.1, chest: 1.06, waist: 0.96, hips: 0.92, arms: 1.06, neck: 1.08, jaw: 1.08, hair: 'curly', feet: 'boots', vest: 'waistcoat', sleeves: 'rolled',
     pal: { skin: '#f2c8a6', hair: '#6a4430', eyes: '#5f7f95', lips: '#c08878', top: '#f0e8d6', vest: '#4a5a3a', trousers: '#6a5a46', boots: '#5a3a22', bootsDk: '#3e2614' } },
+  // (his grandfather, the old fowler he lives with at the meadow's edge: stooped a little, bald and white, a long moustache, an old brown coat)
+  fowler: { name: 'Master Fowler', age: 73, sex: 'm', scale: 0.94, shoulders: 1.02, chest: 1.0, waist: 1.12, hips: 0.96, neck: 1.0, jaw: 1.04, nose: 1.15, hair: 'bald', grey: true, beard: 'moustache', feet: 'boots', vest: 'coat', sleeves: 'long', old: true,
+    pal: { skin: '#eec4a2', hair: '#e2ded6', eyes: '#5f7f95', lips: '#a87068', top: '#e8dfcc', vest: '#6a5038', trousers: '#5a5650', boots: '#4a3424', bootsDk: '#2e2014' } },
   tom: { name: 'Tom Ferrier', age: 20, sex: 'm', scale: 0.98, shoulders: 1.12, chest: 1.08, waist: 0.98, hips: 0.92, arms: 1.12, neck: 1.1, jaw: 1.06, hair: 'tousled', feet: 'boots', apron: 'leather', sleeves: 'rolled',
     pal: { skin: '#eec09a', hair: '#2a1c16', eyes: '#6a4a2a', lips: '#b88070', top: '#e6dcc8', trousers: '#4a4440', apron: '#6a4428', apronDk: '#4a2e1a' } },
   smith: { name: 'Master Ferrier', age: 46, sex: 'm', scale: 1.12, shoulders: 1.22, chest: 1.18, waist: 1.12, hips: 1.0, arms: 1.3, legs: 1.12, neck: 1.2, jaw: 1.16, hair: 'short', beard: 'full', feet: 'boots', apron: 'leather', sleeves: 'rolled',
@@ -194,8 +197,10 @@ const SPECS = {
     pal: { skin: '#f6d0b4', hair: '#8a6a4a', eyes: '#5f7f95', lips: '#c07870', top: '#f6f2ea', trousers: '#5a5248', apron: '#fbf8f2', apronDk: '#e2dcd0', hat: '#fbf8f2' } },
   halloran: { name: 'Master Halloran', age: 66, sex: 'm', scale: 0.98, shoulders: 1.06, chest: 1.04, waist: 1.12, hips: 0.98, neck: 1.05, jaw: 1.1, hair: 'short', grey: true, beard: 'short', hat: 'felt', smock: true, feet: 'boots', old: true, sleeves: 'long',
     pal: { skin: '#e4b48c', hair: '#c8c4bc', eyes: '#5f7f95', lips: '#a87068', top: '#e8dcc0', trousers: '#5a4a38', hat: '#6a5a44' } },
-  willie: { name: 'William Dunn', age: 42, sex: 'm', scale: 1.0, shoulders: 1.04, chest: 1.0, waist: 1.0, hips: 0.95, neck: 1.05, jaw: 1.06, hair: 'short', beard: 'stubble', hat: 'nightcap', lower: 'gown', skirtLen: 14.2, feet: 'slippers', sleeves: 'long',
-    pal: { skin: '#f0caa8', hair: '#6a5040', eyes: '#4a70b0', lips: '#b07a6e', top: '#f6f2e6', skirt: '#f6f2e6', skirtDk: '#e2dccc', hem: '#e2dccc', hat: '#d8e0f0', slippers: '#6a2a3a' } },
+  // (the Watchman: "in his nightgown" read as his night watchman's garb, a short cape over his shoulders that leaves his arms free, set aside when
+  // he sits to take someone in hand, and a tricorn hat)
+  willie: { name: 'William Dunn', age: 42, sex: 'm', scale: 1.0, shoulders: 1.04, chest: 1.0, waist: 1.0, hips: 0.95, neck: 1.05, jaw: 1.06, hair: 'short', beard: 'stubble', hat: 'tricorn', cape: true, feet: 'boots', vest: 'waistcoat', sleeves: 'long',
+    pal: { skin: '#f0caa8', hair: '#6a5040', eyes: '#4a70b0', lips: '#b07a6e', top: '#ece6da', vest: '#3a3c48', trousers: '#3a3632', boots: '#2e241c', bootsDk: '#1e1610', hat: '#29272c', cloak: '#2e3a4e', lace: '#56657c' } },
   georgie: { name: 'Georgie Dunn', age: 19, sex: 'm', scale: 0.91, shoulders: 1.04, chest: 1.0, waist: 0.95, hips: 0.92, neck: 1.04, jaw: 1.02, hair: 'tousled', hat: 'flatcap', feet: 'boots', sleeves: 'rolled', flour: true,
     pal: { skin: '#fbe0cc', hair: '#d0a050', eyes: '#4a70b0', lips: '#c08878', top: '#ece6d8', trousers: '#8a7a62', hat: '#5a5048' } },
   holt: { name: 'Holt', age: 41, sex: 'm', scale: 1.1, shoulders: 1.2, chest: 1.14, waist: 1.02, hips: 0.98, arms: 1.22, legs: 1.08, neck: 1.18, jaw: 1.14, hair: 'tail', beard: 'short', feet: 'boots', vest: 'jerkin', sleeves: 'long',
@@ -851,7 +856,9 @@ function make(id, look, opts) {
     cap.computeVertexNormals(); }
   const HAIR = S.hair || 'bun', SHORT = ['short', 'tousled', 'curly', 'tail', 'bald'].includes(HAIR) && (MAN || HAIR !== 'curly');
   // (short hair has less at the back; the cap itself stays whole over the crown, so the scalp never shows through it)
-  const HV = K.hairVol * (SHORT ? 0.96 : 1), HAT = !!S.hat && S.hat !== 'mob'; cap.scale(K.hairVol, K.hairVol, K.hairVol);
+  // (the hat worn: the Watchman, seated by someone's fire, has taken his off with his cape)
+  const HATW = S.cape && opts.seated ? null : S.hat;
+  const HV = K.hairVol * (SHORT ? 0.96 : 1), HAT = !!HATW && HATW !== 'mob'; cap.scale(K.hairVol, K.hairVol, K.hairVol);
   // (under a hat, nothing stands up out of the crown or lies over the forehead)
   const underHat = y => HAT && y > 1.0;
   if (HAIR !== 'bald') {
@@ -908,18 +915,28 @@ function make(id, look, opts) {
     if (B === 'pointed') bk(ell(0.34, 0.62, 0.36), 0, -2.18, 0.98, [0.35, 0, 0]);
   }
   // ── Hats and caps. ──
-  { const H = S.hat, hc = P.hat, hp = (geo, x, y, z, rot, hex) => piece(geo, hex || hc, head, x, y, z, { rot, ink: 0.05 });
+  { const H = HATW, hc = P.hat, hp = (geo, x, y, z, rot, hex) => piece(geo, hex || hc, head, x, y, z, { rot, ink: 0.05 });
     if (H === 'mob') { hp(ell(2.08, 1.3, 2.12), 0, 1.25, -0.28); hp(new THREE.TorusGeometry(1.98, 0.24, 8, 28), 0, 0.62, -0.2, [Math.PI / 2 - 0.22, 0, 0]); }      // (a puffed linen cap, its frill round the face)
     if (H === 'nightcap') { const g = new THREE.Group(); g.position.set(0, 1.0, -0.3); g.rotation.set(-1.05, 0, 0.35); head.add(g); piece(new THREE.CylinderGeometry(0.16, 2.12, 4.2, 18).translate(0, 2.1, 0), hc, g, 0, 0, 0, { ink: 0.05 }); piece(new THREE.SphereGeometry(0.42, 10, 8), '#f4f0e6', g, 0, 4.25, 0, { ink: 0.04 }); hp(new THREE.TorusGeometry(2.04, 0.22, 8, 28), 0, 0.82, -0.25, [Math.PI / 2 - 0.25, 0, 0], shade(hc, -0.1)); }
     if (H === 'bakers') { hp(new THREE.CylinderGeometry(1.62, 1.78, 1.5, 22), 0, 1.75, -0.15); hp(ell(2.05, 1.05, 2.05), 0, 2.75, -0.15); }
     if (H === 'flatcap') { hp(ell(2.08, 0.86, 2.18), 0, 1.6, -0.05); hp(ell(1.35, 0.16, 0.95), 0, 1.12, 1.72, [0.28, 0, 0]); }
+    // (a tricorn: a round crown, and a brim turned up on three sides into three points, one to the front)
+    if (H === 'tricorn') {
+      // (the brim's edge: round the crown, drawn out to a point to the front and either side behind)
+      const R = th => 2.02 + 0.85 * Math.pow(Math.abs(Math.cos(1.5 * th)), 6), y0 = 1.32, Y = 0.95;
+      const band = (u, v) => { const th = u * Math.PI * 2, r = R(th) + 0.22 * v, y = y0 + v * Y * (0.8 + 0.2 * Math.pow(Math.abs(Math.cos(1.5 * th)), 2)); return new V3(Math.sin(th) * r, y, Math.cos(th) * r); };
+      piece(surface(band, 72, 3, p => new V3(p.x, 0, p.z)), hc, head, 0, 0, -0.12, { side: THREE.DoubleSide, ink: 0.045 });
+      piece(surface((u, v) => { const th = u * Math.PI * 2, r = R(th) * v; return new V3(Math.sin(th) * r, y0, Math.cos(th) * r); }, 72, 2, () => new V3(0, -1, 0)), shade(hc, 0.1), head, 0, 0, -0.12, { side: THREE.DoubleSide, ink: 0 });
+      hp(ell(1.76, 1.02, 1.86), 0, 1.95, -0.12); hp(new THREE.TorusGeometry(1.9, 0.07, 6, 40), 0, 1.4, -0.12, [Math.PI / 2, 0, 0], '#8a7a50');      // (the crown, and a band round it)
+    }
     if (H === 'felt') { hp(new THREE.CylinderGeometry(1.45, 1.66, 1.7, 22), 0, 2.15, -0.1); hp(new THREE.CylinderGeometry(3.1, 3.1, 0.14, 28), 0, 1.38, -0.1); hp(new THREE.CylinderGeometry(1.67, 1.68, 0.36, 22), 0, 1.62, -0.1, [0, 0, 0], '#3a2a1e'); }
   }
 
   // ── Her cloak: a scarlet capelet over the shoulders, longest at the back, with the hood down on her back or up over her hair. ──
   const cloakParts = [];
   // (her grandmother wears a shawl the same way: shorter, no hood)
-  if ((id === 'red' && look.outfit !== 'No cloak') || S.shawl) {
+  // (and the Watchman's cape, longer than a shawl; seated to take someone in hand, he's set it aside)
+  if ((id === 'red' && look.outfit !== 'No cloak') || S.shawl || (S.cape && !opts.seated)) {
     const prof = [[9.15, 1.32], [8.75, 2.6], [8.1, 3.7], [7.2, 4.05], [6.0, 4.15], [4.0, 4.2]];
     const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
     const DEP = 0.8, PH0 = 0.42, PH1 = Math.PI * 2 - 0.42;
@@ -946,9 +963,9 @@ function make(id, look, opts) {
     { const yb = rig.upperBack.position.y + D.torsoY, back = fn(0.5, (9.15 - yb) / (9.15 - hem(Math.PI))); rig.upperBack.position.z = Math.min(rig.upperBack.position.z, back.z - 0.12); }
     cloakParts.push(skinnedOn(rig.torso, surface(fn, 40, 10, out), P.cloak, capeW, { side: THREE.DoubleSide, ink: 0.07 }));
     cloakParts.push(skinnedOn(rig.torso, surface((u, v) => { const p = fn(u, 0.93 + 0.07 * v); return p.add(out(p).normalize().multiplyScalar(0.04)); }, 40, 1, out), P.lace, capeW, { side: THREE.DoubleSide, ink: 0 }));
-    cloakParts.push(piece(ell(0.32, 0.32, 0.22), S.shawl ? P.cloakDk : '#e8b84a', rig.torso, 0, 8.95, 1.15));       // the clasp (a knot, on a shawl)
+    cloakParts.push(piece(ell(0.32, 0.32, 0.22), S.shawl ? P.cloakDk : S.cape ? '#b89a50' : '#e8b84a', rig.torso, 0, 8.95, 1.15));       // the clasp (a knot, on a shawl; brass, on his cape)
     for (const sx of [-1, 1]) cloakParts.push(piece(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 6), P.lace, rig.torso, sx * 0.3, 8.3, 1.25, { rot: [0.2, 0, sx * 0.25], ink: 0 }));
-    if (S.shawl) { /* (no hood) */ }
+    if (S.shawl || S.cape) { /* (no hood) */ }
     else if (look.outfit === 'Hood up') {
       const hg = new THREE.SphereGeometry(2.05, 24, 14, Math.PI / 2 + 0.95, Math.PI * 2 - 1.9, 0, Math.PI * 0.72); hg.scale(1, 1.06, 1.1);
       cloakParts.push(piece(hg, P.cloak, head, 0, 0.25, -0.15, { side: THREE.DoubleSide, ink: 0.06 }));

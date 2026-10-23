@@ -104,14 +104,16 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 
 ### Peter (across all acts)
 
+**Peter Fowler** lives with his grandfather, **Master Fowler**, on their smallholding where the meadow meets the wood, between Red's cottage and the beech. Peter calls him Grandad. They keep fowl (a duck among them), a cat, and a garden. Peter's trade is the family's: he's a fowler, netting and snaring birds and calling them with a little pipe, so Tom calls him **Piper** (and won't stop reciting "Peter Piper picked a peck…" at him). Master Fowler is an old friend of Hulda's, and grumbles about the wood and what might come out of it. Peter is steady enough that his grandfather hasn't had to take him in hand in years. The house is where the player finds Peter between quests, at the nets, the coop or the gate.
+
 1. **1.1** The R and P on the beech. Steady, and quiet around her.
 2. **1.2** Their friendship as it is now; meetings at the beech.
 3. **1.3** Notices she's changed. Asks, and she decides how much to tell him.
 4. **2.1** Paused until she's met the Barrows.
 5. **2.2** Their first try at holding each other to account as equals, modelled on what she saw at the Barrows'.
 6. **2.3** Uneasy about the stranger in the wood, and says so.
-7. **3.2** The first to say something is wrong with Hulda's silence.
-8. **3.3** Stands with her. Epilogue: their agreement, in their own words.
+7. **3.2** The first to say something is wrong with Hulda's silence: his grandfather has noticed she's stopped coming by.
+8. **3.3** Stands with her, and helps lay the trap: he knows snares, nets and rope. Epilogue: their agreement, in their own words.
 
 ### Tom and the smith
 
@@ -192,9 +194,10 @@ These figures have no steps to complete, but each has a job in every phase so th
 
 | Who | Act 1 | Act 2 | Act 3 |
 | --- | --- | --- | --- |
-| Willie Winkie | On his rounds every night. Red rarely breaks curfew yet. First catch: he walks her home for Maren to deal with. | Tom's dusk dares make catches likelier. From the second catch, if Red is open and Maren has given her blessing, he offers to deal with her himself before returning her. | Saw a figure in the wood at night. The village's authority when Wolfe is brought to account. |
+| Willie Winkie | On his rounds every night. Red rarely breaks curfew yet. First catch: he walks her home for Maren to deal with. | Tom's dusk dares make catches likelier. From the second catch, if Red is open and Maren has given her blessing, he offers to deal with her himself: agreed between him and Red alone, never procedural, never on his round. He walks her home and it's done there, by her own fire, with her own slipper from the hearth, his cape set aside; then Maren puts the kettle on. | Saw a figure in the wood at night. The village's authority when Wolfe is brought to account. |
 | Georgie Dunn | Village colour; the poem to Agnes; small mischief alongside Red. | Gossip and errands. | Something seen at the mill, if a lead is needed there. |
 | Agnes Thatcher | Village colour; the target of Georgie's poem. | Gossip; a friend Red can confide in about Peter. | At the gathering when Rose speaks. |
+| Master Fowler | Peter's grandfather, at the smallholding: warns about the wood, asks after Hulda. | Notices Hulda hasn't been by. | Tells Peter, which starts 3.2; at the gathering. |
 | The Ferriers, Mistress Pennock, Mistress Abney (once complete) | From 1.3: background figures. Each still corrects her in the open world, weighted by the stat they care about most. | Same; also supply the errand (cake, wine). | Called back as leads and help in the search. |
 | Rotating villagers | Only once village-wide openness is high enough. | Same. | Witnesses; the crowd at the end. |
 
@@ -220,6 +223,12 @@ Twelve gates hold the story in order. The three act gates are hard; the rest ope
 | Halloran at the end | Standing with Rose | Enough of Rose's thread done |
 
 The pie needs Tom, since he dares her, so it falls after their first meeting in 1.1. Holt has his own trust gate, built through Red's work with him, which must be passed before 2.3.
+
+## Bonus story: Peter and the Wolf
+
+A possible DLC adapting Prokofiev's suite, either set earlier or reusing the characters with their history changed. It's played as Peter, with his grandfather, the bird, the duck, the cat, a wolf, and hunters who arrive too late and take the credit. Each character has a theme on its own instrument, as in the suite (Peter the strings, the bird the flute, the duck the oboe, the cat the clarinet, Grandad the bassoon, the wolf the horns, the hunters the woodwinds and drums), which could become motifs for our own cast too.
+
+In it, Master Fowler is a corrector: Peter disobeys him and leaves the meadow gate open, and is taken in hand for it. His implement is his walking stick (proposed). In the main story he never needs to: Peter's steadiness means it's been years. His profile is in `js/correctors.js`, marked as the bonus story's, and Peter has a subject profile with his own safe word.
 
 ## Open questions
 

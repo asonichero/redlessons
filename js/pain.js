@@ -11,6 +11,7 @@ const PAIN = {
     hand: { base: 0.8, sting: 0.55 }, hairbrush: { base: 1.45, sting: 0.5 }, bakersPaddle: { base: 1.7, sting: 0.32 }, strap: { base: 1.55, sting: 0.6 },
     spoon: { base: 1.15, sting: 0.72 }, slipper: { base: 1.05, sting: 0.45 }, switch: { base: 1.2, sting: 0.88 }, spurtle: { base: 1.25, sting: 0.7 },
     tawse: { base: 1.6, sting: 0.62 }, birch: { base: 1.35, sting: 0.82 },
+    walkingStick: { base: 1.5, sting: 0.8 },
   },
   TAU_STING: 3.0, TAU_ACHE: 120,         // seconds for the sting and the ache to fall by 1/e, at resilience 0.5
   RESIST: 0.5,                          // resilience takes up to this share off every smack

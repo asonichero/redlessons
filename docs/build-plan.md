@@ -36,11 +36,12 @@ Today `js/discipline.js` and `js/correction.js` assume Maren is the one taking R
 
 ## New characters
 
-Rose, Maren and Hulda exist. Nineteen more figures are needed, each a look in `js/looks.js`, a voice in `js/audio.js` and a portrait for conversations; most can share the body rig in `js/toon.js` with new proportions and clothes.
+Rose, Maren and Hulda exist. Twenty more figures are needed (all now built in `js/toon.js`), each a look in `js/looks.js`, a voice in `js/audio.js` and a portrait for conversations; most can share the body rig in `js/toon.js` with new proportions and clothes.
 
 | Character | First needed | Role | Corrects Red? |
 | --- | --- | --- | --- |
-| Peter | 1.1 | Oldest friend, steady | No; peer accountability from 2.2 |
+| Peter Fowler | 1.1 | Oldest friend, steady; a fowler, living with his grandfather. Tom calls him Piper | No; peer accountability from 2.2 |
+| Master Fowler | 1.1 | Peter's grandfather; an old friend of Hulda's | No (a corrector in the bonus story, of Peter) |
 | Tom Ferrier | 1.1 | Partner in mischief, apprentice | No; corrected alongside her |
 | The smith (Ferrier) | 1.2 | Tom's father and master | Yes, once she's told Tom |
 | Mistress Pennock | 1.1 | Baker's wife | Yes, from the pie |
@@ -48,7 +49,7 @@ Rose, Maren and Hulda exist. Nineteen more figures are needed, each a look in `j
 | Mistress Abney | 1.1 | Innkeeper | Yes, after disclosure |
 | Abney's daughter | 1.1 | Sat up with; her confinement in 2.2 | No |
 | Old Halloran | 1.1 | Farmer; Rose's quests | No |
-| Willie Winkie (William Dunn) | 1.3 | The Watchman, on his rounds at night; Georgie's father. Red thinks of him as Master William, from when she and Georgie were close as children, and calls him Sir, for his office | Yes, from his second catch |
+| Willie Winkie (William Dunn) | 1.3 | The Watchman, on his rounds at night; Georgie's father. "In his nightgown" is read as his night watchman's garb: a short cape that leaves his arms free, and a tricorn hat. Red thinks of him as Master William, from when she and Georgie were close as children, and calls him Sir, for his office | Yes, from his second catch: Red alone, agreed with her and her mother, at her own hearth with her own slipper |
 | Georgie Dunn | 1.1 | The miller's lad, apprenticed at the mill; village colour; the Watchman's son | No |
 | Agnes Thatcher | 1.1 | Village colour, a confidante | No |
 | Holt | 1.3 | The Woodsman | Yes, after his trust gate |
@@ -60,7 +61,7 @@ Rose, Maren and Hulda exist. Nineteen more figures are needed, each a look in `j
 | Mother Brannock | 2.2 | Runs the Shoe | Yes, at the Shoe, as Rose |
 | Kitty Fisher | 2.2 | Longest resident of the Shoe (optional) | No |
 
-The village's grown men go by Master and their surname (Master Ferrier the smith, Master Pennock the baker, Master Halloran), Holt aside; other adults call Tom and Georgie "young Master Ferrier" and "young Master Dunn" when they mean business. The Barrows are a household of three, a hierarchical polycule, not a family; any or all of them can speak as Scots. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
+The village's grown men go by Master and their surname (Master Ferrier the smith, Master Pennock the baker, Master Halloran, Master Fowler), Holt aside; other adults call Tom and Georgie "young Master Ferrier" and "young Master Dunn" when they mean business. The Barrows are a household of three, a hierarchical polycule, not a family; any or all of them can speak as Scots. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
 
 ## New locations
 
@@ -74,6 +75,7 @@ The cottage, Hulda's cabin and the path through the wood exist. The village is t
 | The inn | 1.2 | Mistress Abney's work; the confinement in 2.2 | *new*, in `js/village.js` |
 | The forge | 1.2 | Tom and the smith | *new*, in `js/village.js` |
 | Halloran's farm | 1.1 | Rose's quests; perhaps the strays' fields | *new* |
+| The Fowlers' smallholding | 1.1 | Peter and his grandfather at home: the nets, the coop, the meadow gate | *new*, at the meadow's edge |
 | The wood, opened out | 1.3 | Paths branching off the existing one; the stream, beech and log | `js/wood.js` |
 | The charcoal-burners' | 2.1 | Helping Holt | *new*, in the wood |
 | The Barrows' house | 2.1 | The trespass and later visits | *new*, deeper in the wood |
@@ -90,7 +92,7 @@ Act 1 playable end to end comes first, because it needs almost every system. Act
 
 1. **Foundations.** World and scene manager, save state, calendar and day/night, quest and gate engine, reputation and openness. Chapter one runs inside the new world rather than as its own page.
 2. **Correction, generalised.** Corrector profiles, any subject across the lap, two in a queue, witnessed scenes, safe words per context. Tests for each.
-3. **The village.** Lanes and green, the bakery, inn and forge, the garden. Peter, Tom, the smith, Mistress Pennock, Mistress Abney, Halloran, Georgie and Agnes.
+3. **The village.** Lanes and green, the bakery, inn and forge, the garden, the Fowlers' smallholding. Peter and his grandfather, Tom, the smith, Mistress Pennock, Mistress Abney, Halloran, Georgie and Agnes.
 4. **Act 1 playable.** Every Act 1 step from the quest plan, Willie Winkie's first catch, Holt and Wolfe's first meetings, and the gate into Act 2.
 5. **Act 2.** The opened-out wood, the charcoal-burners', the Barrows, the Shoe, Wolfe's hidden disclosure, the confinement, and the errand to the cabin.
 6. **Act 3.** Holt and Maren, the search with a lead from every finished figure, Hulda's hiding place, the trap, and the gathering where Rose speaks.

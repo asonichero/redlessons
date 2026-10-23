@@ -13,11 +13,12 @@ const LIST = {
   bakersPaddle: { name: 'the baker’s paddle', of: 'pennock', mark: 2.7, at: 5.4, half: 0.15 },
   strap:        { name: 'the strap', of: 'smith', mark: 2.5, at: 5.0, half: 0.11 },
   spoon:        { name: 'the wooden spoon', of: 'abney', mark: 1.8, at: 5.2, half: 0.2 },
-  slipper:      { name: 'the slipper', of: 'willie', mark: 1.6, at: 3.6, half: 0.2 },
+  slipper:      { name: 'her own slipper', of: 'willie', mark: 1.6, at: 3.6, half: 0.2 },
   switch:       { name: 'the switch', of: 'holt', mark: 2.2, at: 5.6, half: 0.08 },
   spurtle:      { name: 'the spurtle', of: 'motherBarrow', mark: 2.0, at: 4.6, half: 0.26 },
   tawse:        { name: 'the tawse', of: 'fatherBarrow', mark: 2.6, at: 5.2, half: 0.12 },
   birch:        { name: 'the birch', of: 'brannock', mark: 2.3, at: 5.2, half: 0.3 },
+  walkingStick: { name: 'the walking stick', of: 'fowler', mark: 2.7, at: 5.6, half: 0.14 },
 };
 
 // ── The models, in the toon style: two-band shading, ink outlines. ──
@@ -68,6 +69,11 @@ function model(id, palm) {
     case 'birch': {          // a bundle of birch twigs, bound at the handle
       put(new THREE.CylinderGeometry(0.42, 0.42, 0.7, 10), '#8a6a4a', 0, -0.2, 0);
       for (let k = 0; k < 9; k++) { const a = k / 9 * 6.28, r = 0.18 + 0.12 * (k % 3); const t = rod(0.04, 0.08, 6.2, k % 2 ? '#5a3a2a' : '#6a4a30', -0.4, { ink: 0.02 }); t.position.x = Math.cos(a) * r * 0.6; t.position.z = Math.sin(a) * r; t.rotation.z = Math.cos(a) * 0.05; }
+      break; }
+    case 'walkingStick': {   // his old ash walking stick: a straight shaft, the crook of its handle in his fist, a brass ferrule at the tip
+      rod(0.14, 0.15, 7.0, '#7a5a3a', 0.6);
+      put(new THREE.TorusGeometry(0.55, 0.15, 8, 14, Math.PI), '#7a5a3a', 0, 0.6, 0, { rot: [0, Math.PI / 2, 0] });
+      put(new THREE.CylinderGeometry(0.16, 0.16, 0.35, 10), '#b89a50', 0, -6.25, 0, { ink: 0.02 });
       break; }
     default: return g;      // (the hand: nothing in it)
   }

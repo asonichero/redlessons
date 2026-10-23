@@ -18,7 +18,8 @@
 // a long time; they found him a few years ago and moved deep into the wood to live as they are, unwatched. See docs/quest-plan.md.
 const PEOPLE = {
   red: { name: 'Rose', called: 'Red', age: 19 }, maren: { name: 'Maren', called: 'Mother', age: 38 }, hulda: { name: 'Hulda', called: 'Grandmother', age: 71 },
-  peter: { name: 'Peter', age: 21 }, tom: { name: 'Tom Ferrier', stern: 'young Master Ferrier', age: 20 }, smith: { name: 'Master Ferrier', called: 'the smith', age: 46 },
+  // (Piper: Tom's name for Peter, for the pipe he calls birds with; Grandad: what Peter calls his grandfather)
+  peter: { name: 'Peter Fowler', called: 'Piper', age: 21 }, fowler: { name: 'Master Fowler', called: 'Grandad', age: 73 }, tom: { name: 'Tom Ferrier', stern: 'young Master Ferrier', age: 20 }, smith: { name: 'Master Ferrier', called: 'the smith', age: 46 },
   pennock: { name: 'Mistress Pennock', age: 44 }, baker: { name: 'Master Pennock', called: 'the baker', age: 47 },
   abney: { name: 'Mistress Abney', age: 52 }, abneyDaughter: { name: 'Bess Abney', age: 26 }, halloran: { name: 'Master Halloran', called: 'Old Halloran', age: 66 },
   willie: { name: 'William Dunn', called: 'Willie Winkie', title: 'the Watchman', red: { thinks: 'Master William', says: 'Sir' }, age: 42 },      // (Georgie's father; Red and Georgie were close as children)

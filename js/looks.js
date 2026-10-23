@@ -15,7 +15,7 @@ const OUTFITS = { red: ['Hood down', 'Hood up', 'No cloak'], gerda: ['Work', 'Fi
 // Everyone, by the name the figures are built under (js/toon.js), and who they are.
 const NAMES = {
   red: 'Rose (19)', gerda: 'Maren, her mother (38)', gran: 'Hulda, her grandmother (71)',
-  peter: 'Peter (21)', tom: 'Tom Ferrier, the smith’s apprentice (20)', smith: 'Master Ferrier, the smith (46)',
+  peter: 'Peter Fowler, the fowler (21)', fowler: 'Master Fowler, his grandfather (73)', tom: 'Tom Ferrier, the smith’s apprentice (20)', smith: 'Master Ferrier, the smith (46)',
   pennock: 'Mistress Pennock, the baker’s wife (44)', baker: 'Master Pennock, the baker (47)', abney: 'Mistress Abney, the innkeeper (52)',
   abneyDaughter: 'Bess Abney, her daughter (26)', halloran: 'Master Halloran, the farmer (66)', willie: 'William Dunn, the Watchman (42)',
   georgie: 'Georgie Dunn, the miller’s lad (19)', agnes: 'Agnes Thatcher (19)', holt: 'Holt, the woodsman (41)', wolfe: 'Wolfe (36)',

@@ -24,7 +24,7 @@ const CORRECTORS = {
     stop: '{word}. All right, love. It’s over, all of it. Sit up with me, slowly. Talk to me.',
     harsh: 'That’s enough. More than enough. Up you get.',
   } },
-  pennock: { name: 'Mistress Pennock', rig: null, voice: 'gerda', implement: 'bakersPaddle', minds: 'naughty', seat: 'bench', lines: {
+  pennock: { name: 'Mistress Pennock', rig: 'pennock', voice: 'gerda', implement: 'bakersPaddle', minds: 'naughty', seat: 'bench', lines: {
     start: 'Pies don’t walk off by themselves, {name}. Over you come.',
     skirt: 'Up with it. Flour washes out; lessons don’t.',
     drawers: 'Those too. I’ve three dozen loaves to see to and no patience left.',
@@ -36,7 +36,7 @@ const CORRECTORS = {
     stop: '{word}. Right you are, dear. That’s the end of it. Sit. I’ll fetch you some milk.',
     harsh: 'Enough, enough. I’ve gone too far. Up you get, dear.',
   } },
-  smith: { name: 'Master Ferrier', rig: null, voice: 'smith', implement: 'strap', minds: 'wilful', seat: 'bench', lines: {
+  smith: { name: 'Master Ferrier', rig: 'smith', voice: 'smith', implement: 'strap', minds: 'wilful', seat: 'bench', lines: {
     start: 'Same as Tom gets. Same rules, same reasons. Across.',
     skirt: 'Skirt up.',
     drawers: 'And down. Tom’d tell you there’s no arguing it.',
@@ -48,7 +48,7 @@ const CORRECTORS = {
     stop: '{word}. Stopped. That’s that. Sit a while.',
     harsh: 'Enough. That’s more than you were owed. Up.',
   } },
-  abney: { name: 'Mistress Abney', rig: null, voice: 'gerda', implement: 'spoon', minds: 'naughty', seat: 'chair', lines: {
+  abney: { name: 'Mistress Abney', rig: 'abney', voice: 'gerda', implement: 'spoon', minds: 'naughty', seat: 'chair', lines: {
     start: 'A promise is a promise, {name}. Over my knee.',
     skirt: 'Up with your skirts. I’ve seen worse in the taproom.',
     drawers: 'Down with those as well. Broken promises cost.',
@@ -60,19 +60,21 @@ const CORRECTORS = {
     stop: '{word}. Hush, now. It’s finished. Come and sit by me.',
     harsh: 'Oh, enough. That was too much of me. Up you come.',
   } },
-  willie: { name: 'Sir', rig: null, voice: 'smith', implement: 'slipper', minds: 'wilful', seat: 'step', lines: {
-    start: 'Past nine, {name}. The bell rang for you like everyone else.',
-    skirt: 'Skirt up. I’ve the rest of my round to walk.',
-    drawers: 'Down. Curfew’s curfew.',
-    implement: 'The slipper. It walks the village every night, same as me.',
-    during: ['Still.', 'Is the child in bed? Not yet, she isn’t.', 'Mind the bell, next time.', 'Last few.'],
-    done: 'There. Now, home with you.',
-    corner: 'Stand in that corner till I say, hands on your head.',
-    after: 'Up. I’ll walk you to your door, and you’ll be in it.',
-    stop: '{word}. That’s it done. I’ll walk you home, and that’s all.',
-    harsh: 'Enough. I’ve said my piece. Up.',
+  // (only ever Red, agreed between the two of them with her mother's blessing, and never on his round: he walks her home, and it's done there, by her
+  // own fire, with her own slipper from the hearth)
+  willie: { name: 'Sir', rig: 'willie', voice: 'smith', implement: 'slipper', minds: 'wilful', seat: 'chair', lines: {
+    start: 'Past nine, {name}, and you still out on the lane. Your mother and I agreed what happens now. Come here.',
+    skirt: 'Skirt up, lass. I’d sooner be sat by my own fire, and so would you.',
+    drawers: 'And down. We said we’d do it properly, the three of us.',
+    implement: 'Fetch me your slipper from the hearth. That one. Thank you.',
+    during: ['Still now.', 'Are the children in their beds? Not this one, not yet.', 'I’ll not have you on that lane alone in the dark.', 'Last few, {name}.'],
+    done: 'There. That’s done.',
+    corner: 'Stand by the dresser, hands on your head, while I have a word with your mother.',
+    after: 'Up you get. Come here, lass. Your mother’s putting the kettle on.',
+    stop: '{word}. That’s it stopped, all of it. Sit by the fire with me a minute.',
+    harsh: 'Enough. That was more than I meant. Come here.',
   } },
-  holt: { name: 'Holt', rig: null, voice: 'smith', implement: 'switch', minds: 'wilful', seat: 'log', lines: {
+  holt: { name: 'Holt', rig: 'holt', voice: 'smith', implement: 'switch', minds: 'wilful', seat: 'log', lines: {
     start: 'You don’t keep a man like him a secret. Over my knee.',
     skirt: 'Up.',
     drawers: 'Down. You need to feel this one.',
@@ -84,7 +86,7 @@ const CORRECTORS = {
     stop: '{word}. That’s enough, then. I’m here. We walk when you’re ready.',
     harsh: 'Enough. Too much. I’m sorry. Up you get.',
   } },
-  motherBarrow: { name: 'Mother Barrow', rig: null, voice: 'gran', implement: 'spurtle', minds: 'naughty', seat: 'chair', scots: true, lines: {
+  motherBarrow: { name: 'Mother Barrow', rig: 'motherBarrow', voice: 'gran', implement: 'spurtle', minds: 'naughty', seat: 'chair', scots: true, lines: {
     start: 'Ma porridge, ma chair, ma bed. Ower ma knee, {name}.',
     skirt: 'Up wi’ it.',
     drawers: 'Doon wi’ those an’ a’.',
@@ -96,7 +98,7 @@ const CORRECTORS = {
     stop: '{word}. Aye, that’s it stopped. Come here tae me.',
     harsh: 'Enough. That’s mair than ye’d earned. Up, hen.',
   } },
-  fatherBarrow: { name: 'Father Barrow', rig: null, voice: 'smith', implement: 'tawse', minds: 'wilful', seat: 'chair', scots: true, lines: {
+  fatherBarrow: { name: 'Father Barrow', rig: 'fatherBarrow', voice: 'smith', implement: 'tawse', minds: 'wilful', seat: 'chair', scots: true, lines: {
     start: 'The door was yours tae see tae. Ower ma knee.',
     skirt: 'Up.',
     drawers: 'Doon.',
@@ -108,7 +110,20 @@ const CORRECTORS = {
     stop: '{word}. That’s it stopped. Sit wi’ me.',
     harsh: 'Enough. Ower much. Up.',
   } },
-  brannock: { name: 'Mother Brannock', rig: null, voice: 'gran', implement: 'birch', minds: 'wilful', seat: 'chair', lines: {
+  // (the bonus story only, Peter and the Wolf: in the main story Peter's steadiness means it's been years since he needed to)
+  fowler: { name: 'Grandad', rig: 'fowler', voice: 'gran', implement: 'walkingStick', minds: 'wilful', seat: 'chair', bonus: true, lines: {
+    start: 'I told thee, Peter. The meadow gate, shut, every time. Come here.',
+    skirt: 'Up wi’ thy shirt.',
+    drawers: 'And them down. Tha knows how this goes.',
+    implement: 'Fetch me my stick. Aye, that one.',
+    during: ['Still, lad.', 'What if a wolf had come out o’ that wood, eh?', 'Tha’s not too big for this yet.', 'Nearly done.'],
+    done: 'There. That’s done wi’.',
+    corner: 'Stand thee in that corner, hands on thy head, and think on.',
+    after: 'Up, lad. Come here. I’d not have owt happen to thee, that’s all.',
+    stop: '{word}. Right. That’s all of it stopped. Sit by me a while.',
+    harsh: 'Nay, that’s more than I meant. Up tha gets.',
+  } },
+  brannock: { name: 'Mother Brannock', rig: 'brannock', voice: 'gran', implement: 'birch', minds: 'wilful', seat: 'chair', lines: {
     start: 'Young ladies under this roof keep its rules, {name}. Over my knee.',
     skirt: 'Skirt up, as the house does it.',
     drawers: 'And those down, as the house does it.',
@@ -126,12 +141,13 @@ const CORRECTORS = {
 // The subjects: their safe word, what correctors call them, and their voice (the cry's pitch). Every one of them a grown woman or man.
 const SUBJECTS = {
   red: { rig: 'red', pitch: 215, word: 'Rose', names: ['Little Red', 'Red'], player: true },
-  tom: { rig: null, pitch: 140, word: 'Bellows', names: ['young Master Ferrier', 'Tom'] },      // (his own word; he doesn't use it)
-  lucy: { rig: null, pitch: 225, word: 'Red', names: ['Lucy'] },
+  tom: { rig: 'tom', pitch: 140, word: 'Bellows', names: ['young Master Ferrier', 'Tom'] },      // (his own word; he doesn't use it)
+  lucy: { rig: 'lucy', pitch: 225, word: 'Red', names: ['Lucy'] },
   maren: { rig: 'gerda', pitch: 190, word: 'Maren', names: ['Maren'] },                          // (Holt, at her asking, in 3.1)
-  motherBarrow: { rig: null, pitch: 180, word: 'Honey', names: ['Mother'] },
-  fatherBarrow: { rig: null, pitch: 120, word: 'Honey', names: ['Father'] },
-  weeBarrow: { rig: null, pitch: 150, word: 'Honey', names: ['wee cub', 'little cub'] },
+  motherBarrow: { rig: 'motherBarrow', pitch: 180, word: 'Honey', names: ['Mother'] },
+  fatherBarrow: { rig: 'fatherBarrow', pitch: 120, word: 'Honey', names: ['Father'] },
+  weeBarrow: { rig: 'weeBarrow', pitch: 150, word: 'Honey', names: ['wee cub', 'little cub'] },
+  peter: { rig: 'peter', pitch: 135, word: 'Meadow', names: ['Peter', 'lad'] },      // (the bonus story)
 };
 // Where a context changes the subject: at the Shoe, she's Rose, and the house's traffic lights are everyone's words (Red to stop, amber to check in).
 const CONTEXTS = {
