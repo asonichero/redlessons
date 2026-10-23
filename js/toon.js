@@ -702,7 +702,13 @@ function make(id, look, opts) {
       const gg = surface((u, v) => { const L_ = loop(u), r = lerp(Rb + 0.55, Rb, v) + 0.1 * Math.sin(u * Math.PI * 2 * 11) * (1 - v);      // (looser at the rim, crumpled)
         const x = L_.ox != null ? Math.sign(L_.x) * H + L_.ox * r : L_.x * (1 + 0.12 * (1 - v)), z = L_.z * (L_.ox != null ? r : r * 0.92);
         return new V3(x, yb + lerp(1.05, 0, v) - 0.35 * L_.mid * (1 - 0.5 * v), z); }, 88, 5, p => new V3(p.x - Math.sign(p.x) * Math.min(Math.abs(p.x), H), 0, p.z));
-      trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, gg, P.trousers, p => { const l = ss(-H * 0.9, H * 0.9, p.x); return [[rig.kneeL, l], [rig.kneeR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0.04 }))); }
+      const between = p => { const l = ss(-H * 0.9, H * 0.9, p.x); return [[rig.kneeL, l], [rig.kneeR, 1 - l]]; };
+      trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, gg, P.trousers, between, { side: THREE.DoubleSide, ink: 0.04 })));
+      // (and the seat's cloth across between them, so there's no gap to see through from above: from the front run to the back, out to each
+      // pool's edge and a little into it, sagging a little in the middle)
+      const fl = surface((u, v) => { const z = lerp(Rb * 0.95, -Rb * 0.95, v), hw = Math.max(0.05, H - Math.sqrt(Math.max(0, Rb * Rb - z * z))) + 0.35, x = lerp(-hw, hw, u);
+        return new V3(x, yb + 0.42 - 0.22 * Math.sin(Math.PI * u) * Math.sin(Math.PI * v), z); }, 16, 12, () => new V3(0, 1, 0));
+      trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, fl, shade(P.trousers, -0.08), between, { side: THREE.DoubleSide, ink: 0 }))); }
     // (the tail of the shirt, tucked in: it shows only with the trousers down or off, hanging over the top of the drawers)
     // (shorter at the back, where it ends above the seat rather than letting the tops of the cheeks through it)
     // (its top drawn in to lie on the shirt above it, never standing off it)
