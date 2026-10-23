@@ -682,12 +682,24 @@ function make(id, look, opts) {
     for (const [s_, sx] of [['L', 1], ['R', -1]]) {
       { const g = blendIntoHips(ell(CHEEK.rx * 1.1, CHEEK.ry * 1.08, CHEEK.rz * 1.14), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatW(rig.seatPivot[s_]), { ink: 0.05 }))); }
       trousers.push(clipSrc('skirt', skinnedOn(rig['thigh' + s_], lathe(wide(dense([[2.0, 0.5], [2.04, -1.4], [1.9, -Lk * 0.68], [1.56, -Lk + 0.6], [1.46, -Lk - 0.2], [1.42, sh(0.25)], [1.3, sh(0.55)], [1.14, -La + 0.6], [1.08, -La + 0.1]], 30), LG), 1, 22), P.trousers, legW(s_), { cover: inBoots, ink: 0.05 })));
-      // (down: a bundle of cloth round each knee)
-      trousersDown.push(clipSrc('skirt', piece(new THREE.TorusGeometry(1.5 * LG, 0.55, 8, 20).rotateX(Math.PI / 2), P.trousers, rig['thigh' + s_], 0, -D.thigh * 0.82, 0, { ink: 0.05 })));
+      // (down: heavier and looser than drawers, they don't cling to the legs but fall to the ankles and pool there, crumpled, round each boot)
+      const kn = rig['knee' + s_], yA = -D.shin * 0.72;
+      for (const [R, tube, dy, tilt] of [[1.32, 0.44, 0, 0.12], [1.22, 0.38, 0.5, -0.16], [1.12, 0.3, 0.92, 0.1]])
+        trousersDown.push(clipSrc('skirt', piece(new THREE.TorusGeometry(R * LG, tube, 8, 22).rotateX(Math.PI / 2), P.trousers, kn, 0, yA + dy, 0, { rot: [tilt, 0, sx * tilt], ink: 0.045 })));
     }
-    // (and between the knees, the seat of them hanging)
-    { const yb = -D.thigh * 0.84, ax = (D.hipX + 1.5 * K.legGirth), gg = surface((u, v) => { const a = u * Math.PI * 2, x = Math.cos(a) * ax * v, z = Math.sin(a) * 1.6 * K.legGirth * v; return new V3(x, yb - 1.0 * (1 - ss(0, 1.8, Math.abs(x))) - 0.5 * (1 - v * v), z); }, 40, 8, p => new V3(0, -1, 0));
-      trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, gg, P.trousers, p => { const l = ss(-1.2, 1.2, p.x); return [[rig.thighL, l], [rig.thighR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0 }))); }
+    // (and the waist and seat of them, a loop of cloth round both ankles: joined all the way round each leg's pool, outside and in, front and
+    // back, and between the legs sagging only a little; each side goes with its own shin, the cloth between stretching as the legs part)
+    { const H = D.hipX, yb = -(D.thigh + D.shin * 0.72) + 0.25, Rb = 1.32 * K.legGirth + 0.3;
+      // A point round the loop (u, 0..1): the front run between the legs, round the outside of the left leg, the back run, round the right.
+      const loop = u => { const t = (u % 1) * 4, k = Math.floor(t), f = t - k;
+        if (k === 0) return { x: lerp(-H, H, f), z: 1, mid: Math.sin(Math.PI * f) };
+        if (k === 1) { const a = Math.PI / 2 - f * Math.PI; return { x: H + Math.cos(a), z: Math.sin(a), mid: 0, ox: Math.cos(a) }; }
+        if (k === 2) return { x: lerp(H, -H, f), z: -1, mid: Math.sin(Math.PI * f) };
+        const a = -Math.PI / 2 - f * Math.PI; return { x: -H + Math.cos(a), z: Math.sin(a), mid: 0, ox: Math.cos(a) }; };
+      const gg = surface((u, v) => { const L_ = loop(u), r = lerp(Rb + 0.55, Rb, v) + 0.1 * Math.sin(u * Math.PI * 2 * 11) * (1 - v);      // (looser at the rim, crumpled)
+        const x = L_.ox != null ? Math.sign(L_.x) * H + L_.ox * r : L_.x * (1 + 0.12 * (1 - v)), z = L_.z * (L_.ox != null ? r : r * 0.92);
+        return new V3(x, yb + lerp(1.05, 0, v) - 0.35 * L_.mid * (1 - 0.5 * v), z); }, 88, 5, p => new V3(p.x - Math.sign(p.x) * Math.min(Math.abs(p.x), H), 0, p.z));
+      trousersDown.push(clipSrc('skirt', skinnedOn(rig.hips, gg, P.trousers, p => { const l = ss(-H * 0.9, H * 0.9, p.x); return [[rig.kneeL, l], [rig.kneeR, 1 - l]]; }, { side: THREE.DoubleSide, ink: 0.04 }))); }
     // (the tail of the shirt, tucked in: it shows only with the trousers down or off, hanging over the top of the drawers)
     // (shorter at the back, where it ends above the seat rather than letting the tops of the cheeks through it)
     // (its top drawn in to lie on the shirt above it, never standing off it)
@@ -1078,7 +1090,7 @@ function make(id, look, opts) {
       drapeG.visible = seatG.visible = (SKIRTED || (TAP && down)) && (!!opts.seated || (down && seatedNow));
       tails.forEach(m => show(m, (down || S.vest === 'coat') && !seatedNow)); shirtTail.forEach(m => show(m, !down));
       roll.visible = SKIRTED && sk === 'up'; waist.visible = sk !== 'off';
-      trousers.forEach(m => show(m, down)); trousersDown.forEach(m => show(m, sk === 'up'));      // (trousers: on, down at the knees, or off)
+      trousers.forEach(m => show(m, down)); trousersDown.forEach(m => show(m, sk === 'up'));      // (trousers: on, down round the ankles, or off)
       drawers.forEach(m => show(m, !bare && !(down && seatedNow))); drawersDown.forEach(m => show(m, bare));      // (seated, the drape is over them: drawn, they'd only poke through it)
       // (under a skirt that's down, their outline is never rightly seen: where they push through it they take its colour, and an ink line round
       // that would only draw the shape of what's underneath)
