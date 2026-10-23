@@ -458,6 +458,8 @@ function make(id, look, opts) {
   const top = P.blouse;
   // (lying across a lap, the back of the hips between the cheeks and the waist is drawn in, and the drawers or trousers over it with it: the cheeks
   // roll down with her legs and the hips stay where they are, so left full, the middle of it stands up above them like a tailbone)
+  // (the back of a garment drawn in by a share, by height (f(y)), the front untouched)
+  const backIn = (g, f) => { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * f(pp.getY(i))); } g.computeVertexNormals(); return g; };
   const flatWaist = g => { if (!opts.lying) return g; const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1, K.sacrum, ss(2.3, 1.5, pp.getY(i)))); } g.computeVertexNormals(); return g; };
   skinnedOn(rig.hips, flatWaist(lathe(wide(dense([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 36), trunkW), 0.72 * TD, 48)), P.skin, torsoW, { tint: true });      // the hips
   // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
@@ -516,14 +518,17 @@ function make(id, look, opts) {
     : [[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]];
   const BODICE = !MAN && S.lower !== 'gown' && S.bodice !== false, VEST = MAN && S.vest;
   // (where the shirt is under the vest: a waistcoat to the waist, a jerkin and a coat over the hips)
-  const vestFrom = S.vest === 'waistcoat' ? 1.0 : -1.2;
-  skinnedOn(rig.hips, bust(lathe(wide(dense(TORSO, 44), trunkW), 0.68 * TD, 32)), top, torsoW, BODICE ? { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] } : VEST ? { cover: p => [cc('vest'), ss(8.6, 8.2, p.y) * ss(vestFrom - 0.2, vestFrom + 0.2, p.y), 'bodice'] } : {});   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
+  const vestFrom = S.vest === 'waistcoat' ? 2.2 : -1.2;      // (a waistcoat ends at the belt)
+  // (a man's shirt in trousers is tucked in tight at the back below the belt, so it stays inside the waistband as he bends; with the trousers
+  // down, the tail hanging over the drawers covers it)
+  const tucked = g => MAN && (S.lower || 'trousers') === 'trousers' ? backIn(g, y => lerp(0.72, 1, ss(2.5, 3.6, y))) : g;
+  skinnedOn(rig.hips, tucked(bust(lathe(wide(dense(TORSO, 44), trunkW), 0.68 * TD, 32))), top, torsoW, BODICE ? { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] } : VEST ? { cover: p => [cc('vest'), ss(8.6, 8.2, p.y) * ss(vestFrom - 0.2, vestFrom + 0.2, p.y), 'bodice'] } : {});   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
   // A man's vest: a waistcoat (buttoned, to the waist), a leather jerkin (laced, over the hips), or a long coat (over the hips, its tails to the knee).
   if (VEST) {
     const vp = TORSO.filter(([r, y]) => y >= vestFrom - 0.1 && y <= 8.6).map(([r, y]) => [r + 0.14, y]); vp.unshift([TORSO[1][0] + 0.16, vestFrom]); if (vestFrom < 0) vp.unshift([3.2, vestFrom - 0.05]);
     clipSrc('bodice', skinnedOn(rig.hips, lathe(wide(dense(vp.sort((a, b) => a[1] - b[1]), 26), y => y < 0.6 ? K.hipWidth : trunkW(y)), 0.71 * TD, 32), P.vest, torsoW, { ink: 0.05 }));
     const zAt = y => { let r = vp[0][0]; for (const [rr, yy] of vp) if (yy <= y) r = rr; return r * 0.71 * TD * trunkW(Math.max(0.6, y)) + 0.05; };
-    if (S.vest === 'waistcoat') for (let i = 0; i < 5; i++) { const y = 1.6 + i * 1.3; piece(new THREE.SphereGeometry(0.14, 8, 6), '#c8b070', rig.torso, 0, y - D.torsoY, zAt(y), { ink: 0.02 }); }
+    if (S.vest === 'waistcoat') for (let i = 0; i < 5; i++) { const y = 2.75 + i * 1.05; piece(new THREE.SphereGeometry(0.14, 8, 6), '#c8b070', rig.torso, 0, y - D.torsoY, zAt(y), { ink: 0.02 }); }
     else if (S.vest === 'jerkin') for (let i = 0; i < 4; i++) { const y = 2.4 + i * 1.4; for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.7, 0.1, 0.08), '#2a1a10', rig.torso, 0, y - D.torsoY, zAt(y), { rot: [0, 0, sx * 0.5], ink: 0 }); }
     else { piece(new THREE.BoxGeometry(0.3, 7.6, 0.12), shade(P.vest, -0.3), rig.torso, 0, 4.2 - D.torsoY, zAt(4.2), { ink: 0 }); }
   }
@@ -680,16 +685,22 @@ function make(id, look, opts) {
     const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, sh = f => -Lk - f * D.shin, bootTop_ = -(D.thigh + 0.507 * D.shin);
     const inBoots = p => S.feet === 'boots' ? [cc('boots'), ss(bootTop_ + 0.1, bootTop_ - 0.3, p.y), 'boots'] : null;
     { const g = lathe(wide(dense([[0, -2.75], [1.6, -2.6], [2.98, -1.8], [3.46, -0.4], [3.4, 0.4], [3.24, 1.2], [3.1, 2.4], [3.02, 2.62]], 24), trunkW), 0.77 * TD, 32), pp = g.attributes.position;
-      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(-1.3, -0.4, y)) * lerp(1, K.seatBack, ss(1.2, 0.2, y))); }
+      // (and at the top, the waistband drawn in to meet the shirt above it, rather than standing off the small of the back in a step)
+      for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z < 0) pp.setZ(i, z * lerp(1.14, 1, ss(-1.3, -0.4, y)) * lerp(1, K.seatBack, ss(1.2, 0.2, y)) * lerp(1, 0.9, ss(1.2, 2.6, y))); }
       flatWaist(g); g.computeVertexNormals(); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, torsoW, { ink: 0.05 }))); }
     for (const [s_, sx] of [['L', 1], ['R', -1]]) {
-      { const g = blendIntoHips(ell(CHEEK.rx * 1.1, CHEEK.ry * 1.08, CHEEK.rz * 1.14), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatW(rig.seatPivot[s_]), { ink: 0.05 }))); }
       trousers.push(clipSrc('skirt', skinnedOn(rig['thigh' + s_], lathe(wide(dense([[2.0, 0.5], [2.04, -1.4], [1.9, -Lk * 0.68], [1.56, -Lk + 0.6], [1.46, -Lk - 0.2], [1.42, sh(0.25)], [1.3, sh(0.55)], [1.14, -La + 0.6], [1.08, -La + 0.1]], 30), LG), 1, 22), P.trousers, legW(s_), { cover: inBoots, ink: 0.05 })));
       // (down: heavier and looser than drawers, they don't cling to the legs but fall to the ankles and pool there, crumpled, round each boot)
       const kn = rig['knee' + s_], yA = -D.shin * 0.72;
       for (const [R, tube, dy, tilt] of [[1.32, 0.44, 0, 0.12], [1.22, 0.38, 0.5, -0.16], [1.12, 0.3, 0.92, 0.1]])
         trousersDown.push(clipSrc('skirt', piece(new THREE.TorusGeometry(R * LG, tube, 8, 22).rotateX(Math.PI / 2), P.trousers, kn, 0, yA + dy, 0, { rot: [tilt, 0, sx * tilt], ink: 0.045 })));
     }
+    // (their seat: heavier cloth than drawers, it doesn't follow each cheek but lies across both as one flatter curve, bridging the cleft; each
+    // side of it goes with its own cheek as the legs swing, the top with the hips)
+    { const RX = CHEEK.x + CHEEK.rx * 1.06, g = ell(RX, CHEEK.ry * 1.06, CHEEK.rz * 1.12, 40, 24); g.translate(0, CHEEK.y, CHEEK.z);
+      { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i) - CHEEK.z; if (z > 0) pp.setZ(i, CHEEK.z + z * 0.6); } g.computeVertexNormals(); }      // (its front tucked into the hips)
+      const seatBoth = p => { const w = 1 - ss(CHEEK.y - 0.1, CHEEK.y + 1.5, p.y), l = ss(-0.8, 0.8, p.x); return [[rig.hips, 1 - w], [rig.seatPivot.L, w * l], [rig.seatPivot.R, w * (1 - l)]]; };
+      trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatBoth, { ink: 0.05 }))); }
     // (and the waist and seat of them, a loop of cloth round both ankles: joined all the way round each leg's pool, outside and in, front and
     // back, and between the legs sagging only a little; each side goes with its own shin, the cloth between stretching as the legs part)
     { const H = D.hipX, yb = -(D.thigh + D.shin * 0.72) + 0.25, Rb = 1.32 * K.legGirth + 0.3;
@@ -719,7 +730,7 @@ function make(id, look, opts) {
       for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i), back = ss(0.55, -0.15, z / (3.4 * 0.77 * TD)); if (y < top0) pp.setY(i, lerp(y, top0 + (y + 0.1) * 0.3, back)); }
       g.computeVertexNormals(); shirtTail.push(skinnedOn(rig.hips, g, top, torsoW, { side: THREE.DoubleSide, ink: 0.04 })); }
     // The belt, and its buckle.
-    trousers.push(piece(lathe(wide([[3.08, 2.0], [3.14, 2.3], [3.06, 2.62]], trunkW), 0.79 * TD, 28), P.belt, rig.hips, 0, 0, 0, { ink: 0.03 }));
+    trousers.push(piece(flatWaist(backIn(lathe(wide([[3.08, 2.0], [3.14, 2.3], [3.06, 2.62]], trunkW), 0.79 * TD, 28), y => lerp(1, 0.9, ss(1.2, 2.6, y)))), P.belt, rig.hips, 0, 0, 0, { ink: 0.03 }));      // (drawn in with the trousers over a lap)
     trousers.push(piece(new THREE.BoxGeometry(0.9, 0.62, 0.18), '#b8a060', rig.hips, 0, 2.3, 3.08 * trunkW(2.3) * 0.79 * TD + 0.08, { ink: 0.02 }));
     // An apron over them: the smith's leather one or the baker's white, a bib over the chest on a strap round the neck, down past the knees.
     if (S.apron) {
