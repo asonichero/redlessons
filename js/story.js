@@ -8,10 +8,9 @@
 'use strict';
 
 const homecoming = () => [
-  { text: 'The light is nearly gone. The fire is the brightest thing in the cottage.' },
-  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'There you are. I was about to light the lantern and come looking for you.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'There you are! I was about to light the lantern and come looking for you.' },
   { who: 'red', face: 'shy', text: 'I’m sorry. I lost track of the time.' },
-  { who: 'mother', face: 'surprised', listen: { red: 'calm' }, text: '…That’s a face. And that’s a cloak. Your grandmother’s work?' },
+  { who: 'mother', face: 'surprised', listen: { red: 'calm' }, text: '…Well, you’re home now. And with a fine new cloak! Your grandmother’s work?' },
   { who: 'red', face: 'shy', text: 'She made it for me. When I turned round to show her, she called me Little Red.' },
   { who: 'mother', face: 'smile', text: 'She would. It suits you. It always did.' },
   { who: 'mother', face: 'calm', text: 'Sit down. Tell me what’s sitting on you, because something is.' },
@@ -38,7 +37,7 @@ const homecoming = () => [
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'I remember pulling you off it by your collar.' },
   { who: 'red', face: 'shy', text: 'And you brought me home, and you took me over your knee, and I howled the whole way through. And after, you held me by the fire until I fell asleep.' },
   { who: 'red', face: 'shy', listen: { mother: 'shy' }, text: 'I’ve never felt so safe. Not before, not since. Somebody had hold of me. Somebody would stop me.' },
-  { text: 'Her mother is quiet a long moment. Something in her face settles, the way a seam does when it finally lies flat.' },
+  { who: 'mother', face: 'pout', listen: { red: 'shy' }, text: '...' },
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Being Little Red. Is part of it being held to account?' },
   { choose: [
     { text: '…Yes.' },
@@ -46,22 +45,21 @@ const homecoming = () => [
   ] },
   { who: 'red', face: 'shy', listen: { mother: 'calm' }, text: '…Is that so strange?' },
   { who: 'mother', face: 'smile', text: 'No, love. It isn’t strange at all.' },
-  { who: 'mother', face: 'stern', listen: { red: 'surprised' }, text: 'Then let’s start as we mean to go on. You came home through the wood. At dusk. Alone. After I’ve told you a hundred times.' },
-  { who: 'red', face: 'wince', text: 'It wasn’t so dark when I—' },
+  { who: 'mother', face: 'stern', listen: { red: 'surprised' }, text: 'Then let’s start as we mean to go on. Your Grandmother will have sent you home long before the light faded, and yet you lingered in the wood, as dusk crept in. Alone. After I’ve told you a hundred times.' },
+  { who: 'red', face: 'wince', text: 'It wasn’t so dark, Mama—' },
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'It was dark enough. Nothing happened, and that’s luck, and I won’t have you leaning on luck. You’ll not walk away from this one unscathed, Little Red.' },
   { who: 'mother', face: 'calm', text: 'But hear me first, because this matters more than the rest of it.' },
   { who: 'mother', face: 'calm', text: 'If it’s ever too much, not sore, not sorry, too much, you say your name. Your own name. Rose.' },
   { who: 'mother', face: 'calm', text: 'And then you’re Rose again, a grown woman, and I stop, and we sit and talk as two women do. No questions asked, and no shame in it. Ever.' },
   { who: 'red', face: 'shy', text: 'Rose.' },
   { who: 'mother', face: 'smile', text: 'That’s the one.' },
-  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Now. Cloak off, over the back of the chair, and come here.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Now, come here, young lady.' },
 ];
 
 // Chapter one opens at her grandmother's: the last of the afternoon, tea and cake at the round table, the old woman fussing, Rose letting her. Then
 // the gift: a red cloak like the one she wore as a girl. She puts it on and turns round to show it, and her grandmother calls her Little Red.
 // (ctx: the scene's moves, run in order: ctx.fetchGift, ctx.giveGift, ctx.openGift, ctx.twirl, ctx.seeOff.) Speakers: 'red' and 'gran'.
 const grandmother = ctx => [
-  { text: 'Deep in the wood, in her grandmother’s cabin under the great oak, the afternoon is going gold.' },
   { who: 'gran', face: 'smile', listen: { red: 'calm' }, text: 'Another slice. Go on. You’re all elbows and no supper.' },
   { who: 'red', face: 'cheeky', text: 'Grandmother, that’s my third.' },
   { who: 'gran', face: 'cheeky', listen: { red: 'smile' }, text: 'And who’s counting? Not me. My eyes are going.' },
@@ -71,7 +69,7 @@ const grandmother = ctx => [
   { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Magnets! Lord preserve us. I hope she let him down gently.' },
   { who: 'gran', face: 'calm', text: 'And your mother? Working herself to the bone, I suppose.' },
   { who: 'red', face: 'pout', text: 'She’s got me doing half of it now. The mending, the Hallorans’ cows, sitting up with Mistress Abney’s daughter…' },
-  { who: 'gran', face: 'calm', listen: { red: 'shy' }, text: 'Has she, now. And how do you find it?' },
+  { who: 'gran', face: 'calm', listen: { red: 'shy' }, text: 'Has she, now? And how do you find it?' },
   { choose: [
     { text: 'Heavy.', then: [
       { who: 'gran', face: 'calm', listen: { red: 'shy' }, text: 'Mm. It is, at first. It sits heavy till you grow into it.' },
@@ -88,12 +86,11 @@ const grandmother = ctx => [
   { run: ctx.giveGift },
   { text: 'Inside the paper is a cloak of good red wool, lined and edged with cream, with a deep hood: the very twin of the one she wore when she was small.' },
   { run: ctx.openGift },
-  { who: 'red', face: 'surprised', listen: { gran: 'smile' }, text: 'Grandmother… it’s like my old one.' },
+  { who: 'red', face: 'surprised', listen: { gran: 'smile' }, text: 'Grandmother… it’s just like my old one.' },
   { who: 'gran', face: 'smile', text: 'Like it, only bigger. I thought you might be missing it. There. Turn round, let me look at you.' },
   { run: ctx.twirl },
   { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Oh, look at you. Little Red.' },
   { who: 'red', face: 'smile', listen: { gran: 'smile' }, text: '…Little Red.' },
-  { text: 'Nobody has called her that in years. It sits on her the way the cloak does: warm, and exactly right.' },
   { who: 'gran', face: 'calm', listen: { red: 'calm' }, text: 'Now. The light’s going, and your mother will skin us both if you’re late. Straight home, mind. Stay on the path.' },
   { who: 'red', face: 'cheeky', text: 'Straight home. On the path.' },
   { who: 'gran', face: 'cheeky', listen: { red: 'smile' }, text: 'I’ve heard that before. Off you go, Little Red.' },
@@ -130,20 +127,16 @@ const SPOTS = {
 // After the correction (js/correction.js): the two of them in the room by the fire. How it went decides it (Discipline.run's result): taken all
 // the way through, her mother holds her, as she did the winter of the mill pond; stopped with her name, she's Rose, and they talk as two women.
 const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
-  { text: 'Her mother has her up on her feet and close before she quite knows how she got there.' },
   { who: 'mother', face: 'shy', listen: { red: 'shy' }, text: r.rose ? 'Rose. I’m here. Breathe with me.' : 'That was more than I meant it to be. I’m sorry, love.' },
   { who: 'red', face: 'shy', text: 'I’m all right. It was just… a lot, all at once.' },
   { who: 'mother', face: 'calm', text: 'Then that’s what we talk about. Not the wood, not any of it. You.' },
   { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'Thank you for stopping.' },
   { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Always. That was the promise, and it holds. Come on. There’s soup, and the fire’s warm.' },
 ] : [
-  { text: 'It takes a while for the crying to run its course. Her mother waits it out, a hand on her back.' },
   { who: 'mother', face: 'calm', listen: { red: 'crying' }, text: 'There now. That’s done, and it stays done. No more about the wood.' },
   { who: 'red', face: 'crying', listen: { mother: 'calm' }, text: 'I’m sorry, Mama.' },
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you are. Come here.' },
   { text: 'Her mother holds her there by the fire until the shaking stops, the way she did the winter of the mill pond.' },
-  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: '…Somebody had hold of me.' },
-  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Somebody always will. Now: soup, and bed. And that cloak hangs by the door, where I can see it.' },
 ];
 
 // Phase 1.2, the morning after: what's hers to do, agreed between them, nothing too grown. Mary's garden, small errands, and home by the curfew bell.
