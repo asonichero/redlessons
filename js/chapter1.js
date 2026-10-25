@@ -109,7 +109,7 @@ World.scene('ch1.homecoming', {
     o.after = async kind => {
       if (kind !== 'homecoming') return; const P = w.P;
       w.rep.add('wilful', 1, 'home through the wood at dusk, after being told');
-      const r = await Correction.run(P, { tier: 'light', fade: on => w.fade(on) });
+      const r = await Correction.run(P, { tier: 'severe', fade: on => w.fade(on) });
       if (P !== w.P) return;
       await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
       w.rep.settle('wilful'); if (r.rose) w.save.flag('rose-said', w.cal.day);
