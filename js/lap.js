@@ -25,9 +25,12 @@ const TIMES = { lift: 0.5, hold: 0.16, strike: 0.11, contact: 0.3, back: 0.42 };
 // What's in the hand: the hand alone, or a corrector's own implement (js/implements.js: its model, how far its face is from the wrist, how fast it marks).
 const IMPL_HAND = { name: 'the hand', mark: 1 }, implOf = id => (root.Implements && root.Implements.LIST[id]) || IMPL_HAND;
 // Gerda's torso (radians: x lean forward, y turn, z roll): leaning in a little over her, upright as the arm goes up, into the strike, turning for the far cheek.
-const TORSO = { rest: [0.1, 0, 0], raised: [-0.04, -0.08, -0.02], contactL: [0.16, 0, 0], contactR: [0.14, 0.16, 0.08] };
+// (upright enough that their face reads from in front of them: they look down at the lap with the eyes and a little of the neck, not a hunch)
+const TORSO = { rest: [0.03, 0, 0], raised: [-0.06, -0.08, -0.02], contactL: [0.08, 0, 0], contactR: [0.07, 0.16, 0.08] };
 const BANDS = ['composed', 'flinching', 'struggling', 'close to the edge of resistance', 'past the edge of resistance', 'too harsh'];
-const FACE = ['calm', 'wince', 'gritted', 'crying'];
+// The face across the lap: a pout to begin with, wince once it smarts, gritted as it gets harder, and at the edge of resistance crying, held.
+// Each smack flickers the face one on in that order for a moment (pout to wince, wince to gritted, gritted to crying), then back.
+const FACE = ['pout', 'wince', 'gritted', 'crying'], FLICKER = 0.45;
 
 // ── Arm solving ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 const _q = new Q(), _m = new THREE.Matrix4();
@@ -71,7 +74,7 @@ function create(view, opts) {
   const pain = S.createPain({ tolerance: 0.9, resilience: 0.65 });
   const st = { implement: 'hand', pace: 1, strength: 1, side: 'alt', nextSide: 'R', skirt: 'down', drawers: 'up', marks: { L: 0, R: 0 },
     hits: 0, ended: false, red: false, peak: 0, swing: null, runLeft: 0, sound: true, last: null, armed: true, dt: 0.016 };
-  const J = { kick: 0, kickSide: 'R', t: 0 };
+  const J = { kick: 0, kickSide: 'R', t: 0, flick: 0 };
   let dirty = true, exprShown = null;
   const listeners = [], say = (type, data) => listeners.forEach(f => f(type, data));
   const cushion = () => {
@@ -91,7 +94,7 @@ function create(view, opts) {
     const gain = 0.01875 * impl.mark * st.strength;
     st.marks[sw.side] = 1 - (1 - st.marks[sw.side]) * (1 - gain);
     st.hits++; st.peak = Math.max(st.peak, pain.distress()); st.last = hit;
-    J.kick = Math.max(J.kick, hit.reaction); J.kickSide = sw.side;
+    J.kick = Math.max(J.kick, hit.reaction); J.kickSide = sw.side; J.flick = FLICKER;
     thwack(hit.reaction); voice(hit.reaction, bandIndex()); dirty = true;
     say('hit', { hit, side: sw.side, distress: pain.distress(), band: BANDS[bandIndex()], hits: st.hits });
     if (pain.tooHarsh) { st.runLeft = 0; say('tooHarsh', {}); }
@@ -261,7 +264,7 @@ function create(view, opts) {
     const torsoOf = n => n === 'contact' ? TORSO[side === 'R' ? 'contactR' : 'contactL'] : TORSO[n];
     const ta = torsoOf(ph.from), tb = torsoOf(ph.to);
     g.torso.rotation.set(lerp(ta[0], tb[0], ph.e), lerp(ta[1], tb[1], ph.e), lerp(ta[2], tb[2], ph.e));
-    g.neck.rotation.set(0.42, 0.08 + 0.1 * Math.sin(J.t * 0.4), 0); g.head.rotation.set(0.12, 0, 0);
+    g.neck.rotation.set(0.16, 0.08 + 0.1 * Math.sin(J.t * 0.4), 0); g.head.rotation.set(0.06, 0, 0);
     g.root.updateMatrixWorld(true);
     // Left hand: flat between her shoulder blades, fingers across her back.
     const nBack = new V3(0, 0, 1).applyQuaternion(red.torso.getWorldQuaternion(new Q())).normalize();
@@ -288,6 +291,7 @@ function create(view, opts) {
     giver: () => ({ pos: new V3(-7, 30, -11), look: new V3(-3, 12, 6) }),
     top: () => ({ pos: new V3(-3, 62, 9), look: new V3(-3, 10, 6) }),
     face: () => ({ pos: new V3(15, 4, 24), look: new V3(7.5, 8.5, 4.5) }),
+    corrector: () => { const h = world(gerda.headGroup); return { pos: h.clone().add(new V3(4, -3, 22)), look: h.clone().add(new V3(0, -1.2, 0)) }; },      // (the corrector's face, from in front)
   };
   function view_(name, ms) { const v = VIEWS[name](); if (st_) st_.go(v.pos, v.look, ms); return v; }
 
@@ -296,7 +300,9 @@ function create(view, opts) {
     st.dt = dt; J.t += dt; J.kick *= Math.exp(-dt * 3.2);
     advance(dt);
     pain.update(dt, !!(st.swing && st.swing.phase === 'contact'));
-    const b = bandIndex(), face = FACE[Math.min(3, Math.max(0, b - (b >= 3 ? 1 : 0)))];
+    // (bands: composed, flinching, struggling, close to the edge, past it, too harsh)
+    const b = bandIndex(), base = st.peak >= 1 || b >= 4 ? 3 : b === 0 ? 0 : b === 1 ? 1 : 2;      // (once they've reached the edge, crying, for the rest of it) J.flick = Math.max(0, J.flick - dt);
+    const face = FACE[base < 3 && J.flick > 0 ? base + 1 : base];
     if (face !== exprShown) { red.setExpr(face); exprShown = face; }
     if (dirty) repaint();
     poseRed(dt); poseGerda();

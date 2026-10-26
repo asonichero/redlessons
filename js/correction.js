@@ -52,7 +52,7 @@ function ui() {
 
 // The corrector's face for each kind of line (see js/discipline.js).
 const FACES = { start: 'stern', stage: 'stern', implement: 'stern', during: ['calm', 'stern'], amber: 'shy', done: 'calm', after: 'smile', stop: 'shy', harsh: 'surprised' };
-const ANGLES = ['side', 'behind', 'face', 'top', 'room', 'corner'];
+const ANGLES = ['side', 'behind', 'face', 'corrector', 'top', 'room', 'corner'];
 const yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
 
 // Someone else in the room: a figure of their own, moved by js/motion.js, going with the scene (seated on one of its seats, or standing).

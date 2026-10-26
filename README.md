@@ -68,12 +68,12 @@ Her mother sits on a plain chair; Little Red lies face down across her lap, hips
   - **Side** (alternate, left, right), **clothes** (a skirt down or lifted, or trousers up or down; then the drawers), and the **wardrobe** for whichever of the two has outfits.
   - **Scripted:** a tier played with the corrector's own lines (js/discipline.js), the chosen implement coming out for the last stage.
   - **Camera** and **scene** (clear marks, sound, start again).
-- **Her reactions** go through springs: a kick of the legs on the side struck, a lift of the head, and a wriggle that grows with her distress. Her face follows the pain model's bands (calm, wince, gritted, crying), and her voice is synthesised.
+- **Her reactions** go through springs: a kick of the legs on the side struck, a lift of the head, and a wriggle that grows with her distress. Her face starts in a pout and follows the pain model's bands (pout, wince, gritted); each smack flickers it one on for a moment (pout to wince, wince to gritted, gritted to crying), and once she's reached the edge of resistance it's crying, held, and her voice is synthesised.
 - **Clothes:** skirt down or lifted (gathered at her waist); with it lifted, drawers up or down (bunched above her knees). Cloth takes the edge off the sting.
 - **Marks:** colour comes up on each cheek with the smacks, and tender skin hurts more.
 - **Rose** (the button, or R): she says her name, and everything stops at once. Nothing more is struck, the arm comes back to rest, and her mother answers her as Rose.
 - The story plays its corrections in its own scene (`js/correction.js` embeds this one).
-- **Cameras:** Side, Behind, Her mother's view, Above, Her face. The camera glides between them, and you can drag to orbit.
+- **Cameras:** Side, Behind, the corrector's view, Above, the face across the lap, and the corrector's face (the corrector sits upright enough to read: looking down at the lap with the eyes and a little of the neck, not a hunch). The camera glides between them, and you can drag to orbit. The game's correction steps through the same angles, the corrector's face among them.
 
 ## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)
 

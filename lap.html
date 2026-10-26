@@ -193,7 +193,7 @@
     $(k + 'V').textContent = st[k].toFixed(1) + '×';
   });
   let camNow = 'side';
-  for (const [k, n] of [['side', 'Side'], ['behind', 'Behind'], ['giver', 'The corrector’s view'], ['top', 'Above'], ['face', 'The face']]) { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { camNow = k; lap.view(k, 700); all('#cams button').forEach(x => x.classList.toggle('on', x === b)); }; $('cams').appendChild(b); if (k === 'side') b.classList.add('on'); }
+  for (const [k, n] of [['side', 'Side'], ['behind', 'Behind'], ['giver', 'The corrector’s view'], ['top', 'Above'], ['face', 'Face across the lap'], ['corrector', 'The corrector’s face']]) { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { camNow = k; lap.view(k, 700); all('#cams button').forEach(x => x.classList.toggle('on', x === b)); }; $('cams').appendChild(b); if (k === 'side') b.classList.add('on'); }
   $('clear').onclick = () => lap.clearMarks();
   $('snd').onclick = () => { st.sound = !st.sound; $('snd').classList.toggle('on', st.sound); lap.set({ sound: st.sound }); };
   $('again').onclick = () => { Object.assign(st, { skirt: 'down', drawers: 'up' }); build(); };
