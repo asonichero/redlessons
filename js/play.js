@@ -66,9 +66,35 @@ function create(view, opts) {
   const camT = chest();
   st.controls.minDistance = 14; st.controls.maxDistance = 120; st.controls.enablePan = false;
   st.controls.maxPolarAngle = 1.5;      // (in the game the camera stays above the floor: no going round under it)
-  const camBack = opts.camBack || (opts.followCam ? [34, 8] : [42, 16]);      // (in the open, lower and nearer, under the trees)
+  // (in the open, the walking camera's three distances behind her, and heights: close, medium (the usual), far)
+  // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
+  const FOLLOW = [[24, 6], [40, 10], [64, 17]]; let camZ = 1;
+  const followAt = z => { const i = Math.min(1, Math.floor(z)), u = z - i, a = FOLLOW[i], b = FOLLOW[i + 1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; };
+  const camBack = opts.camBack || (opts.followCam ? [40, 10] : [42, 16]);      // (in the open, lower and nearer, under the trees)
   const az = start.yaw + Math.PI + (opts.camTurn || 0);      // (behind her as she starts, or turned round from there by opts.camTurn)
   st.go(camT.clone().add(new V3(Math.sin(az) * camBack[0], camBack[1], Math.cos(az) * camBack[0])), camT);
+
+  // ── The camera by hand. On a touch screen, only the fingers that came down on the view itself count (not the stick's, nor a button's): one
+  // turns the camera round her, two pinch it nearer or further, freely between the nearest and the furthest. (OrbitControls counts every finger
+  // on the screen, so a thumb on the stick and a finger on the view made a pinch.) With a mouse, the wheel steps between near, the usual and far
+  // in the open; indoors it zooms, as before.
+  { const cv = st.renderer.domElement, host = cv.parentNode; let one = null, pinch = null, wheelAt = 0;
+    const orbit = (dx, dy) => { const off = st.camera.position.clone().sub(st.controls.target), sp = new THREE.Spherical().setFromVector3(off);
+      sp.theta -= dx * 0.007; sp.phi = Math.max(0.2, Math.min(st.controls.maxPolarAngle, sp.phi - dy * 0.005)); off.setFromSpherical(sp); st.camera.position.copy(st.controls.target).add(off); };
+    const gap = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const on = (type, fn) => host.addEventListener(type, e => { e.stopPropagation(); if (e.cancelable) e.preventDefault(); if (!st.controls.enabled) return; fn(e.targetTouches); }, { capture: true, passive: false });
+    const begin = t => { one = t.length === 1 ? { x: t[0].clientX, y: t[0].clientY } : null;
+      pinch = t.length >= 2 ? { d: gap(t), z: camZ, r: st.camera.position.distanceTo(st.controls.target) } : null; };
+    on('touchstart', begin); on('touchend', begin); on('touchcancel', begin);
+    on('touchmove', t => {
+      if (t.length === 1 && one) { orbit(t[0].clientX - one.x, t[0].clientY - one.y); one = { x: t[0].clientX, y: t[0].clientY }; }
+      else if (t.length >= 2 && pinch) { const k = pinch.d / Math.max(10, gap(t));      // (fingers apart: nearer)
+        if (opts.followCam) camZ = Math.max(0, Math.min(2, pinch.z + Math.log(k) * 2.4));
+        else { const off = st.camera.position.clone().sub(st.controls.target); off.setLength(Math.max(st.controls.minDistance, Math.min(st.controls.maxDistance, pinch.r * k))); st.camera.position.copy(st.controls.target).add(off); } }
+    });
+    if (opts.followCam) { st.controls.enableZoom = false;
+      cv.addEventListener('wheel', e => { e.preventDefault(); const now = performance.now(); if (now - wheelAt < 220 || Math.abs(e.deltaY) < 1) return; wheelAt = now; camZ = Math.max(0, Math.min(2, Math.round(camZ) + (e.deltaY > 0 ? 1 : -1))); }, { passive: false }); }
+  }
 
   // ── Things to do: whatever's nearest in front of her, of the things she could do from where she is.
   const input = { move: { x: 0, z: 0 }, run: false };
@@ -243,11 +269,11 @@ function create(view, opts) {
     if (st.cottage.follow) st.cottage.follow(m.pos, dt);
     if (opts.onFrame) opts.onFrame(dt);
     for (const f of tickers.slice()) f(dt);
-    // (in the open, the camera swings round behind her as she walks, slowly, so the way ahead stays in view)
-    if (opts.followCam && m.speed > 2 && !busy()) { const off = st.camera.position.clone().sub(st.controls.target), az = Math.atan2(off.x, off.z), want = m.yaw + Math.PI, da = Math.atan2(Math.sin(want - az), Math.cos(want - az)), k = Math.min(1, dt * 0.9);
-      // (and comes in to its usual distance and height behind her, from a wider opening view)
-      const want0 = opts.followCam === true ? [34, 8] : opts.followCam, r0 = Math.hypot(off.x, off.z), kz = Math.min(1, dt * 0.8), r = r0 + (want0[0] - r0) * kz, na = az + da * k;
-      off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; off.y += (want0[1] - off.y) * kz; st.camera.position.copy(st.controls.target).add(off); }
+    // (in the open, walking: the camera directly behind her, swinging round after her as she turns, so she's in the middle of the view and the
+    // way ahead with her; at the distance chosen, close, medium or far (C), which it eases to standing too, from a wider opening view)
+    if (opts.followCam && !busy()) { const off = st.camera.position.clone().sub(st.controls.target), az = Math.atan2(off.x, off.z), want = m.yaw + Math.PI, da = Math.atan2(Math.sin(want - az), Math.cos(want - az)), k = m.speed > 2 ? Math.min(1, dt * 3) : 0;
+      const want0 = followAt(camZ), r0 = Math.hypot(off.x, off.z), kz = Math.min(1, dt * 1.6), r = r0 + (want0[0] * sc - r0) * kz, na = az + da * k;
+      off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; off.y += (want0[1] * sc - off.y) * kz; st.camera.position.copy(st.controls.target).add(off); }
     // The camera keeps its place relative to her, easing after her.
     const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
     st.controls.target.add(d); st.camera.position.add(d);
@@ -274,7 +300,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  return { get follows() { return !!opts.followCam; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Close', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };
