@@ -131,10 +131,16 @@ async function bedtime(P, w, r) {
   P.camHeld = true; st.setLight(Math.max(st.time || 0, 0.85));      // (night, the fire low)
   const b = Bed.scene(st, P.world); P.tick(dt => b.tick(dt));
   const v = b.shot(); st.go(v.pos, v.look, 0);
+  // (her cloak off for bed at last, and on its hook by the door: so it is in the morning)
+  if (P.world.cloakHooks) P.world.cloakHooks.setRed(true);
+  if (root.Looks) { const l = Looks.load(); l.red.outfit = 'No cloak'; Looks.save(l); }
   const castWas = talk.cast.red.rig; talk.cast.red.rig = b.small;
   await P.wait(0.6); await w.fade(false); await P.wait(2.2);
-  for (const [face, text] of Story.bedtime(r)) { await talk.muse(text, { face, fresh: false, ms: 2200 + text.length * 55 }); await P.wait(0.5); }
-  b.small.setExpr('calm'); await P.wait(2.5);
+  // (her mother drifts off first, before Red has done thinking; Red after her last thought)
+  const lines = Story.bedtime(r), sleeps = Math.max(1, lines.length - 3);
+  for (let i = 0; i < lines.length; i++) { const [face, text] = lines[i]; await talk.muse(text, { face, fresh: false, ms: 2200 + text.length * 55 }); await P.wait(0.5);
+    if (i === sleeps - 1) b.big.setExpr('asleep', 1.2); }
+  b.small.setExpr('asleep', 1.0); await P.wait(3.0);
   talk.cast.red.rig = castWas;      // (the bed stays as it is, under the card)
 }
 
@@ -165,6 +171,7 @@ World.scene('ch1.homecoming', {
     w.objective('');
     const W = P.world, dw = W.doorway, mo = P.npcMotion, st = P.stage;
     if (P.outfit === 'No cloak') P.setOutfit('Hood down', true);      // (built again in it: so her motion is taken after)
+    if (W.cloakHooks) W.cloakHooks.setRed(false);      // (it's on her, not on its hook)
     const me = P.motion;
     if (W.door) { W.door.open = W.door.target = 1; }
     if (dw) { me.warp(dw.at, yawTo(dw.at, dw.foot)); P.rig.root.position.copy(dw.at); }

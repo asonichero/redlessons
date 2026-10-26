@@ -35,6 +35,8 @@ const AREAS = {
   },
   home: {
     name: 'Home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
+    // (her cloak on its hook by the door, if she has one and isn't wearing it)
+    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); },
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
     exits: { 'the door': { area: 'wood', entry: 'village' } },      // (until the village is built, the cottage door gives straight onto the wood's edge)
   },
@@ -120,19 +122,27 @@ function create(view, ui) {
     E.stage.go(V(e.from), V(e.look), 0);
     return E;
   }
-  // The title's tableau, behind its menu: with no game saved, the first frame of the opening (the first scene's establishing shot); with one,
-  // the end of the homecoming: the two of them in her mother's bed, at night (js/bed.js). Gone once a game starts (see go).
+  // The title's tableau, behind its menu, as a still picture: with no game saved, the first frame of the opening (the first scene's establishing
+  // shot); with one, the end of the homecoming: the two of them asleep in her mother's bed, at night (js/bed.js). The scene is set, let settle
+  // (faces, hair) a moment by hand, drawn once and taken as a picture, and put away again. → a promise of the picture (a data URL).
   let backdrop = null;
-  function tableau(kind) {
+  async function tableau(kind) {
+    let E = null, b = null;
     if (kind === 'saved' && root.Bed) {
-      const E = root.Play.create(view, Object.assign(baseOpts('home', 'bed'), { onExit: null, camFree: true, light: 0.85 }));
+      E = root.Play.create(view, Object.assign(baseOpts('home', 'bed'), { onExit: null, camFree: true, light: 0.85 }));
       E.rig.root.visible = false; if (E.npc) E.npc.root.visible = false; E.stage.controls.enabled = false; E.camHeld = true;
-      const b = root.Bed.scene(E.stage, E.world); E.tick(dt => b.tick(dt)); const v = b.shot({ far: 1.5, right: 0.3 }); E.stage.go(v.pos, v.look, 0);      // (back, and to the right of the menu)
-      b.small.setExpr('smile');
-      return (backdrop = E);
+      b = root.Bed.scene(E.stage, E.world); E.tick(dt => b.tick(dt)); const v = b.shot({ far: 1.5, right: 0.3 }); E.stage.go(v.pos, v.look, 0);      // (back, and to the right of the menu)
+      b.big.setExpr('asleep', 60); b.small.setExpr('asleep', 60);
+    } else {
+      const first = Object.values(SCENES).find(s => s.establish); if (!first) return null;
+      E = shot(first.establish);
     }
-    const first = Object.values(SCENES).find(s => s.establish); if (!first) return null;
-    backdrop = shot(first.establish); return backdrop;
+    backdrop = E; E.stage.held = true;      // (its own loop idle: stepped here instead)
+    await new Promise(r => requestAnimationFrame(r));
+    for (let i = 0; i < 45; i++) E.frame(1 / 30);
+    E.stage.draw(); const url = E.stage.renderer.domElement.toDataURL('image/jpeg', 0.92);
+    if (backdrop === E) { E.dispose(); backdrop = null; }
+    return url;
   }
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, light: cal.light() };

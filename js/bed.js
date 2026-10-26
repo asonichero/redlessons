@@ -75,19 +75,21 @@ function scene(stage, world, o) {
       add(r, 'hips', new V3(0, 0.5, 0), 4.6); add(r, 'torso', new V3(0, 3, 0), 4.4); add(r, 'torso', new V3(0, 6, 0.4), 4.2);
       for (const s of ['L', 'R']) { add(r, 'thigh' + s, new V3(0, -3.5, 0), 3.0); add(r, 'knee' + s, new V3(0, 0, 0), 2.4); add(r, 'knee' + s, new V3(0, -3.5, 0), 2.0); add(r, 'ankle' + s, new V3(0, 0, 0.6), 2.6); add(r, 'ankle' + s, new V3(0, -1.2, 2.0), 2.4); }
     }
-    pts.push({ c: big.handL.localToWorld(new V3(0, -1, 0)), r: 1.3 * bs }, { c: big.elbowL.localToWorld(new V3(0, -2, 0)), r: 1.8 * bs });      // (her arm over Red, under it too)
+    // (her arm over Red, and Red's own arms drawn up in front of her: under it too, all of them, with room)
+    for (const [r, s] of [[big, 'L'], [small, 'L'], [small, 'R']]) { const k = r.scaleW;
+      for (const [bn, y, rad] of [['arm', -1.5, 1.9], ['arm', -4, 1.9], ['elbow', 0, 1.9], ['elbow', -2.2, 1.8], ['elbow', -4.2, 1.7], ['hand', -0.6, 1.8], ['hand', -1.8, 1.7]]) pts.push({ c: r[bn + s].localToWorld(new V3(0, y, 0)), r: rad * k }); }
     // (from the feet end of the bed to Red's shoulders; from the wall's side to past the room's edge, where it falls)
     const shoulder = small.torso.localToWorld(new V3(0, 7.0, 0)).sub(mid).dot(along) - 0.5, feetEnd = bed.feet.clone().sub(mid).dot(along) - 4.5;
     const halfW = 11.2, hang = 5.5, NA = 44, NC = 30;
     const geo = new THREE.PlaneGeometry(1, 1, NA, NC), pos = geo.attributes.position, H = [];
     for (let j = 0; j <= NC; j++) for (let i = 0; i <= NA; i++) {
       const a = feetEnd + (shoulder - feetEnd) * i / NA, c = -halfW + (2 * halfW + hang) * j / NC, p = mid.clone().addScaledVector(along, a).addScaledVector(front, c);
-      let h = top + 0.5; for (const q of pts) { const d = Math.hypot(p.x - q.c.x, p.z - q.c.z); if (d < q.r) h = Math.max(h, q.c.y + Math.sqrt(q.r * q.r - d * d) + 0.35); }
+      let h = top + 0.5; for (const q of pts) { const d = Math.hypot(p.x - q.c.x, p.z - q.c.z); if (d < q.r) h = Math.max(h, q.c.y + Math.sqrt(q.r * q.r - d * d) + 0.6); }
       if (c > halfW) h = top + 0.5 - (c - halfW) * 1.5;      // (over the edge, falling)
-      H.push({ p, h, c });
+      H.push({ p, h, c, h0: h });
     }
     // (smoothed, so it lies as cloth over them, not as a skin)
-    for (let pass = 0; pass < 3; pass++) { const h0 = H.map(v => v.h); for (let j = 1; j < NC; j++) for (let i = 1; i < NA; i++) { const k = j * (NA + 1) + i; if (H[k].c > halfW) continue; H[k].h = Math.max(top + 0.5, (h0[k] * 4 + h0[k - 1] + h0[k + 1] + h0[k - NA - 1] + h0[k + NA + 1]) / 8); } }
+    for (let pass = 0; pass < 3; pass++) { const h0 = H.map(v => v.h); for (let j = 1; j < NC; j++) for (let i = 1; i < NA; i++) { const k = j * (NA + 1) + i; if (H[k].c > halfW) continue; H[k].h = Math.max(H[k].h0, (h0[k] * 4 + h0[k - 1] + h0[k + 1] + h0[k - NA - 1] + h0[k + NA + 1]) / 8); } }      // (never below what it must clear)
     H.forEach((v, k) => pos.setXYZ(k, v.p.x, v.h, v.p.z)); geo.computeVertexNormals();
     // (the patchwork quilt off the bed, its squares across it)
     const tex = root.Cottage.kit.textures().quilt.clone(); tex.needsUpdate = true; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1.6, 1.3);

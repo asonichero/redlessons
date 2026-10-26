@@ -25,7 +25,7 @@
   #fade.on { opacity: 1; pointer-events: auto; }
   /* The title: the name, the chapter, and a short menu down the left, as Consequence has it */
   #title { position: fixed; inset: 0; z-index: 45; display: flex; flex-direction: column; justify-content: center; padding: 0 max(28px, 8vw); box-sizing: border-box;
-    background: linear-gradient(90deg, rgba(14,7,9,.86) 0%, rgba(14,7,9,.6) 32%, rgba(14,7,9,.12) 62%, rgba(14,7,9,0) 80%); color: #f6ecd8; }      /* (the tableau behind it, shaded down the side the menu's on) */
+    background: linear-gradient(90deg, rgba(14,7,9,.86) 0%, rgba(14,7,9,.6) 32%, rgba(14,7,9,.12) 62%, rgba(14,7,9,0) 80%), var(--tableau, none) center / cover no-repeat, #0e0709; color: #f6ecd8; }      /* (the tableau, a still picture, behind it, shaded down the side the menu's on) */
   #title h1 { margin: 0; font-size: clamp(34px, 6.4vw, 72px); font-weight: normal; letter-spacing: .05em; color: #f3e4b0; text-shadow: 0 3px 0 #5a1418, 0 0 40px rgba(0,0,0,.7); }
   #title h1 b { color: #e8504a; font-weight: normal; }
   #title h2 { margin: 6px 0 30px; font-size: clamp(15px, 2.2vw, 21px); font-weight: normal; font-style: italic; color: #e0c8b0; letter-spacing: .04em; }
@@ -94,7 +94,7 @@ const world = window.__ch = window.__world = World.create($('view'), { objective
 // Continue, if there's a game to take up again: where she was, and when.
 const saved = world.save.exists() && world.save.state.area;
 // Behind the title, a tableau: the first frame of the opening; or, with a game saved, the end of the homecoming (js/world.js's tableau).
-world.tableau(saved ? 'saved' : 'new');      // (with a game saved, the two of them in bed: the end of the homecoming)
+world.tableau(saved ? 'saved' : 'new').then(url => { if (url && $('title')) $('title').style.setProperty('--tableau', 'url("' + url + '")'); });      // (a still picture)
 if (saved) { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>Day ' + world.cal.day + ', ' + world.cal.clock + ' · ' + world.AREAS[world.save.state.area].name + '</small>'; $('begin').classList.remove('primary'); $('begin').textContent = 'Begin again'; }
 const start = f => { if (window.GameAudio) GameAudio.init(); $('title').remove(); hud.show(true); f(); };
 $('begin').onclick = () => { if (saved && !confirm('Begin again, from the start? The game you have now will be lost.')) return; start(() => world.newGame()); };

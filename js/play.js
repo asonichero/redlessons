@@ -125,6 +125,10 @@ function create(view, opts) {
     for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run }, a.at);
     if (W.door) { const d = W.door, p = wp(d.latch); add({ label: (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }
     if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
+    // (her cloak: hung up on its hook by the door, or taken down and put on)
+    if (W.cloakHooks && !m.carry) { const h = W.cloakHooks;
+      if (look.outfit !== 'No cloak' && !h.redHung) add({ label: 'Hang up your cloak', run: () => hangCloak(true) }, h.peg);
+      else if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     if (!m.carry) {
       for (const it of W.items) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: () => take(it) }, p); }
       for (const s of W.seats) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
@@ -185,6 +189,13 @@ function create(view, opts) {
     await m.goTo(s.at, s.yaw);
     m.lookAt(() => wp(c.grip)); await m.reach('R', () => wp(c.grip).add(new V3(0, 0.4, 0.4))); m.reach('L', () => wp(c.grip).add(new V3(2.4, 0.4, 0.4)));
     c.target = c.target ? 0 : 1; await wait(0.7); m.release('L'); await m.release('R'); m.lookAt(null);
+  }
+  // Her cloak off and onto its hook (off: true), or down from it and on: she goes to the hooks, reaches up to the peg, and it's done.
+  async function hangCloak(off) {
+    const h = W.cloakHooks, at = collide(flat(h.stand), R);
+    await m.goTo(at, yawTo(at, h.peg)); m.lookAt(h.peg.clone()); await m.reach('R', h.peg.clone()); await wait(0.35);
+    h.setRed(off); setOutfit(off ? 'No cloak' : 'Hood down', true);      // (built again as she is now: the hand comes down from there)
+    await wait(0.2); m.lookAt(null);
   }
   // Where to stand for a thing on a peg or a surface: in front of it, out from the wall or the table's edge.
   function approachFor(p) {

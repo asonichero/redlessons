@@ -1221,6 +1221,8 @@ const EXPRS = {
   sad:       { brow: 0.75, browY: 0.0, open: 0.55, look: -0.4, mouth: 'sad', blush: 0.35, tears: 0.25, ms: 1.0 },
   // (wistful: happy, and a little sorry for something gone by: the brows lifted a touch in the middle, the lids half down, a soft closed smile)
   wistful:   { brow: 0.3, browY: 0.05, open: 0.58, mouth: 'soft', blush: 0.25, ms: 1.0 },
+  // (asleep: the lids shut, the brows easy, the mouth soft)
+  asleep:    { brow: 0.06, browY: 0, open: 0, mouth: 'soft', blush: 0.2, ms: 0.85 },
 };
 
 // ── A standing idle: her weight on one straight leg, the other easy, changing over now and then. ──

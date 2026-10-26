@@ -154,10 +154,10 @@ function furnish(L, names, made) {
 const nearWall = (W, floor, X0, X1, Z0, Z1, reach) => at => { const d = [[at.x - X0, W.left], [X1 - at.x, W.right], [at.z - Z0, W.back], [Z1 - at.z, W.front]].sort((a, b) => a[0] - b[0])[0]; return d[0] < (reach || 18) ? d[1] : floor; };
 
 // The cottage's furniture and its places. (The hearth, the door and the window are the walls'.)
-const PIECES = { rug: 'The rug', bed: 'The bed nook', chair: 'Her chair (for corrections)', chest: 'The chest', dresser: 'The dresser (under the window by the door)', pegs: 'The peg rail (herbs and baskets)', table: 'The trestle table', stoolA: 'A stool (by the window end)', stoolB: 'A stool (by the hearth end)' };
+const PIECES = { rug: 'The rug', bed: 'The bed nook', chair: 'Her chair (for corrections)', chest: 'The chest', dresser: 'The dresser (under the window by the door)', hooks: 'The cloak hooks (by the door)', pegs: 'The peg rail (herbs and baskets)', table: 'The trestle table', stoolA: 'A stool (by the window end)', stoolB: 'A stool (by the hearth end)' };
 const ROOM = roomLayout('red-lessons:room:cottage', {
   rug: { x: -1, z: 4, ry: 0 }, bed: { x: -42.5, z: Z0 + 12, ry: 0 }, dresser: { x: X0 + 5.8, z: 6, ry: Math.PI / 2 },
-  chest: { x: 26, z: Z0 + 6.5, ry: 0 }, pegs: { x: -2, z: Z0 + 0.9, ry: 0 }, chair: { x: -18.6, z: -27, ry: Math.PI / 2 },
+  chest: { x: 26, z: Z0 + 6.5, ry: 0 }, pegs: { x: -2, z: Z0 + 0.9, ry: 0 }, chair: { x: -18.6, z: -27, ry: Math.PI / 2 }, hooks: { x: -46, z: Z1 - 0.9, ry: Math.PI },      // (just clear of the steps, so she can stand at them)
   table: { x: 38, z: 2, ry: 0 }, stoolA: { x: 26, z: -7, ry: -Math.PI / 2 }, stoolB: { x: 27, z: 13, ry: -Math.PI / 2 },
 });
 
@@ -325,6 +325,26 @@ function build(scene) {
   // its own in the middle of the room, and puts this one out of sight meanwhile: world.chair.)
   { const pc = piece('chair', wall), seatY = T.seatFor('gerda'), ch = T.makeChair(seatY); pc.g.add(ch); world.chair = pc.g;
     world.seats.push({ name: 'the chair', at: pc.P(0, seatY, 1.8), facing: pc.ry, kind: 'chair' }); world.obstacles.push(pc.area(-4.7, 4.7, -3.2, 6.6)); }
+
+  // ── The cloak hooks, on the hearth's wall by the door: three pegs on a short board, lower than the basket rail, where Red reaches them easily and
+  // Maren needn't stoop. Maren's long cloak hangs on the first; Red's, when she's hung it up, on the last. (world.cloakHooks: where to stand to
+  // reach Red's peg, and setRed(on): her cloak shown on it, or not.)
+  { const pc = piece('hooks', wall), g = pc.g, PY = 22, wool = c => T.mat(c);
+    box(g, 14, 2.2, 0.8, 0, PY + 0.6, 0, oak);
+    for (const x of [-4.5, 0, 4.5]) solid(g, new THREE.CylinderGeometry(0.35, 0.45, 2.2, 8), oakDk, x, PY, 1.2, { rot: [Math.PI / 2 - 0.3, 0, 0], ink: 0.05 });
+    // (a cloak hung by its hood from a peg: the hood bunched at the top, the cloak falling from it in folds, flat against the wall behind)
+    const cloak = (x, len, r0, r1, col, edge) => { const c = new THREE.Group(); c.position.set(x, PY + 0.2, 1.9); g.add(c);
+      solid(c, T.ell(1.6, 1.8, 1.2, 12, 8), col, 0, -1.2, 0, { ink: 0.06 });
+      const folds = 9, prof = []; for (let k = 0; k <= 8; k++) { const t = k / 8; prof.push(new THREE.Vector2(r0 + (r1 - r0) * Math.pow(t, 0.8), -2 - len * t)); }
+      const geo = new THREE.LatheGeometry(prof, folds * 4); geo.scale(1, 1, 0.38);
+      { const pp = geo.attributes.position; for (let i = 0; i < pp.count; i++) { const a = Math.atan2(pp.getZ(i), pp.getX(i)), k = 1 + 0.08 * Math.sin(a * folds) * Math.min(1, -pp.getY(i) / 6); pp.setX(i, pp.getX(i) * k); pp.setZ(i, pp.getZ(i) * k); } geo.computeVertexNormals(); }
+      const m = solid(c, geo, col, 0, 0, 0, { ink: 0.06 }); m.material.side = THREE.DoubleSide;
+      if (edge) { const band = new THREE.TorusGeometry(r1, 0.32, 6, 28); band.rotateX(Math.PI / 2); band.scale(1, 1, 0.38); solid(c, band, edge, 0, -2 - len, 0, { ink: 0.03 }); }
+      return c; };
+    cloak(-4.5, 19, 2.2, 6.2, wool('#3e4656')).rotation.x = -0.15;      // (Maren's: long, slate-blue wool, to below the knee, its hem out over the foundation's stones)
+    const look = root.Looks ? (root.Looks.load().red || {}) : {}, red = cloak(4.5, 10, 2.0, 5.2, wool(look.cloak || '#a01828'), wool('#efe3c8')); red.visible = false;
+    world.cloakHooks = { peg: pc.P(4.5, PY, 1.6), stand: pc.P(4.5, 0, 8.5), facing: pc.ry + Math.PI, get redHung() { return red.visible; }, setRed(on) { red.visible = !!on; } };
+    world.obstacles.push(pc.area(-7, 7, -0.5, 3.5)); }
 
   // ── The chest (against the back wall, right): oak, iron-bound, with a gently domed lid and a lock plate.
   { const pc = piece('chest', wall), g = pc.g, cx = 0, cz = 0, cw = 20, ch = 10, cd = 9;
