@@ -5,7 +5,8 @@
 // a braided rug, a round window onto the green of the wood.
 //
 //   const cabin = Cabin.build(scene, { outside })   (outside: seen from the wood, so nothing hides, and the oak's crown spreads over the roof)
-//   → { group, update(camera), tick(dt), light(t), world }   (world as js/cottage.js's: items, seats, surfaces, obstacles, door, bounds, exits)
+//   → { group, update(camera), tick(dt), light(t), world, pieces }   (world as js/cottage.js's: items, seats, surfaces, obstacles, door, bounds, exits;
+//   pieces: the furniture, by id, as the layout set it: { g, P, ry, items }, for the room editor)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
@@ -15,6 +16,22 @@ const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 40, RIDGE = 70, RZ = (Z0 + Z1
 const OAK = { x: X1 - 7, z: Z0 + 5, r: 12 };
 // (the doorway: tall enough for Red, her mother and her grandmother to walk through with room to spare; Holt, the tallest of them, ducks)
 const DOOR = -10, WIN = 22, DOOR_H = 34;      // (where the door and the window are along the front wall, as x)
+
+// The furniture's places: [x, z] on the floor and its turn (ry), each about its own middle. The room editor (rooms.html) changes them, kept in the
+// browser (KEY), and the game builds the room from them; its "Copy layout" gives them as they are, to be set here.
+const PIECES = { rug: 'The braided rug', rocker: 'Her rocking chair', basket: 'The basket of wool', table: 'The round table (laid for tea)', stool: 'Red’s stool', chair: 'Her chair at the table', dresser: 'The dresser', bed: 'The box bed' };
+const LAYOUT = {
+  rug: { x: -8, z: 6, ry: 0 }, rocker: { x: X0 + 22, z: 12, ry: -Math.PI / 2 + 0.5 }, basket: { x: X0 + 28, z: 18, ry: 0 },
+  table: { x: -2, z: -4, ry: 0 }, stool: { x: -2, z: 7, ry: Math.PI }, chair: { x: -2, z: -15, ry: 0 },
+  dresser: { x: -24, z: Z0 + 4, ry: 0 }, bed: { x: X1 - 8, z: Z1 - 13, ry: 0 },
+};
+const KEY = 'red-lessons:room:cabin';
+function layout(o) {
+  let saved = o; if (!saved) try { saved = JSON.parse((root.localStorage && root.localStorage.getItem(KEY)) || '{}'); } catch (e) { saved = {}; }
+  const L = {}; for (const k in LAYOUT) L[k] = Object.assign({}, LAYOUT[k], saved && saved[k]); return L;
+}
+function saveLayout(L) { try { root.localStorage && root.localStorage.setItem(KEY, JSON.stringify(L)); } catch (e) { /* no storage */ } }
+function resetLayout() { try { root.localStorage && root.localStorage.removeItem(KEY); } catch (e) { /* no storage */ } }
 
 let TX = null;
 function tex() {
@@ -53,7 +70,19 @@ function build(scene, opts) {
   // ── Floor: wide boards, and the braided rug.
   const floorG = panel(new V3(0, 0, 0), new V3(0, 1, 0));
   { const f = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0 + 6, Z1 - Z0 + 6), toonMap(tx.boards)); f.rotation.x = -Math.PI / 2; f.position.set(0, 0, RZ); f.receiveShadow = true; floorG.add(f);
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 48), toonMap(tx.braid)); rug.scale.set(17, 12, 1); rug.rotation.x = -Math.PI / 2; rug.position.set(-8, 0.06, 6); rug.receiveShadow = true; floorG.add(rug); }
+  }
+  // ── The furniture: each piece built about its own origin and set where the layout says (LAYOUT, with any changes made in the room editor,
+  // rooms.html, kept in the browser), turned by its own yaw; where it can be sat on, stood against or put things on goes with it.
+  const L = layout(), pieces = {};
+  function piece(id, parent) {
+    const at = L[id], g = new THREE.Group(); g.position.set(at.x, 0, at.z); g.rotation.y = at.ry || 0; parent.add(g); g.updateMatrix();
+    const P = (x, y, z) => new V3(x, y, z).applyMatrix4(g.matrix), ry = at.ry || 0;
+    // (an upright box of the floor, in the piece's own frame, as the box round it in the room's)
+    const area = (x0, x1, z0, z1) => { const c = [P(x0, 0, z0), P(x1, 0, z0), P(x0, 0, z1), P(x1, 0, z1)]; return { x0: Math.min(...c.map(v => v.x)), x1: Math.max(...c.map(v => v.x)), z0: Math.min(...c.map(v => v.z)), z1: Math.max(...c.map(v => v.z)) }; };
+    const pc = pieces[id] = { id, name: PIECES[id], g, P, ry, area, items: [] }; g.userData.piece = id;
+    return pc;
+  }
+  { const pc = piece('rug', floorG), rug = new THREE.Mesh(new THREE.CircleGeometry(1, 48), toonMap(tx.braid)); rug.scale.set(17, 12, 1); rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.06, 0); rug.receiveShadow = true; pc.g.add(rug); }
 
   // ── The walls: round logs, a course every STEP, chinked between. Each wall runs from a to b (seen from inside, x along it), with openings cut.
   // The front corners' logs run on past the corner, notched over each other; at the oak the logs butt into the trunk.
@@ -176,65 +205,67 @@ function build(scene, opts) {
   }
 
   // ── Her rocking chair before the fire, and a basket of wool by it.
-  { const g = W.left, cx = X0 + 22, cz = 12, ry = -Math.PI / 2 + 0.5, c = new THREE.Group(); c.position.set(cx, 0, cz); c.rotation.y = ry; g.add(c);
+  { const pc = piece('rocker', W.left), c = pc.g;
     solid(c, slab(8, 1, 7, 1, 0.4), oakDk, 0, 8.5, 0, { ink: 0.08 });
     for (const sx of [-1, 1]) { solid(c, new THREE.TorusGeometry(14, 0.5, 6, 20, 0.9), oakDk, sx * 3.6, 14.5, 0, { rot: [0, Math.PI / 2, Math.PI * 1.5 - 0.45], ink: 0.05 });
       for (const z of [-2.8, 2.8]) pole(c, new V3(sx * 3.4, 0.9, z), new V3(sx * 3.4, 8.2, z), 0.45, oakDk); pole(c, new V3(sx * 3.6, 9, -3), new V3(sx * 3.4, 22, -4.4), 0.5, oakDk); }
     for (let k = 0; k < 5; k++) pole(c, new V3(-2.6 + k * 1.3, 9, -3.2), new V3(-2.6 + k * 1.3, 21, -4.4), 0.3, oakDk);
     box(c, 8, 1.2, 1, 0, 21.8, -4.4, oakDk);
     solid(c, slab(7.2, 0.8, 6.4, 1.2, 0.3), toonMap(tx.quilt), 0, 9.3, 0.2, { ink: 0.05 });      // (a cushion)
-    world.seats.push({ name: 'the rocking chair', at: new V3(cx, 9.6, cz), facing: ry, kind: 'chair' }); world.obstacles.push({ x: cx, z: cz, r: 5 });
-    const b = new THREE.Group(); b.position.set(cx + 6, 0, cz + 6); g.add(b);
+    world.seats.push({ name: 'the rocking chair', at: pc.P(0, 9.6, 0), facing: pc.ry, kind: 'chair' }); world.obstacles.push({ x: c.position.x, z: c.position.z, r: 5 }); }
+  { const b = piece('basket', W.left).g;
     solid(b, new THREE.CylinderGeometry(2.6, 2.1, 3.4, 14, 1, true), toonMap(tx.wicker), 0, 1.7, 0, { ink: 0.05 }).material.side = THREE.DoubleSide;
     for (const [x, z, c2] of [[-0.8, 0.4, '#b05a4a'], [0.9, -0.3, '#d8c08a'], [0.1, 0.9, '#6a7a9a']]) solid(b, T.ell(1.1, 1.1, 1.1), c2, x, 3.3, z, { ink: 0.04 }); }
 
-  // ── The round table, laid for tea: the pot, two cups, a cake on a plate; a stool drawn up to it for her.
-  const thing = (g, name, build, x, y, z, grip, radius, ry) => { const it = new THREE.Group(); build(it); it.position.set(x, y, z); it.rotation.y = ry || 0; root_.add(it); const item = { obj: it, name, grip, radius, panel: g }; world.items.push(item); return item; };
-  { const g = floorG, tx_ = -2, tz = -4, H = 15;
-    solid(g, new THREE.CylinderGeometry(8.5, 8.5, 1.4, 28), toonMap(tx.oak), tx_, H - 0.7, tz, { ink: 0.1 });
-    solid(g, new THREE.CylinderGeometry(1.4, 1.8, H - 1.4, 12), oakDk, tx_, (H - 1.4) / 2, tz, { ink: 0.08 });
-    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.4; pole(g, new V3(tx_, 1.2, tz), new V3(tx_ + Math.cos(a) * 5, 0.2, tz + Math.sin(a) * 5), 0.6, oakDk); }
-    const cloth = new THREE.Mesh(new THREE.CircleGeometry(5.5, 24), T.mat('#f2eadb')); cloth.rotation.x = -Math.PI / 2; cloth.position.set(tx_, H + 0.02, tz); g.add(cloth);
+  // ── The round table, laid for tea: the pot, two cups, a cake on a plate; a stool drawn up to it for her, and the old woman's chair across from it.
+  // (the things on it are the room's own, to be picked up and put down, set where the table puts them)
+  const thing = (pc, name, build, x, y, z, grip, radius, ry) => { const it = new THREE.Group(); build(it); it.position.copy(pc.P(x, y, z)); it.rotation.y = (ry || 0) + pc.ry; root_.add(it);
+    const item = { obj: it, name, grip, radius, panel: pc.g.parent }; world.items.push(item); pc.items.push({ obj: it, at: new V3(x, y, z), ry: ry || 0 }); return item; };
+  { const pc = piece('table', floorG), g = pc.g, H = 15;
+    solid(g, new THREE.CylinderGeometry(8.5, 8.5, 1.4, 28), toonMap(tx.oak), 0, H - 0.7, 0, { ink: 0.1 });
+    solid(g, new THREE.CylinderGeometry(1.4, 1.8, H - 1.4, 12), oakDk, 0, (H - 1.4) / 2, 0, { ink: 0.08 });
+    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.4; pole(g, new V3(0, 1.2, 0), new V3(Math.cos(a) * 5, 0.2, Math.sin(a) * 5), 0.6, oakDk); }
+    const cloth = new THREE.Mesh(new THREE.CircleGeometry(5.5, 24), T.mat('#f2eadb')); cloth.rotation.x = -Math.PI / 2; cloth.position.set(0, H + 0.02, 0); g.add(cloth);
     const pot = '#4a7a9a', cup = '#e8e2d4';
-    thing(g, 'the teapot', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [1.5, 0.1], [2.1, 1.4], [1.7, 2.7], [0.8, 3.1], [0.4, 3.5]].map(([r, h]) => new THREE.Vector2(r, h)), 16), pot, 0, 0, 0, { ink: 0.06 });
-      solid(it, new THREE.TorusGeometry(1.0, 0.22, 6, 12, Math.PI * 1.2), pot, -2.0, 1.8, 0, { rot: [0, 0, 1.2], ink: 0.04 }); pole(it, new V3(1.8, 1.2, 0), new V3(3.2, 2.6, 0), 0.25, pot, { ink: 0.03 }); }, tx_ + 2, H, tz - 2, new V3(0, 2.4, 0), 2.2);
-    for (const [x, z] of [[-3, 1.5], [3.5, 3]]) thing(g, 'a cup', it => { solid(it, new THREE.CylinderGeometry(0.9, 0.7, 1.2, 12), cup, 0, 0.6, 0, { ink: 0.04 }); solid(it, new THREE.CylinderGeometry(1.4, 1.3, 0.15, 14), cup, 0, 0.08, 0, { ink: 0.03 }); }, tx_ + x, H, tz + z, new V3(0, 0.8, 0), 1.4);
-    thing(g, 'the cake', it => { solid(it, new THREE.CylinderGeometry(2.6, 2.6, 0.2, 18), cup, 0, 0.1, 0, { ink: 0.03 }); solid(it, new THREE.CylinderGeometry(1.9, 1.9, 1.6, 18, 1, false, 0, Math.PI * 1.6), '#d9a45a', 0, 1.0, 0, { ink: 0.05 });
-      solid(it, new THREE.CylinderGeometry(1.95, 1.95, 0.35, 18, 1, false, 0, Math.PI * 1.6), '#f4ecdc', 0, 1.9, 0, { ink: 0.03 }); for (let k = 0; k < 4; k++) solid(it, T.ell(0.25, 0.25, 0.25), '#b0283a', Math.cos(k) * 1.1, 2.15, Math.sin(k) * 1.1, { ink: 0 }); }, tx_ - 2.5, H, tz - 2.5, new V3(0, 1.4, 0), 2.6);
-    world.surfaces.push({ name: 'the table', x0: tx_ - 5, x1: tx_ + 5, z0: tz - 5, z1: tz + 5, y: H, panel: g, front: new V3(0, 0, 1) });
-    world.obstacles.push({ x: tx_, z: tz, r: 9 });
-    // Her stool, drawn up to the table on the front side; and the old woman's chair across from it.
-    for (const [x, z, f, nm] of [[tx_, tz + 11, Math.PI, 'the stool'], [tx_, tz - 11, 0, 'the chair']]) {
-      const s = new THREE.Group(); s.position.set(x, 0, z); g.add(s);
-      solid(s, new THREE.CylinderGeometry(3.4, 3.4, 1.2, 16), oakDk, 0, 8.4, 0, { ink: 0.08 });
-      for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2 + 0.3; pole(s, new V3(Math.cos(a) * 2, 8, Math.sin(a) * 2), new V3(Math.cos(a) * 3.1, 0, Math.sin(a) * 3.1), 0.45, oakDk); }
-      solid(s, new THREE.TorusGeometry(2.7, 0.28, 6, 20), oakDk, 0, 3.4, 0, { rot: [Math.PI / 2, 0, 0], ink: 0.05 });
-      if (nm === 'the chair') { for (const sx of [-1, 1]) pole(s, new V3(sx * 2.4, 8.6, -2.2), new V3(sx * 2.6, 19, -3.2), 0.4, oakDk); box(s, 5.6, 4, 0.7, 0, 16.5, -3, oakDk); }
-      world.seats.push({ name: nm, at: new V3(x, 9, z), facing: f, kind: 'stool', rung: 3.4, rungR: 2.7 }); world.obstacles.push({ x, z, r: 3.6 });
-    }
+    thing(pc, 'the teapot', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [1.5, 0.1], [2.1, 1.4], [1.7, 2.7], [0.8, 3.1], [0.4, 3.5]].map(([r, h]) => new THREE.Vector2(r, h)), 16), pot, 0, 0, 0, { ink: 0.06 });
+      solid(it, new THREE.TorusGeometry(1.0, 0.22, 6, 12, Math.PI * 1.2), pot, -2.0, 1.8, 0, { rot: [0, 0, 1.2], ink: 0.04 }); pole(it, new V3(1.8, 1.2, 0), new V3(3.2, 2.6, 0), 0.25, pot, { ink: 0.03 }); }, 2, H, -2, new V3(0, 2.4, 0), 2.2);
+    for (const [x, z] of [[-3, 1.5], [3.5, 3]]) thing(pc, 'a cup', it => { solid(it, new THREE.CylinderGeometry(0.9, 0.7, 1.2, 12), cup, 0, 0.6, 0, { ink: 0.04 }); solid(it, new THREE.CylinderGeometry(1.4, 1.3, 0.15, 14), cup, 0, 0.08, 0, { ink: 0.03 }); }, x, H, z, new V3(0, 0.8, 0), 1.4);
+    thing(pc, 'the cake', it => { solid(it, new THREE.CylinderGeometry(2.6, 2.6, 0.2, 18), cup, 0, 0.1, 0, { ink: 0.03 }); solid(it, new THREE.CylinderGeometry(1.9, 1.9, 1.6, 18, 1, false, 0, Math.PI * 1.6), '#d9a45a', 0, 1.0, 0, { ink: 0.05 });
+      solid(it, new THREE.CylinderGeometry(1.95, 1.95, 0.35, 18, 1, false, 0, Math.PI * 1.6), '#f4ecdc', 0, 1.9, 0, { ink: 0.03 }); for (let k = 0; k < 4; k++) solid(it, T.ell(0.25, 0.25, 0.25), '#b0283a', Math.cos(k) * 1.1, 2.15, Math.sin(k) * 1.1, { ink: 0 }); }, -2.5, H, -2.5, new V3(0, 1.4, 0), 2.6);
+    world.surfaces.push(Object.assign(pc.area(-5, 5, -5, 5), { name: 'the table', y: H, panel: floorG, front: new V3(0, 0, 1) }));
+    world.obstacles.push({ x: g.position.x, z: g.position.z, r: 9 });
+  }
+  // (her stool and the old woman's chair: each faces the way it's turned; the chair has a back)
+  for (const [id, nm] of [['stool', 'the stool'], ['chair', 'the chair']]) {
+    const pc = piece(id, floorG), s = pc.g;
+    solid(s, new THREE.CylinderGeometry(3.4, 3.4, 1.2, 16), oakDk, 0, 8.4, 0, { ink: 0.08 });
+    for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2 + 0.3; pole(s, new V3(Math.cos(a) * 2, 8, Math.sin(a) * 2), new V3(Math.cos(a) * 3.1, 0, Math.sin(a) * 3.1), 0.45, oakDk); }
+    solid(s, new THREE.TorusGeometry(2.7, 0.28, 6, 20), oakDk, 0, 3.4, 0, { rot: [Math.PI / 2, 0, 0], ink: 0.05 });
+    if (id === 'chair') { for (const sx of [-1, 1]) pole(s, new V3(sx * 2.4, 8.6, -2.2), new V3(sx * 2.6, 19, -3.2), 0.4, oakDk); box(s, 5.6, 4, 0.7, 0, 16.5, -3, oakDk); }
+    world.seats.push({ name: nm, at: pc.P(0, 9, 0), facing: pc.ry, kind: 'stool', rung: 3.4, rungR: 2.7 }); world.obstacles.push({ x: s.position.x, z: s.position.z, r: 3.6 });
   }
 
   // ── The dresser against the back wall: plates on its rack, and on its top, a parcel tied with twine (her gift).
-  { const g = W.back, dx = -24, dz = Z0 + 4;
-    box(g, 18, 12, 6, dx, 6, dz, toonMap(tx.oak)); box(g, 18.6, 0.8, 6.6, dx, 12.4, dz, oakDk);
-    for (const x of [-4.5, 4.5]) box(g, 0.3, 9, 0.2, dx + x, 6, dz + 3.05, oakDk, { ink: 0 });
-    box(g, 18, 14, 1, dx, 20, Z0 + 1.5, toonMap(tx.oak)); for (const y of [16, 22]) box(g, 18, 0.6, 2.4, dx, y, Z0 + 2.4, oakDk);
-    for (const y of [16, 22]) for (let k = 0; k < 5; k++) solid(g, new THREE.CylinderGeometry(1.5, 1.5, 0.3, 16), ['#e8e2d4', '#4a7a9a', '#e8e2d4', '#b06a4a', '#e8e2d4'][k], dx - 6.4 + k * 3.2, y + 1.8, Z0 + 2.8, { rot: [Math.PI / 2 - 0.25, 0, 0], ink: 0.03 });
-    world.surfaces.push({ name: 'the dresser', x0: dx - 7, x1: dx + 7, z0: dz - 1, z1: dz + 1, y: 12.8, panel: g, front: new V3(0, 0, 1) });
-    world.obstacles.push({ x0: dx - 9.5, x1: dx + 9.5, z0: Z0, z1: dz + 3.5 });
-    world.gift = thing(g, 'the parcel', it => { solid(it, slab(5.5, 2.2, 4, 0.6, 0.3), '#c8a878', 0, 1.1, 0, { ink: 0.05 }); box(it, 0.25, 2.3, 4.1, 0, 1.1, 0, '#8a6a3a', { ink: 0 }); box(it, 5.6, 2.3, 0.25, 0, 1.1, 0, '#8a6a3a', { ink: 0 });
-      solid(it, new THREE.TorusGeometry(0.5, 0.12, 6, 10), '#8a6a3a', 0.6, 2.4, 0, { rot: [Math.PI / 2, 0, 0.5], ink: 0 }); solid(it, new THREE.TorusGeometry(0.5, 0.12, 6, 10), '#8a6a3a', -0.6, 2.4, 0, { rot: [Math.PI / 2, 0, -0.5], ink: 0 }); }, dx + 3, 12.8, dz, new V3(0, 1.4, 0), 3.2, 0.2);
+  { const pc = piece('dresser', W.back), g = pc.g;
+    box(g, 18, 12, 6, 0, 6, 0, toonMap(tx.oak)); box(g, 18.6, 0.8, 6.6, 0, 12.4, 0, oakDk);
+    for (const x of [-4.5, 4.5]) box(g, 0.3, 9, 0.2, x, 6, 3.05, oakDk, { ink: 0 });
+    box(g, 18, 14, 1, 0, 20, -2.5, toonMap(tx.oak)); for (const y of [16, 22]) box(g, 18, 0.6, 2.4, 0, y, -1.6, oakDk);
+    for (const y of [16, 22]) for (let k = 0; k < 5; k++) solid(g, new THREE.CylinderGeometry(1.5, 1.5, 0.3, 16), ['#e8e2d4', '#4a7a9a', '#e8e2d4', '#b06a4a', '#e8e2d4'][k], -6.4 + k * 3.2, y + 1.8, -1.2, { rot: [Math.PI / 2 - 0.25, 0, 0], ink: 0.03 });
+    world.surfaces.push(Object.assign(pc.area(-7, 7, -1, 1), { name: 'the dresser', y: 12.8, panel: W.back, front: new V3(0, 0, 1).applyAxisAngle(new V3(0, 1, 0), pc.ry) }));
+    world.obstacles.push(pc.area(-9.5, 9.5, -4, 3.5));
+    world.gift = thing(pc, 'the parcel', it => { solid(it, slab(5.5, 2.2, 4, 0.6, 0.3), '#c8a878', 0, 1.1, 0, { ink: 0.05 }); box(it, 0.25, 2.3, 4.1, 0, 1.1, 0, '#8a6a3a', { ink: 0 }); box(it, 5.6, 2.3, 0.25, 0, 1.1, 0, '#8a6a3a', { ink: 0 });
+      solid(it, new THREE.TorusGeometry(0.5, 0.12, 6, 10), '#8a6a3a', 0.6, 2.4, 0, { rot: [Math.PI / 2, 0, 0.5], ink: 0 }); solid(it, new THREE.TorusGeometry(0.5, 0.12, 6, 10), '#8a6a3a', -0.6, 2.4, 0, { rot: [Math.PI / 2, 0, -0.5], ink: 0 }); }, 3, 12.8, 0, new V3(0, 1.4, 0), 3.2, 0.2);
   }
 
-  // ── The box bed (front right, along the right wall): a frame, a straw mattress, a patchwork quilt, a bolster.
-  { const g = W.right, bx = X1 - 8, bz = Z1 - 13, BW = 14, BL = 22, BH = 8;
-    box(g, BW, 1.4, BL, bx, BH - 0.7, bz, oakDk); box(g, BW, BH - 1.4, 1.2, bx, (BH - 1.4) / 2, bz + BL / 2 - 0.6, oakDk); box(g, 1.2, BH - 1.4, BL, bx - BW / 2 + 0.6, (BH - 1.4) / 2, bz, oakDk);
-    box(g, BW, 14, 1.4, bx, BH + 5, bz - BL / 2 + 0.7, oakDk);
-    solid(g, slab(BW - 2, 3.6, BL - 2, 2, 1.4), toonMap(tx.ticking), bx, BH + 1.8, bz, { ink: 0.1 });
-    solid(g, slab(BW - 1, 1.2, BL - 6, 1, 0.5), toonMap(tx.quilt), bx, BH + 4.1, bz + 2.5, { ink: 0.08 });
-    solid(g, T.ell(BW / 2 - 1.5, 1.6, 2), T.mat('#efe6d0'), bx, BH + 4.4, bz - BL / 2 + 3, { ink: 0.08 });
-    world.seats.push({ name: 'the bed', at: new V3(bx - 2, BH + 3.6, bz + 2), facing: -Math.PI / 2, kind: 'bed', head: new V3(bx, BH + 4.4, bz - BL / 2 + 3), feet: new V3(bx, BH + 4, bz + BL / 2 - 3) });
-    world.obstacles.push({ x0: bx - BW / 2, x1: X1, z0: bz - BL / 2, z1: bz + BL / 2 });
+  // ── The box bed (front right, along the right wall): a frame, a straw mattress, a patchwork quilt, a bolster. (Its head toward the back.)
+  { const pc = piece('bed', W.right), g = pc.g, BW = 14, BL = 22, BH = 8;
+    box(g, BW, 1.4, BL, 0, BH - 0.7, 0, oakDk); box(g, BW, BH - 1.4, 1.2, 0, (BH - 1.4) / 2, BL / 2 - 0.6, oakDk); box(g, 1.2, BH - 1.4, BL, -BW / 2 + 0.6, (BH - 1.4) / 2, 0, oakDk);
+    box(g, BW, 14, 1.4, 0, BH + 5, -BL / 2 + 0.7, oakDk);
+    solid(g, slab(BW - 2, 3.6, BL - 2, 2, 1.4), toonMap(tx.ticking), 0, BH + 1.8, 0, { ink: 0.1 });
+    solid(g, slab(BW - 1, 1.2, BL - 6, 1, 0.5), toonMap(tx.quilt), 0, BH + 4.1, 2.5, { ink: 0.08 });
+    solid(g, T.ell(BW / 2 - 1.5, 1.6, 2), T.mat('#efe6d0'), 0, BH + 4.4, -BL / 2 + 3, { ink: 0.08 });
+    world.seats.push({ name: 'the bed', at: pc.P(-2, BH + 3.6, 2), facing: -Math.PI / 2 + pc.ry, kind: 'bed', head: pc.P(0, BH + 4.4, -BL / 2 + 3), feet: pc.P(0, BH + 4, BL / 2 - 3) });
+    world.obstacles.push(pc.area(-BW / 2, 8, -BL / 2, BL / 2));
   }
 
   // ── Herbs hanging in bunches from the oak's limbs (and a wreath of dried flowers on the left wall).
@@ -283,8 +314,8 @@ function build(scene, opts) {
   // As the day goes, the fire counts for more.
   function light(t) { fire.lightK = 1 + 1.6 * t; }
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
-  return { group: root_, update, tick, light, world, bounds: { X0, X1, Z0, Z1, EAVE, RIDGE }, oak: OAK };
+  return { group: root_, update, tick, light, world, pieces, bounds: { X0, X1, Z0, Z1, EAVE, RIDGE }, oak: OAK };
 }
 
-root.Cabin = { build };
+root.Cabin = { build, PIECES, LAYOUT, KEY, layout, saveLayout, resetLayout };
 })(typeof window !== 'undefined' ? window : globalThis);

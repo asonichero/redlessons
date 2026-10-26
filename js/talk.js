@@ -206,7 +206,7 @@ function create(stage, opts) {
     o = o || {}; playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile)
     saved = { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: stage.controls.enabled };
     stage.controls.enabled = false;
-    settle(o.shot || Object.keys(cast));
+    if (o.shot !== false) settle(o.shot || Object.keys(cast));      // (shot: false, the camera's left where the scene has put it)
     const runList = async list => {
       for (const line of list) {
         if (line.run) { el.classList.remove('on'); portrait = null; unlook(); await line.run(); continue; }      // (the box steps aside while things happen)

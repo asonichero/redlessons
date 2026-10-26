@@ -14,7 +14,8 @@
 //     corrector: 'maren', context, player: 'red', fade: (on, text) => …,
 //     turns: [{ subject: 'red', tier: 'light', implement: true | 'id', implementFrom, corner: true, cornerDress: { skirt: 'up' } }, …],
 //     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z] }],      (who: a rig; seated on a seat of the room, or standing)
-//     cornerTime: 20 })      (a turn's script: the story's own correction as a dialogue: see scripted())      (seconds, at the end, for those in the corner)
+//     cornerTime: 20, after: r => script })      (seconds, at the end, for those in the corner; after: the story's lines for after the player's
+//     own turn, played on the giver's lap: see run's end)      (a turn's script: the story's own correction as a dialogue: see scripted())
 //   → the first turn's result (Discipline.run's: { hits, peak, stopped, rose, tooHarsh, done, implement }), and turns: every turn's
 //   (still: Correction.run(play, { tier: 'light', fade }) — her mother, Red, the one turn)
 (function (root) {
@@ -106,7 +107,7 @@ async function run(P, o) {
   amberBtn.onclick = e => { e.stopPropagation(); amber(); };
   const keys = e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyR') stop(); if (e.code === 'KeyA') amber(); if (e.code === 'KeyC') next(); };
   addEventListener('keydown', keys);
-  const results = []; let stoppedAll = false;
+  const results = []; let stoppedAll = false, afterPlayed = false;
   // ── A scripted turn: the story's own correction, as a dialogue between the two of them over the smacks (Climbing Toward Consequence's way),
   // rather than the tier's procedure. t.script(S) is given:
   //   S.say(who, text, face)   a line, held to be read: who 'corrector' (or the corrector's own key) or 'subject' (the one across the lap)
@@ -228,6 +229,21 @@ async function run(P, o) {
       // (and out of it: the corrector's last word)
       const last = cornered(); if (last) { const l = Cs.line(c, last.sub, 'after'); if (l) await talk.caption(castKey, l, { face: 'smile', wait }); }
     } else await wait(results.length && (results[results.length - 1].stopped || results[results.length - 1].tooHarsh) ? 4.5 : 3.5);
+    // After (o.after(r): the story's lines for it), the player's own turn having been the last: sat up on the giver's lap, still in the chair
+    // (js/lap.js's after): after her word, upright and dressed again; in high distress (past the edge of resistance, or too much), held close
+    // as she is. Otherwise it's played in the room after, as before.
+    const last = results[results.length - 1];
+    if (o.after && lap && last && last.subject === player) {
+      const kind = last.rose ? 'upright' : last.tooHarsh || last.peak >= 1 ? 'held' : null;
+      if (kind) {
+        el.classList.remove('on'); hint.classList.remove('on'); await fade(true); talk.captionOff();
+        lap.after(kind); const v = lap.VIEWS.after(); st.go(v.pos, v.look, 0);
+        const redWas = talk.cast.red && talk.cast.red.rig; if (talk.cast.red) talk.cast.red.rig = lap.subjectRig;
+        await wait(0.4); await fade(false);
+        try { await talk.play(o.after(last), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
+        afterPlayed = true; await wait(0.6);
+      }
+    }
   } finally {
     el.classList.remove('on'); hint.classList.remove('on'); removeEventListener('keydown', keys);
     await fade(true);
@@ -243,13 +259,13 @@ async function run(P, o) {
     const mo = P.npcMotion, me = P.motion, at = P.collide(new V3(-6, 0, 2), 3.6), to = P.collide(new V3(7, 0, 4), 3.4);
     mo.warp(at, Math.atan2(to.x - at.x, to.z - at.z)); me.warp(to, Math.atan2(at.x - to.x, at.z - to.z));
     if (mine) P.setDress({ skirt: 'down', drawers: 'up', marks: mine.marks });
-    P.rig.setExpr(first.stopped ? 'shy' : 'crying'); P.npc.setExpr(first.stopped ? 'shy' : 'calm');
+    P.rig.setExpr(first.stopped || afterPlayed ? 'shy' : 'crying'); P.npc.setExpr(first.stopped ? 'shy' : 'calm');
     P.talk.settle(['red', P.talk.cast.mother ? 'mother' : Object.keys(P.talk.cast).find(k => k !== 'red')]);
   }
   for (let i = 0; i < 90; i++) P.frame(1 / 60);      // (a moment passes in the dark: they've turned to each other, and hair has settled after the move)
   await wait(0.3);
   await fade(false);
-  return Object.assign({}, first, { turns: results });
+  return Object.assign({}, first, { turns: results, afterPlayed });
 }
 
 root.Correction = { run, ui, figure, toCorner };
