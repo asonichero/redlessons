@@ -247,7 +247,7 @@ function create(view, opts) {
     await meet();
     talk.cast.red.rig = rig;
     const picks = await talk.play(Story.homecoming());
-    setOutfit('No cloak', true);      // (cloak off, over the back of the chair, as she's told)
+    // (and she keeps her cloak on, through the correction and after it, until bed: taking it off would be to be Rose again)
     if (opts.after) await opts.after('homecoming', picks);      // (and whatever comes of it, before she's free again)
   }
   // (Rose goes to stand before them, a little apart, and they turn to each other)

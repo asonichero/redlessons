@@ -67,6 +67,7 @@
 <script src="js/correctors.js"></script>
 <script src="js/discipline.js"></script>
 <script src="js/correction.js"></script>
+<script src="js/bed.js"></script>
 <script src="js/play.js"></script>
 <script src="js/save.js"></script>
 <script src="js/calendar.js"></script>
@@ -92,8 +93,8 @@ hud.show(false);
 const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), clock: (t, ph) => hud.clock(t, ph), fade, card });
 // Continue, if there's a game to take up again: where she was, and when.
 const saved = world.save.exists() && world.save.state.area;
-// Behind the title, a tableau: the first frame of the opening (with a game saved, for now the same; see js/world.js's tableau).
-world.tableau(saved ? 'saved' : 'new');
+// Behind the title, a tableau: the first frame of the opening; or, with a game saved, the end of the homecoming (js/world.js's tableau).
+world.tableau(saved ? 'saved' : 'new');      // (with a game saved, the two of them in bed: the end of the homecoming)
 if (saved) { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>Day ' + world.cal.day + ', ' + world.cal.clock + ' · ' + world.AREAS[world.save.state.area].name + '</small>'; $('begin').classList.remove('primary'); $('begin').textContent = 'Begin again'; }
 const start = f => { if (window.GameAudio) GameAudio.init(); $('title').remove(); hud.show(true); f(); };
 $('begin').onclick = () => { if (saved && !confirm('Begin again, from the start? The game you have now will be lost.')) return; start(() => world.newGame()); };

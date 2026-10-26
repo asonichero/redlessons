@@ -525,5 +525,5 @@ function create(view, opts) {
   return api;
 }
 
-root.Lap = { create, BANDS, implOf };
+root.Lap = { create, BANDS, implOf, armIK, basis, setWorldQuat };      // (the arm solving, for other posed scenes: js/bed.js)
 })(typeof window !== 'undefined' ? window : globalThis);

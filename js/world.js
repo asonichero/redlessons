@@ -121,9 +121,16 @@ function create(view, ui) {
     return E;
   }
   // The title's tableau, behind its menu: with no game saved, the first frame of the opening (the first scene's establishing shot); with one,
-  // for now the same (the end of the homecoming is to give its own). Gone once a game starts (see go).
+  // the end of the homecoming: the two of them in her mother's bed, at night (js/bed.js). Gone once a game starts (see go).
   let backdrop = null;
-  function tableau() {
+  function tableau(kind) {
+    if (kind === 'saved' && root.Bed) {
+      const E = root.Play.create(view, Object.assign(baseOpts('home', 'bed'), { onExit: null, camFree: true, light: 0.85 }));
+      E.rig.root.visible = false; if (E.npc) E.npc.root.visible = false; E.stage.controls.enabled = false; E.camHeld = true;
+      const b = root.Bed.scene(E.stage, E.world); E.tick(dt => b.tick(dt)); const v = b.shot({ far: 1.5, right: 0.3 }); E.stage.go(v.pos, v.look, 0);      // (back, and to the right of the menu)
+      b.small.setExpr('smile');
+      return (backdrop = E);
+    }
     const first = Object.values(SCENES).find(s => s.establish); if (!first) return null;
     backdrop = shot(first.establish); return backdrop;
   }

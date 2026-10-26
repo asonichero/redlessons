@@ -121,6 +121,23 @@ function posy(P) {
   return { obj: g, name: 'the bluebells', grip: new V3(0, 0.6, 0), radius: 1 };
 }
 
+// ── Bedtime, the end of the homecoming (and of the chapter): under a fade, the night, and the two of them in her mother's bed (js/bed.js), the
+// camera from the room; Red's thoughts as she lies there (js/story.js's bedtime), her face in the box beside them; and it holds, for the card.
+async function bedtime(P, w, r) {
+  if (!root.Bed || !P.world.seats.some(s => s.kind === 'bed')) return;
+  const st = P.stage, talk = P.talk;
+  await w.fade(true);
+  [P.rig.root, P.npc && P.npc.root].filter(Boolean).forEach(o => { o.visible = false; });
+  P.camHeld = true; st.setLight(Math.max(st.time || 0, 0.85));      // (night, the fire low)
+  const b = Bed.scene(st, P.world); P.tick(dt => b.tick(dt));
+  const v = b.shot(); st.go(v.pos, v.look, 0);
+  const castWas = talk.cast.red.rig; talk.cast.red.rig = b.small;
+  await P.wait(0.6); await w.fade(false); await P.wait(2.2);
+  for (const [face, text] of Story.bedtime(r)) { await talk.muse(text, { face, fresh: false, ms: 2200 + text.length * 55 }); await P.wait(0.5); }
+  b.small.setExpr('calm'); await P.wait(2.5);
+  talk.cast.red.rig = castWas;      // (the bed stays as it is, under the card)
+}
+
 // ── Home, at dusk: in through the door, her mother by the hearth; she sees Rose's face, and they talk. Then the correction she's earned (a light
 // one: home late through the wood, at dusk), there in the room, and after it, the two of them; the end of the chapter.
 World.scene('ch1.homecoming', {
@@ -136,6 +153,7 @@ World.scene('ch1.homecoming', {
       if (!r.afterPlayed) await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
       w.rep.settle('wilful'); if (r.rose) w.save.flag('rose-said', w.cal.day);
       w.complete('maren.homecoming');
+      await bedtime(P, w, r);
       if (w.ui.card) w.ui.card(r);
     };
     return o;

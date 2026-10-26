@@ -209,6 +209,24 @@ const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you are. Come here.' },
 ];
 
+// Bedtime, the end of the homecoming: the two of them in her mother's bed, under the quilt, her mother's arm over her, watching the back of her
+// head. Red's thoughts, as she lies there: what she asked for, what she got, and that it's a good thing, to be held again; to be Little Red.
+// ([face, thought], in turn. Stopped with her name, she thinks it through as Rose.)
+const bedtime = r => r && (r.rose || r.tooHarsh) ? [
+  ['calm', 'I asked her to hold me to account. And when it was too much, I said my name, and she stopped. Just as she said she would.'],
+  ['shy', 'She didn’t ask me why. She just made soup, and listened.'],
+  ['calm', 'And now her arm’s round me, the way it was the winter of the mill pond.'],
+  ['smile', 'It’s a good thing, to know she’ll stop. It means I can let her start.'],
+  ['smile', 'Little Red. Tomorrow, maybe.'],
+] : [
+  ['calm', 'I asked her to hold me to account. I thought I knew what that meant.'],
+  ['shy', 'It meant her hand, and her hairbrush, and counting every one of them out loud.'],
+  ['calm', 'And it meant this. Her arm round me, and her breathing at my back, slow, the way it was the winter of the mill pond.'],
+  ['calm', 'Nobody wants anything from me tonight. Somebody has hold of me.'],
+  ['smile', 'It’s a good thing. To be held again.'],
+  ['smile', 'To be Little Red.'],
+];
+
 // Phase 1.2, the morning after: what's hers to do, agreed between them, nothing too grown. Mary's garden, small errands, and home by the curfew bell.
 const chores = () => [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, Little Red. Sleep?' },
@@ -241,5 +259,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { homecoming, homecomingCorrection, afterCorrection, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { homecoming, homecomingCorrection, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
