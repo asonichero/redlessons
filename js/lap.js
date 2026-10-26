@@ -347,7 +347,7 @@ function create(view, opts) {
   //  • 'upright' (after the safe word): dressed again, sitting up on her own nearer the giver's knees, the giver's left hand in the small of her back and the right
   //    resting on her far knee; her hands in her lap; turned a little toward each other, they look at each other.
   let sitter = null, held_ = null;
-  const GTORSO = { held: [0.04, 0.05, 0.2], upright: [0.02, 0.05, 0] };      // (the giver's torso: sat easy, a touch toward her; held, tipped to her right, to make room for her in the crook of the left arm)
+  const GTORSO = { held: [0.04, 0.05, 0.2], upright: [0.14, 0.05, 0] };      // (the giver's torso: sat easy, a touch toward her (upright, leant a little forward, to rest her hand on the knee); held, tipped to her right, to make room for her in the crook of the left arm)
   const side_ = (rig, s) => new V3(s === 'L' ? 1 : -1, 0, 0).applyQuaternion(rig.root.getWorldQuaternion(new Q()));      // (a figure's left, or right, in the world)
   // A hand laid flat on a point Tp: the palm into the surface along nIn, the fingers along d.
   function handFlat(g, s, Tp, nIn, d, reach) {
@@ -466,8 +466,19 @@ function create(view, opts) {
       L_ = handFlat(g, 'L', world(r.hips).add(new V3(0, 3.2 * rs, 0)).addScaledVector(back, 2.0 * rs), back.clone().negate(), up);
       // (resting on the far knee: the palm on top of it, the fingers pointing forward, the way she faces)
       const ahead = new V3(0, 0, 1).applyQuaternion(r.root.getWorldQuaternion(new Q())).setY(0).normalize();      // (the way she faces)
-      R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.45 * rs, 0)).addScaledVector(ahead, -0.4 * rs), up.clone().negate(), ahead);      // (the fingers forward, over the knee)
-      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, ahead.clone().negate().add(new V3(0, 0.7, 0)));      // (the right elbow behind the wrist and up: the forearm runs forward along her thigh, and the hand goes on from it, over the knee)
+      // (the hand goes on from the forearm, the wrist barely bent: the fingers forward and down along the forearm's line, over the kneecap, the
+      // palm cupping the front of the knee there. The elbow behind the wrist and up; settled in a couple of goes, the forearm's line and the
+      // hand's place each following the other)
+      const knee = world(r.kneeL), poleR = ahead.clone().negate().add(new V3(0, 0.7, 0));
+      let d = ahead.clone();
+      for (let it = 0; it < 3; it++) {
+        const nIn = up.clone().negate().addScaledVector(d, d.y).normalize();      // (into the knee, square to the fingers)
+        R_ = handFlat(g, 'R', knee.clone().addScaledVector(nIn, -1.35 * rs).addScaledVector(d, -0.3 * rs), nIn, d);
+        armIK(g, 'R', R_.W, poleR);
+        const f = world(g.handR).sub(world(g.elbowR)).normalize();
+        d = ahead.clone().multiplyScalar(0.35).addScaledVector(f, 0.65); d.y = Math.min(d.y, 0); d.normalize();
+      }
+      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4));
     }
     setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
   }
