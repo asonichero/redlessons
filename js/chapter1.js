@@ -46,7 +46,7 @@ World.scene('ch1.tea', {
             const B = W.bounds, I = 5, xs = [B.x0 + I, (B.x0 + B.x1) / 2, B.x1 - I], zs = [B.z0 + I, (B.z0 + B.z1) / 2, B.z1 - I], along = b.clone().sub(a).normalize(), redAt = flat(P.motion.pos);
             const blocks = c => { const v = mid.clone().sub(c), t = Math.max(0, Math.min(1, redAt.clone().sub(c).dot(v) / v.lengthSq())); return c.clone().addScaledVector(v, t).distanceTo(redAt) < 9; };
             let best = null;
-            for (const x of xs) for (const z of zs) { const c = new V3(x, 0, z); if (c.distanceTo(mid) < 20) continue;
+            for (const x of xs) for (const z of zs) { const c = P.collide(new V3(x, 0, z), 6); if (c.distanceTo(mid) < 20) continue;      // (out of the oak, the hearth and the furniture)
               const score = Math.abs(c.distanceTo(mid) - 42) + 30 * Math.abs(c.clone().sub(mid).normalize().dot(along)) + (blocks(c) ? 200 : 0) + (c.clone().sub(b).dot(front) < 0 ? 25 : 0);      // (side on; not through Rose; the dresser's front to it)
               if (!best || score < best.score) best = { c, score }; }
             P.stage.go(best.c.clone().setY(30), mid.clone().setY(11), 1100); }
