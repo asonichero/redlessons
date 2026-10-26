@@ -67,7 +67,7 @@ const homecoming = ctx => { ctx = Object.assign({ walk: { bluebells: 0, stream: 
       { run: ctx.lie },
       { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: big ? 'With half the bluebell glade in your arms?' : 'With bluebells from the glade, a good way off the path?' },
       { who: 'red', face: 'wince', listen: { mother: 'stern' }, text: '…I stopped. I’m sorry. Only for moments. The bluebells, the stream, the old beech.' },
-      ...(ctx.walk.bluebells || ctx.walk.stream || ctx.walk.beech ? [{ who: 'red', face: 'gritted', listen: { mother: 'stern' }, text: 'Well… Maybe more than a moment…' }] : []),      // (if she stayed at any of them)
+      ...(ctx.walk.bluebells || ctx.walk.stream || ctx.walk.beech ? [{ who: 'red', face: 'gritted', text: 'Well… Maybe more than a moment…' }] : []),      // (if she stayed at any of them)
       { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'I know you did. And now there’s a lie on top of the lateness, and that’s worse.' },
     ] },
   ] },
@@ -142,8 +142,6 @@ const WALK = [
   [0.21, 'calm', 'When did everyone start wanting things from me?'],
   [0.29, 'pout', 'Mistress Abney asked me to sit up with her daughter through the night. As if I’d know what to do if something went wrong.'],
   [0.36, 'shy', 'I said yes. I always say yes. And then I lie awake.'],
-  [0.47, 'shy', 'Peter used to just be Peter. Now he goes quiet when I look at him, and I go quiet back, and neither of us knows what comes next.'],
-  [0.55, 'calm', 'In this cloak, I don’t feel like anybody’s question.'],
   [0.66, 'shy', 'Grandmother always makes me feel better. Like being small. Like nothing was mine to carry.'],
   [0.73, 'pout', 'That’s it, isn’t it. Everyone’s decided I’m grown. And I’m not ready.'],
   [0.86, 'shy', 'It’s getting dark. I should hurry.'],
@@ -178,8 +176,10 @@ const STOPS = {
     went: [['shy', 'Mama will be watching the window.']],
   },
   beech: {
-    first: [['shy', 'R and P. Peter carved it the summer we were nine. It’s grown so wide.']],
-    stay: 'Stay with it a while.',
+    first: [['shy', 'R and P. Peter carved it the summer we were nine. It’s grown so wide.'],
+      ['shy', 'Peter used to just be Peter. Now he goes quiet when I look at him, and I go quiet back, and neither of us knows what comes next.'],
+      ['calm', 'In this cloak, I don’t feel like anybody’s question.']],
+    stay: 'Remember when he carved it.',
     stayed: [
       ['smile', 'He cut his thumb doing the P, and wouldn’t cry because I was watching. So I cried for him.'],
       ['smile', 'We used to race to this tree. He let me win, and swore blind he didn’t.'],
