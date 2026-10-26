@@ -173,7 +173,8 @@ const SPECS = {
     pal: { skin: '#f2cfb2', hair: '#5a4034', eyes: '#6a4a2a', lips: '#b06068', top: '#efe6d4', bodice: '#3a4a34', skirt: '#4a5a3e', skirtDk: '#38462e', hem: '#38462e', apron: '#ece2c8', apronDk: '#d4c8aa' } },
   abneyDaughter: { name: 'Bess Abney', age: 26, sex: 'f', scale: 0.93, jaw: 0.9, neck: 0.85, legs: 0.85, arms: 0.8, hips: 0.86, chest: 0.85, shoulders: 0.85, bust: 0.49, waist: 0.8, hair: 'braid', feet: 'boots', skirtLen: 13.2,
     pal: { skin: '#f4d0b4', hair: '#6a4430', eyes: '#6a4a2a', lips: '#c46a70', top: '#f4ecdc', bodice: '#5a7a9a', skirt: '#86a4c0', skirtDk: '#6a88a6', hem: '#6a88a6' } },
-  agnes: { name: 'Agnes Thatcher', age: 19, sex: 'f', scale: 0.87, neck: 1.1, legs: 1.1, arms: 1.12, waist: 1.1, chest: 1.13, bust: 1.25, hair: 'long', feet: 'boots', skirtLen: 9,
+  agnes: { name: 'Agnes Thatcher', age: 19, sex: 'f', scale: 0.87, shoulders: 1.2, chest: 1.25, waist: 1.15, hips: 1.1, arms: 1.25, legs: 1.23, neck: 1.3, jaw: 1.05,
+    seatY: -0.12, seatW: 1.2, seatH: 1.25, seatD: 1.25, bust: 1.25, hair: 'long', feet: 'boots', skirtLen: 9,      // (her shape, as set in the editor)
     pal: { skin: '#fbe0cc', hair: '#e8c070', eyes: '#4a70b0', lips: '#d0707a', top: '#fbf4e4', bodice: '#a86a3a', skirt: '#d8a840', skirtDk: '#b88a2c', hem: '#fbf4e4' } },
   lucy: { name: 'Lucy Locket', age: 20, sex: 'f', scale: 0.87, seatH: 1.25, bust: 1.0, hair: 'curly', feet: 'boots', skirtLen: 9.5,
     pal: { skin: '#eec4a2', hair: '#2a1c16', eyes: '#6a4a2a', lips: '#c4585e', top: '#ece4d4', bodice: '#5a5a62', skirt: '#9ab0c4', skirtDk: '#7a90a6', hem: '#7a90a6' } },
