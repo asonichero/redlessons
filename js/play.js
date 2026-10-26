@@ -72,7 +72,17 @@ function create(view, opts) {
   const anchor = () => indoors ? roomMid() : chest();
   const camT = anchor();
   st.controls.minDistance = 14; st.controls.maxDistance = 200; st.controls.enablePan = false; st.controls.enableZoom = false;
-  st.controls.maxPolarAngle = 1.5;      // (in the game the camera stays above the floor: no going round under it)
+  st.controls.maxPolarAngle = indoors ? 2.3 : 1.5;      // (outdoors the camera stays above the ground; indoors a drag down goes on past level, and the camera slides along the floor toward the anchor: see inRoom)
+  // (indoors: the camera kept inside the room, so there's never the blank outside of it in view: within the walls, above the floor and under
+  // the roof's slope. Pulled in along its line to the anchor as far as it must be: so on the floor, dragged further down, it slides along it
+  // toward the anchor.)
+  const RB = indoors && st.cottage && st.cottage.bounds && st.cottage.bounds.EAVE ? st.cottage.bounds : null;
+  const inside = p => { const m = 1.6, R = RB, half = (R.Z1 - R.Z0) / 2, roof = R.EAVE + (R.RIDGE - R.EAVE) * Math.max(0, 1 - Math.abs(p.z - (R.Z0 + R.Z1) / 2) / half);
+    return p.x > R.X0 + m && p.x < R.X1 - m && p.z > R.Z0 + m && p.z < R.Z1 - m && p.y > 3 && p.y < roof - 3; };
+  const inRoom = () => { if (!RB) return; const T = st.controls.target, off = st.camera.position.clone().sub(T); if (inside(st.camera.position) || !inside(T)) return;
+    let lo = 0, hi = 1; for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (inside(T.clone().addScaledVector(off, mid))) lo = mid; else hi = mid; }
+    st.camera.position.copy(T).addScaledVector(off, lo); };
+  st.afterControls = () => { if (!opts.camFree && !camHeld && !busy() && !st.moving && st.controls.enabled) inRoom(); };      // (after the controls' own easing, last thing before it's drawn)
   // (its three distances from the anchor, across the floor and up: near, medium (the usual), far. Outdoors, from her, scaled to her; indoors,
   // from the middle of the room, medium holding the whole room)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
@@ -296,6 +306,7 @@ function create(view, opts) {
       // (the distance is the step's; which way it looks at the anchor from, round and over, is the player's: a drag goes any way about it)
       const off = st.camera.position.clone().sub(st.controls.target), s = stepAt(camZ), dist = Math.hypot(s[0], s[1]), L = off.length();
       off.setLength(L + (dist - L) * Math.min(1, dt * 2.2)); st.camera.position.copy(st.controls.target).add(off);
+      inRoom();      // (pulled in along its line, before anything lifts it off the floor: lifted, it would creep away along it)
     } else camT.copy(st.controls.target);
     if (st.camera.position.y < 3) st.camera.position.y = 3;
     offer = busy() ? [] : options();

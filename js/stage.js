@@ -50,7 +50,7 @@ function create(view, opts) {
     const loop = now => {
       if (!running) return; if (api.held) { requestAnimationFrame(loop); return; } const dt = Math.min(0.05, (now - last) / 1000); last = now;
       if (tween) { const k = Math.min(1, (now - tween.t0) / tween.ms), e = k * k * (3 - 2 * k); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.l0, tween.l1, e); if (k >= 1) tween = null; }
-      if (each) each(dt); controls.update(); if (cottage) { cottage.tick(dt); cottage.update(camera); } draw(); requestAnimationFrame(loop);
+      if (each) each(dt); controls.update(); if (api.afterControls) api.afterControls(); if (cottage) { cottage.tick(dt); cottage.update(camera); } draw(); requestAnimationFrame(loop);      // (afterControls: a page's last word on the camera, after the controls' own easing)
     };
     requestAnimationFrame(loop);
   }
