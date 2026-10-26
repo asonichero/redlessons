@@ -385,13 +385,19 @@ function create(view, opts) {
     r.root.position.set(hip.x + P.x * gs, lapTop + P.y * rs - T.DIM.hipY * rs, lerp(hip.z, knee.z, P.along));
     // (sat down on the lap: the lower of the two cheeks resting on it, its underside on the top of the giver's thigh, however they're rolled,
     // whoever they are: the underside found by a ray up from beneath each cheek into what's drawn of them, their seat, drawers or trousers)
+    if (r.setSeated) r.setSeated(1);      // (their skirt as it is sitting, first: standing, its back would hang below the seat, and be taken for it)
     r.root.updateMatrixWorld(true);
     { const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
       for (const m of r.meshes) if (m.isSkinnedMesh && m.skeleton) m.skeleton.update();
-      let low = Infinity;
+      // (and the lap under each cheek: down from it onto the giver, the top of her skirt there; the lower cheek set on it)
+      for (const m of g.meshes) if (m.isSkinnedMesh && m.skeleton) m.skeleton.update();
+      let lift = -Infinity;
       for (const sd of ['L', 'R']) { const c = world(r.cheekC[sd]); ray.set(c.clone().add(new V3(0, -12 * rs, 0)), new V3(0, 1, 0)); ray.far = 14 * rs;
-        const hit = ray.intersectObjects(r.meshes, false).find(h => shown(h.object)); low = Math.min(low, hit ? hit.point.y : c.y - 1.75 * rs); }
-      r.root.position.y += lapTop - low; }
+        const hit = ray.intersectObjects(r.meshes, false).find(h => shown(h.object)), under = hit ? hit.point.y : c.y - 1.75 * rs;
+        ray.set(c.clone().add(new V3(0, 6 * rs, 0)), new V3(0, -1, 0)); ray.far = 30;
+        const lapHit = ray.intersectObject(g.root, true).find(h => shown(h.object) && h.point.y < c.y + 1), surf = lapHit ? lapHit.point.y : lapTop;      // (all that's drawn of her: her skirt's drape over the lap among it)
+        lift = Math.max(lift, surf - under); }
+      r.root.position.y += lift - 0.1; }      // (pressed in a hair: cloth on cloth)
     r.root.updateMatrixWorld(true);
     held_ = { kind, t: 0, sob: kind === 'held' ? 1 : 0, lean: null };
     // (the giver: a touch toward her; held, leant in over her)
@@ -458,9 +464,9 @@ function create(view, opts) {
     } else {
       // (the left hand flat in the small of her back; the right resting on her far knee)
       L_ = handFlat(g, 'L', world(r.hips).add(new V3(0, 3.2 * rs, 0)).addScaledVector(back, 2.0 * rs), back.clone().negate(), up);
-      // (resting over the far knee: the palm on top of it, the fingers along her thigh to the knee and curling a little over its far side)
-      const along = world(r.kneeL).sub(world(r.thighL)).setY(0).normalize();
-      R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.45 * rs, 0)).addScaledVector(along, -0.6 * rs).addScaledVector(far, 0.3 * rs), up.clone().negate(), along.clone().addScaledVector(far, 0.35));
+      // (resting on the far knee: the palm on top of it, the fingers pointing forward, the way she faces)
+      const ahead = new V3(0, 0, 1).applyQuaternion(r.root.getWorldQuaternion(new Q())).setY(0).normalize();      // (the way she faces)
+      R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.45 * rs, 0)).addScaledVector(ahead, -0.4 * rs), up.clone().negate(), ahead);      // (the fingers forward, over the knee)
       armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, new V3(-0.6, 0.6, 0.3));      // (the right elbow out and up: the forearm comes down onto the knee, over the near thigh)
     }
     setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
