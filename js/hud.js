@@ -255,6 +255,7 @@ function create(opts) {
     requestAnimationFrame(tick);
     const p = P(), o = p && p.offer;
     btn('hAct', o ? { icon: iconFor(o.label), label: verb(o.label), title: o.label, enabled: true } : { icon: 'act', label: 'Do', enabled: false });
+    { const nr = !!(p && p.noRun); if ($('hRun')._nr !== nr) { $('hRun')._nr = nr; $('hRun').style.visibility = nr ? 'hidden' : ''; } }      // (no running there: no button for it)
     btn('hAlt', o && o.alt ? { icon: 'lie', label: o.altLabel || 'Lie down', enabled: true } : { icon: 'lie', label: 'Lie down', enabled: false });
     const chip = o ? o.label + '|' + (o.alt ? o.altLabel || 'Lie down' : '') : '';
     if (chip !== lastChip) {

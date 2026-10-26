@@ -29,7 +29,7 @@ const AREAS = {
     dress(P, w) { const g = P.world.gift; if (g && w.q.done('hulda.cloak')) { g.obj.visible = false; const i = P.world.items.indexOf(g); if (i >= 0) P.world.items.splice(i, 1); } },
   },
   wood: {
-    name: 'The wood', music: 'wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    name: 'The wood', music: 'wood', noRun: true, set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
     exits: { 'the village': { area: 'home', entry: 'door' }, 'the cabin': { area: 'cabin', entry: 'door' } },
   },
@@ -149,7 +149,7 @@ function create(view, ui) {
     return url;
   }
   function baseOpts(name, entry) {
-    const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, light: cal.light() };
+    const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, noRun: !!A.noRun, light: cal.light() };      // (noRun: walking only: the wood, on her way home)
     if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc() : A.npc;
     // (where she comes in: the saved place, when taking the game up again; the way she came in; or the place's first)
     const saved = entry === 'saved' && save.state.at, list = A.entries === 'set' ? null : A.entries;
