@@ -7,12 +7,13 @@
 // the camera is outside it, it isn't drawn, so the room stays open to the camera from any side, above or below.
 //
 //   const c = Cottage.build(scene); each frame: c.update(camera)   (c.pieces: the furniture, as its layout set it: see furnish; Cottage.layout() etc.: the layout)
-// Units: the characters' (a figure stands about 31 tall). Floor at y 0; the room runs x -54..54 and z -36..44; the chair stands at the middle.
+// Units: the characters' (a figure stands about 31 tall). Floor at y 0; the room runs x -63..54 and z -36..44 (the door's wall set back to take
+// the bed at its full length); the correction's chair stands near the middle, at the origin.
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3, srgb = h => new THREE.Color(h).convertSRGBToLinear();
 const lerp = (a, b, t) => a + (b - a) * t;
-const X0 = -54, X1 = 54, Z0 = -36, Z1 = 44, EAVE = 40, RIDGE = 80, RZ = (Z0 + Z1) / 2, FOOT = 7;
+const X0 = -63, X1 = 54, Z0 = -36, Z1 = 44, EAVE = 40, RIDGE = 80, RZ = (Z0 + Z1) / 2, FOOT = 7;
 
 function canvasTex(w, h, paint, rep) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d'), w, h);
@@ -153,9 +154,10 @@ function furnish(L, names, made) {
 const nearWall = (W, floor, X0, X1, Z0, Z1, reach) => at => { const d = [[at.x - X0, W.left], [X1 - at.x, W.right], [at.z - Z0, W.back], [Z1 - at.z, W.front]].sort((a, b) => a[0] - b[0])[0]; return d[0] < (reach || 18) ? d[1] : floor; };
 
 // The cottage's furniture and its places. (The hearth, the door and the window are the walls'.)
-const PIECES = { rug: 'The rug', bed: 'The bed nook', chest: 'The chest', pegs: 'The peg rail (herbs and baskets)', table: 'The trestle table', stoolA: 'A stool (by the window end)', stoolB: 'A stool (by the hearth end)' };
+const PIECES = { rug: 'The rug', bed: 'The bed nook', chair: 'Her chair (for corrections)', chest: 'The chest', dresser: 'The dresser (under the window by the door)', pegs: 'The peg rail (herbs and baskets)', table: 'The trestle table', stoolA: 'A stool (by the window end)', stoolB: 'A stool (by the hearth end)' };
 const ROOM = roomLayout('red-lessons:room:cottage', {
-  rug: { x: -1, z: 4, ry: 0 }, bed: { x: X0 + 16, z: Z0 + 12, ry: 0 }, chest: { x: 26, z: Z0 + 6.5, ry: 0 }, pegs: { x: -2, z: Z0 + 0.9, ry: 0 },
+  rug: { x: -1, z: 4, ry: 0 }, bed: { x: -42.5, z: Z0 + 12, ry: 0 }, dresser: { x: X0 + 5.8, z: 6, ry: Math.PI / 2 },
+  chest: { x: 26, z: Z0 + 6.5, ry: 0 }, pegs: { x: -2, z: Z0 + 0.9, ry: 0 }, chair: { x: -18.6, z: -27, ry: Math.PI / 2 },
   table: { x: 38, z: 2, ry: 0 }, stoolA: { x: 26, z: -7, ry: -Math.PI / 2 }, stoolB: { x: 27, z: 13, ry: -Math.PI / 2 },
 });
 
@@ -256,6 +258,24 @@ function build(scene) {
     world.ground = p => { if (Math.abs(p.z - dz) > TW / 2 + 1) return 0; if (p.x < sx0) return FOOT + 1.2; for (const t of treads) if (p.x < t.x1) return t.h; return 0; };
     world.doorway = { at: new V3(sx0 + 0.4, 0, dz), inward: new V3(1, 0, 0), foot: new V3(sx0 + N * TD + 3, 0, dz) }; }      // (just in, on the top step; and the floor at the foot of the steps)
 
+  // ── A window on the door's wall, toward the back of it (as the other, sky beyond, a timber frame, the shutters open against the wall, a sill),
+  // and the dresser under it.
+  { const f = walls.left.f, win = new THREE.Group(); win.position.set(RZ - 6, 27, 0.05); f.add(win);      // (in the wall's frame x runs from front to back: z 6)
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(14, 12), new THREE.MeshBasicMaterial({ map: tx.sky })); sky.position.z = 0.02; win.add(sky);
+    for (const [w, h, x, y] of [[16, 1.4, 0, 6.6], [16, 1.4, 0, -6.6], [1.4, 14.6, -7.6, 0], [1.4, 14.6, 7.6, 0], [0.8, 12, 0, 0]]) box(win, w, h, 1.4, x, y, 0.7, oak, { shadow: false });
+    box(win, 18, 1, 3.2, 0, -7.6, 1.6, oak, { shadow: false });
+    for (const sx of [-1, 1]) { const sh = box(win, 7, 12, 0.6, sx * 11.6, 0, 0.4, toonMap(tx.door), { shadow: false }); box(sh, 6, 0.8, 0.5, 0, 3.5, 0.4, oakDk); box(sh, 6, 0.8, 0.5, 0, -3.5, 0.4, oakDk); } }
+  // The dresser: a low chest of drawers, three deep, with brass knobs; on it a candlestick and a jug and basin.
+  { const pc = piece('dresser', wall), g = pc.g, DW = 18, DH = 12, DD = 6;
+    box(g, DW, DH, DD, 0, DH / 2, 0, oak); box(g, DW + 0.6, 0.8, DD + 0.6, 0, DH + 0.4, 0, oakDk);
+    for (let k = 0; k < 3; k++) { const y = 2 + k * 3.4; box(g, DW - 1.4, 2.8, 0.3, 0, y + 0.3, DD / 2 + 0.1, oakDk, { ink: 0.03 });
+      for (const x of [-DW / 4, DW / 4]) solid(g, new THREE.SphereGeometry(0.35, 8, 6), '#c9a24a', x, y + 0.3, DD / 2 + 0.45, { ink: 0 }); }
+    solid(g, new THREE.CylinderGeometry(0.9, 1.1, 0.5, 12), '#c9a24a', -5.5, DH + 1.05, 0, { ink: 0.03 }); solid(g, new THREE.CylinderGeometry(0.35, 0.35, 3.2, 8), '#f2ead8', -5.5, DH + 2.9, 0, { ink: 0.03 });
+    solid(g, new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.2, 1.2], [3.4, 1.5]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#e8e2d4', 3, DH + 0.8, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
+    solid(g, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.8], [1.0, 3.6], [0.8, 4.2], [1.1, 4.6]].map(([r, h]) => new THREE.Vector2(r, h)), 14), '#e8e2d4', 3, DH + 1.2, 0, { ink: 0.06 });
+    world.surfaces.push(Object.assign(pc.area(-DW / 2 + 2, DW / 2 - 2, -1, 1), { name: 'the dresser', y: DH + 0.8, panel: g, front: pc.turn(new V3(0, 0, 1)) }));
+    world.obstacles.push(pc.area(-DW / 2 - 0.5, DW / 2 + 0.5, -DD / 2 - 0.5, DD / 2 + 0.5)); }
+
   // ── The roof: two slopes of thatch from the ridge to the eaves (over the walls), on rafters, with a ridge beam, purlins and two tie beams.
   const slope = sideZ => {
     const zE = sideZ > 0 ? Z1 + 8 : Z0 - 8, yE = EAVE - 4, a = new V3(0, RIDGE, RZ), e = new V3(0, yE, zE);
@@ -276,7 +296,7 @@ function build(scene) {
 
   // ── The bed nook (back left): a raised platform boxed in at the foot, posts and a canopy rail, a curtain tied back; on it a straw mattress in
   // ticking, a heavy woollen blanket hanging over the side, a patchwork quilt turned down, and a bolster.
-  { const pc = piece('bed', wall), g = pc.g, bx = 0, bz = 0, BW = 31, BD = 23, BH = 9;      // (size of the platform, about its middle)
+  { const pc = piece('bed', wall), g = pc.g, bx = 0, bz = 0, BW = 40, BD = 23, BH = 9;      // (size of the platform, about its middle: long enough for her mother to lie in)
     box(g, BW, 1.6, BD, bx, BH - 0.8, bz, oak);                                                                        // the platform's boards
     box(g, BW, BH - 1.6, 1.6, bx, (BH - 1.6) / 2, bz + BD / 2 - 0.8, oak);                                             // its front, boxed in
     box(g, 1.6, BH - 1.6, BD, bx + BW / 2 - 0.8, (BH - 1.6) / 2, bz, oak);
@@ -298,8 +318,13 @@ function build(scene) {
     solid(g, slab(5, 1.6, BD - 1, 1, 0.7), quilt, bx - BW / 2 + 9, BH + 6.6, bz + 0.6, { ink: 0.1, rot: [0, 0, 0.2] });   // (turned down)
     solid(g, T.ell(2.2, 1.8, BD / 2 - 2.5, 16, 10), T.mat('#efe6d0'), bx - BW / 2 + 4, BH + 6.4, bz - 0.5, { ink: 0.1 });   // the bolster
     world.seats.push({ name: 'the bed', at: pc.P(bx - 2, BH + 5.6, bz + BD / 2 - 3), facing: pc.ry, kind: 'bed', head: pc.P(bx - BW / 2 + 4, BH + 6.2, bz - 0.5), feet: pc.P(bx + BW / 2 - 4, BH + 6, bz - 0.5) });
-    world.obstacles.push(pc.area(-16, BW / 2, -12, BD / 2));      // (back to the walls, as it stands by default)
+    world.obstacles.push(pc.area(-BW / 2 - 0.5, BW / 2, -12, BD / 2));      // (back to the wall behind it, as it stands by default)
   }
+
+  // ── Her chair, the plain one she sits on to take someone in hand, kept under the peg rail, its back to the foot of the bed. (The correction sets
+  // its own in the middle of the room, and puts this one out of sight meanwhile: world.chair.)
+  { const pc = piece('chair', wall), seatY = T.seatFor('gerda'), ch = T.makeChair(seatY); pc.g.add(ch); world.chair = pc.g;
+    world.seats.push({ name: 'the chair', at: pc.P(0, seatY, 1.8), facing: pc.ry, kind: 'chair' }); world.obstacles.push(pc.area(-4.7, 4.7, -3.2, 6.6)); }
 
   // ── The chest (against the back wall, right): oak, iron-bound, with a gently domed lid and a lock plate.
   { const pc = piece('chest', wall), g = pc.g, cx = 0, cz = 0, cw = 20, ch = 10, cd = 9;

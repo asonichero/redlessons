@@ -1201,7 +1201,9 @@ const MOUTHS = { flat: { mw: 0.42, mc: 0.05, mo: 0, mt: 0 }, smile: { mw: 0.6, m
   // (wailing: wide, the corners dragged down, the top lip arched over it and the bottom one flat: a crying mouth, not a laughing one)
   wail: { mw: 0.6, mc: -0.95, mo: 0.42, mt: 0.25 },
   // (sad: small, the corners down, a little trembling open; concerned: pressed together, the corners just down)
-  sad: { mw: 0.34, mc: -0.7, mo: 0.06, mt: 0 }, concern: { mw: 0.36, mc: -0.28, mo: 0, mt: 0 } };
+  sad: { mw: 0.34, mc: -0.7, mo: 0.06, mt: 0 }, concern: { mw: 0.36, mc: -0.28, mo: 0, mt: 0 },
+  // (soft: a small smile, closed, the corners only a little up)
+  soft: { mw: 0.44, mc: 0.36, mo: 0, mt: 0 } };
 const EXPRS = {
   calm:      { brow: 0, browY: 0, open: 0.95, mouth: 'flat', blush: 0, ms: 1 },
   smile:     { brow: 0.1, browY: 0.08, open: 0.72, mouth: 'smile', blush: 0.35, ms: 1.3 },
@@ -1217,6 +1219,8 @@ const EXPRS = {
   // middle, the eyes lowered and wet, the mouth's corners down: not the screwed-up face of a wince)
   concerned: { brow: 0.38, browY: 0.06, open: 0.92, mouth: 'concern', blush: 0, ms: 0.95 },
   sad:       { brow: 0.75, browY: 0.0, open: 0.55, look: -0.4, mouth: 'sad', blush: 0.35, tears: 0.25, ms: 1.0 },
+  // (wistful: happy, and a little sorry for something gone by: the brows lifted a touch in the middle, the lids half down, a soft closed smile)
+  wistful:   { brow: 0.3, browY: 0.05, open: 0.58, mouth: 'soft', blush: 0.25, ms: 1.0 },
 };
 
 // ── A standing idle: her weight on one straight leg, the other easy, changing over now and then. ──

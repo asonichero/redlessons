@@ -79,7 +79,7 @@ async function run(P, o) {
   const turns = o.turns || [{ subject: 'red', tier: o.tier || 'light', implement: o.implement, implementFrom: o.implementFrom }];
   await fade(true);
   // The two of them as they walk about, put aside; whoever watches, set in the room; the lap scene at the middle of it.
-  const walkers = [P.rig.root, P.npc && P.npc.root].filter(Boolean); walkers.forEach(r => { r.visible = false; });
+  const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
   const figs = [], cornerOf = {}, corners = (P.world.corners || []).slice();
   for (const w of o.watchers || []) {
     const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
