@@ -129,9 +129,9 @@ const SPOTS = {
 // lifted; then her drawers down; and last the hairbrush, for the wood. Her name stops it anywhere, and her mother answers that instead.
 const homecomingCorrection = async S => {
   const M = 'corrector', R = 'subject';
-  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.1 });
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.4 });
   await S.wait(0.8);
-  await S.say(M, 'Settle. Hands down, toward the floor. There.', 'stern');
+  await S.say(M, 'Settle now. Hands down, toward the floor. There.', 'stern');
   await S.say(R, 'Mama…');
   await S.say(M, 'You asked to be held to account, love. This is what it looks like. Not a pat, and not a game.', 'calm');
   await S.step([M, 'You were told. Home before dark.', 'stern'], 8);
@@ -144,7 +144,7 @@ const homecomingCorrection = async S => {
   S.set({ skirt: 'up' }); await S.wait(0.7);
   await S.say(R, 'Mama!');
   await S.say(M, 'Still. You’re not too grown for this, Little Red, and you’re not too grown for me.', 'stern');
-  S.set({ strength: 1.75, pace: 1.25 });
+  S.set({ strength: 1.75, pace: 1.65 });
   await S.step([M, 'Anything could have been on that path. Anyone.', 'stern'], 10);
   await S.step([R, 'Ow— I stayed on the path, I did—'], 6);
   await S.step([M, 'You stayed on it in the dark. That’s the part I mind.', 'stern'], 10);
@@ -155,17 +155,27 @@ const homecomingCorrection = async S => {
   S.set({ drawers: 'down' }); await S.wait(0.8);
   await S.say(R, 'Mama, no, please—');
   await S.say(M, 'Yes. Because it matters, and because you need to remember it matters. Breathe.', 'calm');
-  S.set({ strength: 2.0, pace: 1.35 });
+  S.set({ strength: 2.0, pace: 2 });
   await S.step([M, 'You lingered.', 'stern'], 8);
-  await S.step([M, 'You let the dusk come in round you.', 'stern'], 8);
+  await S.step([M, 'You let the dusk come in around you.', 'stern'], 8);
   await S.step([R, 'I’m sorry! I’m sorry, Mama!'], 6);
   await S.step([M, 'And you let me sit here, watching the window, with the lantern in my hand.', 'stern'], 12);
   await S.smacks(10);
-  // (and the hairbrush, for the last of it)
+  // (and the hairbrush, for the last of it: she counts every one; the one she doesn't count, she counts after)
   S.set({ implement: 'hairbrush', strength: 1.85, pace: 1 }); await S.wait(1.0);
   await S.say(M, 'The last of it is with my hairbrush. Twelve. Count them for me, and then it’s finished.', 'stern');
   await S.say(R, '…Yes, Mama.');
-  for (let k = 1; k <= 12; k++) await S.step(k % 3 === 0 ? [R, ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][k - 1] + (k < 12 ? '…' : '.')] : null, 1);
+  for (const n of ['One…', 'Two…', 'Three…', 'Owww, Four…', 'Five…', 'Six, oh Mama…', 'Seven…']) await S.step([R, n], 1);
+  await S.step([R, 'I’ll be good, Mama, I swear it!'], 1);
+  await S.say(M, 'That’s what this is for, Little Red. To make sure of it. Do you need that one again?', 'stern');
+  await S.say(R, 'No, Mama!');
+  await S.say(M, 'Then count it, love.', 'calm');
+  await S.say(R, 'Eight…');
+  await S.step([R, 'Nine…'], 1);
+  await S.step([R, 'Ten! I’m sorry, Mama!'], 1);
+  await S.say(M, 'I know, love.', 'calm');
+  await S.step([R, 'Eleven!'], 1);
+  await S.step([R, 'Twelve.'], 1);
   await S.wait(0.8);
   await S.say(M, 'There. That’s done, and it stays done. Stay there a moment. Just breathe. I’ve got you.', 'calm');
   await S.wait(2.4);

@@ -21,7 +21,7 @@ const CORRECTORS = {
     done: 'There. That’s done, and it stays done.',
     corner: 'Now the corner, {name}. Hands on your head, and think.',
     after: 'Up you get, slowly, my {name}. Come here. We’re all right.',
-    stop: '{word}. All right, love. It’s over, all of it. Sit up with me, slowly. Talk to me.',
+    stop: 'All right, love. It’s over, all of it. Sit up with me, slowly. Talk to me.',
     harsh: 'That’s enough. More than enough. Up you get.',
   } },
   pennock: { name: 'Mistress Pennock', rig: 'pennock', voice: 'gerda', implement: 'bakersPaddle', minds: 'naughty', seat: 'bench', lines: {
