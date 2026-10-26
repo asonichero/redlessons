@@ -317,9 +317,14 @@ const afterCorrection = (r, ctx) => (r && (r.rose || r.tooHarsh) ? [
 // Bedtime, the end of the homecoming: the two of them in her mother's bed, under the quilt, her mother's arm over her, watching the back of her
 // head. Red's thoughts, as she lies there: what she asked for, what she got, and that it's a good thing, to be held again; to be Little Red.
 // ([face, thought], in turn; 'sleep': where her mother's eyes close, asleep, as the next comes up. Stopped with her name, she thinks it through as Rose.)
-const bedtime = r => r && (r.rose || r.tooHarsh) ? [
+// (how: what she said of the wood, if she was asked (how.lied: true or false): a thought on it, after the first of her others; if not asked, none)
+const honesty = how => !how || how.lied == null ? [] : how.lied
+  ? [['pout', 'I won’t lie to her again in a hurry. Though it did come easier, as Little Red. Like it wasn’t really me saying it.']]
+  : [['shy', 'Mama was glad I told her the truth. But a part of me wanted to lie… and now I wonder what she’d have done if I had.']];
+const bedtime = (r, how) => r && (r.rose || r.tooHarsh) ? [
   ['calm', 'I asked her to hold me to account. And when it was too much, I said my name, and she stopped. Just as she said she would.'],
   ['shy', 'She didn’t ask me why. She just made soup, and listened.'],
+  ...honesty(how),
   'sleep',
   ['calm', 'And now her arm’s round me, the way it was the winter of the mill pond.'],
   ['smile', 'It’s a good thing, to know she’ll stop. It means I can let her start.'],
@@ -327,6 +332,7 @@ const bedtime = r => r && (r.rose || r.tooHarsh) ? [
 ] : [
   ['calm', 'I asked her to hold me to account. I thought I knew what that meant.'],
   ['shy', 'It meant her hand, and her hairbrush, and counting every one of them out loud.'],
+  ...honesty(how),
   ['calm', 'And it meant this. Her arm round me, and her breathing at my back, slow, the way it was the winter of the mill pond.'],
   'sleep',
   ['calm', 'Nobody wants anything from me tonight. Somebody has hold of me.'],
