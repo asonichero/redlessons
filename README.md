@@ -11,7 +11,7 @@ The look is a soft toon style (after *The Wind Waker HD* and *Mika and the Witch
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens chapter one (story.html); /lap.html is the correction test; /play.html is the cottage to wander; /editor.html is the character editor
+npm run serve        # http://localhost:8123/ opens chapter one (story.html); /lap.html is the correction test; /play.html is the cottage to wander; /editor.html is the character editor; /rooms.html is the room editor
 npm test             # the pain model, the discipline scripts and the looks
 ```
 
@@ -120,6 +120,10 @@ The subject's safe word (Red's is Rose) ends it there and then, and the correcto
 ## The pain model (`js/pain.js`)
 
 Each smack adds a sharp **sting** (fading in seconds) and a deep **ache** (fading over minutes). Distress is their sum against how much she can take. The implement, strength, pace, the wait with the arm raised, the clothing and how tender the skin already is all count. Her skirt and drawers each cushion the sting.
+
+## Room editor (`rooms.html`)
+
+The rooms, empty, to arrange (so far her grandmother's cabin). Click a piece of furniture to choose it (a box is drawn round it) and drag it across the floor, to the half unit (Alt for free); the arrows nudge it as the camera sees the floor (Shift for five), Q and E turn it by fifteen degrees, or type where it goes and how it's turned. Views from above and from each side; Rose standing in the room for the size of things. What's on a piece (the tea things on the table, the parcel on the dresser) goes with it, and so do where it's sat on, put things on and walked round. The layout is kept in the browser and the game builds the room from it; **Copy layout** gives it as it is, to be set as the room's own (`LAYOUT` in `js/cabin.js`).
 
 ## Character editor (`editor.html`, `js/looks.js`)
 

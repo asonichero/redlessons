@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room Editor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a0f10">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1416; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #e8e6e3; }
+  #view { position: fixed; inset: 0 320px 0 0; touch-action: none; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; box-sizing: border-box; padding: 14px 16px; overflow-y: auto; background: rgba(22,18,20,0.97); border-left: 1px solid #3a2c30; font-size: 13px; }
+  h1 { font-size: 15px; margin: 0 0 4px; } .sub { color: #9a8a8e; font-size: 11px; line-height: 1.5; }
+  h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #a8969a; margin: 14px 0 6px; border-bottom: 1px solid #3a2c30; padding-bottom: 3px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .list { display: flex; flex-direction: column; gap: 3px; } .list button { text-align: left; }
+  button { background: #33282c; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  button:hover:not(:disabled) { background: #43343a; } button:disabled { opacity: .4; cursor: default; }
+  button.on { background: #6b2a2a; border-color: #e07070; color: #fff; }
+  button.moved::after { content: ' •'; color: #c9a84c; }
+  select { background: #120e10; color: #f0ebe8; border: 1px solid #554449; border-radius: 4px; padding: 5px; font-size: 12px; width: 100%; }
+  .row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; } .row span.l { width: 46px; color: #c9c0c2; }
+  input[type=number] { width: 64px; background: #1c1418; color: #e8e6e3; border: 1px solid #554449; border-radius: 4px; padding: 5px; }
+  textarea { width: 100%; box-sizing: border-box; height: 120px; background: #120e10; color: #d8d0cc; border: 1px solid #554449; border-radius: 4px; font: 11px/1.4 ui-monospace, Menlo, monospace; }
+  a { color: #c9a84c; } #saved { color: #c9a84c; font-size: 11px; margin-left: 6px; }
+  @media (max-width: 760px) { #view { inset: 0 0 45% 0; } #panel { top: 55%; width: 100%; border-left: 0; border-top: 1px solid #3a2c30; } }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="panel">
+  <h1>Room editor</h1>
+  <div class="sub">The rooms, empty, to arrange. Click a piece to choose it, then drag it across the floor; arrows nudge it (Shift for five), Q and E turn it. Drag anywhere else to orbit; the wheel zooms. Changes are kept in this browser and used by <a href="story.html">the game</a>. <a href="editor.html">Character editor</a> · <a href="lap.html">Correction test</a></div>
+  <h3>Room</h3>
+  <select id="room"><option value="cabin">Grandmother’s cabin</option></select>
+  <h3>View</h3>
+  <div class="btns" id="views"></div>
+  <div class="btns" style="margin-top:6px"><button id="scale">Rose, for scale</button></div>
+  <h3>Furniture</h3>
+  <div class="list" id="list"></div>
+  <h3 id="selH">The piece</h3>
+  <div id="sel">
+    <div class="row"><span class="l">Across</span><button data-n="x" data-d="-1">−</button><input id="x" type="number" step="0.5"><button data-n="x" data-d="1">+</button></div>
+    <div class="row"><span class="l">Back</span><button data-n="z" data-d="-1">−</button><input id="z" type="number" step="0.5"><button data-n="z" data-d="1">+</button></div>
+    <div class="row"><span class="l">Turn</span><button data-n="ry" data-d="-15">−</button><input id="ry" type="number" step="5"><button data-n="ry" data-d="15">+</button><span class="sub">degrees</span></div>
+    <div class="btns" style="margin-top:6px"><button id="resetOne">Back where it was</button></div>
+  </div>
+  <h3>Layout</h3>
+  <div class="btns"><button id="copy">Copy layout</button><button id="resetAll">All back where they were</button><span id="saved"></span></div>
+  <div class="sub" style="margin-top:4px">The layout as it is now, to keep (or to have set as the room's own):</div>
+  <textarea id="out" readonly></textarea>
+</div>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="js/toon.js"></script>
+<script src="js/looks.js"></script>
+<script src="js/cottage.js"></script>
+<script src="js/cabin.js"></script>
+<script src="js/stage.js"></script>
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id), all = s => document.querySelectorAll(s), V3 = THREE.Vector3;
+// The rooms the editor knows: each one's build, its pieces and their places. (So far, her grandmother's cabin.)
+const ROOMS = { cabin: { M: Cabin, views: { above: [[0, 150, 4], [0, 0, 3]], door: [[-10, 30, 70], [0, 10, 0]], hearth: [[-80, 40, 4], [0, 8, 2]], oak: [[60, 45, -50], [-6, 6, 8]], bed: [[70, 40, 50], [-4, 6, 0]] } } };
+const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side' };
+const st = Stage.create($('view'), { room: false });
+st.controls.maxDistance = 260;
+let R = ROOMS.cabin, set = null, L = null, sel = null, figure = null;
+
+function build() {
+  if (set) { st.scene.remove(set.group); set = null; }
+  L = R.M.layout(); set = R.M.build(st.scene); if (set.light) set.light(0.3);
+  list(); select(sel && set.pieces[sel] ? sel : null); out();
+}
+// (a piece moved or turned: its group, and the things on it, there and then; and kept)
+function place(id) {
+  const pc = set.pieces[id], at = L[id]; pc.g.position.set(at.x, 0, at.z); pc.g.rotation.y = at.ry; pc.g.updateMatrix(); pc.g.updateMatrixWorld(true);
+  for (const it of pc.items) { it.obj.position.copy(it.at).applyMatrix4(pc.g.matrix); it.obj.rotation.y = it.ry + at.ry; }
+  R.M.saveLayout(L); flash(); out(); fields(); marks();
+}
+const moved = id => { const a = L[id], b = R.M.LAYOUT[id]; return Math.abs(a.x - b.x) > 1e-6 || Math.abs(a.z - b.z) > 1e-6 || Math.abs(a.ry - b.ry) > 1e-6; };
+function list() {
+  const box = $('list'); box.innerHTML = '';
+  for (const id in R.M.PIECES) { const b = document.createElement('button'); b.textContent = R.M.PIECES[id]; b.dataset.id = id; b.onclick = () => select(sel === id ? null : id); box.appendChild(b); }
+  marks();
+}
+function marks() { all('#list button').forEach(b => { b.classList.toggle('on', b.dataset.id === sel); b.classList.toggle('moved', moved(b.dataset.id)); }); }
+// The chosen piece: a box drawn round it, its numbers in the panel.
+let outline = null;
+function select(id) {
+  sel = id; if (outline) { st.scene.remove(outline); outline = null; }
+  if (id) { outline = new THREE.BoxHelper(set.pieces[id].g, 0xffd060); st.scene.add(outline); }
+  $('sel').style.opacity = id ? 1 : 0.4; all('#sel input, #sel button').forEach(e => e.disabled = !id);
+  $('selH').textContent = id ? R.M.PIECES[id] : 'The piece (choose one)';
+  fields(); marks();
+}
+function fields() { if (!sel) { for (const k of ['x', 'z', 'ry']) $(k).value = ''; return; } const a = L[sel]; $('x').value = +a.x.toFixed(2); $('z').value = +a.z.toFixed(2); $('ry').value = Math.round(a.ry * 180 / Math.PI); }
+function out() { const o = {}; for (const id in L) o[id] = { x: +L[id].x.toFixed(2), z: +L[id].z.toFixed(2), ry: +L[id].ry.toFixed(4) }; $('out').value = JSON.stringify(o, null, 1); }
+let flashT = 0; function flash() { $('saved').textContent = 'Kept'; clearTimeout(flashT); flashT = setTimeout(() => { $('saved').textContent = ''; }, 1200); }
+const turnBy = deg => { if (!sel) return; L[sel].ry = Math.round((L[sel].ry * 180 / Math.PI + deg) / 5) * 5 * Math.PI / 180; place(sel); };
+const nudge = (dx, dz) => { if (!sel) return; L[sel].x += dx; L[sel].z += dz; place(sel); };
+
+for (const k of ['x', 'z']) $(k).onchange = () => { if (sel && isFinite(+$(k).value)) { L[sel][k] = +$(k).value; place(sel); } };
+$('ry').onchange = () => { if (sel && isFinite(+$('ry').value)) { L[sel].ry = +$('ry').value * Math.PI / 180; place(sel); } };
+all('#sel [data-n]').forEach(b => b.onclick = () => { if (b.dataset.n === 'ry') turnBy(+b.dataset.d); else if (b.dataset.n === 'x') nudge(+b.dataset.d, 0); else nudge(0, +b.dataset.d); });
+$('resetOne').onclick = () => { if (!sel) return; L[sel] = Object.assign({}, R.M.LAYOUT[sel]); place(sel); };
+$('resetAll').onclick = () => { R.M.resetLayout(); build(); };
+$('copy').onclick = () => { out(); const t = $('out'); t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).catch(() => document.execCommand('copy')).finally(() => { $('saved').textContent = 'Copied'; }); };
+
+// ── Choosing and dragging, in the view: a press on a piece chooses it and drags it across the floor (the camera held still meanwhile); a press
+// anywhere else orbits as usual; a click on nothing lets the piece go.
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floor = new THREE.Plane(new V3(0, 1, 0), 0), el = st.renderer.domElement;
+const toNdc = e => { const r = el.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, st.camera); };
+const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+function pick() { const hits = ray.intersectObjects(set.group.children, true); for (const h of hits) { if (!shown(h.object)) continue; for (let o = h.object; o; o = o.parent) if (o.userData.piece) return o.userData.piece; } return null; }
+let drag = null, down = null;
+el.addEventListener('pointerdown', e => {
+  toNdc(e); const id = pick(); down = { x: e.clientX, y: e.clientY, id };
+  if (id) { select(id); const p = ray.ray.intersectPlane(floor, new V3()); if (p) { drag = { id, off: new V3(L[id].x - p.x, 0, L[id].z - p.z), moved: false }; st.controls.enabled = false; el.setPointerCapture(e.pointerId); } }
+});
+el.addEventListener('pointermove', e => {
+  if (!drag) return; toNdc(e); const p = ray.ray.intersectPlane(floor, new V3()); if (!p) return;
+  const snap = v => e.altKey ? v : Math.round(v * 2) / 2;      // (to half a unit; Alt for free)
+  L[drag.id].x = snap(p.x + drag.off.x); L[drag.id].z = snap(p.z + drag.off.z); drag.moved = true; place(drag.id);
+});
+el.addEventListener('pointerup', e => {
+  if (drag) { drag = null; st.controls.enabled = true; }
+  else if (down && !down.id && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4) select(null);
+  down = null;
+});
+addEventListener('keydown', e => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  const k = e.shiftKey ? 5 : 1;
+  // (the arrows move it as the camera sees the floor: up the screen is away from the camera)
+  const f = new V3(); st.camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-6) f.set(0, 0, -1); f.normalize(); const r = new V3(-f.z, 0, f.x);
+  const ax = v => Math.abs(v.x) > Math.abs(v.z) ? new V3(Math.sign(v.x), 0, 0) : new V3(0, 0, Math.sign(v.z));
+  const F = ax(f), Rt = ax(r);
+  if (e.code === 'ArrowUp') { nudge(F.x * k, F.z * k); e.preventDefault(); }
+  if (e.code === 'ArrowDown') { nudge(-F.x * k, -F.z * k); e.preventDefault(); }
+  if (e.code === 'ArrowRight') { nudge(Rt.x * k, Rt.z * k); e.preventDefault(); }
+  if (e.code === 'ArrowLeft') { nudge(-Rt.x * k, -Rt.z * k); e.preventDefault(); }
+  if (e.code === 'KeyQ') turnBy(15); if (e.code === 'KeyE') turnBy(-15);
+  if (e.code === 'Escape') select(null);
+});
+
+// ── Views, and Rose standing in the room, for the size of things.
+for (const v in R.views) { const b = document.createElement('button'); b.textContent = VIEWNAMES[v]; b.onclick = () => { const [p, l] = R.views[v]; st.go(new V3(...p), new V3(...l), 700); all('#views button').forEach(x => x.classList.toggle('on', x === b)); }; $('views').appendChild(b); }
+$('scale').onclick = () => {
+  if (figure) { st.scene.remove(figure.root); figure = null; $('scale').classList.remove('on'); return; }
+  const looks = Looks.load(); figure = Toon.make('red', looks.red || {}); figure.root.position.set(-14, 0, 18); figure.root.rotation.y = 0.6; st.scene.add(figure.root); st.cast(figure); $('scale').classList.add('on');
+};
+
+build(); select(null);
+$('views').children[0].click();
+let t = 0;
+st.start(dt => { t += dt; if (set) { set.tick(dt); set.update(st.camera); } if (outline) outline.update(); if (figure) { Toon.idle(figure, t); figure.tick(dt); } });
+window.__rooms = { get set() { return set; }, get L() { return L; }, select, place, st };
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
