@@ -4,7 +4,7 @@
 //   const save = Save.create({ key, storage })      (storage: anything with getItem/setItem/removeItem; by default localStorage, or memory)
 //   save.state                                      the state itself (see fresh() for its shape)
 //   save.has(flag) · save.flag(flag, value = true) · save.change(fn) (fn(state), then written and told) · save.on(fn) (told of every change)
-//   save.exists() · save.reset() · save.export() → JSON · save.import(json)
+//   save.exists() · save.reset() · save.wipe() (removed from the browser) · save.export() → JSON · save.import(json)
 (function (root) {
 'use strict';
 const VERSION = 1;
@@ -41,7 +41,7 @@ function create(opts) {
   const key = opts.key || 'little-red:save:v1', store = opts.storage || defaultStorage(), listeners = [];
   let state = null;
   try { const raw = store.getItem(key); state = raw ? migrate(JSON.parse(raw)) : null; } catch (e) { state = null; }
-  const existed = !!state; if (!state) state = fresh();
+  let existed = !!state; if (!state) state = fresh();
   const write = () => { try { store.setItem(key, JSON.stringify(state)); } catch (e) { /* full, or none */ } };
   const tell = what => { for (const f of listeners.slice()) f(state, what); };
   const api = {
@@ -52,6 +52,7 @@ function create(opts) {
     change(fn, what) { fn(state); write(); tell(what || {}); },
     on(fn) { listeners.push(fn); return () => { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); }; },
     reset() { state = fresh(); write(); tell({ reset: true }); },
+    wipe() { try { store.removeItem(key); } catch (e) { /* none */ } state = fresh(); existed = false; tell({ reset: true }); },      // (gone from the browser altogether, until something's written again)
     export: () => JSON.stringify(state),
     import(json) { state = migrate(typeof json === 'string' ? JSON.parse(json) : json); write(); tell({ reset: true }); },
     write,

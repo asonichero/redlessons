@@ -93,15 +93,17 @@ hud.show(false);
 const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), clock: (t, ph) => hud.clock(t, ph), fade, card });
 // Continue, if there's a game to take up again: where she was, and when.
 const saved = world.save.exists() && world.save.state.area;
+// (the picture of that night only once the game has come to it: before, the opening's)
+const cover = saved && world.q.done('maren.homecoming') ? 'saved' : 'new';
 // Behind the title, a tableau: the first frame of the opening; or, with a game saved, the end of the homecoming (js/world.js's tableau).
-world.tableau(saved ? 'saved' : 'new').then(url => { if (url && $('title')) $('title').style.setProperty('--tableau', 'url("' + url + '")'); });      // (a still picture)
+world.tableau(cover).then(url => { if (url && $('title')) $('title').style.setProperty('--tableau', 'url("' + url + '")'); });      // (a still picture)
 // (and its music: the browser lets it play from the first click or key on the page, so it's started then, and again on Begin or Continue)
-{ const theme = world.tableauMusic(saved ? 'saved' : 'new'), A = window.GameAudio;
+{ const theme = world.tableauMusic(cover), A = window.GameAudio;
   const play = () => { if (!A || !theme || !$('title')) return; A.init(); A.startMusic({ theme }); };
   play(); for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, play, { once: true, capture: true }); }
 if (saved) { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>Day ' + world.cal.day + ', ' + world.cal.clock + ' · ' + world.AREAS[world.save.state.area].name + '</small>'; $('begin').classList.remove('primary'); $('begin').textContent = 'Begin again'; }
 const start = f => { if (window.GameAudio) GameAudio.init(); $('title').remove(); hud.show(true); f(); };
-$('begin').onclick = () => { if (saved && !confirm('Begin again, from the start? The game you have now will be lost.')) return; start(() => world.newGame()); };
+$('begin').onclick = () => { if (saved && !confirm('Begin again, from the start? The game you have now will be lost.')) return; if (saved) world.save.wipe(); start(() => world.newGame()); };      // (confirmed: the saved game wiped from the browser)
 $('cont').onclick = () => start(() => world.resume());
 $('pick').onclick = () => $('title').querySelector('.scenes').classList.toggle('on');
 document.querySelectorAll('[data-at]').forEach(a => a.onclick = () => start(() => a.dataset.at === 'cabin' ? world.newGame() : world.startAt(a.dataset.at)));
