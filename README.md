@@ -11,7 +11,7 @@ The look is a soft toon style (after *The Wind Waker HD* and *Mika and the Witch
 ## Run it
 
 ```
-npm run serve        # http://localhost:8123/ opens chapter one (story.html); /lap.html is the correction test; /play.html is the cottage to wander; /editor.html is the character editor; /rooms.html is the room editor
+npm run serve        # http://localhost:8123/ opens chapter one (story.html); /lap.html is the correction test; /editor.html is the character editor; /rooms.html is the room editor
 npm test             # the pain model, the discipline scripts and the looks
 ```
 

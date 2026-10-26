@@ -196,8 +196,9 @@ function create(stage, opts) {
   root.document.addEventListener('click', e => { if (!el.classList.contains('on')) return; const t = e.target; if (!el.contains(t) && t.closest && t.closest('button, a, select, input, textarea')) return; next(); });
   const keys = e => {
     if (!el.classList.contains('on')) return;
-    if (picking && /^Digit[1-9]$/.test(e.code)) { const k = +e.code.slice(5) - 1; if (k < choicesEl.children.length) picking(k); e.preventDefault(); return; }
-    if (['Space', 'Enter', 'KeyE'].includes(e.code)) { next(); e.preventDefault(); e.stopImmediatePropagation(); }
+    // (the number keys over the letters, or on the number pad; Enter either one)
+    if (picking && /^(Digit|Numpad)[1-9]$/.test(e.code)) { const k = +e.code.slice(-1) - 1; if (k < choicesEl.children.length) picking(k); e.preventDefault(); return; }
+    if (['Space', 'Enter', 'NumpadEnter', 'KeyE'].includes(e.code)) { next(); e.preventDefault(); e.stopImmediatePropagation(); }
   };
   root.addEventListener('keydown', keys, true);
 

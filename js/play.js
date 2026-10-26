@@ -241,6 +241,7 @@ function create(view, opts) {
   async function talkToMother(how) {
     const meet = () => how && how.stay ? faceEachOther() : approach();
     if (opts.talk) { await meet(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) await opts.after('talk', picks); return; }
+    if (!NPC || NPC.key !== 'mother') return;      // (the homecoming is her mother's, and no one else's)
     // (she came home in her grandmother's cloak)
     if (look.outfit === 'No cloak') setOutfit('Hood down', true);
     await meet();

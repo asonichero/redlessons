@@ -223,7 +223,7 @@ function create(opts) {
     if (typing(e) || el.classList.contains('hide')) return;
     if (e.key === '?' || e.code === 'F1') { sheet.classList.add('on'); e.preventDefault(); return; }
     if (e.repeat) return; held.add(e.code); const p = P();
-    if (p && ['KeyE', 'Space', 'Enter'].includes(e.code)) p.use();
+    if (p && ['KeyE', 'Space', 'Enter', 'NumpadEnter'].includes(e.code)) p.use();
     if (p && e.code === 'KeyQ') p.use(true);
     if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
     axes();

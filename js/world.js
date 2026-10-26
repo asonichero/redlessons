@@ -22,7 +22,7 @@ const HULDA = { id: 'gran', key: 'gran', name: 'Grandmother', voice: 'gran', tin
 // the place gives them: to where, and in by which way).
 const AREAS = {
   cabin: {
-    name: 'Grandmother’s', set: s => root.Cabin.build(s), npc: () => Object.assign({ at: [-22, 17], yaw: Math.PI / 2 }, HULDA),      // (by her rocking chair and the hearth, facing into the room) talk: () => root.Story.granAgain(),
+    name: 'Grandmother’s', set: s => root.Cabin.build(s), npc: () => Object.assign({ at: [-22, 17], yaw: Math.PI / 2 }, HULDA), talk: () => root.Story.granAgain(),      // (npc: by her rocking chair and the hearth, facing into the room)
     entries: { door: { at: [-10, 26], yaw: Math.PI }, chapter: { at: [-2, 7], yaw: Math.PI } },
     exits: { 'the wood': { area: 'wood', entry: 'cabin' } },
     // (once she has the cloak, its parcel is gone from the dresser)
