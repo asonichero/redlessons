@@ -51,7 +51,7 @@ World.scene('ch1.tea', {
             for (const x of xs) for (const z of zs) { const c = P.collide(new V3(x, 0, z), 6); if (c.distanceTo(mid) < 20) continue;      // (out of the oak, the hearth and the furniture)
               const score = Math.abs(c.distanceTo(mid) - 42) + 30 * Math.abs(c.clone().sub(mid).normalize().dot(along)) + (blocks(c) ? 200 : 0) + (c.clone().sub(b).dot(front) < 0 ? 25 : 0);      // (side on; not through Rose; the dresser's front to it)
               if (!best || score < best.score) best = { c, score }; }
-            P.stage.go(best.c.clone().setY(30), mid.clone().setY(11), 1100); }
+            P.stage.go(best.c.clone().setY(34), mid.clone().setY(20), 1100); }      // (aimed between Rose's head, sat, and her grandmother's, stood: both in it)
           await g.stand();
           const at = flat(gp()).addScaledVector(front, 8); await round(g, at); await g.goTo(at, yawTo(at, gp()));      // (before the dresser, whichever way it faces)
           await g.reach('R', gp()); g.reach('L', gp().addScaledVector(new V3(-front.z, 0, front.x), 1.5)); g.hold(gift, 'front'); gift.panel = null; W.items.splice(W.items.indexOf(gift), 1);
