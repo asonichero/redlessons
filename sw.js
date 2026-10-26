@@ -1,6 +1,6 @@
 // Service worker: caches the game on first load so it installs and plays offline. Bump VERSION whenever the files change, so installed copies refresh.
 const APP = '0.9.0';
-const VERSION = 'little-red-v122';
+const VERSION = 'little-red-v123';
 const FILES = [
   'index.html', 'story.html', 'lap.html', 'editor.html', 'play.html', 'manifest.webmanifest',
   'js/toon.js', 'js/cottage.js', 'js/stage.js', 'js/looks.js', 'js/audio.js', 'js/pain.js', 'js/lap.js', 'js/discipline.js', 'js/mocap.js', 'js/motion.js', 'js/play.js', 'js/talk.js', 'js/story.js', 'js/cabin.js', 'js/wood.js', 'js/chapter1.js', 'js/hud.js', 'js/correction.js', 'js/save.js', 'js/calendar.js', 'js/reputation.js', 'js/questdata.js', 'js/quests.js', 'js/world.js', 'js/implements.js', 'js/correctors.js',
