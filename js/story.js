@@ -16,13 +16,13 @@ const homecoming = ctx => { ctx = Object.assign({ walk: { bluebells: 0, stream: 
   ...(big ? [
     { who: 'mother', face: 'surprised', listen: { red: 'shy' }, text: 'Red, that’s half the bluebell glade in your arms.' },
     { who: 'red', face: 'shy', listen: { mother: 'calm' }, text: 'They’re for you. I… got carried away.' },
-    { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'So I see.' },
+    { who: 'mother', face: 'cheeky', listen: { red: 'shy' }, text: 'So I see.' },
   ] : [
     { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And bluebells. From the glade off the wood path, I’d guess.' },
     { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'For you. You always liked them.' },
   ]),
   { who: 'mother', face: 'surprised', listen: { red: 'calm' }, text: '…Well, you’re home now. And with a fine new cloak! Your grandmother’s work?' },
-  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'She made it for me, like the one I used to have. When I turned round to show her, she called me Little Red.' },
+  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'She made it for me, like the one I used to have. When I turned round to show her, she called me Little Red like it was the very same one.' },
   { who: 'mother', face: 'smile', listen: { red: 'pout' }, text: 'She would. It suits you. It always did.' },
   { who: 'mother', face: 'calm', listen: { red: 'pout' }, text: 'Sit down. Tell me what’s sitting on you, because something is.' },
   { choose: [
@@ -65,9 +65,10 @@ const homecoming = ctx => { ctx = Object.assign({ walk: { bluebells: 0, stream: 
     ] },
     { text: 'I came straight home, Mama. Truly.', face: 'shy', then: [
       { run: ctx.lie },
-      { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: big ? 'With half the bluebell glade in your arms? Don’t, Red. Not to me.' : 'With bluebells from the glade, a good way off the path? Don’t, Red. Not to me.' },
-      { who: 'red', face: 'wince', listen: { mother: 'stern' }, text: '…I stopped. I’m sorry.' },
-      { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'I know you did. And now there’s a lie on top of the lateness, and that’s worse than the both of them.' },
+      { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: big ? 'With half the bluebell glade in your arms?' : 'With bluebells from the glade, a good way off the path?' },
+      { who: 'red', face: 'wince', listen: { mother: 'stern' }, text: '…I stopped. I’m sorry. Only for moments. The bluebells, the stream, the old beech.' },
+      ...(ctx.walk.bluebells || ctx.walk.stream || ctx.walk.beech ? [{ who: 'red', face: 'gritted', listen: { mother: 'stern' }, text: 'Well… Maybe more than a moment…' }] : []),      // (if she stayed at any of them)
+      { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'I know you did. And now there’s a lie on top of the lateness, and that’s worse.' },
     ] },
   ] },
   { who: 'mother', face: 'calm', listen: { red: 'concerned' }, text: 'You lingered in the wood as dusk crept in. Alone. After I’ve told you a hundred times.' },
@@ -143,7 +144,7 @@ const WALK = [
   [0.36, 'shy', 'I said yes. I always say yes. And then I lie awake.'],
   [0.47, 'shy', 'Peter used to just be Peter. Now he goes quiet when I look at him, and I go quiet back, and neither of us knows what comes next.'],
   [0.55, 'calm', 'In this cloak, I don’t feel like anybody’s question.'],
-  [0.66, 'shy', 'At the table, with Grandmother fussing and me letting her. Like being small. Like nothing was mine to carry.'],
+  [0.66, 'shy', 'Grandmother always makes me feel better. Like being small. Like nothing was mine to carry.'],
   [0.73, 'pout', 'That’s it, isn’t it. Everyone’s decided I’m grown. And I’m not ready.'],
   [0.86, 'shy', 'It’s getting dark. I should hurry.'],
   [0.89, 'pout', '…I don’t want to hurry.'],
@@ -159,12 +160,12 @@ const STOPS = {
   bluebells: {
     first: [['smile', 'Bluebells. The whole glade of them, the way it was every spring.'], ['smile', 'We used to pick these by the armful. Mama would pretend to sneeze at them.']],
     stay: 'Just a few more.',
-    stayed: [['smile', 'A few more. And a few more. There’s always one bluer, just past the last.'], ['shy', 'There. An armful, like when I was small. She can’t be cross at an armful of bluebells.']],
+    stayed: [['smile', 'There’s always one bluer, just past the last.'], ['shy', 'There. An armful, like when I was small. She can’t be cross at an armful of bluebells.']],
     go: 'That’s enough. Home.',
     went: [['shy', 'She’ll like these.']],
   },
   stream: {
-    first: [['calm', 'I always stop here. I always have.'], ['calm', 'I could sit here till the stars come out. Nobody would ask me for anything at all.']],
+    first: [['cheeky', 'I used to catch frogs from here. I wonder if there are any out tonight?'], ['calm', 'I could sit here till the stars come out. Nobody would ask me for anything at all.']],
     stay: 'Sit a while longer.',
     stayed: [
       ['calm', 'Mama was nineteen once. By not much older she had a house, and a husband, and me.'],
@@ -256,7 +257,7 @@ const homecomingCorrection = async (S, how) => {
   await S.smacks(10);
   // (a lie, answered on its own; owning up, owned)
   if (how.lied) {
-    await S.say(M, 'And then you stood in my kitchen and told me you came straight home.', 'stern');
+    await S.say(M, 'And then you stood by my hearth and told me you came straight home.', 'stern');
     await S.say(R, 'I’m sorry I said it! I’m sorry!');
     await S.step([M, 'You can be late, and you can be foolish, and I’ll mend it. But you don’t lie to me, Little Red.'], 10);
     await S.step([M, 'Not ever.'], 8);
