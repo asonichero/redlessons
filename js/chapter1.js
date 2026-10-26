@@ -115,9 +115,10 @@ World.scene('ch1.homecoming', {
     o.after = async kind => {
       if (kind !== 'homecoming') return; const P = w.P;
       w.rep.add('wilful', 1, 'home through the wood at dusk, after being told');
-      const r = await Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Story.homecomingCorrection, implement: 'hairbrush' }], fade: on => w.fade(on) });      // (the story's own correction, scripted: js/story.js)
+      // (the story's own correction, scripted: js/story.js; and after it, on her mother's lap, held close or sat up as Rose)
+      const r = await Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Story.homecomingCorrection, implement: 'hairbrush' }], after: Story.afterCorrection, fade: on => w.fade(on) });
       if (P !== w.P) return;
-      await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
+      if (!r.afterPlayed) await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
       w.rep.settle('wilful'); if (r.rose) w.save.flag('rose-said', w.cal.day);
       w.complete('maren.homecoming');
       if (w.ui.card) w.ui.card(r);

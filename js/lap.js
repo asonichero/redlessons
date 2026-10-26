@@ -13,6 +13,8 @@
 //   const lap = Lap.create(null, { external: { scene } })   // embedded: adds its stage group to another scene, which renders it
 //   lap.smack(); lap.run(n); lap.rose() (the safe word); lap.amber() (a check-in); lap.set({ implement, skirt, drawers, strength, pace }); lap.setLooks(looks); lap.update(dt); lap.on(fn)
 //   lap.halt() (stop a run); lap.end() (says 'end'); lap.clearMarks(); events: hit, tooHarsh, rest, rose, amber, end
+//   lap.after('held' | 'upright' | null) (after it: sat up on the giver's lap, held close in distress or upright after the safe word; see poseHeld)
+//   lap.still('contact', 'L' | 'R') · lap.still('soothe') · lap.still(null) (the hand held where it lands, or soothing, to look at: the editor)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, S = root.Pain, L = root.Looks;
@@ -101,7 +103,7 @@ function create(view, opts) {
   }
   // The swing's phases. `from` and `to` name the arm's poses (rest, raised, contact), `e` how far between them.
   function advance(dt) {
-    const sw = st.swing; if (!sw) return;
+    const sw = st.swing; if (!sw || sw.still) return;      // (still: held where it is, for looking at: see lap.still)
     sw.t += dt * st.pace;
     const go = (phase) => { sw.phase = phase; sw.t = 0; };
     switch (sw.phase) {
@@ -242,6 +244,9 @@ function create(view, opts) {
     if (crownT !== J.t) { crownT = J.t; for (const k in crowns) delete crowns[k]; }
     if (crowns[side]) return { p: crowns[side].p.clone(), n: crowns[side].n.clone() };
     const mid = side === 'C' ? world(red.cheekC.L).lerp(world(red.cheekC.R), 0.5) : world(red.cheekC[side]);
+    // (moved along her body by the tuning's "where the hand lands": toward her thighs, or toward her waist)
+    const ly = T.getTune().landY || 0;      // (the default, -0.8, is a little below the cheek's middle: mid-cheek, as it rounds)
+    if (ly) mid.addScaledVector(new V3(0, 1, 0).applyQuaternion(red.hips.getWorldQuaternion(new Q())), ly * red.scaleW);
     const nIn = new V3(0, -1, 0).multiplyScalar(0.75).addScaledVector(intoSkin(), 0.25).normalize();
     ray.set(mid.clone().addScaledVector(nIn, -12 * red.scaleW), nIn); ray.far = 24 * red.scaleW;
     const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
@@ -332,14 +337,118 @@ function create(view, opts) {
     dirty = false;
   }
 
+  // ── After: sat up on the giver's lap, side on, her back to the giver's left, her legs over the right thigh. Two ways (lap.after(kind)):
+  //  • 'held' (high distress): dressed as the correction left her, her head down in the giver's shoulder, or her chest if she sits too low to
+  //    reach it (whichever her height on the lap brings her face to), the giver's arms wrapped round her: the left across her back, its hand on
+  //    her far shoulder blade, the right round her waist, its hand on her far hip; the giver's head relaxed and facing forward, resting
+  //    lightly against hers. She shakes a little as she cries.
+  //  • 'upright' (after the safe word): dressed again, sitting up on her own, the giver's left hand in the small of her back and the right
+  //    resting on her far knee; her hands in her lap, her face turned a little to the giver's, the giver's a little to hers.
+  let sitter = null, held_ = null;
+  const GTORSO = { held: [0.04, 0.05, -0.04], upright: [0.02, 0.05, 0] };      // (the giver's torso: sat easy, a touch toward her)
+  const side_ = (rig, s) => new V3(s === 'L' ? 1 : -1, 0, 0).applyQuaternion(rig.root.getWorldQuaternion(new Q()));      // (a figure's left, or right, in the world)
+  // A hand laid flat on a point Tp: the palm into the surface along nIn, the fingers along d.
+  function handFlat(g, s, Tp, nIn, d, reach) {
+    const sc = g.scaleW; d = d.clone().addScaledVector(nIn, -d.dot(nIn)).normalize();
+    return { W: Tp.clone().addScaledVector(nIn, -0.28 * sc).addScaledVector(d, -(reach || 0.85) * sc), q: basis(nIn.clone().multiplyScalar(g.palm[s]), d.clone().negate()) };
+  }
+  // The neck (and a little of the head) turned so the face looks toward a point, as far as a neck goes, by `amount`.
+  function lookTo(rig, at, amount, roll) {
+    rig.neck.rotation.set(0, 0, 0); rig.head.rotation.set(0, 0, 0); rig.root.updateMatrixWorld(true);
+    const l = at.clone().sub(world(rig.neck)).applyQuaternion(rig.torso.getWorldQuaternion(new Q()).invert());
+    const yaw = clamp(Math.atan2(l.x, l.z), -1.3, 1.3) * amount, pitch = clamp(Math.atan2(-l.y, Math.hypot(l.x, l.z)), -0.5, 0.7) * amount;
+    rig.neck.rotation.set(pitch * 0.6, yaw * 0.75, roll || 0); rig.head.rotation.set(pitch * 0.4, yaw * 0.25, 0);
+  }
+  function seatSitter(kind) {
+    const g = gerda, gs = g.scaleW, r = sitter, rs = r.scaleW;
+    g.torso.rotation.set(0, 0, 0); g.neck.rotation.set(0, 0, 0); g.head.rotation.set(0, 0, 0); g.root.updateMatrixWorld(true);
+    const hip = world(g.thighR).lerp(world(g.thighL), 0.5), knee = world(g.kneeR).lerp(world(g.kneeL), 0.5);
+    const lapTop = lerp(hip.y, knee.y, 0.5) + 2.35 * gs;
+    // (facing the giver's right, along -x; her hips a little to the left of the middle of the lap, halfway down the thighs)
+    r.root.rotation.set(0, -Math.PI / 2, 0);
+    r.hips.position.set(0, T.DIM.hipY, 0); r.hips.rotation.set(0, 0, 0);
+    const droop = 0.22;      // (her thighs sloping a little down over the giver's right thigh; the shins hanging)
+    for (const l of [r.legL, r.legR]) { l.thigh.rotation.set(-Math.PI / 2 + droop, 0, l.sign * 0.05); l.knee.rotation.set(Math.PI / 2 - droop + 0.12, 0, 0); l.ankle.rotation.set(0.35, 0, 0); }
+    r.root.position.set(hip.x + (kind === 'held' ? 2.2 : 0.9) * gs, lapTop + 2.55 * rs - T.DIM.hipY * rs, lerp(hip.z, knee.z, kind === 'held' ? 0.45 : 0.58));      // (held, over the left thigh, so the shoulder's at her side)
+    r.root.updateMatrixWorld(true);
+    held_ = { kind, t: 0, sob: kind === 'held' ? 1 : 0, lean: null };
+    // (the giver: a touch toward her; held, leant in over her)
+    g.torso.rotation.set(...GTORSO[kind]); g.root.updateMatrixWorld(true);
+    if (kind === 'held') {
+      // Where her face goes: the front of the giver's left shoulder, if she sits high enough to reach it; otherwise the chest. (Measured with her
+      // leaning in a little: how high her face would come, against the shoulder's height.)
+      r.torso.rotation.set(0.05, 0, 0.3); r.root.updateMatrixWorld(true);
+      const fwdG = new V3(0, 0, 1).applyQuaternion(g.torso.getWorldQuaternion(new Q())).setY(0).normalize(), leftG = side_(g, 'L'), up = new V3(0, 1, 0);
+      // (the shoulder: the front of it, toward its point; her face in it, beside and below the giver's, a head's breadth out from it. The chest:
+      // below the collarbones, a little to the left; her head in front of it)
+      const sh = world(g.neck).lerp(world(g.armL), 0.65).addScaledVector(fwdG, 1.4 * gs);
+      const chest = world(g.torso).addScaledVector(up, 5.2 * gs).addScaledVector(fwdG, 2.5 * gs).addScaledVector(leftG, 0.9 * gs);
+      const faceY = world(r.headGroup).y - 0.6 * rs, k = ss(chest.y + 1.5 * gs, sh.y + 1.5 * gs, faceY);
+      held_.target = chest.clone().lerp(sh, k); held_.onShoulder = k;
+      const want = chest.clone().addScaledVector(fwdG, 2.8 * rs).lerp(sh.clone().addScaledVector(fwdG, 1.8 * rs).addScaledVector(leftG, 1.0 * rs).addScaledVector(up, 0.4 * rs), k);      // (out at the shoulder, clear of the giver's face)
+      // (her lean, found by trying: turned into the giver, rolled toward her and bowed; whichever
+      // brings her head nearest the spot, with as little lean as gets her there)
+      let best = null;
+      for (let z = 0; z <= 0.9; z += 0.05) for (let x = -0.2; x <= 0.9; x += 0.05) for (let y = -0.9; y <= 0.01; y += 0.1) {
+        r.torso.rotation.set(x, y, z); r.torso.updateMatrixWorld(true);
+        const dd = world(r.headGroup).distanceTo(want) + 0.15 * z + 0.15 * Math.abs(x) + 0.1 * Math.abs(y);
+        if (!best || dd < best.dd) best = { dd, x, y, z };
+      }
+      held_.lean = best;
+    }
+  }
+  function poseHeld(dt) {
+    const g = gerda, r = sitter, h = held_, gs = g.scaleW, rs = r.scaleW; h.t += dt;
+    const sob = h.sob * (0.55 + 0.45 * Math.sin(h.t * 0.9)), shake = sob * (0.025 * Math.sin(h.t * 11) + 0.015 * Math.sin(h.t * 7.3));
+    // Her: the torso leant in (held) or upright, the head turned into the giver or to her face.
+    if (h.kind === 'held') { const b = h.lean; r.torso.rotation.set(b.x + shake, b.y, b.z + 0.4 * shake); }
+    else r.torso.rotation.set(-0.04, -0.12, 0);
+    r.root.updateMatrixWorld(true);
+    if (h.kind === 'held') lookTo(r, h.target, 1, 0.25);
+    else lookTo(r, world(g.headGroup), 0.45);
+    // Her hands: held, the near one curled against the giver's chest, the other in her own lap; upright, both in her lap.
+    const lapPt = (s, k) => world(r['thigh' + s]).lerp(world(r['knee' + s]), k).add(new V3(0, 1.5 * rs, 0));
+    if (h.kind === 'held') {
+      const fwdG = new V3(0, 0, 1).applyQuaternion(g.torso.getWorldQuaternion(new Q())).setY(0).normalize();
+      armIK(r, 'R', h.target.clone().add(new V3(0, -3.2 * gs, 0)).addScaledVector(fwdG, 0.8 * gs).addScaledVector(side_(r, 'R'), -0.4 * rs), side_(r, 'R').add(new V3(0, -0.8, 0)));
+      armIK(r, 'L', lapPt('R', 0.55).addScaledVector(side_(r, 'L'), 1.2 * rs), side_(r, 'L').add(new V3(0, -0.5, 0)));
+    } else {
+      armIK(r, 'L', lapPt('L', 0.6).addScaledVector(side_(r, 'R'), 0.9 * rs), side_(r, 'L').add(new V3(0, -0.4, 0)));
+      armIK(r, 'R', lapPt('R', 0.55).addScaledVector(side_(r, 'L'), 0.9 * rs), side_(r, 'R').add(new V3(0, -0.4, 0)));
+    }
+    // The giver: leant a little toward her.
+    g.torso.rotation.set(...GTORSO[h.kind]); g.root.updateMatrixWorld(true);
+    // (the head relaxed and facing forward: held, tipped a little to rest against hers; upright, turned only a little toward her)
+    if (h.kind === 'held') { g.neck.rotation.set(0.1, 0.04, -0.16); g.head.rotation.set(0.04, 0, -0.06); } else lookTo(g, world(r.headGroup), 0.3);
+    g.root.updateMatrixWorld(true);
+    const far = side_(r, 'L'), back = new V3(0, 0, -1).applyQuaternion(r.torso.getWorldQuaternion(new Q())), up = new V3(0, 1, 0);
+    let L_, R_;
+    if (h.kind === 'held') {
+      // (the left arm across her back, its hand flat on her far shoulder blade; the right round her waist, its hand on her far hip)
+      L_ = handFlat(g, 'L', world(r.upperBack).addScaledVector(far, 1.7 * rs).addScaledVector(up, -0.6 * rs), back.clone().negate(), far.clone().add(up.clone().multiplyScalar(0.3)));
+      R_ = handFlat(g, 'R', world(r.hips).addScaledVector(far, 2.5 * rs).add(new V3(0, 2.2 * rs, 0)).addScaledVector(back, 0.4 * rs), far.clone().negate(), back);
+      armIK(g, 'L', L_.W, new V3(0.7, -0.5, -0.6)); armIK(g, 'R', R_.W, new V3(-0.8, -0.6, 0.2));
+    } else {
+      // (the left hand flat in the small of her back; the right resting on her far knee)
+      L_ = handFlat(g, 'L', world(r.hips).add(new V3(0, 3.2 * rs, 0)).addScaledVector(back, 2.0 * rs), back.clone().negate(), up);
+      R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.05 * rs, 0)).addScaledVector(back, 0.2 * rs), up.clone().negate(), back.clone().negate().add(far.clone().multiplyScalar(0.3)));
+      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, new V3(-0.8, -0.7, 0));
+    }
+    setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
+  }
+
   // ── Cameras ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   const VIEWS = {
     side: () => ({ pos: new V3(-3, 19, 64), look: new V3(-2, 11, 4) }),
     behind: () => ({ pos: new V3(-50, 24, 18), look: new V3(-4, 11, 5) }),
     giver: () => ({ pos: new V3(-7, 30, -11), look: new V3(-3, 12, 6) }),
     top: () => ({ pos: new V3(-3, 62, 9), look: new V3(-3, 10, 6) }),
-    face: () => ({ pos: new V3(15, 4, 24), look: new V3(7.5, 8.5, 4.5) }),
+    face: () => { if (held_) { const h = world(sitter.headGroup), f = new V3(-1, 0, 0.35).normalize(); return { pos: h.clone().addScaledVector(f, 20).add(new V3(0, 1, 0)), look: h.clone().add(new V3(0, -1, 0)) }; }      // (after, on the lap: her face, from in front of her)
+      return { pos: new V3(15, 4, 24), look: new V3(7.5, 8.5, 4.5) }; },
     corrector: () => { const h = world(gerda.headGroup); return { pos: h.clone().add(new V3(4, -3, 22)), look: h.clone().add(new V3(0, -1.2, 0)) }; },      // (the corrector's face, from in front)
+    // (the two of them after, on the lap: held, from in front, the giver's face and hers in the giver's shoulder; upright, from in front and to the giver's right, both faces)
+    seat: () => { const c = world(red.hips); return { pos: c.clone().add(new V3(-5, 24, 34)), look: c.clone().add(new V3(-1, -1, 0)) }; },      // (close on the seat, from the side and above: where the hand lands)
+    after: () => held_ && held_.kind === 'held' ? { pos: new V3(5, 21, 38), look: new V3(1.5, 15.5, 2) } : { pos: new V3(-30, 23, 40), look: new V3(-1.5, 12.5, 2) },
   };
   function view_(name, ms) { const v = VIEWS[name](); if (st_) st_.go(v.pos, v.look, ms); return v; }
 
@@ -347,6 +456,7 @@ function create(view, opts) {
   function update(dt) {
     // (paused: the scene held while something else happens elsewhere, the pain, the colour and the clothes as they are; the giver still breathes)
     if (st.paused) { if (st.lapHands) handsInLap(); gerda.tick(dt); return; }
+    if (held_) { poseHeld(dt); sitter.tick(dt); gerda.tick(dt); return; }
     st.dt = dt; J.t += dt; J.kick *= Math.exp(-dt * 3.2);
     advance(dt); stepGesture(dt);
     pain.update(dt, !!(st.swing && st.swing.phase === 'contact'));
@@ -362,7 +472,7 @@ function create(view, opts) {
 
   const api = {
     stage, pain, st, VIEWS, BANDS, implOf,
-    get redRig() { return red; }, get gerda() { return gerda; }, get giverRig() { return gerda; }, get subjectRig() { return red; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
+    get redRig() { return red; }, get gerda() { return gerda; }, get giverRig() { return gerda; }, get subjectRig() { return held_ ? sitter : red; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
     smack,
     run(n) { st.runLeft = Math.max(0, (n || 1) - 1); return smack(); },
     // Red: everything stops at once. Nothing more is struck, whatever was queued; the arm comes back to rest.
@@ -374,6 +484,27 @@ function create(view, opts) {
     // (soothe, { hold: true }: it goes on until the scene closes; the promise is done once it's begun)
     gesture(kind, o) { o = o || {}; return new Promise(res => { const go = () => { if (st.swing || st.gesture) return setTimeout(go, 50); const pass = kind === 'soothe' && st.implement !== 'hand';
       st.gesture = { kind, t: 0, dur: (GEST[kind] || 2) + (pass ? 2 * PASS : 0), res, pass, loop: !!o.hold }; }; go(); }); },
+    // After (see poseHeld): 'held' (high distress) or 'upright' (after the safe word), sat up on the giver's lap; null, back across it.
+    // Whatever was going on stops; an implement in hand is put out of sight.
+    after(kind) {
+      if (sitter) { stage.remove(sitter.root); sitter = null; } held_ = null; frame.visible = true; st.armed = true;
+      if (!kind) return;
+      st.swing = null; st.gesture = null; st.swap = false; st.runLeft = 0; st.armed = false; if (held) held.visible = false;
+      frame.visible = false;
+      sitter = T.make(SUBJ, looks[SUBJ] || {}, {}); stage.add(sitter.root); if (st_) st_.cast(sitter);
+      sitter.setDress(kind === 'held' ? { skirt: st.skirt, drawers: st.drawers, marks: st.marks } : { skirt: 'down', drawers: 'up', marks: st.marks });
+      seatSitter(kind); sitter.setSeated(1);
+      sitter.setExpr(kind === 'held' ? 'crying' : 'shy'); sitter.breath = kind === 'held' ? 1.6 : 1;
+      poseHeld(0); sitter.tick(0.016); gerda.tick(0.016);
+    },
+    get held() { return held_ ? held_.kind : null; },
+    // Held still, for looking at (the character editor): 'contact' (the hand landed on one cheek, side 'L' or 'R'), 'soothe' (the hand
+    // circling on the cheeks, going on), or null (at rest).
+    still(kind, side) {
+      st.swing = null; st.gesture = null; st.swap = false; st.runLeft = 0;
+      if (kind === 'contact') st.swing = { phase: 'contact', t: 0, side: side || 'R', waited: 0, still: true };
+      if (kind === 'soothe') st.gesture = { kind: 'soothe', t: 0, dur: GEST.soothe, res() {}, pass: false, loop: true, resolved: true };
+    },
     pause(on, o) { st.paused = !!on; st.lapHands = !!(on && o && o.handsInLap); },      // (a run stopped after the smack in hand)
     clearMarks() { st.marks = { L: 0, R: 0 }; dirty = true; },
     canStrike, running: () => st.runLeft > 0,

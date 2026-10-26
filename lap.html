@@ -63,6 +63,9 @@
   <h3>Scripted</h3>
   <div class="btns" id="tiers"></div>
   <div class="sub" id="tierNote" style="margin-top:4px"></div>
+  <h3>After</h3>
+  <div class="btns"><button id="aHeld">Held (distress)</button><button id="aUp">Upright (safe word)</button><button id="aNone">Back across</button></div>
+  <div class="sub" style="margin-top:4px">Sat up on the lap, side on: held close, dressed as it ended; or upright and dressed again, after the safe word.</div>
   <h3>Camera</h3>
   <div class="btns" id="cams"></div>
   <h3>Scene</h3>
@@ -193,7 +196,9 @@
     $(k + 'V').textContent = st[k].toFixed(1) + '×';
   });
   let camNow = 'side';
-  for (const [k, n] of [['side', 'Side'], ['behind', 'Behind'], ['giver', 'The corrector’s view'], ['top', 'Above'], ['face', 'Face across the lap'], ['corrector', 'The corrector’s face']]) { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { camNow = k; lap.view(k, 700); all('#cams button').forEach(x => x.classList.toggle('on', x === b)); }; $('cams').appendChild(b); if (k === 'side') b.classList.add('on'); }
+  for (const [k, n] of [['side', 'Side'], ['behind', 'Behind'], ['giver', 'The corrector’s view'], ['top', 'Above'], ['face', 'Face across the lap'], ['corrector', 'The corrector’s face'], ['after', 'After, on the lap']]) { const b = document.createElement('button'); b.textContent = n; b.dataset.k = k; b.onclick = () => { camNow = k; lap.view(k, 700); all('#cams button').forEach(x => x.classList.toggle('on', x === b)); }; $('cams').appendChild(b); if (k === 'side') b.classList.add('on'); }
+  const after = k => { lap.after(k); all('#aHeld, #aUp, #aNone').forEach(b => b.classList.toggle('on', b.id === { held: 'aHeld', upright: 'aUp' }[k])); if (k) { camNow = 'after'; lap.view('after', 700); } };
+  $('aHeld').onclick = () => after('held'); $('aUp').onclick = () => after('upright'); $('aNone').onclick = () => after(null);
   $('clear').onclick = () => lap.clearMarks();
   $('snd').onclick = () => { st.sound = !st.sound; $('snd').classList.toggle('on', st.sound); lap.set({ sound: st.sound }); };
   $('again').onclick = () => { Object.assign(st, { skirt: 'down', drawers: 'up' }); build(); };

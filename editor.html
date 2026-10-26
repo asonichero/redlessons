@@ -41,7 +41,7 @@
   <div class="btns" style="margin-top:8px"><button data-view="front" class="on">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="faces">Faces</button><button id="spin">Turn</button></div>
   <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Skirts, trousers</span><button data-skirt="down" class="on">On</button><button data-skirt="up">Lifted, down</button><button data-skirt="off">Off</button></div>
   <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Drawers</span><button data-drawers="up" class="on">Up</button><button data-drawers="down">Down</button><span class="sub" style="margin-left:4px">(with the skirt or trousers lifted, down or off)</span></div>
-  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Pose</span><button data-pose="stand" class="on">Standing</button><button data-pose="lap">Over the knee</button><span class="sub" style="margin-left:4px">(the right one across the left one’s knee)</span></div>
+  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Pose</span><button data-pose="stand" class="on">Standing</button><button data-pose="lap">Over the knee</button><button data-pose="contactL">Hand landing, left</button><button data-pose="contactR">Hand landing, right</button><button data-pose="soothe">Soothing</button><button data-pose="held">After: held</button><button data-pose="upright">After: upright</button><span class="sub" style="margin-left:4px">(the right one across the left one’s knee; landing and soothing, the left one’s hand held on the seat, to see where it lands: Shapes › Seat › Where the hand lands moves it; after, sat up on the lap: held close in distress, or upright after the safe word)</span></div>
   <details class="who" open><summary id="nameA"></summary><div id="boxA"></div></details>
   <details class="who" open><summary id="nameB"></summary><div id="boxB"></div></details>
   <div class="btns" style="margin-top:16px"><button id="reset">Back to their own colours</button><span id="saved"></span></div>
@@ -79,7 +79,7 @@
   const VIEWS = { front: [[0, 20, 88], [0, 15, 0]], side: [[88, 20, 0], [0, 15, 0]], back: [[0, 20, -88], [0, 15, 0]], faces: [[0, 28.5, 34], [0, 28, 0]] };
   // (the faces view looks at their heads wherever their sizes put them)
   const headsAt = () => { const p = new V3(); for (const w in rigs) p.add(rigs[w].headGroup.getWorldPosition(new V3())); return p.multiplyScalar(0.5); };
-  const view = (name, ms) => { if (pose === 'lap' && lap) return lapView(name, ms); if (name === 'faces') { const h = headsAt(); st.go(new V3(h.x, h.y + 0.3, h.z + 40), h.clone().add(new V3(0, -0.6, 0)), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); return; }
+  const view = (name, ms) => { if (LAPS[pose] && lap) return lapView(name, ms); if (name === 'faces') { const h = headsAt(); st.go(new V3(h.x, h.y + 0.3, h.z + 40), h.clone().add(new V3(0, -0.6, 0)), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); return; }
     st.go(new V3(...VIEWS[name][0]), new V3(...VIEWS[name][1]), ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
   let savedT = 0, shapePanelHook = null;
   function changed(side) { look = L.save(look); for (const s of ['A', 'B']) if (s === side || who[s] === who[side]) build(s); sync(); $('saved').textContent = 'Saved'; clearTimeout(savedT); savedT = setTimeout(() => $('saved').textContent = '', 1200); }
@@ -127,7 +127,7 @@
   function dressAll() {
     document.querySelectorAll('[data-skirt]').forEach(x => x.classList.toggle('on', x.dataset.skirt === skirtView));
     document.querySelectorAll('[data-drawers]').forEach(x => { x.classList.toggle('on', x.dataset.drawers === dressView().drawers); x.disabled = skirtView === 'down'; });
-    for (const w in rigs) rigs[w].setDress(dressView()); if (lap) lap.set(dressView());
+    for (const w in rigs) rigs[w].setDress(dressView()); if (lap && lap.held) buildLap(); else if (lap) lap.set(dressView());      // (after, sat up, she's dressed anew)
   }
   document.querySelectorAll('[data-skirt]').forEach(b => b.onclick = () => { skirtView = b.dataset.skirt; dressAll(); });
   document.querySelectorAll('[data-drawers]').forEach(b => b.onclick = () => { drawersView = b.dataset.drawers; dressAll(); });
@@ -202,19 +202,24 @@
 
   // ── Pose: standing side by side, or the over-the-knee arrangement of the lap scene (still, for looking at), built from the same looks and shapes.
   let pose = 'stand', lap = null;
-  const LAPVIEW = { front: 'side', side: 'giver', back: 'behind', faces: 'face' };
+  // (the lap's poses: over the knee; the hand held where it lands on either cheek, or soothing; after, held or upright on the lap. Each with its
+  // own views for the editor's Front, Side, Back and Faces)
+  const LAPS = { lap: {}, contactL: { still: ['contact', 'L'] }, contactR: { still: ['contact', 'R'] }, soothe: { still: ['soothe'] }, held: { after: 'held' }, upright: { after: 'upright' } };
+  const LAPVIEW = { front: 'side', side: 'giver', back: 'behind', faces: 'face' }, STILLVIEW = { front: 'seat', side: 'side', back: 'behind', faces: 'face' }, AFTERVIEW = { front: 'after', side: 'side', back: 'behind', faces: 'face' };
   function buildLap() {
     if (lap) { st.scene.remove(lap.stage); lap = null; }
-    if (pose !== 'lap') return;
+    const L_ = LAPS[pose]; if (!L_) return;
     lap = Lap.create(null, { external: { scene: st.scene }, looks: look, giver: who.A, subject: who.B });
-    lap.set(Object.assign({ sound: false }, dressView())); lap.subjectRig.setExpr(faces.B); lap.giverRig.setExpr(faces.A);
+    lap.set(Object.assign({ sound: false }, dressView()));
+    if (L_.still) lap.still(...L_.still); if (L_.after) lap.after(L_.after);
+    lap.subjectRig.setExpr(faces.B); lap.giverRig.setExpr(faces.A);
     for (const r of [lap.subjectRig, lap.giverRig]) st.cast(r);
   }
-  const lapView = (name, ms) => { const v = lap.view(LAPVIEW[name] || 'side'); st.go(v.pos, v.look, ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
+  const lapView = (name, ms) => { const L_ = LAPS[pose], m = L_.still ? STILLVIEW : L_.after ? AFTERVIEW : LAPVIEW, v = lap.view(m[name] || 'side'); st.go(v.pos, v.look, ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
   document.querySelectorAll('[data-pose]').forEach(b => b.onclick = () => {
     pose = b.dataset.pose; document.querySelectorAll('[data-pose]').forEach(x => x.classList.toggle('on', x === b));
     turn.visible = pose === 'stand'; buildLap();
-    const on = document.querySelector('[data-view].on'); (pose === 'lap' ? lapView : view)(on ? on.dataset.view : 'front', 700);
+    const on = document.querySelector('[data-view].on'); (LAPS[pose] ? lapView : view)(on ? on.dataset.view : 'front', 700);
   });
   // (the rest of the editor's changes reach the lap too)
   const build0 = build; build = side => { build0(side); if (lap) buildLap(); };
