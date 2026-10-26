@@ -243,14 +243,15 @@ function build(scene, opts) {
   }
 
   // ── The box bed (front right, along the right wall): a frame, a straw mattress, a patchwork quilt, a bolster. (Its head toward the back.)
-  { const pc = piece('bed', wall), g = pc.g, BW = 14, BL = 22, BH = 8;
+  // (long enough for her to lie in, with room to spare at the foot: grown from 22 at the foot only, OZ, so its head stays where it's set, at the wall)
+  { const pc = piece('bed', wall), BW = 14, BL = 34, BH = 8, OZ = (BL - 22) / 2, g = new THREE.Group(); g.position.z = OZ; pc.g.add(g);
     box(g, BW, 1.4, BL, 0, BH - 0.7, 0, oakDk); box(g, BW, BH - 1.4, 1.2, 0, (BH - 1.4) / 2, BL / 2 - 0.6, oakDk); box(g, 1.2, BH - 1.4, BL, -BW / 2 + 0.6, (BH - 1.4) / 2, 0, oakDk);
     box(g, BW, 14, 1.4, 0, BH + 5, -BL / 2 + 0.7, oakDk);
     solid(g, slab(BW - 2, 3.6, BL - 2, 2, 1.4), toonMap(tx.ticking), 0, BH + 1.8, 0, { ink: 0.1 });
     solid(g, slab(BW - 1, 1.2, BL - 6, 1, 0.5), toonMap(tx.quilt), 0, BH + 4.1, 2.5, { ink: 0.08 });
     solid(g, T.ell(BW / 2 - 1.5, 1.6, 2), T.mat('#efe6d0'), 0, BH + 4.4, -BL / 2 + 3, { ink: 0.08 });
-    world.seats.push({ name: 'the bed', at: pc.P(-2, BH + 3.6, 2), facing: -Math.PI / 2 + pc.ry, kind: 'bed', head: pc.P(0, BH + 4.4, -BL / 2 + 3), feet: pc.P(0, BH + 4, BL / 2 - 3) });
-    world.obstacles.push(pc.area(-BW / 2, 8, -BL / 2, BL / 2));
+    world.seats.push({ name: 'the bed', at: pc.P(-2, BH + 3.6, OZ + 2), facing: -Math.PI / 2 + pc.ry, kind: 'bed', head: pc.P(0, BH + 4.4, OZ - BL / 2 + 3), feet: pc.P(0, BH + 4, OZ + BL / 2 - 3) });
+    world.obstacles.push(pc.area(-BW / 2, 8, OZ - BL / 2, OZ + BL / 2));
   }
 
   // ── Herbs hanging in bunches from the oak's limbs (and a wreath of dried flowers on the left wall).
