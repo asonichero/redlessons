@@ -651,7 +651,13 @@ function make(id, look, opts) {
       if (d < lapL + arcL || drop < 0.01) { const a = arcL > 0 ? clamp((d - lapL) / arcL, 0, 1) * Math.PI / 2 : 0; return { c: new V3(0, -0.1, Tk), n: new V3(0, Math.cos(a), Math.sin(a)), w: 4.0 * K.hipWidth, h: 2.3 * K.legGirth }; }
       const t = (d - lapL - arcL) / drop; return { c: new V3(0, -0.1 - t * drop, Tk + 0.4 * t), n: new V3(0, 0, 1), w: lerp(4.0, 4.9 * K.skirtFull, t) * K.hipWidth, h: lerp(2.3, 2.5 * K.skirtFull, t) };
     };
-    const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u); return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
+    // (a short skirt, one that ends on the lap, lies on the thighs: across them just wide enough, its top on them, the sides falling to the seat,
+    // and at the hem a little lower still, as cloth hangs, rather than standing round them as a tube; the longer ones fall from the knees)
+    const short = L <= lapL + 0.01, hugW = D.hipX + 1.95 * K.legGirth + 0.3, hugTop = 1.95 * K.legGirth + 0.22, hugLow = 1.5 * K.legGirth;
+    const tube = (a0, a1, v0, v1, lift) => (u, v) => { const f = at(lerp(v0, v1, v)), a = lerp(a0, a1, u);
+      if (short) { const top = Math.cos(a) >= 0, hem = ss(0.75, 1, lerp(v0, v1, v)), y = Math.cos(a) * ((top ? hugTop : hugLow) + lift) - 0.55 * hem * Math.abs(Math.sin(a));
+        return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (hugW + lift)).addScaledVector(f.n, y); }
+      return f.c.clone().addScaledVector(new V3(1, 0, 0), Math.sin(a) * (f.w + lift)).addScaledVector(f.n, Math.cos(a) * (f.h + lift)); };
     const outward = p => new V3(p.x, p.z < Tk ? p.y + 0.1 : Math.max(0, p.y + 0.1), p.z < Tk ? 0 : p.z - Tk);      // (away from the spine)
     if (only === 'apron') { clipSrc('apron', piece(surface(tube(-0.95, 0.95, 0.04, S.apron === 'leather' ? 0.74 : 0.8, -0.35), 12, 22, outward), P.apron, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 })); return; }
     if (only === 'coat') { clipSrc('apron', piece(surface(tube(0.75, Math.PI * 2 - 0.75, 0, 0.66, -0.25), 22, 22, outward), P.vest, parent, 0, 0, 0, { side: THREE.DoubleSide, ink: 0.05 })); return; }

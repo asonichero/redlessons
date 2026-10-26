@@ -365,9 +365,9 @@ function create(view, opts) {
   // the middle between the thighs, toward the giver's left) and along it (from the hips to the knees); her seat's height over the lap; her legs
   // ([thigh forward swing, out, knee bend, ankle] for each).
   const POSE = {
-    // (held: up on her right hip, so the hip joint stands higher over the lap than sitting square; the numbers found by trying, for none of her
-    // legs to pass into the chair, the giver's lap or her legs, or the floor)
-    held: { turn: 0.55, roll: 0.65, x: 1.4, along: 0.62, y: 4.4, legL: [-1.75, 0.12, 1.7, 0.6], legR: [-1.45, 0.05, 1.45, 0.6] },
+    // (held: rolled onto her right hip, that cheek planted on the lap (see seatSitter); the numbers found by trying, for none of her legs to pass
+    // into the chair, the giver's lap or her legs, or the floor. y: a first guess only, before she's sat down onto the lap)
+    held: { turn: 0.6, roll: 0.35, x: 1.4, along: 0.62, y: 2.55, legL: [-1.4, 0.12, 1.4, 0.6], legR: [-1.8, 0.05, 1.4, 0.6] },
     upright: { turn: 0.3, roll: 0, x: 0.6, along: 0.78, y: 2.55, legL: [-Math.PI / 2 + 0.3, 0.05, 1.2, 0.35], legR: [-Math.PI / 2 + 0.22, -0.05, 1.15, 0.35] },      // (the shins forward of the chair)
   };
   function seatSitter(kind) {
@@ -383,6 +383,9 @@ function create(view, opts) {
     r.hips.position.set(0, T.DIM.hipY, 0); r.hips.rotation.set(0, 0, P.roll);
     for (const l of [r.legL, r.legR]) { const k = l === r.legL ? P.legL : P.legR; l.thigh.rotation.set(k[0], 0, l.sign * k[1]); l.knee.rotation.set(k[2], 0, 0); l.ankle.rotation.set(k[3], 0, 0); }
     r.root.position.set(hip.x + P.x * gs, lapTop + P.y * rs - T.DIM.hipY * rs, lerp(hip.z, knee.z, P.along));
+    // (sat down on the lap: the lower of her two cheeks resting on it, its underside on the top of the giver's thigh, however she's rolled)
+    r.root.updateMatrixWorld(true);
+    { const low = Math.min(world(r.cheekC.L).y, world(r.cheekC.R).y) - 1.75 * rs; r.root.position.y += lapTop - low; }
     r.root.updateMatrixWorld(true);
     held_ = { kind, t: 0, sob: kind === 'held' ? 1 : 0, lean: null };
     // (the giver: a touch toward her; held, leant in over her)
@@ -420,7 +423,7 @@ function create(view, opts) {
     if (h.kind === 'held') lookTo(r, h.target, 1, 0.25);
     else lookTo(r, world(g.headGroup), 0.7);      // (nearer the knees, turned a little: they look at each other without straining)
     // Her hands: held, the near one curled against the giver's chest, the other in her own lap; upright, both in her lap.
-    const lapPt = (s, k) => world(r['thigh' + s]).lerp(world(r['knee' + s]), k).add(new V3(0, 1.5 * rs, 0));
+    const lapPt = (s, k) => world(r['thigh' + s]).lerp(world(r['knee' + s]), k).add(new V3(0, 2.5 * rs, 0));      // (on top of her skirt, over the thigh)
     if (h.kind === 'held') {
       // (her right arm over the giver's back, behind the neck, its hand on the back of the far shoulder; her left across in front, its hand
       // hanging on that same shoulder)
@@ -446,7 +449,9 @@ function create(view, opts) {
     } else {
       // (the left hand flat in the small of her back; the right resting on her far knee)
       L_ = handFlat(g, 'L', world(r.hips).add(new V3(0, 3.2 * rs, 0)).addScaledVector(back, 2.0 * rs), back.clone().negate(), up);
-      R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.05 * rs, 0)).addScaledVector(back, 0.2 * rs), up.clone().negate(), back.clone().negate().add(far.clone().multiplyScalar(0.3)));
+      // (resting over the far knee: the palm on top of it, the fingers along her thigh to the knee and curling a little over its far side)
+      const along = world(r.kneeL).sub(world(r.thighL)).setY(0).normalize();
+      R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.45 * rs, 0)).addScaledVector(along, -0.6 * rs).addScaledVector(far, 0.3 * rs), up.clone().negate(), along.clone().addScaledVector(far, 0.35));
       armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, new V3(-0.8, -0.7, 0));
     }
     setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
