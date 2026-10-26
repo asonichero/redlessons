@@ -142,6 +142,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/toon.js` | The characters: the rig (bones), bodies, faces and expressions, hair, clothes, skinned skirts, marks; the chair |
 | `js/stage.js` | Renderer, lights and shadows, the camera and its glides |
 | `js/cottage.js` | The cottage: walls, frame, foundation, thatch, door and window, the furniture and everything hanging |
+| `js/mocap.js`, `mocap.html` | Motion capture: Mixamo's idle, walk, run, strafes, turns and jump, converted from FBX and retargeted to the rig, played by `js/motion.js` under everything but sitting, lying, crouching, reaching, carrying and looking; the viewer plays one clip on one figure |
 | `js/lap.js`, `lap.html` | Over the knee: the session, the corrector's arm solving, the reactions of whoever is across the lap, the cameras; the correction test |
 | `js/motion.js` | Movement for any figure: walking and running with planted feet, turning, reaching, crouching, carrying, sitting, lying |
 | `story.html`, `js/chapter1.js` | The game's page; chapter one's scenes (the cabin, the wood, home) |

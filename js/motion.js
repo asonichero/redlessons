@@ -15,7 +15,8 @@
 //   const m = Motion.create(rig, { collide: (pos, r) => pos })
 //   each frame: m.update(dt, { move: { x, z } (world, length 0..1), run: bool })      then rig.tick(dt)
 //   m.goTo(pos, yaw).then(…); m.face(yaw); m.reach('R', pointOrFn); m.release('R'); m.hold(item, 'hang' | 'front'); m.drop();
-//   m.sit(seat).then(…); m.stand().then(…); m.lie(bed).then(…)
+//   m.sit(seat).then(…); m.stand().then(…); m.lie(bed).then(…); m.jump().then(…)
+// Standing, walking, running, strafing, turning and jumping are played from motion capture (js/mocap.js) where it's loaded: see capture().
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3, Q = THREE.Quaternion;
@@ -406,6 +407,52 @@ function create(rig, opts) {
     r.root.updateMatrixWorld(true);
   }
 
+  // ── Motion capture (js/mocap.js): standing, walking, running, strafing, turning on the spot and jumping are played from Mixamo's clips, laid
+  // over the pose above. Which clips, and how much of each, follow what she's doing: idle when she's still, walking and running by her speed
+  // (the cycle played as fast as her feet must go back under her to keep pace), the strafes as she goes sideways, the turns as she turns on
+  // the spot; a jump when asked (m.jump()). Sitting, lying, crouching for a low reach, a reaching or carrying hand, and looking at something are
+  // still the pose's own: the clips give way to them. (opts.mocap === false, or no js/mocap.js: the pose alone.)
+  const MC = root.Mocap && opts.mocap !== false ? { idle: root.Mocap.clip('idle'), walk: root.Mocap.clip('walking'), run: root.Mocap.clip('running'),
+    walkL: root.Mocap.clip('left_strafe_walk'), walkR: root.Mocap.clip('right_strafe_walk'), runL: root.Mocap.clip('left_strafe'), runR: root.Mocap.clip('right_strafe'),
+    turnL: root.Mocap.clip('left_turn'), turnR: root.Mocap.clip('right_turn'), jump: root.Mocap.clip('jump') } : null;
+  const mc = { phase: 0, idleT: Math.random() * 8, turnT: 0, turnW: 0, jumpT: -1, S: {}, out: null, boneW: {} };
+  m.jump = () => { if (!MC || mc.jumpT >= 0) return Promise.resolve(); mc.jumpT = 0; return after(() => mc.jumpT < 0); };
+  function capture(dt) {
+    const W = (1 - ease(m.sitW)) * (1 - ease(m.lieW)) * (1 - m.crouch);
+    if (!MC || W < 0.001) { mc.jumpT = -1; return; }
+    const kk = (D.thigh + D.shin) / 76.83 * sc;      // (Mixamo units to hers)
+    const local = m.vel.clone().applyQuaternion(yawQ(-m.yaw)), spd = m.speed, moving = ss(0.4 * sc, 4 * sc, spd);
+    const lat = spd > 0.01 ? clamp(local.x / spd, -1, 1) : 0, side = Math.abs(lat), run = m.runB;
+    // (the cycle: as fast as the clip's feet must go back to keep her pace, between the walk's and the run's)
+    const rate = c => spd / Math.max(1e-3, c.footSpeed * kk) / c.duration;
+    mc.phase = (mc.phase + dt * lerp(rate(MC.walk), rate(MC.run), run)) % 1;
+    mc.idleT += dt;
+    // Turning on the spot: the turn's steps played as she turns, faster for a quicker turn.
+    const spin = (1 - moving) * ss(0.35, 1.4, Math.abs(m.yawV || 0)); mc.turnW = approach(mc.turnW, spin, 8, dt);
+    if (mc.turnW > 0.01) mc.turnT += dt * clamp(Math.abs(m.yawV || 0) / 1.4, 0.6, 1.6); else mc.turnT = 0;
+    const S = mc.S, at = (k, c, t) => (S[k] = root.Mocap.sample(c, t, S[k]));
+    const cyc = c => mc.phase * c.duration, sideC = lat > 0 ? 'L' : 'R';
+    const list = [
+      [at('idle', MC.idle, mc.idleT), (1 - moving) * (1 - mc.turnW)],
+      [at('turn', (m.yawV || 0) > 0 ? MC.turnL : MC.turnR, mc.turnT), (1 - moving) * mc.turnW],
+      [at('walk', MC.walk, cyc(MC.walk)), moving * (1 - run) * (1 - side)],
+      [at('run', MC.run, cyc(MC.run)), moving * run * (1 - side)],
+      [at('walkS', MC['walk' + sideC], cyc(MC['walk' + sideC])), moving * (1 - run) * side],
+      [at('runS', MC['run' + sideC], cyc(MC['run' + sideC])), moving * run * side],
+    ];
+    let pose = root.Mocap.blend(list, mc.out); mc.out = pose;
+    // A jump, over all of it, eased in and out at its ends.
+    if (mc.jumpT >= 0) { mc.jumpT += dt; const J = MC.jump, e = ss(0, 0.15, mc.jumpT) * (1 - ss(J.duration - 0.2, J.duration, mc.jumpT));
+      pose = root.Mocap.blend([[pose, 1 - e], [at('jump', J, mc.jumpT), e]], mc.jumpOut || (mc.jumpOut = { q: {}, hips: new V3() })); if (mc.jumpT >= J.duration) mc.jumpT = -1; }
+    if (!pose) return;
+    // (what the pose keeps: a reaching or carrying hand's arm, and the head looking at something)
+    const bw = mc.boneW;
+    for (const s of ['L', 'R']) { const keep = Math.max(m.hands[s].w, m.carryW || 0); bw['arm' + s] = bw['elbow' + s] = bw['hand' + s] = 1 - keep; }
+    bw.neck = bw.head = 1 - 0.8 * (m.lookW || 0);
+    root.Mocap.apply(rig, pose, W, bw);
+    rig.root.updateMatrixWorld(true);
+  }
+
   // ── Each frame ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   m.update = (dt, input) => {
     dt = clamp(dt || 1 / 60, 1 / 240, 1 / 20); m.t += dt;
@@ -419,6 +466,7 @@ function create(rig, opts) {
     locomote(dt, input);
     stepFeet(dt);
     pose(dt);
+    capture(dt);
     // Carried things follow the hand (or both hands), upright.
     if (m.carry) {
       const r = rig, g = m.carryStyle === 'hang' ? r.handR.localToWorld(new V3(0, -0.9, 0)) : r.handR.localToWorld(new V3(0, -0.9, 0)).lerp(r.handL.localToWorld(new V3(0, -0.9, 0)), 0.5);

@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>Mocap Viewer</title><meta name="viewport" content="width=device-width, initial-scale=1"><!-- a clip played straight onto a figure: mocap.html?clip=walking&who=red&cam=30,22,70 (js/mocap.js names the clips) --><style>html,body{margin:0;height:100%;background:#d8cfc4}#v{position:fixed;inset:0}</style><div id="v"></div>
+<script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="js/toon.js"></script><script src="js/looks.js"></script><script src="js/stage.js"></script><script src="js/mocap.js"></script>
+<script>
+const st = Stage.create(document.getElementById('v'), { fov: 30, room: false }); st.scene.background = new THREE.Color('#d8cfc4');
+{ const f = new THREE.Mesh(new THREE.CircleGeometry(60, 48), Toon.mat('#bfb3a4')); f.rotation.x = -Math.PI / 2; f.receiveShadow = true; st.scene.add(f); }
+const who = new URLSearchParams(location.search).get('who') || 'red';
+const r = Toon.make(who, Looks.load()[who] || {}); st.scene.add(r.root); st.cast(r);
+window.__r = r; window.__st = st; window.__clip = Mocap.clip(new URLSearchParams(location.search).get('clip') || 'idle'); window.__t = 0;
+window.__pose = t => { const s = Mocap.sample(__clip, t); Mocap.apply(r, s, 1); r.root.updateMatrixWorld(true); r.tick(1 / 60); };
+{ const cv = (new URLSearchParams(location.search).get('cam') || '30,22,70').split(',').map(Number); st.go(new THREE.Vector3(...cv), new THREE.Vector3(0, 13, 0), 0); }
+st.start(dt => { __t += dt; __pose(__t); });
+</script>
