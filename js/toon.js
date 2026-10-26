@@ -473,6 +473,10 @@ function make(id, look, opts) {
   rig.cheek = {}; rig.seatPivot = {};
   const seatW = pv => p => { const w = 1 - ss(CHEEK.y - 0.1, CHEEK.y + 1.5, p.y); return [[rig.hips, 1 - w], [pv, w]]; };
   const pivotAt = sx => new V3(sx * D.hipX, 0, 0);
+  // (a man across a lap: the upper back of each cheek drawn in toward the body, so the seat eases into the line of his back instead of standing
+  // up from it in a hump; the drawers and trousers over it drawn in the same. Around the cheek's own middle, before it's put in place.)
+  const manTop = g => { if (!(MAN && opts.lying)) return g; const pp = g.attributes.position; let ry = 0; for (let i = 0; i < pp.count; i++) ry = Math.max(ry, pp.getY(i));
+    for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z < 0) pp.setZ(i, z * lerp(1, 0.5, ss(-0.1 * ry, 0.85 * ry, y))); } g.computeVertexNormals(); return g; };
   // A cheek's shading blends into the hip's at its sides and top: there its surface's normals are turned toward the hips' own (outward from the body's
   // middle), so the light falls on the two as one form; only the back of it, and the crease under it, keep their own.
   const blendIntoHips = (g, sx, cx, cy, cz) => {
@@ -489,7 +493,7 @@ function make(id, look, opts) {
     const pv = rig['seatPivot' + s]; rig.seatPivot[s] = pv;
     // Each cheek bends between its thigh and the hips: the lower part goes with the thigh (by cheekFollow), the top stays with the hips and runs on
     // into the small of the back, so it never tips out of it as the legs swing forward. Coloured per point, by the same rule as the skin around it.
-    const g = blendIntoHips(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 40, 28), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z);
+    const g = blendIntoHips(manTop(ell(CHEEK.rx, CHEEK.ry, CHEEK.rz, 40, 28)), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z);
     const m = skinnedOn(rig.hips, g, P.skin, seatW(pv), { tint: true, follow: pv, ink: 0.035 });
     rig.cheek[s] = { mesh: m }; if (opts.seated) m.visible = false;      // (seated, the seat is under her skirt and on the chair)
   }
@@ -666,7 +670,7 @@ function make(id, look, opts) {
       for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i), y = pp.getY(i); if (z < 0) pp.setZ(i, z * lerp(1.1, 1, ss(-1.3, -0.4, y)) * lerp(1, K.seatBack, ss(1.2, 0.2, y))); }
       flatWaist(g); g.computeVertexNormals(); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, torsoW, { cover: underSkirt }))); }
     for (const [s, sx] of [['L', 1], ['R', -1]]) {
-      { const g = blendIntoHips(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07, cover: underSkirt }))); }
+      { const g = blendIntoHips(manTop(ell(CHEEK.rx * 1.05, CHEEK.ry * 1.05, CHEEK.rz * 1.08)), sx, CHEEK.x, CHEEK.y, CHEEK.z); g.translate(sx * CHEEK.x, CHEEK.y, CHEEK.z); drawers.push(clipSrc('drawers', skinnedOn(rig.hips, g, P.drawers, seatW(rig.seatPivot[s]), { ink: 0.07, cover: underSkirt }))); }
       drawers.push(clipSrc('drawers', skinnedOn(rig['thigh' + s], lathe(wide([[1.9, 0.2], [1.95, -1.6], [1.8, -2.9], [1.88, -3.1]], K.legGirth), 1, 18), P.drawers, legW(s), { cover: underSkirt })));
       drawers.push(clipSrc('drawers', skinnedOn(rig['thigh' + s], lathe(wide([[1.86, -3.05], [1.96, -3.2], [1.84, -3.35]], K.legGirth), 1, 18), P.drawersDk, legW(s), { ink: 0.03, cover: underSkirt })));
       drawersDown.push(clipSrc('drawers', piece(new THREE.TorusGeometry(1.42 * K.legGirth, 0.42, 8, 20).rotateX(Math.PI / 2), P.drawers, rig['thigh' + s], 0, -D.thigh * 0.74, 0, { ink: 0 })));
@@ -701,7 +705,7 @@ function make(id, look, opts) {
     }
     // (their seat: heavier cloth than drawers, it doesn't follow each cheek but lies across both as one flatter curve, bridging the cleft; each
     // side of it goes with its own cheek as the legs swing, the top with the hips)
-    { const RX = CHEEK.x + CHEEK.rx * 1.06, g = ell(RX, CHEEK.ry * 1.06, CHEEK.rz * 1.12, 40, 24); g.translate(0, CHEEK.y, CHEEK.z);
+    { const RX = CHEEK.x + CHEEK.rx * 1.06, g = manTop(ell(RX, CHEEK.ry * 1.06, CHEEK.rz * 1.12, 40, 24)); g.translate(0, CHEEK.y, CHEEK.z);
       { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i) - CHEEK.z; if (z > 0) pp.setZ(i, CHEEK.z + z * 0.6); } g.computeVertexNormals(); }      // (its front tucked into the hips)
       const seatBoth = p => { const w = 1 - ss(CHEEK.y - 0.1, CHEEK.y + 1.5, p.y), l = ss(-0.8, 0.8, p.x); return [[rig.hips, 1 - w], [rig.seatPivot.L, w * l], [rig.seatPivot.R, w * (1 - l)]]; };
       trousers.push(clipSrc('skirt', skinnedOn(rig.hips, g, P.trousers, seatBoth, { ink: 0.05 }))); }
