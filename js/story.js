@@ -200,13 +200,11 @@ const walkStop = (k, ctx) => { const S = STOPS[k], th = l => l.map(([face, text]
 // lifted; then her drawers down (her mother's hand at each); and last the hairbrush, which she's sent to fetch from the chest, for the wood,
 // counted after each stroke; then her mother soothes her, the brush in her other hand. Her name stops it anywhere, and her mother answers that instead.
 // How long she stayed in the wood, and whether she owned to it, make it heavier (how: { walk: { bluebells, stream, beech }, lingered, lied }):
-// her mother names each place she stayed, over more of it; a lie is answered on its own; and the hairbrush's count is longer for each.
-const NUMS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
-  'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
+// the main part runs longer, her mother scolding her for each place she stayed, and a lie answered on its own, before the hairbrush comes
+// out. The hairbrush is always twelve.
 const homecomingCorrection = async (S, how) => {
   how = Object.assign({ walk: { bluebells: 0, stream: 0, beech: 0 }, lingered: 0, lied: null }, how || {});
   const M = 'corrector', R = 'subject', more = 0.05 * how.lingered + (how.lied ? 0.1 : 0);
-  const strokes = Math.min(NUMS.length, 12 + 2 * how.lingered + (how.lied ? 4 : 0));
   // (a stroke, then her count; her mother's face as she hears it, where it changes)
   const count = async (n, face) => { await S.smacks(1); S.face(face); await S.say(R, n); };
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5 + more, pace: 1.4 });
@@ -273,7 +271,7 @@ const homecomingCorrection = async (S, how) => {
     back: [M, 'Good girl. Now back across my lap, Little Red.', 'smile'],
   });
   S.set({ strength: 1.85 + more, pace: 1 }); await S.wait(0.8);
-  await S.say(M, 'You’ve ' + NUMS[strokes - 1].toLowerCase() + ' more coming. Count them for me, and then it’s finished.', 'stern');
+  await S.say(M, 'You’ve twelve more coming. Count them for me, and then it’s finished.', 'stern');
   await S.say(R, '…Yes, Mama.');
   await count('One…'); await count('Two…'); await count('Three…'); await count('Owww, Four…', 'concerned');
   await count('Five…'); await count('Six, oh Mama…', 'calm'); await count('Seven…');
@@ -282,11 +280,11 @@ const homecomingCorrection = async (S, how) => {
   await S.say(R, 'No, Mama!');
   await S.say(M, 'Then count it, love.', 'calm');
   await S.say(R, 'Eight…');
-  for (let k = 9; k <= strokes - 3; k++) await count(k === 13 ? 'Oh— Thirteen…' : k === 17 ? 'Seventeen, please, Mama…' : NUMS[k - 1] + '…', k === 13 ? 'concerned' : null);      // (past twelve: the extra, for the wood and the lie)
-  await count(NUMS[strokes - 3] + '! I’m sorry, Mama!');
+  await count('Nine…');
+  await count('Ten! I’m sorry, Mama!');
   await S.say(M, 'I know, love.', 'concerned');
-  await count(NUMS[strokes - 2] + '!', 'stern');
-  await count(NUMS[strokes - 1] + '.', 'stern');
+  await count('Eleven!', 'stern');
+  await count('Twelve.', 'stern');
   S.face('pout'); await S.wait(0.8);
   // (and the brush into her other hand, and her own laid on the sting, slowly, while she says it)
   await S.gesture('soothe', { hold: true });      // (it goes on until the scene fades)
