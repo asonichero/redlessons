@@ -154,8 +154,9 @@ World.scene('ch1.homecoming', {
     // (the shot: from the side of the line between them, toward the room, a little round toward the door, so her face turned to it shows)
     if (mo && dw) { const a = flat(mo.pos), b = flat(dw.at), mid = a.clone().lerp(b, 0.5), d = b.clone().sub(a), sep = d.length(); d.normalize();
       let side = new V3(-d.z, 0, d.x); const B = W.bounds; if (B && mid.clone().addScaledVector(side, 30).z > B.z1) side.negate();
-      const cam = P.collide(mid.clone().addScaledVector(side, sep * 0.95).addScaledVector(d, sep * 0.15), 4).setY(24);
-      P.camHeld = true; st.go(cam, a.clone().lerp(b, 0.42).setY(19), 0); }
+      // (far enough back to hold the two of them, her mother and the doorway with its steps, across the view)
+      const cam = P.collide(mid.clone().addScaledVector(side, sep * 1.3).addScaledVector(d, sep * 0.12), 4).setY(26);
+      P.camHeld = true; st.go(cam, a.clone().lerp(b, 0.55).setY(17), 0); }
     P.act(async () => {
       await P.wait(1.0);
       if (dw) { await me.goTo(dw.foot, yawTo(dw.foot, mo ? mo.pos : dw.foot)); if (W.door) W.door.target = 0; }      // (in, down the steps; the door swung to behind her)
