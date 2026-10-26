@@ -63,7 +63,7 @@ function create(view, opts) {
 
   // ── The camera, between scenes. Indoors it's anchored at the middle of the room, not on her: the whole room in view, turned round it by hand.
   // Outdoors it's anchored on her, she in the middle of the view, and goes with her. Either way, drag to go round (all the way), and the
-  // camera button, C or the wheel steps between near, medium (where it starts) and far; a pinch goes anywhere between. Where it's been turned
+  // camera button or the wheel steps between near, medium (where it starts) and far; on a touch screen a pinch goes anywhere between near and far. Where it's been turned
   // to, it stays: it doesn't swing round after her. (A scene can take it for a shot of its own: camHeld; or a page can leave it free: opts.camFree.)
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
   const indoors = !opts.followCam;
@@ -303,7 +303,8 @@ function create(view, opts) {
   }
   let exited = null;
   // Seated already, as a scene opens: Rose (who 'red') or the other, on a seat, there and then.
-  function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
+  // (from the seat itself, wherever it stands: getting up, that's where they stand)
+  function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
   return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };

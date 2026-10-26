@@ -3,7 +3,7 @@
 // embedded) is put in it; her mother works through the tier (js/discipline.js), her lines in the conversation box over the smacks, her portrait
 // beside them; then under another fade the room comes back, Rose standing before her, the marks still on her.
 //
-// The player has the camera (the round button, or C, steps round the angles; a drag looks about) and her name: the octagon, ROSE (or R). Said
+// The player has the camera (the round button steps round the angles; a drag looks about) and her name: the octagon, ROSE (or R). Said
 // at any point, everything stops at once, and her mother's closing words are the gentle ones, to Rose.
 //
 // Anyone can take anyone in hand (js/correctors.js): the corrector on their seat with their own implement, if the story brings it out; subjects in
@@ -44,7 +44,7 @@ function ui() {
   if (uiEl) return uiEl;
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
   uiEl = document.createElement('div'); uiEl.id = 'corrUI';
-  uiEl.innerHTML = '<button id="corrCam" title="Another angle (C)" aria-label="Camera"><svg viewBox="0 0 24 24"><path d="M3 8h4l1.6-2.4h6.8L17 8h4v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>' +
+  uiEl.innerHTML = '<button id="corrCam" title="Another angle" aria-label="Camera"><svg viewBox="0 0 24 24"><path d="M3 8h4l1.6-2.4h6.8L17 8h4v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>' +
     '<button id="corrAmber" title="Amber: a check-in (A)" aria-label="Amber" hidden>AMBER</button><button id="corrRose" title="Her name: it stops at once (R)" aria-label="Stop"><span>ROSE</span></button>';
   document.body.appendChild(uiEl);
   const hint = document.createElement('div'); hint.id = 'corrHint'; hint.textContent = 'Her name stops it, at any moment: the sign, or R.'; document.body.appendChild(hint);
@@ -105,7 +105,7 @@ async function run(P, o) {
   camBtn.onclick = e => { e.stopPropagation(); next(); };
   stopBtn.onclick = e => { e.stopPropagation(); if (A && A.init) A.init(); stop(); };
   amberBtn.onclick = e => { e.stopPropagation(); amber(); };
-  const keys = e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyR') stop(); if (e.code === 'KeyA') amber(); if (e.code === 'KeyC') next(); };
+  const keys = e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyR') stop(); if (e.code === 'KeyA') amber(); };
   addEventListener('keydown', keys);
   const results = []; let stoppedAll = false, afterPlayed = false;
   // ── A scripted turn: the story's own correction, as a dialogue between the two of them over the smacks (Climbing Toward Consequence's way),

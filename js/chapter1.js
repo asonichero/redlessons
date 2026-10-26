@@ -25,6 +25,10 @@ World.scene('ch1.tea', {
   run(P, w) {
     w.objective('');
     const W = P.world, stool = W.seats.find(s => s.name === 'the stool'), chair = W.seats.find(s => s.name === 'the chair');
+    // (on her way somewhere: if the table's in the way, out round its nearer side first, wherever the furniture stands)
+    const round = async (mo, to) => { const tb = W.surfaces.find(s => s.name === 'the table'); if (!tb) return; const c = new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2), R = Math.max(tb.x1 - tb.x0, tb.z1 - tb.z0) / 2 + 9;
+      const a = flat(mo.pos), v = flat(to).sub(a), t = Math.max(0, Math.min(1, c.clone().sub(a).dot(v) / (v.lengthSq() || 1))), near = a.clone().addScaledVector(v, t);
+      if (near.distanceTo(c) >= R || t <= 0 || t >= 1) return; const out = near.clone().sub(c); if (out.lengthSq() < 1e-4) out.set(-v.z, 0, v.x); await mo.goTo(P.collide(c.clone().addScaledVector(out.normalize(), R), 3.6, 'npc'), null); };
     P.seatNow(stool); P.seatNow(chair, 'npc');
     P.act(async () => {
       await P.wait(0.05); if (P.talk) P.talk.settle(['red', 'gran'], 0);      // (sat, under the fade: it opens on the conversation's own view of them)
@@ -35,17 +39,23 @@ World.scene('ch1.tea', {
         fetchGift: async () => {
           // (a wider shot as she gets up, across the room, side on to her way from the table to the dresser and back, so she's seen going
           // for it rather than walking at the camera)
-          // (from the room's far side from the dresser, at the height of the table: the table, the dresser and her way between them, side on)
+          // (a wide shot from high in a corner of the room or the middle of a wall, whichever's at a good distance from the table and the dresser
+          // and has Rose, sat at the table, out of the way: her way from the one to the other in it, side on as near as can be)
           const dr = W.surfaces.find(s => s.name === 'the dresser'), front = dr ? dr.front.clone().setY(0).normalize() : new V3(0, 0, 1);
-          { const tb = W.surfaces.find(s => s.name === 'the table'), a = tb ? new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2) : new V3(), b = flat(gp()), mid = a.clone().lerp(b, 0.5), across = new V3(-(b.z - a.z), 0, b.x - a.x).normalize();
-            if (across.dot(front) < 0) across.negate();      // (from the side the dresser faces, so it's seen from the front)
-            P.stage.go(P.collide(mid.clone().addScaledVector(across, 40), 2).setY(27), mid.clone().setY(11), 1100); }
+          { const tb = W.surfaces.find(s => s.name === 'the table'), a = tb ? new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2) : new V3(), b = flat(gp()), mid = a.clone().lerp(b, 0.5);
+            const B = W.bounds, I = 5, xs = [B.x0 + I, (B.x0 + B.x1) / 2, B.x1 - I], zs = [B.z0 + I, (B.z0 + B.z1) / 2, B.z1 - I], along = b.clone().sub(a).normalize(), redAt = flat(P.motion.pos);
+            const blocks = c => { const v = mid.clone().sub(c), t = Math.max(0, Math.min(1, redAt.clone().sub(c).dot(v) / v.lengthSq())); return c.clone().addScaledVector(v, t).distanceTo(redAt) < 9; };
+            let best = null;
+            for (const x of xs) for (const z of zs) { const c = new V3(x, 0, z); if (c.distanceTo(mid) < 20) continue;
+              const score = Math.abs(c.distanceTo(mid) - 42) + 30 * Math.abs(c.clone().sub(mid).normalize().dot(along)) + (blocks(c) ? 200 : 0) + (c.clone().sub(b).dot(front) < 0 ? 25 : 0);      // (side on; not through Rose; the dresser's front to it)
+              if (!best || score < best.score) best = { c, score }; }
+            P.stage.go(best.c.clone().setY(30), mid.clone().setY(11), 1100); }
           await g.stand();
-          const at = flat(gp()).addScaledVector(front, 8); await g.goTo(at, yawTo(at, gp()));      // (before the dresser, whichever way it faces)
+          const at = flat(gp()).addScaledVector(front, 8); await round(g, at); await g.goTo(at, yawTo(at, gp()));      // (before the dresser, whichever way it faces)
           await g.reach('R', gp()); g.reach('L', gp().addScaledVector(new V3(-front.z, 0, front.x), 1.5)); g.hold(gift, 'front'); gift.panel = null; W.items.splice(W.items.indexOf(gift), 1);
           g.release('L'); await g.release('R');
           // (to Rose: an arm's length and the parcel's from her, coming from where she is: not into her)
-          const red = P.motion.pos.clone(), to = P.collide(red.clone().add(flat(g.pos).sub(flat(red)).setLength(12)), 3.6, 'npc'); await g.goTo(to, yawTo(to, red));
+          const red = P.motion.pos.clone(), to = P.collide(red.clone().add(flat(g.pos).sub(flat(red)).setLength(12)), 3.6, 'npc'); await round(g, to); await g.goTo(to, yawTo(to, red));
           await P.getUp(); await P.motion.face(yawTo(P.motion.pos, g.pos)); P.talk.settle(['red', 'gran']); await P.wait(0.6);
         },
         giveGift: async () => { const it = g.drop(); P.motion.hold(it, 'front'); await P.wait(0.8); },

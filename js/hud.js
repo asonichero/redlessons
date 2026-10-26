@@ -3,7 +3,7 @@
 // the controls.
 //
 //   Keys: WASD or arrows to walk, Shift (held) to run, E (or Space, Enter) to do what the chip offers, Q for the other thing (lie down, on a bed),
-//   C to bring the camera in or take it out, Esc for the menu, ? (or the keyboard button) for the controls. A drag looks round her; the wheel zooms.
+//   Esc for the menu, ? (or the keyboard button) for the controls. A drag goes round; the camera button, or the wheel, steps it near, medium or far.
 //   Touch (or ?touch in the address): a stick under the left thumb; under the right, the action button (labelled with what it'll do, greyed when
 //   there's nothing), the other action above it, and Run (held). Top right, the menu and the camera.
 //   The chip is clickable (or tappable) too: each part of it does what its key does.
@@ -119,7 +119,7 @@ function create(opts) {
   const el = document.createElement('div'); el.id = 'hud';
   el.innerHTML = '<div id="hClock"></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
-    '<button id="hCam" class="hb" title="Camera (C)" aria-label="Camera">' + svg('camera') + '</button>' +
+    '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
     '<button id="hAct" class="hb t off">' + svg('act') + '<span>Do</span></button>' +
     '<button id="hAlt" class="hb t off">' + svg('lie') + '<span>Lie down</span></button>' +
@@ -147,9 +147,9 @@ function create(opts) {
   const setEl = screen('hSettings', '');
   const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
     ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'],
-    ['<kbd>Q</kbd>', 'The other thing (lie down, on a bed)'], ['<kbd>C</kbd>, or the wheel', 'Camera: closer or further'], ['Drag', 'Look round her'],
+    ['<kbd>Q</kbd>', 'The other thing (lie down, on a bed)'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
-    '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold).</p><div class="x">Click anywhere or press Esc to close</div>');
+    '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
   let paused = false, wasHeld = false, audioWas = null;
   // The journal (opts.journal() → { phase, clock, lines: [{ name, main, state, step: { title, hint }, done, total }] }): where each line has got to.
   const STATE = { offered: '', waiting: 'waiting', gated: 'not yet', later: 'later', paused: 'paused', done: 'done' };
@@ -198,11 +198,11 @@ function create(opts) {
   function stepCam() {
     const p = P(); if (!p || (p.talk && p.talk.playing) || document.body.classList.contains('correcting')) return; const st = p.stage, off = st.camera.position.clone().sub(st.controls.target);
     // (between scenes, the game's camera steps between its own three distances, near, medium and far: see js/play.js)
-    if (p.follows) { p.camZoom = p.camZoom + 1; $('hCam').title = 'Camera: ' + p.FOLLOW_NAMES[p.camZoom] + ' (C)'; return; }
+    if (p.follows) { p.camZoom = p.camZoom + 1; $('hCam').title = 'Camera: ' + p.FOLLOW_NAMES[p.camZoom]; return; }
     if (base == null || Math.abs(off.length() - base * ZOOMS[zoom][1]) > 2) { base = off.length() / ZOOMS[zoom][1]; }      // (the wheel moved it: start from there)
     zoom = (zoom + 1) % ZOOMS.length; const want = Math.max(st.controls.minDistance, Math.min(st.controls.maxDistance, base * ZOOMS[zoom][1]));
     st.go(st.controls.target.clone().add(off.setLength(want)), st.controls.target.clone(), 450);
-    $('hCam').title = 'Camera: ' + ZOOMS[zoom][0] + ' (C)';
+    $('hCam').title = 'Camera: ' + ZOOMS[zoom][0];
   }
   $('hCam').addEventListener('click', e => { e.stopPropagation(); stepCam(); });
 
@@ -225,7 +225,6 @@ function create(opts) {
     if (e.repeat) return; held.add(e.code); const p = P();
     if (p && ['KeyE', 'Space', 'Enter'].includes(e.code)) p.use();
     if (p && e.code === 'KeyQ') p.use(true);
-    if (e.code === 'KeyC') stepCam();
     if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
     axes();
   });
