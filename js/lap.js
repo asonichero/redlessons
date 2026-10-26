@@ -338,14 +338,16 @@ function create(view, opts) {
   }
 
   // ── After: sat up on the giver's lap, side on, her back to the giver's left, her legs over the right thigh. Two ways (lap.after(kind)):
-  //  • 'held' (high distress): dressed as the correction left her, her head down in the giver's shoulder, or her chest if she sits too low to
+  //  • 'held' (high distress): dressed as the correction left her, forward on the lap, turned into the giver and resting on her right hip, her
+  //    legs curled up with the knees toward the giver; her right arm over the giver's back and shoulders, her left hand hanging on the giver's
+  //    right shoulder; her head down in the giver's shoulder, or her chest if she sits too low to
   //    reach it (whichever her height on the lap brings her face to), the giver's arms wrapped round her: the left across her back, its hand on
   //    her far shoulder blade, the right round her waist, its hand on her far hip; the giver's head relaxed and facing forward, resting
   //    lightly against hers. She shakes a little as she cries.
-  //  • 'upright' (after the safe word): dressed again, sitting up on her own, the giver's left hand in the small of her back and the right
-  //    resting on her far knee; her hands in her lap, her face turned a little to the giver's, the giver's a little to hers.
+  //  • 'upright' (after the safe word): dressed again, sitting up on her own nearer the giver's knees, the giver's left hand in the small of her back and the right
+  //    resting on her far knee; her hands in her lap; turned a little toward each other, they look at each other.
   let sitter = null, held_ = null;
-  const GTORSO = { held: [0.04, 0.05, -0.04], upright: [0.02, 0.05, 0] };      // (the giver's torso: sat easy, a touch toward her)
+  const GTORSO = { held: [0.04, 0.05, 0.2], upright: [0.02, 0.05, 0] };      // (the giver's torso: sat easy, a touch toward her; held, tipped to her right, to make room for her in the crook of the left arm)
   const side_ = (rig, s) => new V3(s === 'L' ? 1 : -1, 0, 0).applyQuaternion(rig.root.getWorldQuaternion(new Q()));      // (a figure's left, or right, in the world)
   // A hand laid flat on a point Tp: the palm into the surface along nIn, the fingers along d.
   function handFlat(g, s, Tp, nIn, d, reach) {
@@ -359,17 +361,28 @@ function create(view, opts) {
     const yaw = clamp(Math.atan2(l.x, l.z), -1.3, 1.3) * amount, pitch = clamp(Math.atan2(-l.y, Math.hypot(l.x, l.z)), -0.5, 0.7) * amount;
     rig.neck.rotation.set(pitch * 0.6, yaw * 0.75, roll || 0); rig.head.rotation.set(pitch * 0.4, yaw * 0.25, 0);
   }
+  // The two ways she sits, on the lap: turned (from facing the giver's right) toward the giver; rolled onto her right hip; across the lap (from
+  // the middle between the thighs, toward the giver's left) and along it (from the hips to the knees); her seat's height over the lap; her legs
+  // ([thigh forward swing, out, knee bend, ankle] for each).
+  const POSE = {
+    // (held: up on her right hip, so the hip joint stands higher over the lap than sitting square; the numbers found by trying, for none of her
+    // legs to pass into the chair, the giver's lap or her legs, or the floor)
+    held: { turn: 0.55, roll: 0.65, x: 1.4, along: 0.62, y: 4.4, legL: [-1.75, 0.12, 1.7, 0.6], legR: [-1.45, 0.05, 1.45, 0.6] },
+    upright: { turn: 0.3, roll: 0, x: 0.6, along: 0.78, y: 2.55, legL: [-Math.PI / 2 + 0.3, 0.05, 1.2, 0.35], legR: [-Math.PI / 2 + 0.22, -0.05, 1.15, 0.35] },      // (the shins forward of the chair)
+  };
   function seatSitter(kind) {
     const g = gerda, gs = g.scaleW, r = sitter, rs = r.scaleW;
     g.torso.rotation.set(0, 0, 0); g.neck.rotation.set(0, 0, 0); g.head.rotation.set(0, 0, 0); g.root.updateMatrixWorld(true);
     const hip = world(g.thighR).lerp(world(g.thighL), 0.5), knee = world(g.kneeR).lerp(world(g.kneeL), 0.5);
     const lapTop = lerp(hip.y, knee.y, 0.5) + 2.35 * gs;
-    // (facing the giver's right, along -x; her hips a little to the left of the middle of the lap, halfway down the thighs)
-    r.root.rotation.set(0, -Math.PI / 2, 0);
-    r.hips.position.set(0, T.DIM.hipY, 0); r.hips.rotation.set(0, 0, 0);
-    const droop = 0.22;      // (her thighs sloping a little down over the giver's right thigh; the shins hanging)
-    for (const l of [r.legL, r.legR]) { l.thigh.rotation.set(-Math.PI / 2 + droop, 0, l.sign * 0.05); l.knee.rotation.set(Math.PI / 2 - droop + 0.12, 0, 0); l.ankle.rotation.set(0.35, 0, 0); }
-    r.root.position.set(hip.x + (kind === 'held' ? 2.2 : 0.9) * gs, lapTop + 2.55 * rs - T.DIM.hipY * rs, lerp(hip.z, knee.z, kind === 'held' ? 0.45 : 0.58));      // (held, over the left thigh, so the shoulder's at her side)
+    // Held: forward on the lap toward the knees, turned into the giver, resting on her right hip (the hips rolled that way) with her legs
+    // curled up on the lap, the knees toward the giver, clear of the chair and the giver's legs. Upright: sitting up nearer the knees, turned a
+    // little toward the giver so that they can look at each other easily, her legs over the giver's right thigh.
+    const P = POSE[kind];
+    r.root.rotation.set(0, -Math.PI / 2 - P.turn, 0);
+    r.hips.position.set(0, T.DIM.hipY, 0); r.hips.rotation.set(0, 0, P.roll);
+    for (const l of [r.legL, r.legR]) { const k = l === r.legL ? P.legL : P.legR; l.thigh.rotation.set(k[0], 0, l.sign * k[1]); l.knee.rotation.set(k[2], 0, 0); l.ankle.rotation.set(k[3], 0, 0); }
+    r.root.position.set(hip.x + P.x * gs, lapTop + P.y * rs - T.DIM.hipY * rs, lerp(hip.z, knee.z, P.along));
     r.root.updateMatrixWorld(true);
     held_ = { kind, t: 0, sob: kind === 'held' ? 1 : 0, lean: null };
     // (the giver: a touch toward her; held, leant in over her)
@@ -389,7 +402,7 @@ function create(view, opts) {
       // (her lean, found by trying: turned into the giver, rolled toward her and bowed; whichever
       // brings her head nearest the spot, with as little lean as gets her there)
       let best = null;
-      for (let z = 0; z <= 0.9; z += 0.05) for (let x = -0.2; x <= 0.9; x += 0.05) for (let y = -0.9; y <= 0.01; y += 0.1) {
+      for (let z = -0.5; z <= 0.9; z += 0.05) for (let x = -0.2; x <= 0.9; x += 0.05) for (let y = -0.9; y <= 0.01; y += 0.1) {
         r.torso.rotation.set(x, y, z); r.torso.updateMatrixWorld(true);
         const dd = world(r.headGroup).distanceTo(want) + 0.15 * z + 0.15 * Math.abs(x) + 0.1 * Math.abs(y);
         if (!best || dd < best.dd) best = { dd, x, y, z };
@@ -405,13 +418,15 @@ function create(view, opts) {
     else r.torso.rotation.set(-0.04, -0.12, 0);
     r.root.updateMatrixWorld(true);
     if (h.kind === 'held') lookTo(r, h.target, 1, 0.25);
-    else lookTo(r, world(g.headGroup), 0.45);
+    else lookTo(r, world(g.headGroup), 0.7);      // (nearer the knees, turned a little: they look at each other without straining)
     // Her hands: held, the near one curled against the giver's chest, the other in her own lap; upright, both in her lap.
     const lapPt = (s, k) => world(r['thigh' + s]).lerp(world(r['knee' + s]), k).add(new V3(0, 1.5 * rs, 0));
     if (h.kind === 'held') {
-      const fwdG = new V3(0, 0, 1).applyQuaternion(g.torso.getWorldQuaternion(new Q())).setY(0).normalize();
-      armIK(r, 'R', h.target.clone().add(new V3(0, -3.2 * gs, 0)).addScaledVector(fwdG, 0.8 * gs).addScaledVector(side_(r, 'R'), -0.4 * rs), side_(r, 'R').add(new V3(0, -0.8, 0)));
-      armIK(r, 'L', lapPt('R', 0.55).addScaledVector(side_(r, 'L'), 1.2 * rs), side_(r, 'L').add(new V3(0, -0.5, 0)));
+      // (her right arm over the giver's back, behind the neck, its hand on the back of the far shoulder; her left across in front, its hand
+      // hanging on that same shoulder)
+      const fwdG = new V3(0, 0, 1).applyQuaternion(g.torso.getWorldQuaternion(new Q())).setY(0).normalize(), rG = side_(g, 'R'), shR = world(g.armR);
+      armIK(r, 'R', world(g.neck).lerp(shR, 0.75).addScaledVector(fwdG, -2.0 * gs).add(new V3(0, 1.0 * gs, 0)), new V3(0, 1, 0).addScaledVector(fwdG, -0.6));
+      armIK(r, 'L', shR.clone().addScaledVector(fwdG, 1.6 * gs).addScaledVector(rG, -0.4 * gs).add(new V3(0, 0.6 * gs, 0)), new V3(0, -0.6, 0).addScaledVector(fwdG, 1));
     } else {
       armIK(r, 'L', lapPt('L', 0.6).addScaledVector(side_(r, 'R'), 0.9 * rs), side_(r, 'L').add(new V3(0, -0.4, 0)));
       armIK(r, 'R', lapPt('R', 0.55).addScaledVector(side_(r, 'L'), 0.9 * rs), side_(r, 'R').add(new V3(0, -0.4, 0)));
@@ -419,7 +434,7 @@ function create(view, opts) {
     // The giver: leant a little toward her.
     g.torso.rotation.set(...GTORSO[h.kind]); g.root.updateMatrixWorld(true);
     // (the head relaxed and facing forward: held, tipped a little to rest against hers; upright, turned only a little toward her)
-    if (h.kind === 'held') { g.neck.rotation.set(0.1, 0.04, -0.16); g.head.rotation.set(0.04, 0, -0.06); } else lookTo(g, world(r.headGroup), 0.3);
+    if (h.kind === 'held') { g.neck.rotation.set(0.1, 0.04, -0.16); g.head.rotation.set(0.04, 0, -0.06); } else lookTo(g, world(r.headGroup), 0.6);
     g.root.updateMatrixWorld(true);
     const far = side_(r, 'L'), back = new V3(0, 0, -1).applyQuaternion(r.torso.getWorldQuaternion(new Q())), up = new V3(0, 1, 0);
     let L_, R_;
@@ -497,7 +512,7 @@ function create(view, opts) {
       sitter.setExpr(kind === 'held' ? 'crying' : 'shy'); sitter.breath = kind === 'held' ? 1.6 : 1;
       poseHeld(0); sitter.tick(0.016); gerda.tick(0.016);
     },
-    get held() { return held_ ? held_.kind : null; },
+    get held() { return held_ ? held_.kind : null; }, get chair() { return chair; }, POSE,      // (POSE: the after poses' numbers, for tuning)
     // Held still, for looking at (the character editor): 'contact' (the hand landed on one cheek, side 'L' or 'R'), 'soothe' (the hand
     // circling on the cheeks, going on), or null (at rest).
     still(kind, side) {
