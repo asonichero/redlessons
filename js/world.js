@@ -22,19 +22,19 @@ const HULDA = { id: 'gran', key: 'gran', name: 'Grandmother', voice: 'gran', tin
 // the place gives them: to where, and in by which way).
 const AREAS = {
   cabin: {
-    name: 'Grandmother’s', set: s => root.Cabin.build(s), npc: () => Object.assign({ at: [-22, 17], yaw: Math.PI / 2 }, HULDA), talk: () => root.Story.granAgain(),      // (npc: by her rocking chair and the hearth, facing into the room)
+    name: 'Grandmother’s', music: 'hearth', set: s => root.Cabin.build(s), npc: () => Object.assign({ at: [-22, 17], yaw: Math.PI / 2 }, HULDA), talk: () => root.Story.granAgain(),      // (npc: by her rocking chair and the hearth, facing into the room)
     entries: { door: { at: [-10, 26], yaw: Math.PI }, chapter: { at: [-2, 7], yaw: Math.PI } },
     exits: { 'the wood': { area: 'wood', entry: 'cabin' } },
     // (once she has the cloak, its parcel is gone from the dresser)
     dress(P, w) { const g = P.world.gift; if (g && w.q.done('hulda.cloak')) { g.obj.visible = false; const i = P.world.items.indexOf(g); if (i >= 0) P.world.items.splice(i, 1); } },
   },
   wood: {
-    name: 'The wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    name: 'The wood', music: 'wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
     exits: { 'the village': { area: 'home', entry: 'door' }, 'the cabin': { area: 'cabin', entry: 'door' } },
   },
   home: {
-    name: 'Home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
+    name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
     dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); },
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
@@ -93,6 +93,7 @@ function create(view, ui) {
       if (opts.place) opts.place(P);
       if (A.dress) A.dress(P, w);
       P.tick(dt => frame(dt));
+      { const Au = root.GameAudio; if (Au && Au.startMusic && A.music) Au.startMusic({ theme: (sc && sc.music) || A.music }); }      // (each place its own music; a scene can have its own)
       save.change(s => { s.area = name; }, { area: name });
       refresh();
       if (sc && sc.run) sc.run(P, w, step);
@@ -188,6 +189,7 @@ function create(view, ui) {
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
     if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, 1); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
     P.stage.setLight(lightFn ? lightFn() : cal.light());
+    { const Au = root.GameAudio; if (Au && Au.musicTheme === 'wood' && Au.nodes.musicFilter) Au.nodes.musicFilter.frequency.value = 2200 - 1400 * cal.light(); }      // (the wood's music darkening with the light)
     if ((sinceSave += dt) > 3 && idle) { sinceSave = 0; const m = P.motion; save.change(s => { s.at = [Math.round(m.pos.x * 10) / 10, Math.round(m.pos.z * 10) / 10, Math.round(m.yaw * 100) / 100]; }, { at: true }); }
   }
   let lastClock = ''; function refreshClock() { const c = 'Day ' + cal.day + ' · ' + cal.clock; if (c !== lastClock && ui.clock) { lastClock = c; ui.clock(c, q.phaseOf(q.phase())); } }

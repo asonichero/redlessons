@@ -149,6 +149,7 @@ async function bedtime(P, w, r) {
   await w.fade(true);
   [P.rig.root, P.npc && P.npc.root].filter(Boolean).forEach(o => { o.visible = false; });
   P.camHeld = true; st.setLight(Math.max(st.time || 0, 0.85));      // (night, the fire low)
+  if (root.GameAudio && GameAudio.startMusic) GameAudio.startMusic({ theme: 'bed' });      // (her thoughts at night: the music box)
   const b = Bed.scene(st, P.world); P.tick(dt => b.tick(dt));
   const v = b.shot(); st.go(v.pos, v.look, 0);
   // (her cloak off for bed at last, and on its hook by the door: so it is in the morning)
@@ -186,7 +187,7 @@ World.scene('ch1.homecoming', {
       const r = await Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: S => Story.homecomingCorrection(S, how), implement: 'hairbrush' }], after: Story.afterCorrection,
         fade: async on => { await w.fade(on); if (on) lay(); } });
       if (P !== w.P) return;
-      if (!r.afterPlayed) await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] });
+      if (!r.afterPlayed) { if (root.GameAudio && GameAudio.startMusic) GameAudio.startMusic({ theme: 'after' }); await P.converse(Story.afterCorrection(r), { shot: ['red', 'mother'] }); }
       w.rep.settle('wilful'); if (r.rose) w.save.flag('rose-said', w.cal.day);
       w.complete('maren.homecoming');
       await bedtime(P, w, r);

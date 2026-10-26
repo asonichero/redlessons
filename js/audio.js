@@ -66,6 +66,38 @@ THEMES.nursery = { dt: 0.5, cut: 3400, play(step, t, tone, rnd) {               
   const m = MEL[bar][beat]; if (m) { tone(hz(m), t, 1.5, 'sine', 0.05); tone(hz(m) * 4, t, 0.22, 'sine', 0.011); if (bar % 2 === 1 && rnd() < 0.7) tone(hz(m) * 1.034, t + 0.02, 1.1, 'sine', 0.013); }       // (the shadow note, a hair sharp, as if the box has gone slightly off)
 } };
 THEMES.dark = Object.assign({}, THEMES.pastoral, { cut: 700 });
+// Little Red's own (chapter one):
+//   hearth (her grandmother's): a cosy folk waltz in G, a bass on the one and the chord on two and three, a fiddle-ish tune over it.
+//   wood (the walk home): D dorian, slow and open: long fifths, a wandering flute line with rests in it, now and then an owl's two notes.
+//     (the world darkens its filter as the light goes)
+//   home (the homecoming, before): F major, tender and hesitant: a soft piano's broken chords, a few sighing notes.
+//   after (on her lap, after the correction): D major, slow and consoling, sustained chords swelling in, a melody that falls and comes to rest.
+//   bed (her thoughts at night): the music-box lullaby (nursery), slower.
+THEMES.hearth = { dt: 0.42, cut: 2400, play(step, t, tone) {
+  const CH = [[43, 59, 62], [48, 60, 64], [50, 57, 62], [43, 59, 62], [40, 59, 64], [48, 60, 64], [50, 57, 66], [43, 59, 67]];
+  const MEL = [[67, 71, 74], [76, 0, 74], [72, 0, 71], [69, 0, 0], [71, 74, 79], [76, 0, 72], [74, 72, 69], [67, 0, 0]];
+  const bar = Math.floor(step / 3) % 8, beat = step % 3, c = CH[bar];
+  if (beat === 0) tone(hz(c[0]), t, 1.1, 'triangle', 0.09, 0.02);
+  else { tone(hz(c[1]), t, 0.5, 'triangle', 0.03, 0.02); tone(hz(c[2]), t, 0.5, 'triangle', 0.03, 0.02); }
+  const m = MEL[bar][beat]; if (m) { tone(hz(m), t, 0.8, 'triangle', 0.05, 0.03); tone(hz(m) * 1.004, t, 0.8, 'sawtooth', 0.006, 0.05); } } };
+THEMES.wood = { dt: 0.8, cut: 2200, play(step, t, tone, rnd) {
+  const CH = [[38, 45, 50], [36, 43, 50], [41, 48, 53], [43, 50, 55]], SC = [62, 64, 65, 67, 69, 71, 72, 74, 76], bar = Math.floor(step / 8) % 4, beat = step % 8;       // Dm, C, F, G: dorian
+  if (beat === 0) for (const m of CH[bar]) tone(hz(m), t, 7, 'sine', 0.05, 2.2);
+  if ((beat === 1 || beat === 4 || beat === 6) && rnd() < 0.7) { const m = SC[Math.floor(rnd() * SC.length)]; tone(hz(m), t, 2.2, 'sine', 0.045, 0.25); tone(hz(m) * 2, t, 1.2, 'sine', 0.008, 0.25); }
+  if (bar === 3 && beat === 7 && rnd() < 0.5) { tone(hz(57), t, 0.5, 'sine', 0.03, 0.08); tone(hz(53), t + 0.45, 0.8, 'sine', 0.03, 0.08); } } };
+THEMES.home = { dt: 0.7, cut: 1900, play(step, t, tone, rnd) {
+  const CH = [[41, 57, 60, 65], [38, 57, 62, 65], [46, 58, 62, 65], [48, 55, 60, 64], [46, 58, 62, 65], [45, 57, 60, 65], [43, 58, 62, 67], [48, 55, 58, 64]];      // F, Dm, Bb, C; Bb, F/A, Gm, C7
+  const bar = Math.floor(step / 8) % 8, beat = step % 8, c = CH[bar];
+  if (beat === 0) tone(hz(c[0]), t, 5, 'sine', 0.08, 0.05);
+  if (beat < 6) tone(hz(c[1 + (beat % 3)] + (beat >= 3 ? 12 : 0)), t, 1.8, 'triangle', 0.035, 0.01);
+  if (beat === 6 && bar % 2 === 1) { const m = c[3] + 12; tone(hz(m + 2), t, 0.7, 'sine', 0.035, 0.05); tone(hz(m), t + 0.7, 2.2, 'sine', 0.035, 0.05); } } };      // (a sigh: a step, and down onto the note)
+THEMES.after = { dt: 1.0, cut: 1600, play(step, t, tone) {
+  const CH = [[38, 57, 62, 66], [35, 54, 59, 62], [31, 55, 59, 62], [33, 57, 61, 64], [38, 57, 62, 66], [31, 55, 59, 62], [33, 55, 57, 61], [38, 54, 57, 62]];      // D, Bm, G, A; D, G, A7, D
+  const MEL = [[78, 0, 76, 0], [74, 0, 0, 71], [71, 0, 74, 0], [69, 0, 0, 0], [78, 0, 81, 0], [79, 0, 76, 74], [73, 0, 76, 0], [74, 0, 0, 0]];
+  const bar = Math.floor(step / 4) % 8, beat = step % 4, c = CH[bar];
+  if (beat === 0) { tone(hz(c[0]), t, 4.4, 'sine', 0.09, 1.2); for (const m of c.slice(1)) tone(hz(m), t, 4.4, 'sine', 0.04, 1.6); }
+  const m = MEL[bar][beat]; if (m) tone(hz(m), t, 2.6, 'triangle', 0.04, 0.4); } };
+THEMES.bed = Object.assign({}, THEMES.nursery, { dt: 0.62, cut: 2600 });
 A.startMusic = function (opts) {
   if (!A.ctx) return; const want = (opts && opts.theme) || (opts && opts.dark ? 'dark' : 'pastoral'); if (A.musicOn && A.musicTheme === want) return;
   if (A.musicOn) A.stopMusic(2.2);
@@ -162,10 +194,12 @@ A.birch = function (power, muffle, vol) {
   g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.22 * p, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08); o.connect(g); g.connect(lp); o.start(t); o.stop(t + 0.1);
 };
 // base: the voice's pitch at rest (Hz); a woman's by default. Her vowels sit a little higher with it.
+// (A.cryPitch: where a cry sits, for how hard it landed and how far gone she is: what her words are pitched to, said over them)
+A.cryPitch = (power, band, base) => { const b0 = base || 215; return b0 + 70 * (b0 / 125) * 0.8 * clamp(power, 0, 1.5) + 26 * band; };
 A.voice = function (power, band, muffle, vol, base) {
   if (!A.init()) return; const ctx = A.ctx, N = A.nodes, k = (vol == null ? 1 : vol) * (muffle ? 2.2 : 1);
   const t0 = ctx.currentTime + 0.05 + Math.random() * 0.05, dur = [0.12, 0.2, 0.3, 0.42, 0.6, 0.6][band] || 0.3;
-  const b0 = base || 215, f0 = b0 + 70 * (b0 / 125) * 0.8 * clamp(power, 0, 1.5) + 26 * band + Math.random() * 16, fm = b0 > 170 ? 1.15 : 1;
+  const b0 = base || 215, f0 = A.cryPitch(power, band, b0) + Math.random() * 16, fm = b0 > 170 ? 1.15 : 1;
   const vowel = ([[420, 800], [760, 1150], [620, 1000], [700, 1100], [520, 920], [480, 880]][band] || [650, 1000]).map(f => f * fm);
   const osc = ctx.createOscillator(); osc.type = 'sawtooth';
   osc.frequency.setValueAtTime(f0, t0); osc.frequency.linearRampToValueAtTime(f0 * (band >= 3 ? 1.35 : band === 2 ? 1.12 : 0.9), t0 + dur);
@@ -179,8 +213,8 @@ A.voice = function (power, band, muffle, vol, base) {
 
 // ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: 'red' | 'gerda' | 'narrator' ──
 const PITCH = { red: 215, gerda: 190, gran: 172, narrator: 150 };
-A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through a wall (louder in the filter, to carry); opts.vol scales it
-  if (!A.init()) return { stop() {} }; const ctx = A.ctx, N = A.nodes, base = PITCH[who] || 160, muffle = opts && opts.muffle;
+A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through a wall (louder in the filter, to carry); opts.vol scales it; opts.pitch: in place of the speaker's own (Hz)
+  if (!A.init()) return { stop() {} }; const ctx = A.ctx, N = A.nodes, base = (opts && opts.pitch) || PITCH[who] || 160, muffle = opts && opts.muffle;
   const words = text.split(/\s+/).filter(Boolean); let t = ctx.currentTime + 0.05; const step = seconds / Math.max(1, words.length), stopAt = t + seconds + 0.3, nodes = [];
   let dest = N.voice; if (muffle) { const m = ctx.createBiquadFilter(); m.type = 'lowpass'; m.frequency.value = (opts && opts.cutoff) || 520; m.connect(N.sfx); dest = m; }
   const vowels = [[700, 1100], [500, 1700], [350, 2300], [450, 800], [320, 900]];

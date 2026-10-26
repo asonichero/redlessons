@@ -54,7 +54,7 @@ function ui() {
 // The corrector's face for each kind of line (see js/discipline.js).
 const FACES = { start: 'stern', stage: 'stern', implement: 'stern', during: ['calm', 'stern'], amber: 'shy', done: 'calm', after: 'smile', stop: 'shy', harsh: 'surprised' };
 const ANGLES = ['side', 'behind', 'face', 'corrector', 'top', 'room', 'corner'];
-const yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+const yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z), flat = v => v.clone().setY(0), clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 // Someone else in the room: a figure of their own, moved by js/motion.js, going with the scene (seated on one of its seats, or standing).
 function figure(P, id, look) {
@@ -77,6 +77,7 @@ async function run(P, o) {
   const el = ui(), hint = document.getElementById('corrHint'), looks = root.Looks ? root.Looks.load() : {};
   const c = Cs.corrector(o.corrector || 'maren'), player = o.player || 'red';
   const turns = o.turns || [{ subject: 'red', tier: o.tier || 'light', implement: o.implement, implementFrom: o.implementFrom }];
+  if (A && A.stopMusic) A.stopMusic(3);      // (no music under it)
   await fade(true);
   // The two of them as they walk about, put aside; whoever watches, set in the room; the lap scene at the middle of it.
   const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
@@ -138,12 +139,18 @@ async function run(P, o) {
     const rub = () => { const p = r.rear.L.getWorldPosition(new V3()), back = new V3(-Math.sin(m.yaw), 0, -Math.cos(m.yaw)), t = performance.now() / 1000;
       return p.addScaledVector(back, 0.9 * r.scaleW).add(new V3(0, Math.sin(t * 5) * 0.5 * r.scaleW, 0)); };
     const ch = P.world.chest, at = P.collide(ch.front.clone().add(new V3(0, 0, 6)).setY(0), 3.4);
-    m.reach('L', rub); await m.goTo(at, Math.PI, { speed: 0.42 }); await m.release('L');      // (and back to the chest's lid, to open it)
+    // (round her mother and the chair, not through them: by a point beside them, on whichever side the way passes, if it passes near)
+    const around = async (to, yaw, o3) => { const a = flat(m.pos), d = flat(to).sub(a), c = flat(gp), R = 16 * G.scaleW;
+      const t = clamp(c.clone().sub(a).dot(d) / (d.lengthSq() || 1), 0, 1), near = a.clone().addScaledVector(d, t);
+      if (t > 0.05 && t < 0.95 && near.distanceTo(c) < R) { let side = near.clone().sub(c); if (side.lengthSq() < 1e-3) side.set(-d.z, 0, d.x); side.setLength(R);
+        await m.goTo(P.collide(c.clone().add(side), 3.4), null, o3); }
+      await m.goTo(to, yaw, o3); };
+    m.reach('L', rub); await around(at, Math.PI, { speed: 0.42 }); await m.release('L');      // (and back to the chest's lid, to open it)
     await P.useChest();
     // (in her left hand: held out on her mother's right, toward the camera at her shoulder)
     const brush = root.Implements ? root.Implements.model(id, r.palm ? r.palm.L : -1) : null; if (brush) { brush.position.y = -0.5; r.handL.add(brush); }
     await wait(0.5); await P.useChest();      // (and the lid shut on the rest)
-    await m.goTo(before, yawTo(before, gp));
+    await around(before, yawTo(before, gp));
     if (o2.presentFace) G.setExpr(o2.presentFace);
     // (holding it out to her: the camera sweeping slowly round to her mother's right shoulder, Red's face and the brush held out both to us)
     { const sh = G.armR.getWorldPosition(new V3()), out = sh.clone().sub(gp).setY(0).normalize(), sc = G.scaleW;
@@ -162,7 +169,9 @@ async function run(P, o) {
     lap.set({ noHarsh: true });      // (the story's own: only her word stops it, never the pain model's "too harsh")
     const ended = () => lap.st.rose || lap.st.ended;
     const keyOf = w => w === 'subject' || w === sub.id || w === 'red' && sub.id === player ? subKey : castKey;
-    const line = (who, text, face) => talk.caption(keyOf(who), text.replace(/\{name\}/g, sub.names[0]).replace(/\{word\}/g, sub.word), { face, wait });
+    // (hers: pitched where her cries are by now, and in place of any she'd make while it's said)
+    const line = (who, text, face) => { const k = keyOf(who), hers = k === subKey;
+      return talk.caption(k, text.replace(/\{name\}/g, sub.names[0]).replace(/\{word\}/g, sub.word), { face, wait, pitch: hers ? lap.cryPitch() : null, speaking: hers ? s => lap.hush(s) : null }); };
     const smacks = async n => { if (!n || ended()) return; lap.run(n); await wait(0.3); for (let i = 0; i < 900 && lap.busy() && !ended(); i++) await wait(0.1); };
     const S = { lap, corrector: c, subject: sub,
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
@@ -244,6 +253,7 @@ async function run(P, o) {
         const ctx = { beat: async () => { lap.giverRig.setExpr('tender', 3); await wait(2.2); },
           sitUp: async () => { await fade(true); lap.after('upright', { asIs: true }); lap.subjectRig.setExpr('teary', 60); if (talk.cast.red) talk.cast.red.rig = lap.subjectRig;
             const v2 = lap.VIEWS.after(); st.go(v2.pos, v2.look, 0); await wait(0.4); await fade(false); } };
+        if (A && A.startMusic) A.startMusic({ theme: 'after' });      // (and after it, the two of them: music again, its own)
         try { await talk.play(o.after(last, ctx), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
         afterPlayed = true; await wait(0.6);
       }

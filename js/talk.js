@@ -239,7 +239,9 @@ function create(stage, opts) {
     o = o || {}; const n = ++capN, c = cast[who]; if (!c) return Promise.resolve();
     el.classList.remove('muse'); el.classList.add('cap'); speaker(who); face(who, o.face); choicesEl.innerHTML = '';
     const cps = CPS(), secs = Math.max(0.4, text.length / cps), t0 = performance.now();
-    if (voice) voice.stop(); voice = A && A.speak ? A.speak(c.voice || who, text, secs * 0.92) : null;
+    // (o.pitch: her words pitched where her cries are; o.speaking(secs): told how long they're voiced for)
+    if (voice) voice.stop(); voice = A && A.speak ? A.speak(c.voice || who, text, secs * 0.92, o.pitch ? { pitch: o.pitch } : null) : null;
+    if (o.speaking) o.speaking(secs * 0.92 + 0.15);
     const step = () => { if (n !== capN) return; const i = Math.min(text.length, Math.floor((performance.now() - t0) / 1000 * cps)); textEl.textContent = text.slice(0, i); if (i < text.length) requestAnimationFrame(step); };
     textEl.textContent = ''; requestAnimationFrame(step);
     // (o.wait: the scene's own clock, so that a line holds while the game is paused)

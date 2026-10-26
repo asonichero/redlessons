@@ -86,7 +86,9 @@ function create(view, opts) {
   const bandIndex = () => { const d = pain.distress(); return d < 0.3 ? 0 : d < 0.6 ? 1 : d < 0.9 ? 2 : d < 1 ? 3 : d < 1.5 ? 4 : 5; };
   const canStrike = () => !st.ended && (st.noHarsh || !pain.tooHarsh);      // (noHarsh: a scripted correction, which only her word stops)
   const thwack = power => { if (st.sound && root.GameAudio) root.GameAudio.thwack(power, st.skirt === 'down' || st.drawers === 'up'); };
-  const voice = (power, band) => { if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false, 1, opts.pitch || 215); };
+  // (her cries; held back while she's saying something, her words taking their place: see hush and cryPitch)
+  let lastCry = null, hushUntil = 0;
+  const voice = (power, band) => { lastCry = { power, band }; if (performance.now() < hushUntil) return; if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false, 1, opts.pitch || 215); };
 
   function smack() { if (!canStrike() || st.swing || st.gesture) return false; st.swing = { phase: 'lift', t: 0, side: pickSide(), waited: 0 }; return true; }
   function pickSide() { const s = st.side === 'alt' ? st.nextSide : st.side; if (st.side === 'alt') st.nextSide = st.nextSide === 'R' ? 'L' : 'R'; return s; }
@@ -313,7 +315,10 @@ function create(view, opts) {
     const torsoOf = n => n === 'contact' ? TORSO[side === 'R' ? 'contactR' : 'contactL'] : TORSO[n];
     const ta = torsoOf(ph.from), tb = torsoOf(ph.to);
     g.torso.rotation.set(lerp(ta[0], tb[0], ph.e), lerp(ta[1], tb[1], ph.e), lerp(ta[2], tb[2], ph.e));
-    g.neck.rotation.set(0.16, 0.08 + 0.1 * Math.sin(J.t * 0.4), 0); g.head.rotation.set(0.06, 0, 0);
+    // (her eyes on what she's doing: on the seat through a run, and at the clothes; between runs, when she speaks, on her face; eased between)
+    const busy = !!st.swing || st.runLeft > 0 || !!st.gesture;
+    st.gazeW = lerp(st.gazeW == null ? 1 : st.gazeW, busy ? 1 : 0, 1 - Math.exp(-(st.dt || 0.016) * 3.5));
+    lookTo(g, world(red.headGroup).lerp(world(red.rear.C), st.gazeW), 0.85);
     g.root.updateMatrixWorld(true);
     // Left hand: flat between her shoulder blades, fingers across her back.
     const nBack = new V3(0, 0, 1).applyQuaternion(red.torso.getWorldQuaternion(new Q())).normalize();
@@ -514,6 +519,9 @@ function create(view, opts) {
   }
 
   const api = {
+    // (the pitch her cries are at now, for her words said over them (null before the first); and her cries held back for secs)
+    cryPitch: () => (lastCry && root.GameAudio && root.GameAudio.cryPitch ? root.GameAudio.cryPitch(lastCry.power, bandIndex(), opts.pitch || 215) : null),
+    hush(secs) { hushUntil = Math.max(hushUntil, performance.now() + secs * 1000); },
     stage, pain, st, VIEWS, BANDS, implOf,
     get redRig() { return red; }, get gerda() { return gerda; }, get giverRig() { return gerda; }, get subjectRig() { return held_ ? sitter : red; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
     smack,
