@@ -82,7 +82,7 @@ function create(view, opts) {
     return 1 - worn.reduce((left, x) => left * (1 - x), 1);
   };
   const bandIndex = () => { const d = pain.distress(); return d < 0.3 ? 0 : d < 0.6 ? 1 : d < 0.9 ? 2 : d < 1 ? 3 : d < 1.5 ? 4 : 5; };
-  const canStrike = () => !st.ended && !pain.tooHarsh;
+  const canStrike = () => !st.ended && (st.noHarsh || !pain.tooHarsh);      // (noHarsh: a scripted correction, which only her word stops)
   const thwack = power => { if (st.sound && root.GameAudio) root.GameAudio.thwack(power, st.skirt === 'down' || st.drawers === 'up'); };
   const voice = (power, band) => { if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false, 1, opts.pitch || 215); };
 
@@ -97,7 +97,7 @@ function create(view, opts) {
     J.kick = Math.max(J.kick, hit.reaction); J.kickSide = sw.side; J.flick = FLICKER;
     thwack(hit.reaction); voice(hit.reaction, bandIndex()); dirty = true;
     say('hit', { hit, side: sw.side, distress: pain.distress(), band: BANDS[bandIndex()], hits: st.hits });
-    if (pain.tooHarsh) { st.runLeft = 0; say('tooHarsh', {}); }
+    if (pain.tooHarsh && !st.noHarsh) { st.runLeft = 0; say('tooHarsh', {}); }
   }
   // The swing's phases. `from` and `to` name the arm's poses (rest, raised, contact), `e` how far between them.
   function advance(dt) {

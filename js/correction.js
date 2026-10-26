@@ -14,7 +14,7 @@
 //     corrector: 'maren', context, player: 'red', fade: (on, text) => …,
 //     turns: [{ subject: 'red', tier: 'light', implement: true | 'id', implementFrom, corner: true, cornerDress: { skirt: 'up' } }, …],
 //     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z] }],      (who: a rig; seated on a seat of the room, or standing)
-//     cornerTime: 20 })      (seconds, at the end, for those in the corner)
+//     cornerTime: 20 })      (a turn's script: the story's own correction as a dialogue: see scripted())      (seconds, at the end, for those in the corner)
 //   → the first turn's result (Discipline.run's: { hits, peak, stopped, rose, tooHarsh, done, implement }), and turns: every turn's
 //   (still: Correction.run(play, { tier: 'light', fade }) — her mother, Red, the one turn)
 (function (root) {
@@ -107,6 +107,37 @@ async function run(P, o) {
   const keys = e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyR') stop(); if (e.code === 'KeyA') amber(); if (e.code === 'KeyC') next(); };
   addEventListener('keydown', keys);
   const results = []; let stoppedAll = false;
+  // ── A scripted turn: the story's own correction, as a dialogue between the two of them over the smacks (Climbing Toward Consequence's way),
+  // rather than the tier's procedure. t.script(S) is given:
+  //   S.say(who, text, face)   a line, held to be read: who 'corrector' (or the corrector's own key) or 'subject' (the one across the lap)
+  //   S.step(line, n)          a line said over a run of n smacks (the hand never waits for the words): line [who, text, face] or null
+  //   S.smacks(n)              a run with nothing said;   S.wait(secs);   S.set({ skirt, drawers, implement, strength, pace, side })
+  //   S.lap, S.corrector, S.subject
+  // Her word (the safe word) ends it at once ("too harsh" doesn't: the story's corrections are written to be what they are), wherever it's got to: the script stops there, and the corrector answers it.
+  const STOP = { stop: true };
+  async function scripted(script, lap, c, sub, castKey) {
+    const subKey = sub.id === player && talk.cast.red ? 'red' : 'subject', subWas = talk.cast[subKey];
+    talk.cast[subKey] = Object.assign({ name: sub.names[0], side: 'left', voice: sub.rig === 'red' ? 'red' : 'gerda' }, subWas || {}, { rig: lap.subjectRig });
+    lap.set({ noHarsh: true });      // (the story's own: only her word stops it, never the pain model's "too harsh")
+    const ended = () => lap.st.rose || lap.st.ended;
+    const keyOf = w => w === 'subject' || w === sub.id || w === 'red' && sub.id === player ? subKey : castKey;
+    const line = (who, text, face) => talk.caption(keyOf(who), text.replace(/\{name\}/g, sub.names[0]).replace(/\{word\}/g, sub.word), { face, wait });
+    const smacks = async n => { if (!n || ended()) return; lap.run(n); await wait(0.3); for (let i = 0; i < 900 && lap.busy() && !ended(); i++) await wait(0.1); };
+    const S = { lap, corrector: c, subject: sub,
+      say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
+      step: async (l, n) => { if (ended()) throw STOP; await Promise.all([l ? line(l[0], l[1], l[2]) : null, smacks(n)]); if (ended()) throw STOP; },
+      smacks: async n => { await smacks(n); if (ended()) throw STOP; },
+      wait: async secs => { await wait(secs); if (ended()) throw STOP; },
+      set: o2 => lap.set(o2),
+    };
+    let done = false;
+    try { await script(S); done = true; }
+    catch (e) { if (e !== STOP) throw e; }
+    const rose = !!lap.st.rose, tooHarsh = false;
+    if (!done) { talk.captionOff(); await line('corrector', Cs.line(c, sub, 'stop') || '', 'shy'); }
+    lap.end(); if (subWas) talk.cast[subKey] = subWas; else delete talk.cast[subKey];
+    return { hits: lap.st.hits, peak: lap.st.peak, stopped: rose, rose, tooHarsh, done: done && !rose && !tooHarsh, implement: lap.st.implement !== 'hand' ? lap.st.implement : null };
+  }
   try {
     for (let i = 0; i < turns.length && !stoppedAll; i++) {
       const t = turns[i]; sub = Cs.subject(t.subject || 'red', o.context);
@@ -124,7 +155,7 @@ async function run(P, o) {
       hint.textContent = mine ? (sub.lights ? 'Red stops it, at any moment; amber checks in: the buttons, or R and A.' : 'Her name stops it, at any moment: the sign, or R.') : '';
       await wait(0.3); await fade(false);
       el.classList.add('on'); if (mine && i === 0) { hint.classList.add('on'); setTimeout(() => hint.classList.remove('on'), 7000); }
-      const r = await root.Discipline.run(lap, t.tier || 'light', {
+      const r = t.script ? await scripted(t.script, lap, c, sub, castKey) : await root.Discipline.run(lap, t.tier || 'light', {
         corrector: c, subject: sub, implement: t.implement, implementFrom: t.implementFrom, corner: !!(t.corner && corners.length),
         say: (text, kind, k) => { const f = FACES[kind]; talk.caption(castKey, text, { face: Array.isArray(f) ? f[(k || 0) % f.length] : f, wait }); },
         sleep: ms => wait(ms / 1000),

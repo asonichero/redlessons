@@ -72,7 +72,7 @@ Her mother sits on a plain chair; Little Red lies face down across her lap, hips
 - **Clothes:** skirt down or lifted (gathered at her waist); with it lifted, drawers up or down (bunched above her knees). Cloth takes the edge off the sting.
 - **Marks:** colour comes up on each cheek with the smacks, and tender skin hurts more.
 - **Rose** (the button, or R): she says her name, and everything stops at once. Nothing more is struck, the arm comes back to rest, and her mother answers her as Rose.
-- The story plays its corrections in its own scene (`js/correction.js` embeds this one).
+- The story plays its corrections in its own scene (`js/correction.js` embeds this one). A story correction can be **scripted** as a dialogue between the two of them over the smacks, as Climbing Toward Consequence does (a turn's `script`: lines, runs of smacks, the clothes and implement changed as it goes); the tiers of `js/discipline.js` stay for the procedural ones. Only the safe word stops a scripted correction, never the pain model's "too harsh". The first, the homecoming's, is `Story.homecomingCorrection`: about 130 smacks over three minutes, skirt down, lifted, then drawers down, and the hairbrush to finish, counted, bringing her up to the edge of her resistance.
 - **Cameras:** Side, Behind, the corrector's view, Above, the face across the lap, and the corrector's face (the corrector sits upright enough to read: looking down at the lap with the eyes and a little of the neck, not a hunch). The camera glides between them, and you can drag to orbit. The game's correction steps through the same angles, the corrector's face among them.
 
 ## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)

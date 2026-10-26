@@ -124,6 +124,53 @@ const SPOTS = {
   log: [['calm', 'Just a little longer.'], ['pout', 'Just a little.']],
 };
 
+// The first correction, the homecoming's, scripted as a dialogue between them over the smacks (js/correction.js runs it: S.say, S.step, S.set).
+// Not a token: it's meant, and it's meant to be felt by a grown woman, in the words that Little Red needs. Across her lap, skirt down; then
+// lifted; then her drawers down; and last the hairbrush, for the wood. Her name stops it anywhere, and her mother answers that instead.
+const homecomingCorrection = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.1 });
+  await S.wait(0.8);
+  await S.say(M, 'Settle. Hands down, toward the floor. There.', 'stern');
+  await S.say(R, 'Mama…');
+  await S.say(M, 'You asked to be held to account, love. This is what it looks like. Not a pat, and not a game.', 'calm');
+  await S.step([M, 'You were told. Home before dark.', 'stern'], 8);
+  await S.step([R, 'I know— I know!'], 6);
+  await S.step([M, 'Through the wood. Alone. With the light going.', 'stern'], 8);
+  await S.smacks(8);
+  await S.step([R, 'Mama, I’m sorry, I am!'], 4);
+  await S.say(M, 'I believe you. Sorry doesn’t walk you home, though, does it?', 'stern');
+  // (the skirt up)
+  S.set({ skirt: 'up' }); await S.wait(0.7);
+  await S.say(R, 'Mama!');
+  await S.say(M, 'Still. You’re not too grown for this, Little Red, and you’re not too grown for me.', 'stern');
+  S.set({ strength: 1.75, pace: 1.25 });
+  await S.step([M, 'Anything could have been on that path. Anyone.', 'stern'], 10);
+  await S.step([R, 'Ow— I stayed on the path, I did—'], 6);
+  await S.step([M, 'You stayed on it in the dark. That’s the part I mind.', 'stern'], 10);
+  await S.smacks(10);
+  await S.step([R, 'Please— I understand—'], 4);
+  await S.say(M, 'Nearly. Not yet.', 'calm');
+  // (her drawers down)
+  S.set({ drawers: 'down' }); await S.wait(0.8);
+  await S.say(R, 'Mama, no, please—');
+  await S.say(M, 'Yes. Because it matters, and because you need to remember it matters. Breathe.', 'calm');
+  S.set({ strength: 2.0, pace: 1.35 });
+  await S.step([M, 'You lingered.', 'stern'], 8);
+  await S.step([M, 'You let the dusk come in round you.', 'stern'], 8);
+  await S.step([R, 'I’m sorry! I’m sorry, Mama!'], 6);
+  await S.step([M, 'And you let me sit here, watching the window, with the lantern in my hand.', 'stern'], 12);
+  await S.smacks(10);
+  // (and the hairbrush, for the last of it)
+  S.set({ implement: 'hairbrush', strength: 1.85, pace: 1 }); await S.wait(1.0);
+  await S.say(M, 'The last of it is with my hairbrush. Twelve. Count them for me, and then it’s finished.', 'stern');
+  await S.say(R, '…Yes, Mama.');
+  for (let k = 1; k <= 12; k++) await S.step(k % 3 === 0 ? [R, ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][k - 1] + (k < 12 ? '…' : '.')] : null, 1);
+  await S.wait(0.8);
+  await S.say(M, 'There. That’s done, and it stays done. Stay there a moment. Just breathe. I’ve got you.', 'calm');
+  await S.wait(2.4);
+};
+
 // After the correction (js/correction.js): the two of them in the room by the fire. How it went decides it (Discipline.run's result): taken all
 // the way through, her mother holds her, as she did the winter of the mill pond; stopped with her name, she's Rose, and they talk as two women.
 const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
@@ -171,5 +218,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { homecoming, afterCorrection, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { homecoming, homecomingCorrection, afterCorrection, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
