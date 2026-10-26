@@ -1230,6 +1230,9 @@ const EXPRS = {
   wistful:   { brow: 0.3, browY: 0.05, open: 0.58, mouth: 'soft', blush: 0.25, ms: 1.0 },
   // (asleep: the lids shut, the brows easy, the mouth soft)
   asleep:    { brow: 0.06, browY: 0, open: 0, mouth: 'soft', blush: 0.2, ms: 0.85 },
+  // (tender: the eyes closed a moment, holding someone, a soft smile; teary: crying come down, the eyes still wet, a small smile that means it)
+  tender:    { brow: 0.14, browY: 0.02, open: 0, mouth: 'soft', blush: 0.25, ms: 0.95 },
+  teary:     { brow: 0.38, browY: 0.04, open: 0.7, mouth: 'soft', blush: 0.6, tears: 0.6, ms: 1.0 },
 };
 
 // ── A standing idle: her weight on one straight leg, the other easy, changing over now and then. ──

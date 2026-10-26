@@ -240,7 +240,11 @@ async function run(P, o) {
         lap.after(kind); const v = lap.VIEWS.after(); st.go(v.pos, v.look, 0);
         const redWas = talk.cast.red && talk.cast.red.rig; if (talk.cast.red) talk.cast.red.rig = lap.subjectRig;
         await wait(0.4); await fade(false);
-        try { await talk.play(o.after(last), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
+        // (what the lines can ask for, on the lap: a beat, the giver's eyes closed, holding her; and her sat up, as she is, her crying come down)
+        const ctx = { beat: async () => { lap.giverRig.setExpr('tender', 3); await wait(2.2); },
+          sitUp: async () => { await fade(true); lap.after('upright', { asIs: true }); lap.subjectRig.setExpr('teary', 60); if (talk.cast.red) talk.cast.red.rig = lap.subjectRig;
+            const v2 = lap.VIEWS.after(); st.go(v2.pos, v2.look, 0); await wait(0.4); await fade(false); } };
+        try { await talk.play(o.after(last, ctx), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
         afterPlayed = true; await wait(0.6);
       }
     }

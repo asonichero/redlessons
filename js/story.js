@@ -197,7 +197,9 @@ const homecomingCorrection = async S => {
 // After the correction (js/correction.js plays it, still in the chair): how it went decides it (Discipline.run's result). Taken all the way
 // through, she's held on her mother's lap, her face in her mother's shoulder, as she was the winter of the mill pond; stopped with her name, she
 // sits up on it, dressed again, as Rose, and they talk as two women. (Correction.run's after: the pose, 'held' or 'upright', goes with it.)
-const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
+// (ctx, as js/correction.js plays it on the lap: beat() her mother holding her a moment, eyes closed; sitUp() Red sat up on the lap, her
+// crying come down. Without them, played in the room, those steps are left out.)
+const afterCorrection = (r, ctx) => (r && (r.rose || r.tooHarsh) ? [
   { who: 'mother', face: r.rose ? 'concerned' : 'shy', listen: { red: 'shy' }, text: r.rose ? 'Rose. I’m here. Breathe with me.' : 'That was more than I meant it to be. I’m sorry, love.' },
   { who: 'red', face: 'shy', text: 'I’m all right. It was just… a lot, all at once.' },
   { who: 'mother', face: 'calm', text: 'Then that’s what we talk about. Not the wood, not any of it. You.' },
@@ -207,14 +209,19 @@ const afterCorrection = r => r && (r.rose || r.tooHarsh) ? [
   { who: 'mother', face: 'calm', listen: { red: 'crying' }, text: 'Hush, sweetheart. It’s over now. You’re my good Little Red again, and we’ll talk no more of the wood.' },
   { who: 'red', face: 'crying', listen: { mother: 'calm' }, text: 'I’m sorry, Mama.' },
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you are. Come here.' },
-];
+  { run: ctx && ctx.beat },      // (her mother's eyes close as she holds her, a beat)
+  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'Thank you.' },
+  { run: ctx && ctx.sitUp },      // (Red sits up on her lap, her distress come down, smiling, tears still in her eyes)
+  { who: 'mother', face: 'wistful', listen: { red: 'teary' }, text: 'You know I’ll always give you what you need, Little Red. Now, there’s soup over the hearth. Let’s get you fed and into bed, hm?' },
+]).filter(l => !('run' in l) || l.run);
 
 // Bedtime, the end of the homecoming: the two of them in her mother's bed, under the quilt, her mother's arm over her, watching the back of her
 // head. Red's thoughts, as she lies there: what she asked for, what she got, and that it's a good thing, to be held again; to be Little Red.
-// ([face, thought], in turn. Stopped with her name, she thinks it through as Rose.)
+// ([face, thought], in turn; 'sleep': where her mother's eyes close, asleep, as the next comes up. Stopped with her name, she thinks it through as Rose.)
 const bedtime = r => r && (r.rose || r.tooHarsh) ? [
   ['calm', 'I asked her to hold me to account. And when it was too much, I said my name, and she stopped. Just as she said she would.'],
   ['shy', 'She didn’t ask me why. She just made soup, and listened.'],
+  'sleep',
   ['calm', 'And now her arm’s round me, the way it was the winter of the mill pond.'],
   ['smile', 'It’s a good thing, to know she’ll stop. It means I can let her start.'],
   ['smile', 'Little Red. Tomorrow, maybe.'],
@@ -222,6 +229,7 @@ const bedtime = r => r && (r.rose || r.tooHarsh) ? [
   ['calm', 'I asked her to hold me to account. I thought I knew what that meant.'],
   ['shy', 'It meant her hand, and her hairbrush, and counting every one of them out loud.'],
   ['calm', 'And it meant this. Her arm round me, and her breathing at my back, slow, the way it was the winter of the mill pond.'],
+  'sleep',
   ['calm', 'Nobody wants anything from me tonight. Somebody has hold of me.'],
   ['smile', 'It’s a good thing. To be held again.'],
   ['smile', 'To be Little Red.'],

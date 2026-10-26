@@ -529,13 +529,13 @@ function create(view, opts) {
       st.gesture = { kind, t: 0, dur: (GEST[kind] || 2) + (pass ? 2 * PASS : 0), res, pass, loop: !!o.hold }; }; go(); }); },
     // After (see poseHeld): 'held' (high distress) or 'upright' (after the safe word), sat up on the giver's lap; null, back across it.
     // Whatever was going on stops; an implement in hand is put out of sight.
-    after(kind) {
+    after(kind, o) {      // (o.asIs: dressed as they are, not put right: sitting up from being held)
       if (sitter) { stage.remove(sitter.root); sitter = null; } held_ = null; frame.visible = true; st.armed = true;
       if (!kind) return;
       st.swing = null; st.gesture = null; st.swap = false; st.runLeft = 0; st.armed = false; if (held) held.visible = false;
       frame.visible = false;
       sitter = T.make(SUBJ, looks[SUBJ] || {}, {}); stage.add(sitter.root); if (st_) st_.cast(sitter);
-      sitter.setDress(kind === 'held' ? { skirt: st.skirt, drawers: st.drawers, marks: st.marks } : { skirt: 'down', drawers: 'up', marks: st.marks });
+      sitter.setDress(kind === 'held' || (o && o.asIs) ? { skirt: st.skirt, drawers: st.drawers, marks: st.marks } : { skirt: 'down', drawers: 'up', marks: st.marks });
       seatSitter(kind); sitter.setSeated(1);
       sitter.setExpr(kind === 'held' ? 'crying' : 'shy'); sitter.breath = kind === 'held' ? 1.6 : 1;
       poseHeld(0); sitter.tick(0.016); gerda.tick(0.016);
