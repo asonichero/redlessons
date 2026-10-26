@@ -1,5 +1,5 @@
 // Little Red’s Lessons — the story's conversations, as scripts for js/talk.js. Speakers: 'red' (Rose: Red to her mother, her grandmother and Peter; Little
-// Red in her cloak), 'mother' (Maren, whom Rose only ever calls Mama) and 'gran' (Hulda, her grandmother). Faces are js/toon.js's expressions: calm, smile, shy, cheeky, pout,
+// Red in her cloak), 'mother' (Maren, whom Rose only ever calls Mama) and 'gran' (Hulda, her grandmother). Faces are js/toon.js's expressions: calm, smile, shy, bashful, cheeky, pout,
 // stern, surprised, wince, gritted, crying, concerned, sad.
 //
 // Chapter one, the homecoming: Red comes in late in the dusk from her grandmother's, through the wood, in the new red cloak her grandmother made
@@ -113,7 +113,7 @@ const grandmother = ctx => [
     ] },
   ] },
   { who: 'gran', face: 'smile', text: 'Well. You’re not to carry any of it in this house. In this house you’re my girl, and you’ll eat cake and let an old woman fuss.' },
-  { who: 'red', face: 'shy', listen: { gran: 'smile' }, text: 'I like being fussed.' },
+  { who: 'red', face: 'bashful', listen: { gran: 'smile' }, text: 'I like being fussed.' },
   { who: 'gran', face: 'cheeky', text: 'I know you do. Which is why I’ve made you something. Stay there.' },
   { run: ctx.fetchGift },
   { who: 'gran', face: 'smile', listen: { red: 'surprised' }, text: 'Here. Go on, open it.' },
