@@ -811,7 +811,8 @@ function make(id, look, opts) {
   function drawEye(sx, F, open) {
     const cx = sx * K.eyeX, cy = K.eyeY, rx = 0.43 * K.eyeW, ry = 0.3 * K.eyeH, shut = clamp(1 - open, 0, 1), drop = 2 * ry * shut, E = (x, y) => [px(cx + x), py(cy + y)];
     const ell_ = (x, y, a, b) => { fx.beginPath(); fx.ellipse(px(cx + x), py(cy + y), a * U, b * U, 0, 0, 7); };
-    if (shut < 0.97) {
+    // (squeezed shut, or as good as shut, nothing of the eye shows: only the lashes)
+    if (shut < 0.97 && !((F.sq || 0) > 0.5 && shut > 0.6) && shut < 0.85) {
       fx.save();
       ell_(0, 0, rx, ry); fx.clip();
       fx.beginPath(); fx.ellipse(px(cx), py(cy - drop), rx * U, ry * U, 0, Math.PI, 2 * Math.PI); fx.lineTo(...E(rx, -ry - 2)); fx.lineTo(...E(-rx, -ry - 2)); fx.closePath(); fx.clip();      // (below the lid)
@@ -866,6 +867,12 @@ function make(id, look, opts) {
     if (S.beard === 'stubble') { fx.save(); fx.globalAlpha = 0.22; fx.fillStyle = P.beard; fx.beginPath(); fx.ellipse(px(0), py(-1.55), 1.35 * U, 0.75 * U, 0, 0, 7); fx.fill(); fx.beginPath(); fx.ellipse(px(0), py(K.noseY - 0.42), 0.55 * U, 0.16 * U, 0, 0, 7); fx.fill(); fx.restore(); }
     // The nose's shadow, a short soft curve under its tip.
     fx.strokeStyle = shade(P.skin, -0.3); fx.lineWidth = 0.035 * U; fx.lineCap = 'round'; fx.beginPath(); fx.arc(px(0.02), py(K.noseY - 0.12 * K.noseSize), 0.1 * K.noseSize * U, Math.PI * 0.15, Math.PI * 0.75); fx.stroke();
+    // Tears, under the eyes: drawn first, so they come from beneath the lashes rather than over them.
+    if (F.tears > 0.05) for (const sx of [-1, 1]) {
+      const x = sx * (K.eyeX - 0.05), y0 = K.eyeY - lerp(0.2, 0.4, clamp(1 - open, 0, 1)) * K.eyeH, len = 0.75 * F.tears;
+      fx.strokeStyle = 'rgba(150,205,240,0.9)'; fx.lineWidth = 0.08 * U; fx.lineCap = 'round'; fx.beginPath(); fx.moveTo(px(x), py(y0)); fx.quadraticCurveTo(px(x + sx * 0.06), py(y0 - len * 0.5), px(x + sx * 0.02), py(y0 - len)); fx.stroke();
+      fx.fillStyle = 'rgba(150,205,240,0.95)'; fx.beginPath(); fx.arc(px(x + sx * 0.02), py(y0 - len), 0.06 * U, 0, 7); fx.fill();
+    }
     for (const sx of [-1, 1]) { drawEye(sx, F, open); drawBrow(sx, F); }
     // Older faces: soft laugh lines from the nose to the corners of the mouth, and a fan of them at the outer corners of the eyes, deeper when she smiles.
     if (S.old) {
@@ -877,11 +884,6 @@ function make(id, look, opts) {
       }
     }
     drawMouth(F);
-    if (F.tears > 0.05) for (const sx of [-1, 1]) {
-      const x = sx * (K.eyeX - 0.05), y0 = K.eyeY - 0.2 * K.eyeH, len = 0.75 * F.tears;
-      fx.strokeStyle = 'rgba(150,205,240,0.9)'; fx.lineWidth = 0.08 * U; fx.lineCap = 'round'; fx.beginPath(); fx.moveTo(px(x), py(y0)); fx.quadraticCurveTo(px(x + sx * 0.06), py(y0 - len * 0.5), px(x + sx * 0.02), py(y0 - len)); fx.stroke();
-      fx.fillStyle = 'rgba(150,205,240,0.95)'; fx.beginPath(); fx.arc(px(x + sx * 0.02), py(y0 - len), 0.06 * U, 0, 7); fx.fill();
-    }
     ftex.needsUpdate = true;
   }
   // ── Hair. ──
