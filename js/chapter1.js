@@ -140,6 +140,28 @@ World.scene('ch1.homecoming', {
     };
     return o;
   },
-  run(P, w) { w.objective(''); P.act(async () => { await P.wait(1.4); await P.talkToMother(); }); },
+  // It opens on her mother by the hearth, waiting, concerned, turned to the door; the door open, and Rose in it, in her grandmother's cloak, coming
+  // in and down the steps. The camera to the side of the two of them, her mother's face to it, the doorway beyond. Then the shot gives way to
+  // the conversation's own, as Rose comes over.
+  run(P, w) {
+    w.objective('');
+    const W = P.world, dw = W.doorway, mo = P.npcMotion, st = P.stage;
+    if (P.outfit === 'No cloak') P.setOutfit('Hood down', true);      // (built again in it: so her motion is taken after)
+    const me = P.motion;
+    if (W.door) { W.door.open = W.door.target = 1; }
+    if (dw) { me.warp(dw.at, yawTo(dw.at, dw.foot)); P.rig.root.position.copy(dw.at); }
+    if (mo && dw) { mo.warp(mo.pos, yawTo(mo.pos, dw.at)); P.mother.setExpr('concerned'); }
+    // (the shot: from the side of the line between them, toward the room, a little round toward the door, so her face turned to it shows)
+    if (mo && dw) { const a = flat(mo.pos), b = flat(dw.at), mid = a.clone().lerp(b, 0.5), d = b.clone().sub(a), sep = d.length(); d.normalize();
+      let side = new V3(-d.z, 0, d.x); const B = W.bounds; if (B && mid.clone().addScaledVector(side, 30).z > B.z1) side.negate();
+      const cam = P.collide(mid.clone().addScaledVector(side, sep * 0.95).addScaledVector(d, sep * 0.15), 4).setY(24);
+      P.camHeld = true; st.go(cam, a.clone().lerp(b, 0.42).setY(19), 0); }
+    P.act(async () => {
+      await P.wait(1.0);
+      if (dw) { await me.goTo(dw.foot, yawTo(dw.foot, mo ? mo.pos : dw.foot)); if (W.door) W.door.target = 0; }      // (in, down the steps; the door swung to behind her)
+      await P.wait(0.6); P.camHeld = false;
+      await P.talkToMother();
+    });
+  },
 });
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -247,7 +247,14 @@ function build(scene) {
     // (out through it, once it's open: the doorway, a step inside it)
     world.exits = world.exits || []; world.exits.push({ name: 'the door', get at() { return d.getWorldPosition(new V3()).setY(0).add(new V3(3, 0, 0)); }, r: 4, when: () => world.door.open > 0.6 });
     box(d, 15.6, 1.6, 1.6, 0, 28.8, 0.8, oak, { shadow: false }); for (const sx of [-1, 1]) box(d, 1.4, 29, 1.6, sx * 7.4, 14, 0.8, oak, { shadow: false });
-    box(d, 16, 1.2, 3, 0, 0.6, 1.5, stone, { shadow: false }); }      // (the stone threshold)
+    box(d, 16, 1.2, 3, 0, 0.6, 1.5, stone, { shadow: false });      // (the stone threshold)
+    // Steps down from it into the room: the doorway's on the foundation, FOOT up; three stone treads, each a quarter of that lower, the width of the
+    // door frame. (world.ground: the floor's height on them, for whoever walks there.)
+    root_.updateMatrixWorld(true); const dz = d.getWorldPosition(new V3()).z, sx0 = X0 + 3, TD = 3, TW = 15, N = 3, treads = [];
+    for (let i = 0; i < N; i++) { const h = FOOT * (N - i) / (N + 1), x0 = sx0 + i * TD; treads.push({ x0, x1: x0 + TD, h });
+      box(W.left, TD, h, TW, x0 + TD / 2, h / 2, dz, stone); }
+    world.ground = p => { if (Math.abs(p.z - dz) > TW / 2 + 1) return 0; if (p.x < sx0) return FOOT + 1.2; for (const t of treads) if (p.x < t.x1) return t.h; return 0; };
+    world.doorway = { at: new V3(sx0 + 0.4, 0, dz), inward: new V3(1, 0, 0), foot: new V3(sx0 + N * TD + 3, 0, dz) }; }      // (just in, on the top step; and the floor at the foot of the steps)
 
   // ── The roof: two slopes of thatch from the ridge to the eaves (over the walls), on rafters, with a ridge beam, purlins and two tie beams.
   const slope = sideZ => {

@@ -43,7 +43,8 @@ function create(view, opts) {
     }
     return q;
   }
-  let m = Motion.create(rig, { collide });
+  const ground = W.ground ? p => W.ground(p) : null;      // (a set's floor where it isn't level: the cottage's steps down from the door)
+  let m = Motion.create(rig, { collide, ground });
 
   // ── Whoever else is there (her mother at home, by the hearth, unless the page says otherwise): in Rose's way like the furniture, and someone to
   // talk to. (Their own collisions are only the set's.)
@@ -53,7 +54,7 @@ function create(view, opts) {
     const looks = root.Looks && Looks.load ? Looks.load() : {};
     mom = Toon.make(NPC.id, looks[NPC.id] || {}); st.scene.add(mom.root); st.cast(mom);
     mom.root.position.set(NPC.at[0], 0, NPC.at[1]); mom.root.rotation.y = NPC.yaw;
-    mm = Motion.create(mom, { collide: (p, r) => collide(p, r, 'npc') });      // (kept out of the furniture, and the walls, as Rose is; and out of Rose)
+    mm = Motion.create(mom, { collide: (p, r) => collide(p, r, 'npc'), ground });      // (kept out of the furniture, and the walls, as Rose is; and out of Rose)
     W.obstacles.push({ get x() { return m.pos.x; }, get z() { return m.pos.z; }, r: 3.4, rose: true });
     W.obstacles.push({ get x() { return mm.pos.x; }, get z() { return mm.pos.z; }, r: 3.6, npc: true });
   }
@@ -299,7 +300,7 @@ function create(view, opts) {
     const at = m.pos.clone(), yaw = m.yaw, carry = m.carry, style = m.carryStyle;
     st.scene.remove(rig.root);
     rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig); rig.root.position.copy(at); rig.root.rotation.y = yaw;
-    m = Motion.create(rig, { collide }); if (carry) m.hold(carry, style);
+    m = Motion.create(rig, { collide, ground }); if (carry) m.hold(carry, style);
     rig.setDress(dress); if (talk) talk.cast.red.rig = rig;
   }
   let exited = null;

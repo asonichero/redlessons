@@ -12,7 +12,7 @@
 // Layered on top: a reach with either hand to a point (crouching for low ones, feet staying put), carrying a thing (hanging from one hand, or held
 // in front in both), sitting on a seat, lying on a bed. Each layer has a weight that eases in and out, so one thing flows into the next.
 //
-//   const m = Motion.create(rig, { collide: (pos, r) => pos })
+//   const m = Motion.create(rig, { collide: (pos, r) => pos, ground: pos => height })      (ground: the floor's height where it isn't level)
 //   each frame: m.update(dt, { move: { x, z } (world, length 0..1), run: bool })      then rig.tick(dt)
 //   m.goTo(pos, yaw).then(…); m.face(yaw); m.reach('R', pointOrFn); m.release('R'); m.hold(item, 'hang' | 'front'); m.drop();
 //   m.sit(seat).then(…); m.stand().then(…); m.lie(bed).then(…); m.jump().then(…)
@@ -469,6 +469,10 @@ function create(rig, opts) {
     stepFeet(dt);
     pose(dt);
     capture(dt);
+    // (where the floor isn't level, a step: the whole figure lifted onto it, as posed on the level, the lift easing as she goes up or down a
+    // step; opts.ground(pos) → the floor's height there. Not sitting or lying, which their seat or bed decides)
+    if (opts.ground) { const g = opts.ground(m.pos) || 0, k = 1 - Math.exp(-dt * 14); m.gy = m.gy == null ? g : m.gy + (g - m.gy) * k;
+      const w = (1 - ease(m.sitW)) * (1 - ease(m.lieW)); if (w > 0 && Math.abs(m.gy) > 0.001) { rig.root.position.y += m.gy * w; rig.root.updateMatrixWorld(true); } }
     // Carried things follow the hand (or both hands), upright.
     if (m.carry) {
       const r = rig, g = m.carryStyle === 'hang' ? r.handR.localToWorld(new V3(0, -0.9, 0)) : r.handR.localToWorld(new V3(0, -0.9, 0)).lerp(r.handL.localToWorld(new V3(0, -0.9, 0)), 0.5);
