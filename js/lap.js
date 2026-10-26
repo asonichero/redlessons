@@ -467,7 +467,7 @@ function create(view, opts) {
       // (resting on the far knee: the palm on top of it, the fingers pointing forward, the way she faces)
       const ahead = new V3(0, 0, 1).applyQuaternion(r.root.getWorldQuaternion(new Q())).setY(0).normalize();      // (the way she faces)
       R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.45 * rs, 0)).addScaledVector(ahead, -0.4 * rs), up.clone().negate(), ahead);      // (the fingers forward, over the knee)
-      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, new V3(-0.6, 0.6, 0.3));      // (the right elbow out and up: the forearm comes down onto the knee, over the near thigh)
+      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, ahead.clone().negate().add(new V3(0, 0.7, 0)));      // (the right elbow behind the wrist and up: the forearm runs forward along her thigh, and the hand goes on from it, over the knee)
     }
     setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
   }
