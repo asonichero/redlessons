@@ -301,9 +301,10 @@ function create(view, opts) {
     advance(dt);
     pain.update(dt, !!(st.swing && st.swing.phase === 'contact'));
     // (bands: composed, flinching, struggling, close to the edge, past it, too harsh)
-    const b = bandIndex(), base = st.peak >= 1 || b >= 4 ? 3 : b === 0 ? 0 : b === 1 ? 1 : 2;      // (once they've reached the edge, crying, for the rest of it) J.flick = Math.max(0, J.flick - dt);
-    const face = FACE[base < 3 && J.flick > 0 ? base + 1 : base];
-    if (face !== exprShown) { red.setExpr(face); exprShown = face; }
+    // (once they've reached the edge, crying, for the rest of it)
+    const b = bandIndex(), base = st.peak >= 1 || b >= 4 ? 3 : b === 0 ? 0 : b === 1 ? 1 : 2; J.flick = Math.max(0, J.flick - dt);
+    const flick = base < 3 && J.flick > 0, face = FACE[flick ? base + 1 : base];
+    if (face !== exprShown) { red.setExpr(face, flick ? 28 : 9); exprShown = face; }      // (the flicker snaps on; the face eases back)
     if (dirty) repaint();
     poseRed(dt); poseGerda();
     red.tick(dt); gerda.tick(dt);

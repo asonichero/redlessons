@@ -1011,7 +1011,10 @@ function make(id, look, opts) {
   // ── Expressions: brows, lids, the look of the eyes, the mouth, a flush and tears. Changes ease in (see tick). ──
   const EX = EXPRS, F = Object.assign({ brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0, ms: 1 }, MOUTHS.flat), drawn = {};
   let target = Object.assign({}, EX.calm), blinkWait = 2 + Math.random() * 3, blinkPhase = 0, blink = 0, t = 0;      // (blinkPhase: 0 open, waiting; 1 closing; 2 opening)
-  rig.setExpr = name => { const e = EX[name] || EX.calm; target = Object.assign({}, e, MOUTHS[e.mouth] || MOUTHS.flat); rig.expr = EX[name] ? name : 'calm'; };
+  // (rate: how fast the face eases to it, per second; a flicker of pain comes on faster than the face settles back)
+  let easeRate = 10;
+  rig.setExpr = (name, rate) => { const e = EX[name] || EX.calm; target = Object.assign({}, e, MOUTHS[e.mouth] || MOUTHS.flat); rig.expr = EX[name] ? name : 'calm'; easeRate = rate || 10; };
+  rig.faceNow = () => Object.assign({}, F);      // (the face as it is this moment, eased: for a look in from outside)
   // Redraw the face when anything on it has moved (expressions ease over a few frames; a blink is quick).
   function applyFace(force) {
     const open = clamp(F.open * (1 - blink), 0, 1.15);
@@ -1135,7 +1138,7 @@ function make(id, look, opts) {
   const penOf = d => { const sh = d.front ? 0.6 : 0; d.g.updateMatrixWorld(true); return inside(d.g.localToWorld(tip.set(0, -d.len, 0)), sh) + inside(d.g.localToWorld(tip.set(0, -d.len * 0.5, 0)), sh); };
   rig.tick = dt => {
     dt = clamp(dt || 1 / 60, 0, 0.1); t += dt;
-    const k = 1 - Math.exp(-dt * 10);
+    const k = 1 - Math.exp(-dt * easeRate);
     for (const key in F) F[key] = lerp(F[key], target[key] == null ? (key === 'ms' ? 1 : 0) : target[key], k);
     if (blinkPhase === 0) { blinkWait -= dt; if (blinkWait <= 0) blinkPhase = 1; }
     else if (blinkPhase === 1) { blink += dt * 14; if (blink >= 1) { blink = 1; blinkPhase = 2; } }
