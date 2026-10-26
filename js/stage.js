@@ -61,7 +61,7 @@ function create(view, opts) {
   // Characters cast shadows (their outlines do not); they take none themselves, which keeps their shading clean.
   const cast = rig => { for (const m of rig.meshes) m.castShadow = true; };
   // (held: the loop idles, for stepping frames by hand)
-  const api = { renderer, scene, camera, controls, sun, resize, start, stop, go, cast, cottage, draw, held: false, overlays: [], hemi, setLight, time: 0 };
+  const api = { renderer, scene, camera, controls, sun, resize, start, stop, go, cast, cottage, draw, held: false, overlays: [], hemi, setLight, time: 0, get moving() { return !!tween; } };      // (moving: on its way to a shot)
   return api;
 }
 

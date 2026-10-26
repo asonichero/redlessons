@@ -215,8 +215,8 @@ function build(scene, opts) {
     windows[0].color.copy(new THREE.Color(srgb('#3a3028')).lerp(new THREE.Color(srgb('#ffcc6a')), ss(0.45, 0.8, t)));
     if (cabin && cabin.light) cabin.light(t);
   }
-  function follow(pos) {
-    if (!api) return; occlude(api.camera.position, pos); const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
+  function follow(pos, dt, camera, at) {
+    if (!api) return; occlude(api.camera.position, pos); if (cabin && cabin.cut) cabin.cut(api.camera.position, at || pos.clone().setY(20), dt);      // (and the cabin, if it's in the way of her) const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
   }
   let clock = 0;
   function tick(dt) {

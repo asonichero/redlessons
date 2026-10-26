@@ -35,13 +35,17 @@ World.scene('ch1.tea', {
         fetchGift: async () => {
           // (a wider shot as she gets up, across the room, side on to her way from the table to the dresser and back, so she's seen going
           // for it rather than walking at the camera)
-          P.stage.go(new V3(34, 27, -2), new V3(-12, 12, -8), 1100);      // (from the bed's side of the room: the table, the dresser and her way between them)
+          // (from the room's far side from the dresser, at the height of the table: the table, the dresser and her way between them, side on)
+          const dr = W.surfaces.find(s => s.name === 'the dresser'), front = dr ? dr.front.clone().setY(0).normalize() : new V3(0, 0, 1);
+          { const tb = W.surfaces.find(s => s.name === 'the table'), a = tb ? new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2) : new V3(), b = flat(gp()), mid = a.clone().lerp(b, 0.5), across = new V3(-(b.z - a.z), 0, b.x - a.x).normalize();
+            if (across.dot(front) < 0) across.negate();      // (from the side the dresser faces, so it's seen from the front)
+            P.stage.go(P.collide(mid.clone().addScaledVector(across, 40), 2).setY(27), mid.clone().setY(11), 1100); }
           await g.stand();
-          const at = flat(gp()).add(new V3(0, 0, 8)); await g.goTo(at, yawTo(at, gp()));
-          await g.reach('R', gp()); g.reach('L', gp().add(new V3(1.5, 0, 0))); g.hold(gift, 'front'); gift.panel = null; W.items.splice(W.items.indexOf(gift), 1);
+          const at = flat(gp()).addScaledVector(front, 8); await g.goTo(at, yawTo(at, gp()));      // (before the dresser, whichever way it faces)
+          await g.reach('R', gp()); g.reach('L', gp().addScaledVector(new V3(-front.z, 0, front.x), 1.5)); g.hold(gift, 'front'); gift.panel = null; W.items.splice(W.items.indexOf(gift), 1);
           g.release('L'); await g.release('R');
-          // (round the table, not through it: out to its side, then to Rose's)
-          const red = P.motion.pos.clone(), to = red.clone().add(new V3(-12, 0, 1));      // (an arm's length and the parcel's, from her: not into her) await g.goTo(new V3(-17, 0, 2), null); await g.goTo(to, yawTo(to, red));
+          // (to Rose: an arm's length and the parcel's from her, coming from where she is: not into her)
+          const red = P.motion.pos.clone(), to = P.collide(red.clone().add(flat(g.pos).sub(flat(red)).setLength(12)), 3.6, 'npc'); await g.goTo(to, yawTo(to, red));
           await P.getUp(); await P.motion.face(yawTo(P.motion.pos, g.pos)); P.talk.settle(['red', 'gran']); await P.wait(0.6);
         },
         giveGift: async () => { const it = g.drop(); P.motion.hold(it, 'front'); await P.wait(0.8); },
