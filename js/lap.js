@@ -365,10 +365,10 @@ function create(view, opts) {
   // the middle between the thighs, toward the giver's left) and along it (from the hips to the knees); her seat's height over the lap; her legs
   // ([thigh forward swing, out, knee bend, ankle] for each).
   const POSE = {
-    // (held: rolled onto her right hip, that cheek planted on the lap (see seatSitter); the numbers found by trying, for none of her legs to pass
+    // (held: on the giver's left thigh toward the knee, only a little onto her right hip, that cheek planted on the lap (see seatSitter); the numbers found by trying, for none of her legs to pass
     // into the chair, the giver's lap or her legs, or the floor. y: a first guess only, before she's sat down onto the lap)
-    held: { turn: 0.6, roll: 0.35, x: 1.4, along: 0.62, y: 2.55, legL: [-1.4, 0.12, 1.4, 0.6], legR: [-1.8, 0.05, 1.4, 0.6] },
-    upright: { turn: 0.3, roll: 0, x: 0.6, along: 0.78, y: 2.55, legL: [-Math.PI / 2 + 0.3, 0.05, 1.2, 0.35], legR: [-Math.PI / 2 + 0.22, -0.05, 1.15, 0.35] },      // (the shins forward of the chair)
+    held: { turn: 0.3, roll: 0.15, x: 1.4, along: 0.88, y: 2.55, legL: [-1.4, 0.12, 1.4, 0.6], legR: [-1.6, 0.3, 1.4, 0.6] },
+    upright: { turn: 0.2, roll: 0, x: 1.0, along: 0.78, y: 2.55, legL: [-Math.PI / 2 + 0.3, 0.05, 1.2, 0.35], legR: [-Math.PI / 2 + 0.22, -0.05, 1.15, 0.35] },      // (the shins forward of the chair)
   };
   function seatSitter(kind) {
     const g = gerda, gs = g.scaleW, r = sitter, rs = r.scaleW;
@@ -383,9 +383,15 @@ function create(view, opts) {
     r.hips.position.set(0, T.DIM.hipY, 0); r.hips.rotation.set(0, 0, P.roll);
     for (const l of [r.legL, r.legR]) { const k = l === r.legL ? P.legL : P.legR; l.thigh.rotation.set(k[0], 0, l.sign * k[1]); l.knee.rotation.set(k[2], 0, 0); l.ankle.rotation.set(k[3], 0, 0); }
     r.root.position.set(hip.x + P.x * gs, lapTop + P.y * rs - T.DIM.hipY * rs, lerp(hip.z, knee.z, P.along));
-    // (sat down on the lap: the lower of her two cheeks resting on it, its underside on the top of the giver's thigh, however she's rolled)
+    // (sat down on the lap: the lower of the two cheeks resting on it, its underside on the top of the giver's thigh, however they're rolled,
+    // whoever they are: the underside found by a ray up from beneath each cheek into what's drawn of them, their seat, drawers or trousers)
     r.root.updateMatrixWorld(true);
-    { const low = Math.min(world(r.cheekC.L).y, world(r.cheekC.R).y) - 1.75 * rs; r.root.position.y += lapTop - low; }
+    { const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+      for (const m of r.meshes) if (m.isSkinnedMesh && m.skeleton) m.skeleton.update();
+      let low = Infinity;
+      for (const sd of ['L', 'R']) { const c = world(r.cheekC[sd]); ray.set(c.clone().add(new V3(0, -12 * rs, 0)), new V3(0, 1, 0)); ray.far = 14 * rs;
+        const hit = ray.intersectObjects(r.meshes, false).find(h => shown(h.object)); low = Math.min(low, hit ? hit.point.y : c.y - 1.75 * rs); }
+      r.root.position.y += lapTop - low; }
     r.root.updateMatrixWorld(true);
     held_ = { kind, t: 0, sob: kind === 'held' ? 1 : 0, lean: null };
     // (the giver: a touch toward her; held, leant in over her)
@@ -428,7 +434,10 @@ function create(view, opts) {
       // (her right arm over the giver's back, behind the neck, its hand on the back of the far shoulder; her left across in front, its hand
       // hanging on that same shoulder)
       const fwdG = new V3(0, 0, 1).applyQuaternion(g.torso.getWorldQuaternion(new Q())).setY(0).normalize(), rG = side_(g, 'R'), shR = world(g.armR);
-      armIK(r, 'R', world(g.neck).lerp(shR, 0.75).addScaledVector(fwdG, -2.0 * gs).add(new V3(0, 1.0 * gs, 0)), new V3(0, 1, 0).addScaledVector(fwdG, -0.6));
+      // (over the shoulders if their own shoulder is high enough to reach over; if not, under, round the giver's back below the shoulder blades)
+      const over = world(r.armR).y > shR.y - 1.2 * gs;
+      if (over) armIK(r, 'R', world(g.neck).lerp(shR, 0.75).addScaledVector(fwdG, -2.0 * gs).add(new V3(0, 1.0 * gs, 0)), new V3(0, -1, 0).addScaledVector(fwdG, -0.7));      // (the elbow down and behind, as an arm hangs over shoulders)
+      else armIK(r, 'R', world(g.upperBack).addScaledVector(fwdG, -1.0 * gs).addScaledVector(rG, 1.6 * gs).add(new V3(0, -1.5 * gs, 0)), new V3(0, -1, 0).addScaledVector(fwdG, -0.5));
       armIK(r, 'L', shR.clone().addScaledVector(fwdG, 1.6 * gs).addScaledVector(rG, -0.4 * gs).add(new V3(0, 0.6 * gs, 0)), new V3(0, -0.6, 0).addScaledVector(fwdG, 1));
     } else {
       armIK(r, 'L', lapPt('L', 0.6).addScaledVector(side_(r, 'R'), 0.9 * rs), side_(r, 'L').add(new V3(0, -0.4, 0)));
@@ -444,7 +453,7 @@ function create(view, opts) {
     if (h.kind === 'held') {
       // (the left arm across her back, its hand flat on her far shoulder blade; the right round her waist, its hand on her far hip)
       L_ = handFlat(g, 'L', world(r.upperBack).addScaledVector(far, 1.7 * rs).addScaledVector(up, -0.6 * rs), back.clone().negate(), far.clone().add(up.clone().multiplyScalar(0.3)));
-      R_ = handFlat(g, 'R', world(r.hips).addScaledVector(far, 2.5 * rs).add(new V3(0, 2.2 * rs, 0)).addScaledVector(back, 0.4 * rs), far.clone().negate(), back);
+      R_ = handFlat(g, 'R', world(r.hips).addScaledVector(far, 2.4 * rs).add(new V3(0, 4.2 * rs, 0)).addScaledVector(back, 0.4 * rs), far.clone().negate(), back);      // (at her waist, so the forearm passes over her thighs, not through them)
       armIK(g, 'L', L_.W, new V3(0.7, -0.5, -0.6)); armIK(g, 'R', R_.W, new V3(-0.8, -0.6, 0.2));
     } else {
       // (the left hand flat in the small of her back; the right resting on her far knee)
@@ -452,7 +461,7 @@ function create(view, opts) {
       // (resting over the far knee: the palm on top of it, the fingers along her thigh to the knee and curling a little over its far side)
       const along = world(r.kneeL).sub(world(r.thighL)).setY(0).normalize();
       R_ = handFlat(g, 'R', world(r.kneeL).add(new V3(0, 1.45 * rs, 0)).addScaledVector(along, -0.6 * rs).addScaledVector(far, 0.3 * rs), up.clone().negate(), along.clone().addScaledVector(far, 0.35));
-      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, new V3(-0.8, -0.7, 0));
+      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4)); armIK(g, 'R', R_.W, new V3(-0.6, 0.6, 0.3));      // (the right elbow out and up: the forearm comes down onto the knee, over the near thigh)
     }
     setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
   }
