@@ -169,9 +169,9 @@ async function run(P, o) {
     lap.set({ noHarsh: true });      // (the story's own: only her word stops it, never the pain model's "too harsh")
     const ended = () => lap.st.rose || lap.st.ended;
     const keyOf = w => w === 'subject' || w === sub.id || w === 'red' && sub.id === player ? subKey : castKey;
-    // (hers: pitched where her cries are by now, and in place of any she'd make while it's said)
+    // (hers: pitched up toward where her cries are by now (see lap.speechPitch), and in place of any she'd make while it's said)
     const line = (who, text, face) => { const k = keyOf(who), hers = k === subKey;
-      return talk.caption(k, text.replace(/\{name\}/g, sub.names[0]).replace(/\{word\}/g, sub.word), { face, wait, pitch: hers ? lap.cryPitch() : null, speaking: hers ? s => lap.hush(s) : null }); };
+      return talk.caption(k, text.replace(/\{name\}/g, sub.names[0]).replace(/\{word\}/g, sub.word), { face, wait, pitch: hers ? lap.speechPitch() : null, speaking: hers ? s => lap.hush(s) : null }); };
     const smacks = async n => { if (!n || ended()) return; lap.run(n); await wait(0.3); for (let i = 0; i < 900 && lap.busy() && !ended(); i++) await wait(0.1); };
     const S = { lap, corrector: c, subject: sub,
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },

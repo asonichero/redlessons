@@ -521,6 +521,9 @@ function create(view, opts) {
   const api = {
     // (the pitch her cries are at now, for her words said over them (null before the first); and her cries held back for secs)
     cryPitch: () => (lastCry && root.GameAudio && root.GameAudio.cryPitch ? root.GameAudio.cryPitch(lastCry.power, bandIndex(), opts.pitch || 215) : null),
+    // (and her words' pitch with it: raised toward where her cries are, but only partway, and never far above her own voice; taken all the way,
+    // the words went up into a squeak)
+    speechPitch() { const c = api.cryPitch(), b = opts.pitch || 215; return c == null ? null : Math.min(b * 1.3, b + Math.max(0, c - b) * 0.4); },
     hush(secs) { hushUntil = Math.max(hushUntil, performance.now() + secs * 1000); },
     stage, pain, st, VIEWS, BANDS, implOf,
     get redRig() { return red; }, get gerda() { return gerda; }, get giverRig() { return gerda; }, get subjectRig() { return held_ ? sitter : red; }, get rear() { return red.rear; }, get stg() { return st_; },      // (her rig is redRig; lap.rose() is the safe word)
