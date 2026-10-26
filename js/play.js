@@ -62,9 +62,9 @@ function create(view, opts) {
   const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw), look: (who, at) => (who === 'red' ? m : mm).lookAt(at) }) : null;
 
   // ── The camera, between scenes. Indoors it's anchored at the middle of the room, not on her: the whole room in view, turned round it by hand.
-  // Outdoors it's anchored on her, she in the middle of the view, and goes with her. Either way, drag to go round (all the way), and the
-  // camera button or the wheel steps between near, medium (where it starts) and far; on a touch screen a pinch goes anywhere between near and far. Where it's been turned
-  // to, it stays: it doesn't swing round after her. (A scene can take it for a shot of its own: camHeld; or a page can leave it free: opts.camFree.)
+  // Outdoors it's anchored on her, she in the middle of the view, and goes with her. Either way, a drag moves it any way about the anchor, round
+  // it and up over it or down toward the floor (never under it), and the camera button or the wheel steps between near, medium (where it starts)
+  // and far; on a touch screen a pinch goes anywhere between near and far. Where it's been turned to, it stays: it doesn't swing round after her. (A scene can take it for a shot of its own: camHeld; or a page can leave it free: opts.camFree.)
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
   const indoors = !opts.followCam;
   const roomMid = () => B ? new V3((B.x0 + B.x1) / 2, 12, (B.z0 + B.z1) / 2) : new V3(0, 12, 0);
@@ -271,7 +271,8 @@ function create(view, opts) {
     m.update(dt, { move: mv, run: input.run }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }
     // Exits: walking into one tells the page (once).
     if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; opts.onExit(e); break; }
-    if (st.cottage.follow) st.cottage.follow(m.pos, dt, st.camera, chest());      // (the set: anything between the camera and her is cut away)
+    // (the set: anything between the camera and her is cut away; only in play, with her there to be seen, not in a shot of the page's own)
+    if (st.cottage.follow) st.cottage.follow(m.pos, dt, st.camera, rig.root.visible && !opts.camFree ? chest() : null);
     if (opts.onFrame) opts.onFrame(dt);
     for (const f of tickers.slice()) f(dt);
     // The camera between scenes (see above): the target easing to the anchor (the room's middle, or her), and the camera round it at the distance
@@ -279,10 +280,10 @@ function create(view, opts) {
     if (!opts.camFree && !camHeld && !busy() && !st.moving && st.controls.enabled) {
       const want = anchor(), k = 1 - Math.exp(-dt * (indoors ? 3 : 6));
       camT.copy(st.controls.target).lerp(want, k); const d = camT.clone().sub(st.controls.target); st.controls.target.add(d); st.camera.position.add(d);      // (from wherever a scene left it)
-      const off = st.camera.position.clone().sub(st.controls.target), s = stepAt(camZ), kz = Math.min(1, dt * 2.2), r0 = Math.hypot(off.x, off.z), r = r0 + (s[0] - r0) * kz, a = Math.atan2(off.x, off.z);
-      off.x = Math.sin(a) * r; off.z = Math.cos(a) * r; off.y += (s[1] - off.y) * kz; st.camera.position.copy(st.controls.target).add(off);
-      const phi = Math.atan2(r, off.y); st.controls.minPolarAngle = st.controls.maxPolarAngle = phi;      // (dragging goes round; up and down is the distance's)
-    } else { st.controls.minPolarAngle = 0.01; st.controls.maxPolarAngle = 1.5; camT.copy(st.controls.target); }
+      // (the distance is the step's; which way it looks at the anchor from, round and over, is the player's: a drag goes any way about it)
+      const off = st.camera.position.clone().sub(st.controls.target), s = stepAt(camZ), dist = Math.hypot(s[0], s[1]), L = off.length();
+      off.setLength(L + (dist - L) * Math.min(1, dt * 2.2)); st.camera.position.copy(st.controls.target).add(off);
+    } else camT.copy(st.controls.target);
     if (st.camera.position.y < 3) st.camera.position.y = 3;
     offer = busy() ? [] : options();
     if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  ' + o.label + '   ·   Q  ' + o.altLabel : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }

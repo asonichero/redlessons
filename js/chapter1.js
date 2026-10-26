@@ -44,7 +44,8 @@ World.scene('ch1.tea', {
           const dr = W.surfaces.find(s => s.name === 'the dresser'), front = dr ? dr.front.clone().setY(0).normalize() : new V3(0, 0, 1);
           { const tb = W.surfaces.find(s => s.name === 'the table'), a = tb ? new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2) : new V3(), b = flat(gp()), mid = a.clone().lerp(b, 0.5);
             const B = W.bounds, I = 5, xs = [B.x0 + I, (B.x0 + B.x1) / 2, B.x1 - I], zs = [B.z0 + I, (B.z0 + B.z1) / 2, B.z1 - I], along = b.clone().sub(a).normalize(), redAt = flat(P.motion.pos);
-            const blocks = c => { const v = mid.clone().sub(c), t = Math.max(0, Math.min(1, redAt.clone().sub(c).dot(v) / v.lengthSq())); return c.clone().addScaledVector(v, t).distanceTo(redAt) < 9; };
+            const seg = (p, q, x) => { const v = q.clone().sub(p), t = Math.max(0, Math.min(1, x.clone().sub(p).dot(v) / (v.lengthSq() || 1))); return p.clone().addScaledVector(v, t).distanceTo(x); };
+            const blocks = c => seg(c, mid, redAt) < 9 || seg(a, b, c) < 16;      // (Rose in the line of it; or the camera on her grandmother's way, to be walked into)
             let best = null;
             for (const x of xs) for (const z of zs) { const c = P.collide(new V3(x, 0, z), 6); if (c.distanceTo(mid) < 20) continue;      // (out of the oak, the hearth and the furniture)
               const score = Math.abs(c.distanceTo(mid) - 42) + 30 * Math.abs(c.clone().sub(mid).normalize().dot(along)) + (blocks(c) ? 200 : 0) + (c.clone().sub(b).dot(front) < 0 ? 25 : 0);      // (side on; not through Rose; the dresser's front to it)

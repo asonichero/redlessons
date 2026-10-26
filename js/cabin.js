@@ -295,8 +295,9 @@ function build(scene, opts) {
   let cutT = 0;
   function cut(from, to, dt) {
     if (!opts.outside || (cutT -= dt || 0) > 0) return; cutT = 0.1;
-    const parts = cutParts(), c = root_.getWorldPosition(new V3()), d = from.clone().sub(to), L = d.length();
-    if (to.distanceTo(c) > 160 && from.distanceTo(c) > 160) { for (const g of parts) g.visible = true; return; }
+    const parts = cutParts(), c = root_.getWorldPosition(new V3());
+    if (!to || (to.distanceTo(c) > 160 && from.distanceTo(c) > 160)) { for (const g of parts) g.visible = true; return; }      // (no one to keep in view, or far off: all of it)
+    const d = from.clone().sub(to), L = d.length();
     cutRay.set(to, d.normalize()); cutRay.near = 0.5; cutRay.far = L;
     for (const g of parts) g.visible = cutRay.intersectObject(g, true).length === 0;      // (tested whether it's drawn or not: shown again once it's out of the way)
   }
