@@ -460,8 +460,12 @@ function make(id, look, opts) {
   // roll down with her legs and the hips stay where they are, so left full, the middle of it stands up above them like a tailbone)
   // (the back of a garment drawn in by a share, by height (f(y)), the front untouched)
   const backIn = (g, f) => { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * f(pp.getY(i))); } g.computeVertexNormals(); return g; };
-  const flatWaist = g => { if (!opts.lying) return g; const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1, K.sacrum, ss(2.3, 1.5, pp.getY(i)))); } g.computeVertexNormals(); return g; };
-  skinnedOn(rig.hips, flatWaist(lathe(wide(dense([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 36), trunkW), 0.72 * TD, 48)), P.skin, torsoW, { tint: true });      // the hips
+  const flatWaist = g => { if (!opts.lying) return g; const pp = g.attributes.position, cx = K.cheekX, mid = x => 1 - ss(cx, cx + 0.85 * K.cheekW, Math.abs(x));      // (only behind the cheeks, out to their outer edges: the flanks beyond stay full, so the waist isn't pinched and the cheeks run on into it)
+    for (let i = 0; i < pp.count; i++) { const z = pp.getZ(i); if (z < 0) pp.setZ(i, z * lerp(1, K.sacrum, ss(2.3, 1.5, pp.getY(i)) * mid(pp.getX(i)))); } g.computeVertexNormals(); return g; };
+  // (a man in trousers: above his seat, where his shirt is always over it and tucked tight, the back of the hips is drawn in under it too, so it
+  // never shows through the shirt as he bends)
+  const underShirt = g => MAN && (S.lower || 'trousers') === 'trousers' ? backIn(g, y => lerp(1, 0.55, ss(0.6, 1.6, y))) : g;
+  skinnedOn(rig.hips, flatWaist(underShirt(lathe(wide(dense([[0, -2.5], [1.4, -2.35], [2.7, -1.6], [3.2, -0.4], [3.15, 0.6], [2.85, 1.5], [2.6, 2.1], [0, 2.3]], 36), trunkW), 0.72 * TD, 48))), P.skin, torsoW, { tint: true });      // the hips
   // The seat: one rounded cheek on each side at the back, painted (with the marks) by setDress. The `seat` frame's +z runs into the skin where a smack lands.
   const CHEEK = { x: K.cheekX, y: K.cheekY, z: K.cheekZ * TD, rx: K.cheekW, ry: K.cheekH, rz: K.cheekD };      // (low enough that the tops melt into the small of the back and the undersides meet the thighs in a crease)
   // Each cheek hangs from a pivot at its own hip joint that turns with that thigh by a share (cheekFollow), so as the legs swing forward (sitting,
