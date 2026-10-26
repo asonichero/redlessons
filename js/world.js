@@ -57,7 +57,7 @@ function create(view, ui) {
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
-    go, newGame, resume, startAt, journal, refresh, morning, tableau,
+    go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
   };
 
   // What to say she's about: the first step on offer here with a hint; or else, the main story's, or the first begun line's, and where.
@@ -106,6 +106,7 @@ function create(view, ui) {
   }
   async function establish(e, title) {
     const E = shot(e), V = a => new V3(a[0], a[1], a[2]);
+    { const Au = root.GameAudio; if (Au && Au.startMusic && e.music) Au.startMusic({ theme: e.music }); }      // (its own music, if it has one)
     E.stage.go(V(e.to), V(e.look), e.secs * 1000);
     await fade(false, title); await new Promise(r => setTimeout(r, Math.max(0, e.secs * 1000 - 1400)));
     await fade(true, ''); E.dispose();
@@ -127,6 +128,8 @@ function create(view, ui) {
   // shot); with one, the end of the homecoming: the two of them asleep in her mother's bed, at night (js/bed.js). The scene is set, let settle
   // (faces, hair) a moment by hand, drawn once and taken as a picture, and put away again. → a promise of the picture (a data URL).
   let backdrop = null;
+  // (and the music that goes with it: the opening's, or bedtime's)
+  function tableauMusic(kind) { return kind === 'saved' && root.Bed ? 'bed' : ((Object.values(SCENES).find(s => s.establish) || {}).establish || {}).music || null; }
   async function tableau(kind) {
     let E = null, b = null;
     if (kind === 'saved' && root.Bed) {

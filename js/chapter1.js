@@ -18,7 +18,7 @@ const outfit = (o, onlyIf) => { if (!root.Looks) return; const l = Looks.load();
 World.scene('ch1.tea', {
   ownObjective: true,
   // (the game opens on her grandmother's cabin from the wood, under its oak, in the late afternoon; then straight to the two of them at the table)
-  establish: { area: 'wood', entry: 'cabin', from: [-14, 34, 150], to: [-12, 27, 112], look: [-6, 24, 30], secs: 6 },
+  establish: { area: 'wood', entry: 'cabin', from: [-14, 34, 150], to: [-12, 27, 112], look: [-6, 24, 30], secs: 6, music: 'home' },      // (music: the homecoming's, over it)
   prepare(o) {
     outfit('No cloak');      // (she came without it)
     return Object.assign(o, { npc: { id: 'gran', key: 'gran', name: 'Grandmother', at: [-2, -15], yaw: 0, voice: 'gran', tint: '#5a6a3a', bg: '#e4e8d6' }, start: { at: [-2, 7], yaw: Math.PI } });
