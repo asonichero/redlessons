@@ -1159,7 +1159,7 @@ function make(id, look, opts) {
     const br = Math.sin(t * 1.6) * (rig.breath == null ? 1 : rig.breath);
     rig.torso.scale.set(1 + 0.006 * br, 1 + 0.004 * br, 1 + 0.014 * br);
     root_.updateMatrixWorld(true);
-    for (const d of rig.dangles) {
+    if (!rig.hairHeld) for (const d of rig.dangles) {      // (rig.hairHeld: the hair kept as it lies, not swung: a still scene's, js/bed.js)
       // Gravity in the pivot's parent's space: the hair hangs toward it, as far as it can go without passing into her head.
       d.g.parent.getWorldQuaternion(tq).invert(); gW.set(0, -1, 0).applyQuaternion(tq);
       d.g.getWorldPosition(wp); const v = d.prev ? wp.clone().sub(d.prev).divideScalar(Math.max(dt, 1e-3)) : new V3(); d.prev = wp.clone(); if (v.length() > 200) v.set(0, 0, 0);

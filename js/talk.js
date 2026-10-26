@@ -8,6 +8,7 @@
 //     { who: 'mother', face: 'stern', text: 'There you are.' },              // a line (face: one of js/toon.js's expressions)
 //     { text: 'The fire cracks.' },                                            // narration: no portrait, no name
 //     { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: '…' },    // (listen: how the others look while it's said)
+//     { who: 'red', face: 'calm', thought: true, cue: () => …, text: '…' },  // (thought: unspoken, in italics, unvoiced; cue: run as it comes up)
 //     { choose: [{ text: 'It’s nothing.', then: [ … ] }, { text: '…', then: [ … ] }] },     // a choice; its lines, then on
 //     { run: async () => { … } },                                             // anything else, in order
 //   ])                                                                          → the choices made, in order
@@ -31,7 +32,7 @@ const CSS = `
 .talk.left .name { left: 156px; display: block; } .talk.right .name { right: 156px; display: block; }
 .talk .text { min-height: 1.4em; white-space: pre-wrap; }
 .talk.narr .text { font-style: italic; color: #4a3a2c; text-align: center; }
-.talk.muse .text { font-style: italic; color: #4a3a2c; } .talk.muse .more, .talk.cap .more { display: none; } .talk.cap { pointer-events: none; } .talk.muse { pointer-events: none; width: min(1000px, calc(100vw - 32px)); font-size: clamp(17px, 1.2vw + 6px, 23px); }
+.talk.muse .text, .talk.thought .text { font-style: italic; color: #4a3a2c; } .talk.muse .more, .talk.cap .more { display: none; } .talk.cap { pointer-events: none; } .talk.muse { pointer-events: none; width: min(1000px, calc(100vw - 32px)); font-size: clamp(17px, 1.2vw + 6px, 23px); }
 .talk .more { position: absolute; right: 14px; bottom: 4px; font-size: 14px; color: #8a6a50; animation: talkBob 1s ease-in-out infinite; }
 .talk.right .more { right: 156px; }
 @keyframes talkBob { 50% { transform: translateY(2px); } }
@@ -156,11 +157,12 @@ function create(stage, opts) {
   const CPS = () => 42 * ((root.Hud && Hud.settings.text) || 1);      // (letters a second; the settings can quicken or slow it)
   let autoT = null;
   function show(line) {
-    const c = speaker(line.who);
+    if (line.cue) line.cue();      // (anything to happen as it comes up)
+    const c = speaker(line.who); el.classList.toggle('thought', !!line.thought);      // (thought: hers, unspoken, in italics: still a line to go on from)
     if (c) face(line.who, line.face);
     if (line.listen) for (const k in line.listen) face(k, line.listen[k]);
     const text = line.text, cps = CPS(), secs = Math.max(0.4, text.length / cps);
-    if (voice) voice.stop(); voice = c && A && A.speak ? A.speak(c.voice || line.who, text, secs * 0.92) : null;
+    if (voice) voice.stop(); voice = c && A && A.speak && !line.thought ? A.speak(c.voice || line.who, text, secs * 0.92) : null;      // (a thought isn't voiced)
     return new Promise(res => {
       let i = 0; const t0 = performance.now();
       typing = { done: () => { i = text.length; textEl.textContent = text; typing = null; moreEl.style.visibility = 'visible'; waiting = res; if (voice) { voice.stop(); voice = null; }
@@ -224,7 +226,7 @@ function create(stage, opts) {
     };
     try { await runList(script); }
     finally {
-      el.classList.remove('on'); portrait = null; playing = false; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
+      el.classList.remove('on', 'thought'); portrait = null; playing = false; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
       for (const k in cast) relax(k, o.hold || 9000); unlook();
       if (o.keepCamera) stage.controls.enabled = saved.enabled; else { stage.go(saved.pos, saved.look, 900); setTimeout(() => { stage.controls.enabled = saved.enabled; }, 950); }
     }

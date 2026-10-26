@@ -136,10 +136,9 @@ async function bedtime(P, w, r) {
   if (root.Looks) { const l = Looks.load(); l.red.outfit = 'No cloak'; Looks.save(l); }
   const castWas = talk.cast.red.rig; talk.cast.red.rig = b.small;
   await P.wait(0.6); await w.fade(false); await P.wait(2.2);
-  // (her mother drifts off first, before Red has done thinking; Red after her last thought)
+  // (her thoughts, gone on from as a conversation is; her mother drifts off first, before Red has done thinking; Red after her last thought)
   const lines = Story.bedtime(r), sleeps = Math.max(1, lines.length - 3);
-  for (let i = 0; i < lines.length; i++) { const [face, text] = lines[i]; await talk.muse(text, { face, fresh: false, ms: 2200 + text.length * 55 }); await P.wait(0.5);
-    if (i === sleeps - 1) b.big.setExpr('asleep', 1.2); }
+  await talk.play(lines.map(([face, text], i) => ({ who: 'red', face, text, thought: true, cue: i === sleeps ? () => b.big.setExpr('asleep', 1.2) : null })), { shot: false, keepCamera: true, hold: 1e9 });
   b.small.setExpr('asleep', 1.0); await P.wait(3.0);
   talk.cast.red.rig = castWas;      // (the bed stays as it is, under the card)
 }

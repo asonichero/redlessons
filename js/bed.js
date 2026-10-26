@@ -111,6 +111,7 @@ function scene(stage, world, o) {
   function tick(dt) { big.tick(dt); small.tick(dt); }
   function remove() { stage.scene.remove(group); }
   big.breath = 0.6; small.breath = 0.6;
+  big.hairHeld = small.hairHeld = true;      // (their hair lies as it is, on the pillow: it doesn't swing)
   big.setExpr('wistful'); small.setExpr('calm');
   return { big, small, group, shot, tick, remove, front, along };
 }
