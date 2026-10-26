@@ -257,7 +257,7 @@ function create(view, opts) {
     if (look.outfit === 'No cloak') setOutfit('Hood down', true);
     await meet();
     talk.cast.red.rig = rig;
-    const picks = await talk.play(Story.homecoming());
+    const picks = await talk.play(Story.homecoming(opts.homecoming ? opts.homecoming() : undefined));      // (opts.homecoming: what the scene knows of her way home)
     // (and she keeps her cloak on, through the correction and after it, until bed: taking it off would be to be Rose again)
     if (opts.after) await opts.after('homecoming', picks);      // (and whatever comes of it, before she's free again)
   }

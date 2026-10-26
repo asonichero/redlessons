@@ -7,9 +7,20 @@
 (function (root) {
 'use strict';
 
-const homecoming = () => [
+// (ctx: what the scene knows of her way home: { walk: { bluebells, stream, beech } (1: she stayed there), bunch: 'posy' | 'armful' (the
+// bluebells in her hands), clean(), lie() (run as she answers whether she came straight home) }. Without it: a posy, and nothing stayed for.)
+const homecoming = ctx => { ctx = Object.assign({ walk: { bluebells: 0, stream: 0, beech: 0 }, bunch: 'posy', clean: () => {}, lie: () => {} }, ctx || {}); const big = ctx.bunch === 'armful'; return [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'There you are! I was about to light the lantern and come looking for you.' },
   { who: 'red', face: 'shy', listen: { mother: 'concerned' }, text: 'I’m sorry. I lost track of the time.' },
+  // (the bluebells in her hands: the first her mother knows that she didn't come straight home, whatever she says of it after)
+  ...(big ? [
+    { who: 'mother', face: 'surprised', listen: { red: 'shy' }, text: 'Red, that’s half the bluebell glade in your arms.' },
+    { who: 'red', face: 'shy', listen: { mother: 'calm' }, text: 'They’re for you. I… got carried away.' },
+    { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'So I see.' },
+  ] : [
+    { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And bluebells. From the glade off the wood path, I’d guess.' },
+    { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'For you. You always liked them.' },
+  ]),
   { who: 'mother', face: 'surprised', listen: { red: 'calm' }, text: '…Well, you’re home now. And with a fine new cloak! Your grandmother’s work?' },
   { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: 'She made it for me, like the one I used to have. When I turned round to show her, she called me Little Red.' },
   { who: 'mother', face: 'smile', listen: { red: 'pout' }, text: 'She would. It suits you. It always did.' },
@@ -45,7 +56,21 @@ const homecoming = () => [
   ] },
   { who: 'red', face: 'shy', listen: { mother: 'calm' }, text: '…Is that so strange?' },
   { who: 'mother', face: 'smile', text: 'No, love. It isn’t strange at all.' },
-  { who: 'mother', face: 'calm', listen: { red: 'concerned' }, text: 'Then let’s start as we mean to go on. Your Grandmother will have sent you home long before the light faded, and yet you lingered in the wood, as dusk crept in. Alone. After I’ve told you a hundred times.' },
+  { who: 'mother', face: 'calm', listen: { red: 'concerned' }, text: 'Then let’s start as we mean to go on. Your grandmother will have sent you home long before the light faded. So tell me, and tell me true. Did you come straight home?' },
+  { choose: [
+    { text: 'No, Mama. I stopped on the way.', face: 'shy', then: [
+      { run: ctx.clean },
+      ...confession(ctx.walk).map(t => ({ who: 'red', face: 'shy', listen: { mother: 'calm' }, text: t })),
+      { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me true. That counts for something, and I’ll remember it.' },
+    ] },
+    { text: 'I came straight home, Mama. Truly.', face: 'shy', then: [
+      { run: ctx.lie },
+      { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: big ? 'With half the bluebell glade in your arms? Don’t, Red. Not to me.' : 'With bluebells from the glade, a good way off the path? Don’t, Red. Not to me.' },
+      { who: 'red', face: 'wince', listen: { mother: 'stern' }, text: '…I stopped. I’m sorry.' },
+      { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'I know you did. And now there’s a lie on top of the lateness, and that’s worse than the both of them.' },
+    ] },
+  ] },
+  { who: 'mother', face: 'calm', listen: { red: 'concerned' }, text: 'You lingered in the wood as dusk crept in. Alone. After I’ve told you a hundred times.' },
   { who: 'red', face: 'wince', text: 'It wasn’t so dark, Mama—' },
   { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'It was dark enough. Nothing happened, and that’s luck, and I won’t have you leaning on luck. You’ll not walk away from this one unscathed, Little Red.' },
   { who: 'mother', face: 'calm', text: 'But hear me first, because this matters more than the rest of it.' },
@@ -54,7 +79,15 @@ const homecoming = () => [
   { who: 'red', face: 'shy', text: 'Rose.' },
   { who: 'mother', face: 'smile', text: 'That’s the one.' },
   { who: 'mother', face: 'stern', listen: { red: 'concerned' }, text: 'Now, come here, young lady.' },
-];
+]; };
+// (what she owns to, coming clean: each place she stayed, or, if she only stopped, that they added up)
+const confession = walk => {
+  const said = [];
+  if (walk.bluebells) said.push('I picked bluebells, and kept on picking. There was always one bluer, just past the last.');
+  if (walk.stream) said.push((said.length ? 'And I' : 'I') + ' sat on the flat stone by the stream, thinking, far longer than I meant to.');
+  if (walk.beech) said.push((said.length ? 'And I' : 'I') + ' stopped at the old beech, where Peter carved our letters. I couldn’t make myself leave it.');
+  return said.length ? said : ['Only for moments. The bluebells, the stream, the old beech. Only a moment at each. They added up.'];
+};
 
 // Chapter one opens at her grandmother's: the last of the afternoon, tea and cake at the round table, the old woman fussing, Rose letting her. Then
 // the gift: a red cloak like the one she wore as a girl. She puts it on and turns round to show it, and her grandmother calls her Little Red.
@@ -118,21 +151,65 @@ const WALK = [
   [0.985, 'pout', 'And there it all is again. Waiting for me.'],
 ];
 const SPOTS = {
-  bluebells: [['smile', 'We used to pick these by the armful. Mama would pretend to sneeze at them.'], ['shy', 'She’ll like these.']],
-  stream: [['calm', 'I could sit here till the stars come out. Nobody would ask me for anything at all.']],
-  beech: [['shy', 'R and P. Peter carved it the summer we were nine. It’s grown so wide.'], ['shy', '…Does he remember it?']],
   log: [['calm', 'Just a little longer.'], ['pout', 'Just a little.']],
 };
+// The three places she stops (js/chapter1.js): her thoughts there, and the choice, to stay a while (the first) or go on. (ctx.linger: run as
+// she chooses to stay; at the bluebells, she picks an armful.)
+const STOPS = {
+  bluebells: {
+    first: [['smile', 'Bluebells. The whole glade of them, the way it was every spring.'], ['smile', 'We used to pick these by the armful. Mama would pretend to sneeze at them.']],
+    stay: 'Just a few more.',
+    stayed: [['smile', 'A few more. And a few more. There’s always one bluer, just past the last.'], ['shy', 'There. An armful, like when I was small. She can’t be cross at an armful of bluebells.']],
+    go: 'That’s enough. Home.',
+    went: [['shy', 'She’ll like these.']],
+  },
+  stream: {
+    first: [['calm', 'I always stop here. I always have.'], ['calm', 'I could sit here till the stars come out. Nobody would ask me for anything at all.']],
+    stay: 'Sit a while longer.',
+    stayed: [
+      ['calm', 'Mama was nineteen once. By not much older she had a house, and a husband, and me.'],
+      ['pout', 'Did she want it? Or did it just come, the way it’s all coming at me?'],
+      ['shy', 'Responsible. Everyone says it as if it’s a thing you put on, like a cloak. I keep waiting for it to fit.'],
+      ['shy', 'If I’m the one everyone leans on, who do I lean on?'],
+      ['calm', '…The water doesn’t ask me to be anything.'],
+    ],
+    go: 'Up, and on.',
+    went: [['shy', 'Mama will be watching the window.']],
+  },
+  beech: {
+    first: [['shy', 'R and P. Peter carved it the summer we were nine. It’s grown so wide.']],
+    stay: 'Stay with it a while.',
+    stayed: [
+      ['smile', 'He cut his thumb doing the P, and wouldn’t cry because I was watching. So I cried for him.'],
+      ['smile', 'We used to race to this tree. He let me win, and swore blind he didn’t.'],
+      ['shy', 'Now he holds doors for me, and calls me Rose, and doesn’t race anybody.'],
+      ['pout', 'When did we stop? Nobody said. It just stopped.'],
+      ['shy', '…Does he remember it?'],
+    ],
+    go: 'Leave it be.',
+    went: [['shy', '…Does he remember it?']],
+  },
+};
+const walkStop = (k, ctx) => { const S = STOPS[k], th = l => l.map(([face, text]) => ({ who: 'red', face, text, thought: true })); return [
+  ...th(S.first),
+  { choose: [{ text: S.stay, then: [{ run: ctx.linger }, ...th(S.stayed)] }, { text: S.go, then: th(S.went) }] },
+]; };
 
 // The first correction, the homecoming's, scripted as a dialogue between them over the smacks (js/correction.js runs it: S.say, S.step, S.set).
 // Not a token: it's meant, and it's meant to be felt by a grown woman, in the words that Little Red needs. Across her lap, skirt down; then
 // lifted; then her drawers down (her mother's hand at each); and last the hairbrush, which she's sent to fetch from the chest, for the wood,
 // counted after each stroke; then her mother soothes her, the brush in her other hand. Her name stops it anywhere, and her mother answers that instead.
-const homecomingCorrection = async S => {
-  const M = 'corrector', R = 'subject';
+// How long she stayed in the wood, and whether she owned to it, make it heavier (how: { walk: { bluebells, stream, beech }, lingered, lied }):
+// her mother names each place she stayed, over more of it; a lie is answered on its own; and the hairbrush's count is longer for each.
+const NUMS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+  'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
+const homecomingCorrection = async (S, how) => {
+  how = Object.assign({ walk: { bluebells: 0, stream: 0, beech: 0 }, lingered: 0, lied: null }, how || {});
+  const M = 'corrector', R = 'subject', more = 0.05 * how.lingered + (how.lied ? 0.1 : 0);
+  const strokes = Math.min(NUMS.length, 12 + 2 * how.lingered + (how.lied ? 4 : 0));
   // (a stroke, then her count; her mother's face as she hears it, where it changes)
   const count = async (n, face) => { await S.smacks(1); S.face(face); await S.say(R, n); };
-  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.4 });
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5 + more, pace: 1.4 });
   await S.wait(0.8);
   await S.say(M, 'Settle now. Hands down, toward the floor. There.', 'calm');
   await S.say(R, 'Mama…');
@@ -147,10 +224,15 @@ const homecomingCorrection = async S => {
   await S.gesture('skirt'); await S.wait(0.4);
   await S.say(R, 'Mama!');
   await S.say(M, 'Hush. You’re not too grown for this, Little Red, and you’re not too grown for me.', 'calm');
-  S.set({ strength: 1.75, pace: 1.65 });
+  S.set({ strength: 1.75 + more, pace: 1.65 });
   await S.step([M, 'Anything could have been on that path. Anyone.', 'stern'], 10);
   await S.step([R, 'Ow— I stayed on the path, I did—'], 6);
   await S.step([M, 'You stayed on it in the dark. That’s the part I mind.'], 10);
+  if (how.walk.bluebells) {      // (an armful of bluebells, picked as the light went)
+    await S.step([M, 'And an armful of bluebells, picked while the light went.'], 8);
+    await S.step([R, 'They were for you—'], 4);
+    await S.step([M, 'I’d sooner have had you home.'], 8);
+  }
   await S.smacks(10);
   await S.step([R, 'Please— I understand—'], 4);
   await S.say(M, 'Not yet, but nearly.', 'calm');
@@ -158,12 +240,30 @@ const homecomingCorrection = async S => {
   await S.gesture('drawers'); await S.wait(0.5);
   await S.say(R, 'Mama, no, please—');
   await S.say(M, 'Yes. Because it matters, and because you need to remember it matters. Breathe.', 'stern');
-  S.set({ strength: 2.0, pace: 2 });
+  S.set({ strength: 2.0 + more, pace: 2 });
   await S.step([M, 'You lingered. Dawdled.'], 8);
   await S.step([M, 'You let the dusk come in around you.'], 8);
+  if (how.walk.stream) {      // (sat by the stream, thinking)
+    await S.step([M, 'Sat by that stream, I don’t doubt, dreaming, while I watched the window.'], 10);
+    await S.step([R, 'I was only thinking, Mama—'], 4);
+    await S.step([M, 'Then think at home, by the fire, where I can see you.'], 8);
+  }
+  if (how.walk.beech) {      // (at the old beech, with Peter's letters)
+    await S.step([M, 'And whatever kept you at that old tree would have kept till morning. You mightn’t have.'], 10);
+    await S.step([R, 'Mama, please—'], 4);
+    await S.smacks(6);
+  }
   await S.step([R, 'I’m sorry! I’m sorry, Mama!'], 6);
   await S.step([M, 'And you let me sit here, watching the window, with the lantern in my hand.'], 12);
   await S.smacks(10);
+  // (a lie, answered on its own; owning up, owned)
+  if (how.lied) {
+    await S.say(M, 'And then you stood in my kitchen and told me you came straight home.', 'stern');
+    await S.say(R, 'I’m sorry I said it! I’m sorry!');
+    await S.step([M, 'You can be late, and you can be foolish, and I’ll mend it. But you don’t lie to me, Little Red.'], 10);
+    await S.step([M, 'Not ever.'], 8);
+    await S.smacks(6);
+  } else if (how.lied === false) await S.say(M, 'You told me the truth tonight. Remember that it counted.', 'calm');
   // (and the hairbrush, for the last of it: she counts every one; the one she doesn't count, she counts after)
   // (she's sent for it: off the lap, across the room to the chest, and back to give it to her, as she is)
   await S.fetch('hairbrush', {
@@ -172,8 +272,8 @@ const homecomingCorrection = async S => {
     present: [R, '…Here, Mama.'],
     back: [M, 'Good girl. Now back across my lap, Little Red.', 'smile'],
   });
-  S.set({ strength: 1.85, pace: 1 }); await S.wait(0.8);
-  await S.say(M, 'You’ve twelve more coming. Count them for me, and then it’s finished.', 'stern');
+  S.set({ strength: 1.85 + more, pace: 1 }); await S.wait(0.8);
+  await S.say(M, 'You’ve ' + NUMS[strokes - 1].toLowerCase() + ' more coming. Count them for me, and then it’s finished.', 'stern');
   await S.say(R, '…Yes, Mama.');
   await count('One…'); await count('Two…'); await count('Three…'); await count('Owww, Four…', 'concerned');
   await count('Five…'); await count('Six, oh Mama…', 'calm'); await count('Seven…');
@@ -182,11 +282,11 @@ const homecomingCorrection = async S => {
   await S.say(R, 'No, Mama!');
   await S.say(M, 'Then count it, love.', 'calm');
   await S.say(R, 'Eight…');
-  await count('Nine…');
-  await count('Ten! I’m sorry, Mama!');
+  for (let k = 9; k <= strokes - 3; k++) await count(k === 13 ? 'Oh— Thirteen…' : k === 17 ? 'Seventeen, please, Mama…' : NUMS[k - 1] + '…', k === 13 ? 'concerned' : null);      // (past twelve: the extra, for the wood and the lie)
+  await count(NUMS[strokes - 3] + '! I’m sorry, Mama!');
   await S.say(M, 'I know, love.', 'concerned');
-  await count('Eleven!', 'stern');
-  await count('Twelve.', 'stern');
+  await count(NUMS[strokes - 2] + '!', 'stern');
+  await count(NUMS[strokes - 1] + '.', 'stern');
   S.face('pout'); await S.wait(0.8);
   // (and the brush into her other hand, and her own laid on the sting, slowly, while she says it)
   await S.gesture('soothe', { hold: true });      // (it goes on until the scene fades)
@@ -267,5 +367,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { homecoming, homecomingCorrection, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { homecoming, homecomingCorrection, walkStop, STOPS, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
