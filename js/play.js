@@ -68,7 +68,7 @@ function create(view, opts) {
   st.controls.maxPolarAngle = 1.5;      // (in the game the camera stays above the floor: no going round under it)
   // (in the open, the walking camera's three distances behind her, and heights: close, medium (the usual), far)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
-  const FOLLOW = [[24, 6], [40, 10], [64, 17]]; let camZ = 1;
+  const FOLLOW = [[24, 6], [40, 10], [64, 17]]; let camZ = 1, camHeld = false;      // (camHeld: a scene has the camera on a shot of its own)
   const followAt = z => { const i = Math.min(1, Math.floor(z)), u = z - i, a = FOLLOW[i], b = FOLLOW[i + 1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; };
   const camBack = opts.camBack || (opts.followCam ? [40, 10] : [42, 16]);      // (in the open, lower and nearer, under the trees)
   const az = start.yaw + Math.PI + (opts.camTurn || 0);      // (behind her as she starts, or turned round from there by opts.camTurn)
@@ -275,7 +275,7 @@ function create(view, opts) {
       const want0 = followAt(camZ), r0 = Math.hypot(off.x, off.z), kz = Math.min(1, dt * 1.6), r = r0 + (want0[0] * sc - r0) * kz, na = az + da * k;
       off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; off.y += (want0[1] * sc - off.y) * kz; st.camera.position.copy(st.controls.target).add(off); }
     // The camera keeps its place relative to her, easing after her (unless it's been given a shot of its own: opts.camFree).
-    if (!opts.camFree) { const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
+    if (!opts.camFree && !camHeld) { const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
     st.controls.target.add(d); st.camera.position.add(d);
     if (st.camera.position.y < 3) st.camera.position.y = 3; }
     offer = busy() ? [] : options();
@@ -300,7 +300,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get follows() { return !!opts.followCam; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Close', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; if (!v) { camT.copy(chest()); prevT.copy(camT); } }, get follows() { return !!opts.followCam; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Close', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
 }
 
 root.Play = { create };

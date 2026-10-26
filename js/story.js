@@ -185,7 +185,8 @@ const homecomingCorrection = async S => {
   await S.after([R, 'Twelve.']);
   await S.wait(0.8);
   // (and the brush into her other hand, and her own laid on the sting, slowly, while she says it)
-  await Promise.all([S.gesture('soothe'), S.say(M, 'There. That’s done, and it stays done. Stay there a moment. Just breathe. I’ve got you.', 'calm')]);
+  await S.gesture('soothe', { hold: true });      // (it goes on until the scene fades)
+  await S.say(M, 'There. That’s done, and it stays done. Stay there a moment. Just breathe. I’ve got you.', 'calm');
   await S.wait(2.4);
 };
 

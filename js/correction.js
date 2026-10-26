@@ -121,26 +121,35 @@ async function run(P, o) {
     const say_ = l => l ? line(l[0], l[1], l[2]) : null, m = P.motion, r = P.rig, frame = lap.subjectRig.root.parent;
     if (o2.ask) await say_(o2.ask);
     await fade(true);
-    lap.pause(true); frame.visible = false;
+    lap.pause(true, { handsInLap: true }); frame.visible = false;      // (her hands in her lap while she waits)
     const face = lap.subjectRig.expr || 'gritted';
     r.root.visible = true; P.setDress({ skirt: lap.st.skirt, drawers: lap.st.drawers, marks: Object.assign({}, lap.st.marks) }); r.setExpr(face);
     const castRig = talk.cast[subKey].rig; talk.cast[subKey].rig = r;
     // (on her feet beside the chair, facing her; the camera on the room, the chair and the chest both in it)
     const G = lap.giverRig, gp = G.root.getWorldPosition(new V3()), gf = new V3(0, 0, 1).applyQuaternion(G.root.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
     const before = P.collide(gp.clone().addScaledVector(gf, 13).setY(0), 3.4); m.warp(before, yawTo(before, gp)); r.root.position.copy(before);
-    view('room', 0); for (let i = 0; i < 30; i++) P.frame(1 / 60);
+    // (low, from the hearth, across the room: the chair, and the chest beyond it)
+    const hearth = P.world.hearthCam || [4, 7, 34]; P.camHeld = true;
+    st.go(new V3(hearth[0], hearth[1], hearth[2]), new V3(12, 11, -10), 0); for (let i = 0; i < 30; i++) P.frame(1 / 60);
     await fade(false);
+    // (slowly across to it, rubbing her left cheek with her left hand: a moment's respite, and she makes the most of it)
+    const rub = () => { const p = r.rear.L.getWorldPosition(new V3()), back = new V3(-Math.sin(m.yaw), 0, -Math.cos(m.yaw)), t = performance.now() / 1000;
+      return p.addScaledVector(back, 0.9 * r.scaleW).add(new V3(0, Math.sin(t * 5) * 0.5 * r.scaleW, 0)); };
+    const ch = P.world.chest, at = P.collide(ch.front.clone().add(new V3(0, 0, 6)).setY(0), 3.4);
+    m.reach('L', rub); await m.goTo(at, Math.PI, { speed: 0.42 }); await m.release('L');      // (and back to the chest's lid, to open it)
     await P.useChest();
-    const brush = root.Implements ? root.Implements.model(id, r.palm ? r.palm.R : 1) : null; if (brush) { brush.position.y = -0.5; r.handR.add(brush); }
+    // (in her left hand: held out on her mother's right, toward the camera at her shoulder)
+    const brush = root.Implements ? root.Implements.model(id, r.palm ? r.palm.L : -1) : null; if (brush) { brush.position.y = -0.5; r.handL.add(brush); }
     await wait(0.5); await P.useChest();      // (and the lid shut on the rest)
     await m.goTo(before, yawTo(before, gp));
-    // (holding it out to her: seen from behind her mother's shoulder, Red's face to us)
-    st.go(gp.clone().addScaledVector(gf, -15).add(new V3(5, 28, 0)), before.clone().setY(18), 700);
-    m.reach('R', () => G.handR.getWorldPosition(new V3()).lerp(r.handR.getWorldPosition(new V3()), 0.5).add(new V3(0, 3, 0)));
+    // (holding it out to her: the camera sweeping slowly round to her mother's right shoulder, Red's face and the brush held out both to us)
+    { const sh = G.armR.getWorldPosition(new V3()), out = sh.clone().sub(gp).setY(0).normalize(), sc = G.scaleW;
+      st.go(sh.clone().addScaledVector(out, 12 * sc).addScaledVector(gf, -12 * sc).add(new V3(0, 6 * sc, 0)), r.headGroup.getWorldPosition(new V3()).lerp(r.handL.getWorldPosition(new V3()), 0.7).add(new V3(0, -1.5 * sc, 0)), 3200); }
+    m.reach('L', () => { const f = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw)), sd = new V3(Math.cos(m.yaw), 0, -Math.sin(m.yaw)); return r.root.position.clone().addScaledVector(f, 6.5 * r.scaleW).addScaledVector(sd, 1.5 * r.scaleW).add(new V3(0, 17 * r.scaleW, 0)); });      // (held out in front of her, at her chest)
     if (o2.present) await say_(o2.present); else await wait(1.2);
     if (o2.back) await say_(o2.back);
     await fade(true);
-    m.release('R'); if (brush) r.handR.remove(brush); r.root.visible = false; talk.cast[subKey].rig = castRig;
+    m.release('L'); if (brush) r.handL.remove(brush); r.root.visible = false; P.camHeld = false; talk.cast[subKey].rig = castRig;
     frame.visible = true; lap.set({ implement: id }); view(ANGLES[angle], 0);
     await wait(0.3); lap.pause(false); await fade(false);
   }
@@ -161,7 +170,7 @@ async function run(P, o) {
       wait: async secs => { await wait(secs); if (ended()) throw STOP; },
       set: o2 => lap.set(o2),
       // (the giver's hand: lifting the skirt, drawing the drawers down, or soothing: see js/lap.js's gesture)
-      gesture: async kind => { if (ended()) throw STOP; await lap.gesture(kind); if (ended()) throw STOP; },
+      gesture: async (kind, o3) => { if (ended()) throw STOP; await lap.gesture(kind, o3); if (ended()) throw STOP; },
       // Sent to fetch the implement: up off the lap and across the room for it, as she is (the colour, the clothes and the hurt held as they
       // are), back to present it, and told back into place. o: { ask, present, back } — the lines, as [who, text, face].
       fetch: async (id, o2) => { if (ended()) throw STOP; await fetchIt(id, o2 || {}, lap, line, subKey); if (ended()) throw STOP; },

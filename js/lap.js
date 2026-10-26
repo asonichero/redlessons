@@ -270,15 +270,38 @@ function create(view, opts) {
     let Tp;
     if (gs.kind === 'skirt') Tp = thighs.clone().lerp(waist, ss(0.2, 0.75, u)).addScaledVector(nIn, -2.2 * sc);
     else if (gs.kind === 'drawers') Tp = waist.clone().lerp(thighs, ss(0.2, 0.75, u)).addScaledVector(nIn, -1.6 * sc);
-    else { const side = u < 0.5 ? 'L' : 'R', c = crown(side), a = (u * 2 % 1) * Math.PI * 4, s = new V3().crossVectors(nIn, new V3(0, 1, 0)).normalize(), f = new V3().crossVectors(s, nIn);
-      Tp = c.p.addScaledVector(s, Math.cos(a) * 0.7 * sc).addScaledVector(f, Math.sin(a) * 0.5 * sc).addScaledVector(nIn, 0.12 * sc); }
+    else return soothePose(gs, nIn, dir, sc);
     const h = handOn(Tp, nIn, dir, 0.85, 0.28);
     return { W: h.W, q: h.q, blend };
+  }
+  // Soothing: with an implement in hand, first the hand goes to the other and gives it over (PASS), then circles on one cheek and the other,
+  // a few seconds each, until it's done (or, held, until the scene closes); and at the end, takes it back.
+  const PASS = 0.9, SIDE = 2.6;
+  function soothePose(gs, nIn, dir, sc) {
+    const pass = gs.pass ? PASS : 0, t = gs.t, end = gs.loop ? Infinity : gs.dur;
+    if (gs.pass && t < pass) {       // (to the other hand, and it's given over halfway)
+      const k = t / pass; if (k > 0.5) st.swap = true;
+      return { W: world(gerda.handL).add(new V3(0, 0.6 * sc, 0)), q: gerda.handL.getWorldQuaternion(new Q()), blend: ss(0, 0.5, k) * (1 - ss(0.6, 1, k) * 0.0) };
+    }
+    if (gs.pass && t > end - pass) { const k = (t - (end - pass)) / pass; if (k > 0.5) st.swap = false;      // (and back)
+      return { W: world(gerda.handL).add(new V3(0, 0.6 * sc, 0)), q: gerda.handL.getWorldQuaternion(new Q()), blend: 1 - ss(0.6, 1, k) }; }
+    const c0 = t - pass, side = Math.floor(c0 / SIDE) % 2 ? 'R' : 'L', a = (c0 % SIDE) / SIDE * Math.PI * 4, c = crown(side);
+    const s = new V3().crossVectors(nIn, new V3(0, 1, 0)).normalize(), f = new V3().crossVectors(s, nIn);
+    const Tp = c.p.addScaledVector(s, Math.cos(a) * 0.7 * sc).addScaledVector(f, Math.sin(a) * 0.5 * sc).addScaledVector(nIn, 0.12 * sc), h = handOn(Tp, nIn, dir, 0.85, 0.28);
+    return { W: h.W, q: h.q, blend: gs.pass ? 1 : ss(0, 0.4, t) * (end === Infinity ? 1 : 1 - ss(end - 0.4, end, t)) };
+  }
+  // Seated and still (paused, while she's away): the giver's hands in her lap, one over the other.
+  function handsInLap() {
+    const g = gerda, sc = g.scaleW; g.root.updateMatrixWorld(true);
+    for (const s of ['L', 'R']) { const hip = world(g['thigh' + s]), kn = world(g['knee' + s]), W = hip.lerp(kn, 0.55).add(new V3((s === 'L' ? -0.6 : 0.6) * sc, 2.1 * sc, 0));
+      armIK(g, s, W, new V3(s === 'L' ? 1 : -1, -0.3, -0.6)); }
+    g.neck.rotation.set(0.2, 0, 0); g.head.rotation.set(0.05, 0, 0);
   }
   function stepGesture(dt) {
     const gs = st.gesture; if (!gs) return; gs.t += dt;
     if (!gs.applied && gs.t >= gs.dur * 0.55) { gs.applied = true; if (gs.kind === 'skirt') api.set({ skirt: 'up' }); if (gs.kind === 'drawers') api.set({ drawers: 'down' }); }
-    if (gs.t >= gs.dur) { st.gesture = null; st.swap = false; gs.res(); }
+    if (gs.loop && !gs.resolved && gs.t > (gs.pass ? PASS : 0.4)) { gs.resolved = true; gs.res(); }      // (held: it goes on; the caller goes on once it's under way)
+    if (!gs.loop && gs.t >= gs.dur) { st.gesture = null; st.swap = false; gs.res(); }
   }
   function poseGerda() {
     const g = gerda, ph = armPhase(), side = st.swing ? st.swing.side : 'L';
@@ -289,8 +312,10 @@ function create(view, opts) {
     g.root.updateMatrixWorld(true);
     // Left hand: flat between her shoulder blades, fingers across her back.
     const nBack = new V3(0, 0, 1).applyQuaternion(red.torso.getWorldQuaternion(new Q())).normalize();
-    const lh = (() => { const d = new V3(0, 0, 1).addScaledVector(nBack, -nBack.z).normalize(); return { W: world(red.upperBack).addScaledVector(nBack, -0.28 * g.scaleW).addScaledVector(d, -0.85 * g.scaleW), q: basis(nBack.clone().multiplyScalar(g.palm.L), d.clone().negate()) }; })();
-    armIK(g, 'L', lh.W, new V3(0.55, -0.5, -0.45)); setWorldQuat(g.handL, lh.q);
+    // (holding the implement in it, for a while: the forearm laid across her back, the hand on her far side, the implement in it; eased there)
+    st.acrossW = lerp(st.acrossW || 0, st.swap ? 1 : 0, 1 - Math.exp(-(st.dt || 0.016) * 6));
+    const lh = (() => { const d = new V3(0, 0, 1).addScaledVector(nBack, -nBack.z).normalize(); return { W: world(red.upperBack).addScaledVector(nBack, -0.28 * g.scaleW).addScaledVector(d, (-0.85 + 3.2 * st.acrossW) * g.scaleW).add(new V3(0, -1.2 * st.acrossW * g.scaleW, 0)), q: basis(nBack.clone().multiplyScalar(g.palm.L), d.clone().negate()) }; })();
+    armIK(g, 'L', lh.W, new V3(0.55, -0.5 + 0.4 * st.acrossW, -0.45 - 0.4 * st.acrossW)); setWorldQuat(g.handL, lh.q);
     // Right arm: between two of its poses; down through an arc that swings out and over, so the hand comes in from above.
     const A = armPose(ph.from), B = ph.from === ph.to ? A : armPose(ph.to), e = ph.e;
     let W = A.W.clone().lerp(B.W, e), q = A.q.clone().slerp(B.q, e), pole = A.pole.clone().lerp(B.pole, e).normalize();
@@ -321,7 +346,7 @@ function create(view, opts) {
   // ── Each frame ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   function update(dt) {
     // (paused: the scene held while something else happens elsewhere, the pain, the colour and the clothes as they are; the giver still breathes)
-    if (st.paused) { gerda.tick(dt); return; }
+    if (st.paused) { if (st.lapHands) handsInLap(); gerda.tick(dt); return; }
     st.dt = dt; J.t += dt; J.kick *= Math.exp(-dt * 3.2);
     advance(dt); stepGesture(dt);
     pain.update(dt, !!(st.swing && st.swing.phase === 'contact'));
@@ -346,8 +371,10 @@ function create(view, opts) {
     end() { if (!st.ended) { st.ended = true; st.runLeft = 0; say('end', { hits: st.hits, peak: st.peak }); } },
     halt() { st.runLeft = 0; },
     // A gesture of the giver's hand ('skirt', 'drawers' or 'soothe'), once the hand's at rest; done when it is.
-    gesture(kind) { return new Promise(res => { const go = () => { if (st.swing) return setTimeout(go, 50); if (kind === 'soothe' && st.implement !== 'hand') st.swap = true; st.gesture = { kind, t: 0, dur: GEST[kind] || 2, res }; }; go(); }); },
-    pause(on) { st.paused = !!on; },      // (a run stopped after the smack in hand)
+    // (soothe, { hold: true }: it goes on until the scene closes; the promise is done once it's begun)
+    gesture(kind, o) { o = o || {}; return new Promise(res => { const go = () => { if (st.swing || st.gesture) return setTimeout(go, 50); const pass = kind === 'soothe' && st.implement !== 'hand';
+      st.gesture = { kind, t: 0, dur: (GEST[kind] || 2) + (pass ? 2 * PASS : 0), res, pass, loop: !!o.hold }; }; go(); }); },
+    pause(on, o) { st.paused = !!on; st.lapHands = !!(on && o && o.handsInLap); },      // (a run stopped after the smack in hand)
     clearMarks() { st.marks = { L: 0, R: 0 }; dirty = true; },
     canStrike, running: () => st.runLeft > 0,
     // A check-in (amber, where the house uses traffic lights): taken up by the script between runs (js/discipline.js).

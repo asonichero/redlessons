@@ -105,7 +105,7 @@ function create(rig, opts) {
   const after = (test, fn) => new Promise(res => m.cbs.push({ test, res: () => { if (fn) fn(); res(); } }));
 
   // ── Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  m.goTo = (pos, yaw, o) => { m.auto = { pos: pos.clone().setY(0), yaw, run: !!(o && o.run) }; return after(() => !m.auto); };
+  m.goTo = (pos, yaw, o) => { m.auto = { pos: pos.clone().setY(0), yaw, run: !!(o && o.run), speed: o && o.speed || 1 }; return after(() => !m.auto); };      // (o.speed: a share of her walk, for a slow one)
   m.face = yaw => { if (m.seat) return Promise.resolve(); m.faceYaw = yaw;      // (seated, she faces the way the seat does)
     return after(() => Math.abs(angDiff(m.yaw, yaw)) < 0.05 && m.speed < 0.5); };
   m.reach = (side, target) => { const h = m.hands[side]; h.target = target; h.want = 1; return after(() => h.w > 0.97); };
@@ -133,7 +133,7 @@ function create(rig, opts) {
       const a = m.auto, to = a.pos.clone().sub(m.pos).setY(0), dist = to.length();
       a.t = (a.t || 0) + dt; if (a.best == null || dist < a.best - 0.3 * sc) { a.best = dist; a.bestT = a.t; }
       if (!a.there && (dist < 0.7 * sc || a.t - a.bestT > 1.2)) a.there = true;
-      if (!a.there) { dir = to.normalize(); mag = clamp(dist / (5 * sc), 0.3, 1); run = a.run && dist > 12 * sc; }
+      if (!a.there) { dir = to.normalize(); mag = clamp(dist / (5 * sc), 0.3, 1) * a.speed; run = a.run && dist > 12 * sc; }
       else { mag = 0; if (a.yaw != null) m.faceYaw = a.yaw; if (m.speed < 1 && (a.yaw == null || Math.abs(angDiff(m.yaw, a.yaw)) < 0.06)) m.auto = null; }
     }
     if (mag > 0.01) dir.normalize(); else mag = 0;
