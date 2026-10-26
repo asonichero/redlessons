@@ -122,6 +122,7 @@ async function run(P, o) {
     if (o2.ask) await say_(o2.ask);
     await fade(true);
     lap.pause(true, { handsInLap: true }); frame.visible = false;      // (her hands in her lap while she waits)
+    if (o2.waitFace) lap.giverRig.setExpr(o2.waitFace);
     const face = lap.subjectRig.expr || 'gritted';
     r.root.visible = true; P.setDress({ skirt: lap.st.skirt, drawers: lap.st.drawers, marks: Object.assign({}, lap.st.marks) }); r.setExpr(face);
     const castRig = talk.cast[subKey].rig; talk.cast[subKey].rig = r;
@@ -142,6 +143,7 @@ async function run(P, o) {
     const brush = root.Implements ? root.Implements.model(id, r.palm ? r.palm.L : -1) : null; if (brush) { brush.position.y = -0.5; r.handL.add(brush); }
     await wait(0.5); await P.useChest();      // (and the lid shut on the rest)
     await m.goTo(before, yawTo(before, gp));
+    if (o2.presentFace) G.setExpr(o2.presentFace);
     // (holding it out to her: the camera sweeping slowly round to her mother's right shoulder, Red's face and the brush held out both to us)
     { const sh = G.armR.getWorldPosition(new V3()), out = sh.clone().sub(gp).setY(0).normalize(), sc = G.scaleW;
       st.go(sh.clone().addScaledVector(out, 12 * sc).addScaledVector(gf, -12 * sc).add(new V3(0, 6 * sc, 0)), r.headGroup.getWorldPosition(new V3()).lerp(r.handL.getWorldPosition(new V3()), 0.7).add(new V3(0, -1.5 * sc, 0)), 3200); }
@@ -170,6 +172,7 @@ async function run(P, o) {
       wait: async secs => { await wait(secs); if (ended()) throw STOP; },
       set: o2 => lap.set(o2),
       // (the giver's hand: lifting the skirt, drawing the drawers down, or soothing: see js/lap.js's gesture)
+      face: f => { if (f) talk.face(castKey, f); },      // (the corrector's face, between lines; it stays until another is set)
       gesture: async (kind, o3) => { if (ended()) throw STOP; await lap.gesture(kind, o3); if (ended()) throw STOP; },
       // Sent to fetch the implement: up off the lap and across the room for it, as she is (the colour, the clothes and the hurt held as they
       // are), back to present it, and told back into place. o: { ask, present, back } — the lines, as [who, text, face].

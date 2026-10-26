@@ -1205,7 +1205,7 @@ const MOUTHS = { flat: { mw: 0.42, mc: 0.05, mo: 0, mt: 0 }, smile: { mw: 0.6, m
 const EXPRS = {
   calm:      { brow: 0, browY: 0, open: 0.95, mouth: 'flat', blush: 0, ms: 1 },
   smile:     { brow: 0.1, browY: 0.08, open: 0.72, mouth: 'smile', blush: 0.35, ms: 1.3 },
-  shy:       { brow: 0.28, browY: 0.04, open: 0.55, look: -1, mouth: 'smile', blush: 1, ms: 0.85 },
+  shy:       { brow: 0.28, browY: 0.04, open: 0.55, look: -1, mouth: 'concern', blush: 1, ms: 0.8 },
   cheeky:    { brow: -0.22, browY: 0.12, open: 0.62, look: 1, mouth: 'smile', blush: 0.1, ms: 1.2 },
   pout:      { brow: 0.2, browY: -0.04, open: 0.8, look: -0.6, mouth: 'pout', blush: 0.5, ms: 1.35 },
   stern:     { brow: -0.42, browY: -0.1, open: 0.75, mouth: 'flat', blush: 0, ms: 0.9 },

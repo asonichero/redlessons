@@ -214,6 +214,7 @@ function create(stage, opts) {
         if (line.choose) {
           if (line.text) await show(line); else { speaker(line.who || (cast.red ? 'red' : null)); textEl.textContent = ''; }      // (a choice on its own is hers to make: her portrait)
           const k = await choose(line.choose); picks.push(k);
+          if (line.choose[k].face) face(line.who || 'red', line.choose[k].face);      // (a choice can set the chooser's face)
           if (line.choose[k].then) await runList(line.choose[k].then);
           continue;
         }
