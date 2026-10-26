@@ -33,12 +33,15 @@ World.scene('ch1.tea', {
       const ctx = {
         // (she gets up, goes to the dresser, takes the parcel down, and brings it round to Rose's side; Rose stands to take it)
         fetchGift: async () => {
+          // (a wider shot as she gets up, across the room, side on to her way from the table to the dresser and back, so she's seen going
+          // for it rather than walking at the camera)
+          P.stage.go(new V3(34, 27, -2), new V3(-12, 12, -8), 1100);      // (from the bed's side of the room: the table, the dresser and her way between them)
           await g.stand();
           const at = flat(gp()).add(new V3(0, 0, 8)); await g.goTo(at, yawTo(at, gp()));
           await g.reach('R', gp()); g.reach('L', gp().add(new V3(1.5, 0, 0))); g.hold(gift, 'front'); gift.panel = null; W.items.splice(W.items.indexOf(gift), 1);
           g.release('L'); await g.release('R');
           // (round the table, not through it: out to its side, then to Rose's)
-          const red = P.motion.pos.clone(), to = red.clone().add(new V3(-7, 0, 1)); await g.goTo(new V3(-17, 0, 2), null); await g.goTo(to, yawTo(to, red));
+          const red = P.motion.pos.clone(), to = red.clone().add(new V3(-12, 0, 1));      // (an arm's length and the parcel's, from her: not into her) await g.goTo(new V3(-17, 0, 2), null); await g.goTo(to, yawTo(to, red));
           await P.getUp(); await P.motion.face(yawTo(P.motion.pos, g.pos)); P.talk.settle(['red', 'gran']); await P.wait(0.6);
         },
         giveGift: async () => { const it = g.drop(); P.motion.hold(it, 'front'); await P.wait(0.8); },
