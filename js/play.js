@@ -85,7 +85,7 @@ function create(view, opts) {
     const out = [], me = flat(m.pos), f = fwd();
     const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
-    if (talk && mm && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother() }, mm.pos.clone().setY(18));
+    if (talk && mm && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
@@ -200,13 +200,17 @@ function create(view, opts) {
   async function lieDown() { await m.lie(sitting); lying = true; }
   async function getUp() { await m.stand(); sitting = null; lying = false; }
 
-  // Talking to her mother: Rose goes to stand before her, a little apart, and they turn to each other; the camera settles on the two of them and
+  // Talking to her mother: started by the player, they stay where they are and turn to each other; started by a scene, Rose goes to stand
+  // before her, a comfortable distance apart, and they turn to each other. The camera settles on Red, from her mother's side, and
   // the conversation plays. At its end she's to come to her mother: the page is told (opts.after), and can go on to the lap scene.
-  async function talkToMother() {
-    if (opts.talk) { await approach(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) await opts.after('talk', picks); return; }
+  // (the player starting it: they stay where they are, and turn to each other; a scene starting it brings her over: see approach)
+  async function faceEachOther() { m.face(yawTo(m.pos, mm.pos)); mm.face(yawTo(mm.pos, m.pos)); await wait(0.5); }
+  async function talkToMother(how) {
+    const meet = () => how && how.stay ? faceEachOther() : approach();
+    if (opts.talk) { await meet(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) await opts.after('talk', picks); return; }
     // (she came home in her grandmother's cloak)
     if (look.outfit === 'No cloak') setOutfit('Hood down', true);
-    await approach();
+    await meet();
     talk.cast.red.rig = rig;
     const picks = await talk.play(Story.homecoming());
     setOutfit('No cloak', true);      // (cloak off, over the back of the chair, as she's told)
@@ -215,7 +219,7 @@ function create(view, opts) {
   // (Rose goes to stand before them, a little apart, and they turn to each other)
   async function approach(dist) {
     const away = flat(m.pos).sub(flat(mm.pos)); if (away.lengthSq() < 1) away.set(0, 0, -1); away.normalize();
-    const at = collide(flat(mm.pos).addScaledVector(away, dist || 10), R);
+    const at = collide(flat(mm.pos).addScaledVector(away, dist || 15), R);      // (a comfortable distance for talking, not close up)
     await m.goTo(at, yawTo(at, mm.pos));
     mm.face(yawTo(mm.pos, m.pos)); await wait(0.5);
   }

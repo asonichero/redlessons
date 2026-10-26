@@ -112,11 +112,22 @@ function create(stage, opts) {
     // (far enough to hold the two of them across, with room either side, and from their heads to their waists in the part above the box)
     const tv = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), th = tv * cam.aspect;
     const dist = Math.max((sep / 2 + 10 * sc) / th, 15 * sc / tv);
-    const look = mid.clone().add(new V3(0, -6 * sc, 0)), pos = mid.clone().addScaledVector(n, dist).add(new V3(0, 2 * sc, 0));
+    let look = mid.clone().add(new V3(0, -6 * sc, 0)), pos = mid.clone().addScaledVector(n, dist).add(new V3(0, 2 * sc, 0));
+    // With Red in it, the camera favours her: from the other's side, over their shoulder when they're near enough, her face and all her
+    // reactions in the scene (the other's are in their portrait, by the box).
+    const ri = names.indexOf('red');
+    if (ri >= 0 && rigs.length > 1) {
+      const R = heads[ri], O = heads[ri === 0 ? 1 : 0], toR = R.clone().sub(O).setY(0); if (toR.lengthSq() < 1e-6) toR.set(0, 0, 1); toR.normalize();
+      const sideN = new V3(-toR.z, 0, toR.x); if (sideN.dot(cam.position.clone().sub(R).setY(0)) < 0) sideN.negate();
+      const D = Math.max(19 * sc, 13 * sc / tv);      // (head to waist, above the box)
+      pos = R.clone().addScaledVector(toR, -D).addScaledVector(sideN, 0.38 * D).add(new V3(0, 1.2 * sc, 0));
+      look = R.clone().add(new V3(0, -4.5 * sc, 0)).addScaledVector(sideN, 0.05 * D);
+      n = toR.clone().negate().lerp(sideN, 0.4).normalize();
+    }
     if (opts.clamp) opts.clamp(pos);
     stage.go(pos, look, 900);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
-    if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });
+    if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, ri >= 0 ? 0.12 : 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });      // (with Red, facing each other; otherwise opened toward us, as on a stage)
     // (and each looks at the other's face, turned a little toward us, so that even sitting square to one another their faces read from here)
     if (opts.look && rigs.length > 1) names.forEach((nm, k) => { const other = rigs[1 - k]; looking.add(nm);
       // (a little: a quarter of the way between them, sideways toward us, which turns the head some fifteen degrees, never round over a shoulder)
@@ -177,7 +188,8 @@ function create(stage, opts) {
   let picking = null;
   // Advance: finish the line being typed, or go on.
   function next() { if (A && A.init) A.init(); if (picking) return; if (typing) { typing.done(); return; } if (waiting) { const w = waiting; waiting = null; w(); } }
-  el.addEventListener('click', next);
+  // (a click or tap anywhere goes on, not only on the box: anywhere but another button or link, which keep their own)
+  root.document.addEventListener('click', e => { if (!el.classList.contains('on')) return; const t = e.target; if (!el.contains(t) && t.closest && t.closest('button, a, select, input, textarea')) return; next(); });
   const keys = e => {
     if (!el.classList.contains('on')) return;
     if (picking && /^Digit[1-9]$/.test(e.code)) { const k = +e.code.slice(5) - 1; if (k < choicesEl.children.length) picking(k); e.preventDefault(); return; }
