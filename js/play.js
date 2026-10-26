@@ -274,10 +274,10 @@ function create(view, opts) {
     if (opts.followCam && !busy()) { const off = st.camera.position.clone().sub(st.controls.target), az = Math.atan2(off.x, off.z), want = m.yaw + Math.PI, da = Math.atan2(Math.sin(want - az), Math.cos(want - az)), k = m.speed > 2 ? Math.min(1, dt * 3) : 0;
       const want0 = followAt(camZ), r0 = Math.hypot(off.x, off.z), kz = Math.min(1, dt * 1.6), r = r0 + (want0[0] * sc - r0) * kz, na = az + da * k;
       off.x = Math.sin(na) * r; off.z = Math.cos(na) * r; off.y += (want0[1] * sc - off.y) * kz; st.camera.position.copy(st.controls.target).add(off); }
-    // The camera keeps its place relative to her, easing after her.
-    const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
+    // The camera keeps its place relative to her, easing after her (unless it's been given a shot of its own: opts.camFree).
+    if (!opts.camFree) { const want = chest(); camT.lerp(want, 1 - Math.exp(-dt * 6)); const d = camT.clone().sub(prevT); prevT.copy(camT);
     st.controls.target.add(d); st.camera.position.add(d);
-    if (st.camera.position.y < 3) st.camera.position.y = 3;
+    if (st.camera.position.y < 3) st.camera.position.y = 3; }
     offer = busy() ? [] : options();
     if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  ' + o.label + '   ·   Q  ' + o.altLabel : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }

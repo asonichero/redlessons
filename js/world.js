@@ -77,11 +77,13 @@ function create(view, ui) {
     if (going) return going;
     going = (async () => {
       const A = AREAS[name]; if (!A) throw new Error('World: no place ' + name);
-      await fade(true, A.name);
-      if (P) { P.dispose(); P = null; }
-      areaName = name; lightFn = null; timeOn = true; sceneNow = null;
       const step = q.offered({ where: name }).find(s => s.scene && SCENES[s.scene]);
-      const sc = step ? SCENES[step.scene] : null; sceneNow = sc;
+      const sc = step ? SCENES[step.scene] : null;
+      await fade(true, sc && sc.establish ? '' : A.name);
+      if (P) { P.dispose(); P = null; }
+      // (a scene can open on an establishing shot: another place seen from outside, without her, the camera easing in; then a fade, and the scene)
+      if (sc && sc.establish) await establish(sc.establish, A.name);
+      areaName = name; lightFn = null; timeOn = true; sceneNow = sc;
       let opts = baseOpts(name, entry);
       if (sc && sc.prepare) opts = sc.prepare(opts, w, step) || opts;
       P = root.Play.create(view, opts);
@@ -92,9 +94,24 @@ function create(view, ui) {
       refresh();
       if (sc && sc.run) sc.run(P, w, step);
       else if (name === 'home' && entry === 'door') lateHome();
+      // (under the fade, the scene's own first shot settles before it opens: its conversation under way, the camera on them)
+      if (sc && sc.establish) { const t0 = performance.now(); while (performance.now() - t0 < 4000 && !(P.talk && P.talk.playing)) await new Promise(r => setTimeout(r, 50)); await new Promise(r => setTimeout(r, 150)); }
       await fade(false);
     })();
     try { await going; } finally { going = null; }
+  }
+  async function establish(e, title) {
+    const E = root.Play.create(view, Object.assign(baseOpts(e.area, e.entry), { onExit: null, followCam: false, camFree: true, light: cal.light() }));
+    E.rig.root.visible = false; E.stage.controls.enabled = false; E.stage.controls.maxDistance = 1000; root.__establishing = E; if (E.npc) E.npc.root.visible = false;
+    const V = a => new V3(a[0], a[1], a[2]);
+    // (whatever stands between the camera and the cabin, a tree or a bush, is left out of the shot, from anywhere along its move)
+    { const look = V(e.look), seg = (a, p, r) => { const d = look.clone().sub(a), t = THREE.MathUtils.clamp(p.clone().sub(a).dot(d) / d.lengthSq(), 0, 1); return t > 0.02 && t < 0.9 && a.clone().addScaledVector(d, t).distanceTo(p) < r + 3; };
+      E.stage.scene.updateMatrixWorld(true);
+      E.stage.scene.traverse(o => { if (!o.isMesh || !o.geometry) return; if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere.clone().applyMatrix4(o.matrixWorld);
+        if (bs.radius > 140) return; for (let q = o.parent; q; q = q.parent) if (q.userData && q.userData.cabin) return; for (let k = 0; k <= 4; k++) if (seg(V(e.from).lerp(V(e.to), k / 4), bs.center, bs.radius)) { o.visible = false; break; } }); }      // (never the cabin itself)
+    E.stage.go(V(e.from), V(e.look), 0); E.stage.go(V(e.to), V(e.look), e.secs * 1000);
+    await fade(false, title); await new Promise(r => setTimeout(r, Math.max(0, e.secs * 1000 - 1400)));
+    await fade(true, ''); E.dispose();
   }
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, light: cal.light() };

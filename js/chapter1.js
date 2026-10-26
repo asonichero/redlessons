@@ -16,6 +16,8 @@ const outfit = (o, onlyIf) => { if (!root.Looks) return; const l = Looks.load();
 // ── Her grandmother's: at the table, the two of them sat; the tea, the gift, the cloak.
 World.scene('ch1.tea', {
   ownObjective: true,
+  // (the game opens on her grandmother's cabin from the wood, under its oak, in the late afternoon; then straight to the two of them at the table)
+  establish: { area: 'wood', entry: 'cabin', from: [-14, 34, 150], to: [-12, 27, 112], look: [-6, 24, 30], secs: 6 },
   prepare(o) {
     outfit('No cloak');      // (she came without it)
     return Object.assign(o, { npc: { id: 'gran', key: 'gran', name: 'Grandmother', at: [-2, -15], yaw: 0, voice: 'gran', tint: '#5a6a3a', bg: '#e4e8d6' }, start: { at: [-2, 7], yaw: Math.PI } });
@@ -25,6 +27,7 @@ World.scene('ch1.tea', {
     const W = P.world, stool = W.seats.find(s => s.name === 'the stool'), chair = W.seats.find(s => s.name === 'the chair');
     P.seatNow(stool); P.seatNow(chair, 'npc');
     P.act(async () => {
+      await P.wait(0.05); if (P.talk) P.talk.settle(['red', 'gran'], 0);      // (sat, under the fade: it opens on the conversation's own view of them)
       await P.wait(1.2);
       const g = P.npcMotion, gift = W.gift, gp = () => gift.obj.position.clone().add(gift.grip);
       const ctx = {

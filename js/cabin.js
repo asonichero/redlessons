@@ -11,9 +11,10 @@
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
 const KIT = root.Cottage.kit, { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK } = KIT;
 const lerp = (a, b, t) => a + (b - a) * t;
-const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 32, RIDGE = 64, RZ = (Z0 + Z1) / 2, LR = 1.5, STEP = 2.9;
+const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 40, RIDGE = 70, RZ = (Z0 + Z1) / 2, LR = 1.5, STEP = 2.9;
 const OAK = { x: X1 - 7, z: Z0 + 5, r: 12 };
-const DOOR = -10, WIN = 22;      // (where the door and the window are along the front wall, as x)
+// (the doorway: tall enough for Red, her mother and her grandmother to walk through with room to spare; Holt, the tallest of them, ducks)
+const DOOR = -10, WIN = 22, DOOR_H = 34;      // (where the door and the window are along the front wall, as x)
 
 let TX = null;
 function tex() {
@@ -43,7 +44,7 @@ function tex() {
 
 function build(scene, opts) {
   opts = opts || {};
-  const tx = tex(), root_ = new THREE.Group(); scene.add(root_);
+  const tx = tex(), root_ = new THREE.Group(); root_.userData.cabin = true; scene.add(root_);
   const logM = toonMap(tx.log), endM = toonMap(tx.ends), barkM = toonMap(tx.bark), clay = T.mat('#d8c8a6'), oakDk = T.mat('#4e3420'), stone = toonMap(tx.stone), iron = T.mat('#2e2a28');
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [] };
   const panels = [];      // { g, test(cam) → visible }
@@ -73,7 +74,7 @@ function build(scene, opts) {
   };
   const walls = {
     back: { a: new V3(X0, 0, Z0), b: new V3(OAK.x - Math.sqrt(OAK.r ** 2 - (Z0 - OAK.z) ** 2) + 1, 0, Z0), n: new V3(0, 0, 1), over: [3, 0] },
-    front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), over: [3, 3], holes: [{ x0: DOOR - X0 - 6.5, x1: DOOR - X0 + 6.5, y0: 0, y1: 24 }, { x0: WIN - X0 - 6, x1: WIN - X0 + 6, y0: 11, y1: 23 }] },
+    front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), over: [3, 3], holes: [{ x0: DOOR - X0 - 6.5, x1: DOOR - X0 + 6.5, y0: 0, y1: DOOR_H }, { x0: WIN - X0 - 6, x1: WIN - X0 + 6, y0: 11, y1: 23 }] },
     left: { a: new V3(X0, 0, Z1), b: new V3(X0, 0, Z0), n: new V3(1, 0, 0), over: [0, 0], gable: true },
     right: { a: new V3(X1, 0, OAK.z + Math.sqrt(OAK.r ** 2 - (X1 - OAK.x) ** 2) - 1), b: new V3(X1, 0, Z1), n: new V3(-1, 0, 0), over: [0, 0], gable: true },
   };
@@ -134,12 +135,12 @@ function build(scene, opts) {
   // ── The door (front wall, left of centre): planks and a ledge, on strap hinges, swinging in; a latch; out to the wood.
   { const f = new THREE.Group(); f.position.set(DOOR, 0, Z1 - 0.4); W.front.add(f);      // (in the opening in the front wall)
     const hinge = new THREE.Group(); hinge.position.set(-6, 0, 0); f.add(hinge);
-    const leaf = box(hinge, 12, 23, 1.0, 6, 11.5, 0, toonMap(tx.door), { shadow: false }); leaf.rotation.y = Math.PI;
-    for (const y of [-7.5, 7.5]) box(leaf, 11, 1.4, 0.7, 0, y, -0.8, oakDk);
-    box(leaf, 1.1, 15, 0.7, 0, 0, -0.8, oakDk, { rot: [0, 0, 0.6] });
-    const latch = new THREE.Object3D(); latch.position.set(10.5, 11.5, -1.2); hinge.add(latch);
-    solid(hinge, new THREE.TorusGeometry(0.8, 0.16, 6, 12), iron, 10.5, 11.5, -1.0, { ink: 0.04 });
-    box(f, 14, 1.4, 2.6, 0, 23.7, 0, oakDk, { shadow: false }); for (const sx of [-1, 1]) box(f, 1.2, 24, 2.6, sx * 6.6, 12, 0, oakDk, { shadow: false });
+    const leaf = box(hinge, 12, DOOR_H - 1, 1.0, 6, (DOOR_H - 1) / 2, 0, toonMap(tx.door), { shadow: false }); leaf.rotation.y = Math.PI;
+    for (const y of [-11, 11]) box(leaf, 11, 1.4, 0.7, 0, y, -0.8, oakDk);
+    box(leaf, 1.1, 24, 0.7, 0, 0, -0.8, oakDk, { rot: [0, 0, 0.45] });
+    const latch = new THREE.Object3D(); latch.position.set(10.5, 15, -1.2); hinge.add(latch);
+    solid(hinge, new THREE.TorusGeometry(0.8, 0.16, 6, 12), iron, 10.5, 15, -1.0, { ink: 0.04 });
+    box(f, 14, 1.4, 2.6, 0, DOOR_H + 0.7, 0, oakDk, { shadow: false }); for (const sx of [-1, 1]) box(f, 1.2, DOOR_H, 2.6, sx * 6.6, DOOR_H / 2, 0, oakDk, { shadow: false });
     world.door = { pivot: hinge, latch, open: 0, target: 0, swing: 1.75, name: 'the door', inward: new V3(0, 0, -1), axis: 'y' };
     world.exits.push({ name: 'the wood', at: new V3(DOOR, 0, Z1 - 4), r: 6, when: () => world.door.open > 0.6 });      // (out through the open door)
   }

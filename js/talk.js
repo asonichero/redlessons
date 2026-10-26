@@ -13,7 +13,7 @@
 //   ])                                                                          → the choices made, in order
 (function (root) {
 'use strict';
-const THREE = root.THREE, V3 = THREE.Vector3;
+const THREE = root.THREE, V3 = THREE.Vector3, UP = new V3(0, 1, 0);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 const CSS = `
@@ -103,7 +103,7 @@ function create(stage, opts) {
   // ── The camera: side on to the two of them, far enough back to hold both, a little above, their heads in the upper part of the view (the
   // box covers the lower). It eases there, and back to where it was after. ──
   let saved = null;
-  function settle(names) {
+  function settle(names, ms) {
     const rigs = names.map(n => cast[n] && cast[n].rig).filter(Boolean); if (!rigs.length) return;
     const heads = rigs.map(r => r.headGroup.getWorldPosition(new V3())), mid = heads.reduce((a, b) => a.add(b), new V3()).divideScalar(heads.length);
     const sc = rigs[0].scaleW, cam = stage.camera;
@@ -113,19 +113,23 @@ function create(stage, opts) {
     const tv = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), th = tv * cam.aspect;
     const dist = Math.max((sep / 2 + 10 * sc) / th, 15 * sc / tv);
     let look = mid.clone().add(new V3(0, -6 * sc, 0)), pos = mid.clone().addScaledVector(n, dist).add(new V3(0, 2 * sc, 0));
-    // With Red in it, the camera favours her: from the other's side, over their shoulder when they're near enough, her face and all her
-    // reactions in the scene (the other's are in their portrait, by the box).
+    // With Red in it, the camera favours her: from the other's side (a little round toward them), so she faces it; but the two of them still
+    // in the middle of the view, as far from its left edge as from its right. (The other's face is in their portrait, by the box.)
     const ri = names.indexOf('red');
     if (ri >= 0 && rigs.length > 1) {
       const R = heads[ri], O = heads[ri === 0 ? 1 : 0], toR = R.clone().sub(O).setY(0); if (toR.lengthSq() < 1e-6) toR.set(0, 0, 1); toR.normalize();
-      const sideN = new V3(-toR.z, 0, toR.x); if (sideN.dot(cam.position.clone().sub(R).setY(0)) < 0) sideN.negate();
-      const D = Math.max(19 * sc, 13 * sc / tv);      // (head to waist, above the box)
-      pos = R.clone().addScaledVector(toR, -D).addScaledVector(sideN, 0.38 * D).add(new V3(0, 1.2 * sc, 0));
-      look = R.clone().add(new V3(0, -4.5 * sc, 0)).addScaledVector(sideN, 0.05 * D);
-      n = toR.clone().negate().lerp(sideN, 0.4).normalize();
+      const sideN = new V3(-toR.z, 0, toR.x); if (sideN.dot(cam.position.clone().sub(mid).setY(0)) < 0) sideN.negate();
+      const A = 0.45, dir = sideN.clone().multiplyScalar(Math.cos(A)).addScaledVector(toR, -Math.sin(A)).normalize(), right = new V3().crossVectors(UP, dir).normalize();
+      const half = Math.max(...heads.map(h => Math.abs(h.clone().sub(mid).dot(right)))) + 9 * sc, D = Math.max(half / th, 15 * sc / tv);
+      look = mid.clone().add(new V3(0, -6 * sc, 0)); pos = mid.clone().addScaledVector(dir, D).add(new V3(0, 7 * sc, 0));      // (a little above them, looking down: over a table between them, not into its edge)
+      // (centred as the camera sees them: the nearer looks bigger, so the middle between them on the screen is put in the middle of it)
+      const c = cam.clone(); c.position.copy(pos); c.lookAt(look); c.updateMatrixWorld(true);
+      const xm = heads.map(h => h.clone().project(c).x).reduce((a, b) => a + b, 0) / heads.length, shift = right.clone().multiplyScalar(-xm * th * D);
+      look.add(shift); pos.add(shift);
+      n = dir;
     }
     if (opts.clamp) opts.clamp(pos);
-    stage.go(pos, look, 900);
+    stage.go(pos, look, ms == null ? 900 : ms);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
     if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, ri >= 0 ? 0.12 : 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });      // (with Red, facing each other; otherwise opened toward us, as on a stage)
     // (and each looks at the other's face, turned a little toward us, so that even sitting square to one another their faces read from here)
