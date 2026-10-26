@@ -126,7 +126,8 @@ const SPOTS = {
 
 // The first correction, the homecoming's, scripted as a dialogue between them over the smacks (js/correction.js runs it: S.say, S.step, S.set).
 // Not a token: it's meant, and it's meant to be felt by a grown woman, in the words that Little Red needs. Across her lap, skirt down; then
-// lifted; then her drawers down; and last the hairbrush, for the wood. Her name stops it anywhere, and her mother answers that instead.
+// lifted; then her drawers down (her mother's hand at each); and last the hairbrush, which she's sent to fetch from the chest, for the wood,
+// counted after each stroke; then her mother soothes her, the brush in her other hand. Her name stops it anywhere, and her mother answers that instead.
 const homecomingCorrection = async S => {
   const M = 'corrector', R = 'subject';
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.4 });
@@ -141,7 +142,7 @@ const homecomingCorrection = async S => {
   await S.step([R, 'Mama, I’m sorry, I am!'], 4);
   await S.say(M, 'I believe you. Sorry doesn’t walk you home, though, does it?', 'stern');
   // (the skirt up)
-  S.set({ skirt: 'up' }); await S.wait(0.7);
+  await S.gesture('skirt'); await S.wait(0.4);
   await S.say(R, 'Mama!');
   await S.say(M, 'Still. You’re not too grown for this, Little Red, and you’re not too grown for me.', 'stern');
   S.set({ strength: 1.75, pace: 1.65 });
@@ -152,7 +153,7 @@ const homecomingCorrection = async S => {
   await S.step([R, 'Please— I understand—'], 4);
   await S.say(M, 'Nearly. Not yet.', 'calm');
   // (her drawers down)
-  S.set({ drawers: 'down' }); await S.wait(0.8);
+  await S.gesture('drawers'); await S.wait(0.5);
   await S.say(R, 'Mama, no, please—');
   await S.say(M, 'Yes. Because it matters, and because you need to remember it matters. Breathe.', 'calm');
   S.set({ strength: 2.0, pace: 2 });
@@ -162,22 +163,29 @@ const homecomingCorrection = async S => {
   await S.step([M, 'And you let me sit here, watching the window, with the lantern in my hand.', 'stern'], 12);
   await S.smacks(10);
   // (and the hairbrush, for the last of it: she counts every one; the one she doesn't count, she counts after)
-  S.set({ implement: 'hairbrush', strength: 1.85, pace: 1 }); await S.wait(1.0);
+  // (she's sent for it: off the lap, across the room to the chest, and back to give it to her, as she is)
+  await S.fetch('hairbrush', {
+    ask: [M, 'Up you get. My hairbrush is in the chest. Fetch it for me.', 'stern'],
+    present: [R, '…Here, Mama.'],
+    back: [M, 'Thank you. Now back across my lap, Little Red.', 'stern'],
+  });
+  S.set({ strength: 1.85, pace: 1 }); await S.wait(0.8);
   await S.say(M, 'The last of it is with my hairbrush. Twelve. Count them for me, and then it’s finished.', 'stern');
   await S.say(R, '…Yes, Mama.');
-  for (const n of ['One…', 'Two…', 'Three…', 'Owww, Four…', 'Five…', 'Six, oh Mama…', 'Seven…']) await S.step([R, n], 1);
-  await S.step([R, 'I’ll be good, Mama, I swear it!'], 1);
+  for (const n of ['One…', 'Two…', 'Three…', 'Owww, Four…', 'Five…', 'Six, oh Mama…', 'Seven…']) await S.after([R, n]);
+  await S.after([R, 'I’ll be good, Mama, I swear it!']);
   await S.say(M, 'That’s what this is for, Little Red. To make sure of it. Do you need that one again?', 'stern');
   await S.say(R, 'No, Mama!');
   await S.say(M, 'Then count it, love.', 'calm');
   await S.say(R, 'Eight…');
-  await S.step([R, 'Nine…'], 1);
-  await S.step([R, 'Ten! I’m sorry, Mama!'], 1);
+  await S.after([R, 'Nine…']);
+  await S.after([R, 'Ten! I’m sorry, Mama!']);
   await S.say(M, 'I know, love.', 'calm');
-  await S.step([R, 'Eleven!'], 1);
-  await S.step([R, 'Twelve.'], 1);
+  await S.after([R, 'Eleven!']);
+  await S.after([R, 'Twelve.']);
   await S.wait(0.8);
-  await S.say(M, 'There. That’s done, and it stays done. Stay there a moment. Just breathe. I’ve got you.', 'calm');
+  // (and the brush into her other hand, and her own laid on the sting, slowly, while she says it)
+  await Promise.all([S.gesture('soothe'), S.say(M, 'There. That’s done, and it stays done. Stay there a moment. Just breathe. I’ve got you.', 'calm')]);
   await S.wait(2.4);
 };
 

@@ -17,7 +17,7 @@
 'use strict';
 const THREE = root.THREE, T = root.Toon, S = root.Pain, L = root.Looks;
 const V3 = THREE.Vector3, Q = THREE.Quaternion;
-const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, t) => a + (b - a) * t, ease = x => x * x * (3 - 2 * x);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, t) => a + (b - a) * t, ease = x => x * x * (3 - 2 * x), ss = (a, b, x) => ease(clamp((x - a) / (b - a), 0, 1));
 
 const PITCH = -0.12;                 // her body tipped head-down from the hips
 const HOVER = 1.6;                   // at rest the hand hovers this far above the small of her back
@@ -86,7 +86,7 @@ function create(view, opts) {
   const thwack = power => { if (st.sound && root.GameAudio) root.GameAudio.thwack(power, st.skirt === 'down' || st.drawers === 'up'); };
   const voice = (power, band) => { if (st.sound && root.GameAudio) root.GameAudio.voice(power, band, false, 1, opts.pitch || 215); };
 
-  function smack() { if (!canStrike() || st.swing) return false; st.swing = { phase: 'lift', t: 0, side: pickSide(), waited: 0 }; return true; }
+  function smack() { if (!canStrike() || st.swing || st.gesture) return false; st.swing = { phase: 'lift', t: 0, side: pickSide(), waited: 0 }; return true; }
   function pickSide() { const s = st.side === 'alt' ? st.nextSide : st.side; if (st.side === 'alt') st.nextSide = st.nextSide === 'R' ? 'L' : 'R'; return s; }
   function impact(sw) {
     const impl = implOf(st.implement), tender = (st.marks.L + st.marks.R) / 2;
@@ -153,9 +153,10 @@ function create(view, opts) {
   // What's in the giver's hand: the implement's model, made when it's first wanted.
   function hold() {
     const want = st.implement !== 'hand' && implOf(st.implement) !== IMPL_HAND ? st.implement : null;
-    if (held && held.userData.id === want) return;
-    if (held) { gerda.handR.remove(held); held = null; }
-    if (want) { held = root.Implements.model(want, gerda.palm.R); held.userData.id = want; held.position.y = -0.5; gerda.handR.add(held); }
+    const hand = st.swap ? gerda.handL : gerda.handR;      // (swap: passed to the other hand, while the active one soothes)
+    if (held && held.userData.id === want) { if (held.parent !== hand) { held.parent.remove(held); hand.add(held); } return; }
+    if (held) { held.parent.remove(held); held = null; }
+    if (want) { held = root.Implements.model(want, gerda.palm.R); held.userData.id = want; held.position.y = -0.5; hand.add(held); }
   }
   // ── Red: hanging off the edge of the lap; the last smack (k), her distress (d) and her wriggle (w) work on her through springs. ──
   // ── Keeping her arms out of things ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -259,6 +260,26 @@ function create(view, opts) {
     const side = st.swing ? st.swing.side : 'C', c = crown(side);
     return Object.assign(handOn(c.p, c.n, dir, reach, half), { pole: new V3(-0.6, -0.3, -0.5) });
   }
+  // ── The giver's hand at something other than a smack: lifting the skirt from the backs of the knees to the waist; drawing the drawers down
+  // from the waist to the thighs; and soothing, the palm laid flat on each cheek in slow circles. (The change of clothes happens as the hand
+  // passes.) With an implement in hand, it's passed to the other hand for soothing, and back after.
+  const GEST = { skirt: 2.2, drawers: 2.0, soothe: 5.5 };
+  function gesturePose(gs) {
+    const u = clamp(gs.t / gs.dur, 0, 1), blend = ss(0, 0.2, u) * (1 - ss(0.82, 1, u)), nIn = intoSkin(), dir = new V3(0.75, 0, 0.66), sc = red.scaleW;
+    const thighs = world(red.kneeL).lerp(world(red.kneeR), 0.5).lerp(world(red.hips), 0.25), waist = world(red.hips).addScaledVector(nIn, -2.4 * sc);
+    let Tp;
+    if (gs.kind === 'skirt') Tp = thighs.clone().lerp(waist, ss(0.2, 0.75, u)).addScaledVector(nIn, -2.2 * sc);
+    else if (gs.kind === 'drawers') Tp = waist.clone().lerp(thighs, ss(0.2, 0.75, u)).addScaledVector(nIn, -1.6 * sc);
+    else { const side = u < 0.5 ? 'L' : 'R', c = crown(side), a = (u * 2 % 1) * Math.PI * 4, s = new V3().crossVectors(nIn, new V3(0, 1, 0)).normalize(), f = new V3().crossVectors(s, nIn);
+      Tp = c.p.addScaledVector(s, Math.cos(a) * 0.7 * sc).addScaledVector(f, Math.sin(a) * 0.5 * sc).addScaledVector(nIn, 0.12 * sc); }
+    const h = handOn(Tp, nIn, dir, 0.85, 0.28);
+    return { W: h.W, q: h.q, blend };
+  }
+  function stepGesture(dt) {
+    const gs = st.gesture; if (!gs) return; gs.t += dt;
+    if (!gs.applied && gs.t >= gs.dur * 0.55) { gs.applied = true; if (gs.kind === 'skirt') api.set({ skirt: 'up' }); if (gs.kind === 'drawers') api.set({ drawers: 'down' }); }
+    if (gs.t >= gs.dur) { st.gesture = null; st.swap = false; gs.res(); }
+  }
   function poseGerda() {
     const g = gerda, ph = armPhase(), side = st.swing ? st.swing.side : 'L';
     const torsoOf = n => n === 'contact' ? TORSO[side === 'R' ? 'contactR' : 'contactL'] : TORSO[n];
@@ -272,10 +293,12 @@ function create(view, opts) {
     armIK(g, 'L', lh.W, new V3(0.55, -0.5, -0.45)); setWorldQuat(g.handL, lh.q);
     // Right arm: between two of its poses; down through an arc that swings out and over, so the hand comes in from above.
     const A = armPose(ph.from), B = ph.from === ph.to ? A : armPose(ph.to), e = ph.e;
-    let W = A.W.clone().lerp(B.W, e);
+    let W = A.W.clone().lerp(B.W, e), q = A.q.clone().slerp(B.q, e), pole = A.pole.clone().lerp(B.pole, e).normalize();
     if (ph.arc) W.add(new V3(-0.6, 1.6, -0.2).multiplyScalar(4 * e * (1 - e) * g.scaleW));
-    armIK(g, 'R', W, A.pole.clone().lerp(B.pole, e).normalize());
-    setWorldQuat(g.handR, A.q.clone().slerp(B.q, e));
+    // (a gesture of the hand: easing in from where it rests, along its path, and back)
+    if (st.gesture) { const G = gesturePose(st.gesture), b = G.blend; W.lerp(G.W, b); q.slerp(G.q, b); }
+    armIK(g, 'R', W, pole);
+    setWorldQuat(g.handR, q);
     hold(); if (held) held.visible = st.armed;
   }
 
@@ -297,8 +320,10 @@ function create(view, opts) {
 
   // ── Each frame ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   function update(dt) {
+    // (paused: the scene held while something else happens elsewhere, the pain, the colour and the clothes as they are; the giver still breathes)
+    if (st.paused) { gerda.tick(dt); return; }
     st.dt = dt; J.t += dt; J.kick *= Math.exp(-dt * 3.2);
-    advance(dt);
+    advance(dt); stepGesture(dt);
     pain.update(dt, !!(st.swing && st.swing.phase === 'contact'));
     // (bands: composed, flinching, struggling, close to the edge, past it, too harsh)
     // (once they've reached the edge, crying, for the rest of it)
@@ -319,7 +344,10 @@ function create(view, opts) {
     // Her name, said under it: she's Rose again, and everything stops at once.
     rose() { st.rose = true; st.ended = true; st.runLeft = 0; if (st.swing && st.swing.phase !== 'contact') { st.swing.phase = 'back'; st.swing.t = 0; } say('rose', { hits: st.hits }); },
     end() { if (!st.ended) { st.ended = true; st.runLeft = 0; say('end', { hits: st.hits, peak: st.peak }); } },
-    halt() { st.runLeft = 0; },      // (a run stopped after the smack in hand)
+    halt() { st.runLeft = 0; },
+    // A gesture of the giver's hand ('skirt', 'drawers' or 'soothe'), once the hand's at rest; done when it is.
+    gesture(kind) { return new Promise(res => { const go = () => { if (st.swing) return setTimeout(go, 50); if (kind === 'soothe' && st.implement !== 'hand') st.swap = true; st.gesture = { kind, t: 0, dur: GEST[kind] || 2, res }; }; go(); }); },
+    pause(on) { st.paused = !!on; },      // (a run stopped after the smack in hand)
     clearMarks() { st.marks = { L: 0, R: 0 }; dirty = true; },
     canStrike, running: () => st.runLeft > 0,
     // A check-in (amber, where the house uses traffic lights): taken up by the script between runs (js/discipline.js).

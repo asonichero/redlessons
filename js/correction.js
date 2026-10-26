@@ -111,10 +111,39 @@ async function run(P, o) {
   // rather than the tier's procedure. t.script(S) is given:
   //   S.say(who, text, face)   a line, held to be read: who 'corrector' (or the corrector's own key) or 'subject' (the one across the lap)
   //   S.step(line, n)          a line said over a run of n smacks (the hand never waits for the words): line [who, text, face] or null
-  //   S.smacks(n)              a run with nothing said;   S.wait(secs);   S.set({ skirt, drawers, implement, strength, pace, side })
+  //   S.smacks(n)              a run with nothing said;   S.after(line, n)   n smacks, then the line (a count, after each stroke lands)
+//   S.gesture('skirt' | 'drawers' | 'soothe')   the giver's hand at the clothes, or soothing;   S.fetch(id, { ask, present, back })   sent for it
+//     S.wait(secs);   S.set({ skirt, drawers, implement, strength, pace, side })
   //   S.lap, S.corrector, S.subject
   // Her word (the safe word) ends it at once ("too harsh" doesn't: the story's corrections are written to be what they are), wherever it's got to: the script stops there, and the corrector answers it.
   const STOP = { stop: true };
+  async function fetchIt(id, o2, lap, line, subKey) {
+    const say_ = l => l ? line(l[0], l[1], l[2]) : null, m = P.motion, r = P.rig, frame = lap.subjectRig.root.parent;
+    if (o2.ask) await say_(o2.ask);
+    await fade(true);
+    lap.pause(true); frame.visible = false;
+    const face = lap.subjectRig.expr || 'gritted';
+    r.root.visible = true; P.setDress({ skirt: lap.st.skirt, drawers: lap.st.drawers, marks: Object.assign({}, lap.st.marks) }); r.setExpr(face);
+    const castRig = talk.cast[subKey].rig; talk.cast[subKey].rig = r;
+    // (on her feet beside the chair, facing her; the camera on the room, the chair and the chest both in it)
+    const G = lap.giverRig, gp = G.root.getWorldPosition(new V3()), gf = new V3(0, 0, 1).applyQuaternion(G.root.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
+    const before = P.collide(gp.clone().addScaledVector(gf, 13).setY(0), 3.4); m.warp(before, yawTo(before, gp)); r.root.position.copy(before);
+    view('room', 0); for (let i = 0; i < 30; i++) P.frame(1 / 60);
+    await fade(false);
+    await P.useChest();
+    const brush = root.Implements ? root.Implements.model(id, r.palm ? r.palm.R : 1) : null; if (brush) { brush.position.y = -0.5; r.handR.add(brush); }
+    await wait(0.5); await P.useChest();      // (and the lid shut on the rest)
+    await m.goTo(before, yawTo(before, gp));
+    // (holding it out to her: seen from behind her mother's shoulder, Red's face to us)
+    st.go(gp.clone().addScaledVector(gf, -15).add(new V3(5, 28, 0)), before.clone().setY(18), 700);
+    m.reach('R', () => G.handR.getWorldPosition(new V3()).lerp(r.handR.getWorldPosition(new V3()), 0.5).add(new V3(0, 3, 0)));
+    if (o2.present) await say_(o2.present); else await wait(1.2);
+    if (o2.back) await say_(o2.back);
+    await fade(true);
+    m.release('R'); if (brush) r.handR.remove(brush); r.root.visible = false; talk.cast[subKey].rig = castRig;
+    frame.visible = true; lap.set({ implement: id }); view(ANGLES[angle], 0);
+    await wait(0.3); lap.pause(false); await fade(false);
+  }
   async function scripted(script, lap, c, sub, castKey) {
     const subKey = sub.id === player && talk.cast.red ? 'red' : 'subject', subWas = talk.cast[subKey];
     talk.cast[subKey] = Object.assign({ name: sub.names[0], side: 'left', voice: sub.rig === 'red' ? 'red' : 'gerda' }, subWas || {}, { rig: lap.subjectRig });
@@ -127,8 +156,15 @@ async function run(P, o) {
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
       step: async (l, n) => { if (ended()) throw STOP; await Promise.all([l ? line(l[0], l[1], l[2]) : null, smacks(n)]); if (ended()) throw STOP; },
       smacks: async n => { await smacks(n); if (ended()) throw STOP; },
+      // (a stroke, and then the line: a count, or what's said in answer to it, once it's landed)
+      after: async (l, n) => { await smacks(n == null ? 1 : n); if (ended()) throw STOP; if (l) await line(l[0], l[1], l[2]); if (ended()) throw STOP; },
       wait: async secs => { await wait(secs); if (ended()) throw STOP; },
       set: o2 => lap.set(o2),
+      // (the giver's hand: lifting the skirt, drawing the drawers down, or soothing: see js/lap.js's gesture)
+      gesture: async kind => { if (ended()) throw STOP; await lap.gesture(kind); if (ended()) throw STOP; },
+      // Sent to fetch the implement: up off the lap and across the room for it, as she is (the colour, the clothes and the hurt held as they
+      // are), back to present it, and told back into place. o: { ask, present, back } — the lines, as [who, text, face].
+      fetch: async (id, o2) => { if (ended()) throw STOP; await fetchIt(id, o2 || {}, lap, line, subKey); if (ended()) throw STOP; },
     };
     let done = false;
     try { await script(S); done = true; }
