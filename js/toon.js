@@ -826,9 +826,11 @@ function make(id, look, opts) {
     // The lashes: the upper arch of the eye (a touch flatter), moved down as it closes, and the flick at its outer end.
     const ly = -0.5 * shut * K.eyeH, ar = 0.4 * K.eyeW, br = 0.4 * 0.72 * K.eyeH;
     fx.strokeStyle = INKC; fx.lineCap = 'round'; fx.lineWidth = (MAN ? 0.065 : 0.1) * U;
-    fx.beginPath(); fx.ellipse(px(cx), py(cy + ly), ar * U, br * U, 0, Math.PI + 0.15, 2 * Math.PI - 0.15); fx.stroke();
+    // (squeezed shut in pain, the lashes turn down: a curve hanging, not the arch of a happy closed eye; the flick turned down with them)
+    const sq = (F.sq || 0) > 0.5 && shut > 0.6;
+    fx.beginPath(); if (sq) fx.ellipse(px(cx), py(cy + ly + 0.62 * br), ar * U, br * 0.7 * U, 0, 0.2, Math.PI - 0.2); else fx.ellipse(px(cx), py(cy + ly), ar * U, br * U, 0, Math.PI + 0.15, 2 * Math.PI - 0.15); fx.stroke();
     if (MAN) return;      // (a man's lashes: the line of the lid, without the flick)
-    const wx = sx * 0.42 * K.eyeW, wy = (0.13 - 0.55 * shut) * K.eyeH, wl = 0.11 * K.eyeW, wa = sx * 0.45;
+    const wx = sx * 0.42 * K.eyeW, wy = (sq ? 0.05 - 0.5 * shut : 0.13 - 0.55 * shut) * K.eyeH, wl = 0.11 * K.eyeW, wa = sx * (sq ? -0.5 : 0.45);
     fx.lineWidth = 0.07 * U; fx.beginPath(); fx.moveTo(...E(wx - Math.cos(wa) * wl, wy - Math.sin(wa) * wl)); fx.lineTo(...E(wx + Math.cos(wa) * wl, wy + Math.sin(wa) * wl)); fx.stroke();
   }
   function drawBrow(sx, F) {
@@ -1013,7 +1015,7 @@ function make(id, look, opts) {
   }
 
   // ── Expressions: brows, lids, the look of the eyes, the mouth, a flush and tears. Changes ease in (see tick). ──
-  const EX = EXPRS, F = Object.assign({ brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0, ms: 1 }, MOUTHS.flat), drawn = {};
+  const EX = EXPRS, F = Object.assign({ brow: 0, browY: 0, open: 1, look: 0, blush: 0, tears: 0, ms: 1, sq: 0 }, MOUTHS.flat), drawn = {};
   let target = Object.assign({}, EX.calm), blinkWait = 2 + Math.random() * 3, blinkPhase = 0, blink = 0, t = 0;      // (blinkPhase: 0 open, waiting; 1 closing; 2 opening)
   // (rate: how fast the face eases to it, per second; a flicker of pain comes on faster than the face settles back)
   let easeRate = 10;
@@ -1189,7 +1191,11 @@ function make(id, look, opts) {
 // Pushed further than life, to read on the bigger heads: ms is the mouth's size.
 // The mouths, as shapes the painted mouth eases between: width, curve (+ corners up), how open, and how much of the teeth show.
 const MOUTHS = { flat: { mw: 0.42, mc: 0.05, mo: 0, mt: 0 }, smile: { mw: 0.6, mc: 0.6, mo: 0.06, mt: 0.6 }, frown: { mw: 0.48, mc: -0.5, mo: 0, mt: 0 },
-  open: { mw: 0.48, mc: -0.15, mo: 0.8, mt: 0.15 }, gritted: { mw: 0.7, mc: -0.3, mo: 0.36, mt: 1 }, pout: { mw: 0.26, mc: -0.2, mo: 0.1, mt: 0 } };
+  open: { mw: 0.48, mc: -0.15, mo: 0.8, mt: 0.15 }, gritted: { mw: 0.68, mc: -0.8, mo: 0.3, mt: 1 }, pout: { mw: 0.26, mc: -0.2, mo: 0.1, mt: 0 },
+  // (wailing: wide, the corners dragged down, the top lip arched over it and the bottom one flat: a crying mouth, not a laughing one)
+  wail: { mw: 0.6, mc: -0.95, mo: 0.42, mt: 0.25 },
+  // (sad: small, the corners down, a little trembling open; concerned: pressed together, the corners just down)
+  sad: { mw: 0.34, mc: -0.7, mo: 0.06, mt: 0 }, concern: { mw: 0.36, mc: -0.28, mo: 0, mt: 0 } };
 const EXPRS = {
   calm:      { brow: 0, browY: 0, open: 0.95, mouth: 'flat', blush: 0, ms: 1 },
   smile:     { brow: 0.1, browY: 0.08, open: 0.72, mouth: 'smile', blush: 0.35, ms: 1.3 },
@@ -1199,8 +1205,12 @@ const EXPRS = {
   stern:     { brow: -0.42, browY: -0.1, open: 0.75, mouth: 'flat', blush: 0, ms: 0.9 },
   surprised: { brow: 0.3, browY: 0.2, open: 1.1, mouth: 'open', blush: 0.3, ms: 0.75 },
   wince:     { brow: 0.42, browY: 0.08, open: 0.4, mouth: 'frown', blush: 0.65, ms: 1.25 },
-  gritted:   { brow: 0.5, browY: 0.04, open: 0.1, mouth: 'gritted', blush: 0.9, ms: 1.2 },
-  crying:    { brow: 0.6, browY: 0.16, open: 0.2, mouth: 'open', blush: 1, tears: 1, ms: 1.5 },
+  gritted:   { brow: 0.6, browY: 0.02, open: 0.1, mouth: 'gritted', blush: 0.9, ms: 1.2, sq: 1 },
+  crying:    { brow: 0.9, browY: 0.02, open: 0.12, mouth: 'wail', blush: 1, tears: 1, ms: 1.45, sq: 1 },
+  // (concerned: the brows drawn up a little in the middle, the eyes open and on whoever it is, the mouth pressed; sad: the brows up in the
+  // middle, the eyes lowered and wet, the mouth's corners down: not the screwed-up face of a wince)
+  concerned: { brow: 0.38, browY: 0.06, open: 0.92, mouth: 'concern', blush: 0, ms: 0.95 },
+  sad:       { brow: 0.75, browY: 0.0, open: 0.55, look: -0.4, mouth: 'sad', blush: 0.35, tears: 0.25, ms: 1.0 },
 };
 
 // ── A standing idle: her weight on one straight leg, the other easy, changing over now and then. ──
