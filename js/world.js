@@ -55,7 +55,7 @@ function create(view, ui) {
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
-    go, newGame, resume, startAt, journal, refresh, morning,
+    go, newGame, resume, startAt, journal, refresh, morning, tableau,
   };
 
   // What to say she's about: the first step on offer here with a hint; or else, the main story's, or the first begun line's, and where.
@@ -81,6 +81,7 @@ function create(view, ui) {
       const sc = step ? SCENES[step.scene] : null;
       await fade(true, sc && sc.establish ? '' : A.name);
       if (P) { P.dispose(); P = null; }
+      if (backdrop) { backdrop.dispose(); backdrop = null; }      // (the title's tableau)
       // (a scene can open on an establishing shot: another place seen from outside, without her, the camera easing in; then a fade, and the scene)
       if (sc && sc.establish) await establish(sc.establish, A.name);
       areaName = name; lightFn = null; timeOn = true; sceneNow = sc;
@@ -101,6 +102,13 @@ function create(view, ui) {
     try { await going; } finally { going = null; }
   }
   async function establish(e, title) {
+    const E = shot(e), V = a => new V3(a[0], a[1], a[2]);
+    E.stage.go(V(e.to), V(e.look), e.secs * 1000);
+    await fade(false, title); await new Promise(r => setTimeout(r, Math.max(0, e.secs * 1000 - 1400)));
+    await fade(true, ''); E.dispose();
+  }
+  // A place seen from outside, without her, the camera at the shot's start (e: an establishing shot: { area, entry, from, look }), held there.
+  function shot(e) {
     const E = root.Play.create(view, Object.assign(baseOpts(e.area, e.entry), { onExit: null, followCam: false, camFree: true, light: cal.light() }));
     E.rig.root.visible = false; E.stage.controls.enabled = false; E.stage.controls.maxDistance = 1000; root.__establishing = E; if (E.npc) E.npc.root.visible = false;
     const V = a => new V3(a[0], a[1], a[2]);
@@ -109,9 +117,15 @@ function create(view, ui) {
       E.stage.scene.updateMatrixWorld(true);
       E.stage.scene.traverse(o => { if (!o.isMesh || !o.geometry) return; if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere.clone().applyMatrix4(o.matrixWorld);
         if (bs.radius > 140) return; for (let q = o.parent; q; q = q.parent) if (q.userData && q.userData.cabin) return; for (let k = 0; k <= 4; k++) if (seg(V(e.from).lerp(V(e.to), k / 4), bs.center, bs.radius)) { o.visible = false; break; } }); }      // (never the cabin itself)
-    E.stage.go(V(e.from), V(e.look), 0); E.stage.go(V(e.to), V(e.look), e.secs * 1000);
-    await fade(false, title); await new Promise(r => setTimeout(r, Math.max(0, e.secs * 1000 - 1400)));
-    await fade(true, ''); E.dispose();
+    E.stage.go(V(e.from), V(e.look), 0);
+    return E;
+  }
+  // The title's tableau, behind its menu: with no game saved, the first frame of the opening (the first scene's establishing shot); with one,
+  // for now the same (the end of the homecoming is to give its own). Gone once a game starts (see go).
+  let backdrop = null;
+  function tableau() {
+    const first = Object.values(SCENES).find(s => s.establish); if (!first) return null;
+    backdrop = shot(first.establish); return backdrop;
   }
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, light: cal.light() };
