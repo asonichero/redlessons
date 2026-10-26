@@ -17,7 +17,7 @@ const THREE = root.THREE, V3 = THREE.Vector3, UP = new V3(0, 1, 0);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 const CSS = `
-.talk { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: calc(100vw - 32px); display: none; z-index: 20;      /* (across the whole width of the window) */
+.talk { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(1180px, calc(100vw - 32px)); display: none; z-index: 20;      /* (across the window, up to a width: centred, with room either side, on a wide screen) */
   font: clamp(19px, 1.6vw + 6px, 27px)/1.42 Georgia, 'Times New Roman', serif; color: #2e2018; user-select: none; -webkit-user-select: none; }
 .talk.on { display: block; }
 /* (one line high, growing as the words need; translucent, so the scene shows through) */
@@ -31,7 +31,7 @@ const CSS = `
 .talk.left .name { left: 156px; display: block; } .talk.right .name { right: 156px; display: block; }
 .talk .text { min-height: 1.4em; white-space: pre-wrap; }
 .talk.narr .text { font-style: italic; color: #4a3a2c; text-align: center; }
-.talk.muse .text { font-style: italic; color: #4a3a2c; } .talk.muse .more, .talk.cap .more { display: none; } .talk.cap { pointer-events: none; } .talk.muse { pointer-events: none; width: calc(100vw - 32px); font-size: clamp(17px, 1.2vw + 6px, 23px); }
+.talk.muse .text { font-style: italic; color: #4a3a2c; } .talk.muse .more, .talk.cap .more { display: none; } .talk.cap { pointer-events: none; } .talk.muse { pointer-events: none; width: min(1000px, calc(100vw - 32px)); font-size: clamp(17px, 1.2vw + 6px, 23px); }
 .talk .more { position: absolute; right: 14px; bottom: 4px; font-size: 14px; color: #8a6a50; animation: talkBob 1s ease-in-out infinite; }
 .talk.right .more { right: 156px; }
 @keyframes talkBob { 50% { transform: translateY(2px); } }
@@ -42,7 +42,7 @@ const CSS = `
 .talk .choices button:hover, .talk .choices button:focus { background: #f1dcc0; border-color: #6b4a32; outline: none; }
 .talk .choices button b { color: #8a5a3a; margin-right: 8px; }
 @media (max-width: 640px) {
-  .talk { font-size: 17px; bottom: 8px; width: calc(100vw - 16px); } .talk .box { padding: 10px 14px 12px; min-height: 84px; }
+  .talk { font-size: 17px; bottom: 8px; width: calc(100vw - 16px); } .talk.muse { width: calc(100vw - 16px); } .talk .box { padding: 10px 14px 12px; min-height: 84px; }
   .talk.left .box { padding-left: 92px; } .talk.right .box { padding-right: 92px; }
   .talk .frame { width: 76px; height: 84px; } .talk.left .name { left: 92px; } .talk.right .name { right: 92px; } .talk.right .more { right: 92px; }
   .talk .name { font-size: 14px; top: -14px; } .talk.muse { font-size: 16px; } .talk .choices button { font-size: 16px; padding: 6px 10px; }
