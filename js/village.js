@@ -324,7 +324,7 @@ function build(scene, opts) {
 
   // ── The lanes: the street, from the meadow gate (to the wood) past Maren's to the green and on to the east gate (the farms); the loop round
   // the green's far side; the lane south (to the mill), ending, like the street's east end, at a gate shut for now; and short paths to doors.
-  const GATE = new V3(-540, 0, -520);
+  const GATE = new V3(-550, 0, -550);      // (the meadow gate, in the hedge at the north-west corner: out to the meadow, and the wood across it)
   const STREET = lane([[-566, -556], [-520, -500], [-452, -418], [-396, -340], [-330, -246], [-230, -168], [-110, -128], [20, -122], [150, -116], [270, -84], [380, -40], [480, 24], [600, 54]], 22);
   const LOOP = lane([[-230, -168], [-210, -60], [-196, 60], [-140, 144], [-40, 164], [80, 160], [180, 136], [222, 50], [270, -84]], 18);
   const MILL = lane([[80, 160], [104, 260], [118, 420], [130, 600]], 18);
@@ -527,6 +527,16 @@ function build(scene, opts) {
     for (let k = 0; k < 5; k++) box(g, 20, 1.2, 0.8, 0, 2.6 + k * 2.4, 0, oak, { ink: 0.04 }); box(g, 1, 13, 0.8, 0, 7, 0.2, oak, { rot: [0, 0, 0.9], ink: 0.04 });
     world.obstacles.push({ x: p.x, z: p.z, r: 12 }); };
   fiveBar(V(590, 80), Math.PI / 2); fiveBar(V(130, 590), 0.06);
+  // The meadow gate: a field gate on its hanging post, swinging out to the meadow, a latch on the other post. (js/world.js offers to go
+  // through it from close by; past it is the meadow: js/wood.js.)
+  { const out = new V3(-1, 0, -1).normalize(), along = new V3(1, 0, -1).normalize(), g = new THREE.Group(); g.position.copy(GATE); g.rotation.y = Math.atan2(along.x, along.z) - Math.PI / 2; root_.add(g); g.userData.keep = true;
+    for (const sx of [-1, 1]) box(g, 2.6, 16, 2.6, sx * 12, 8, 0, oak);
+    const pivot = new THREE.Group(); pivot.position.set(-11, 0, 0); g.add(pivot);
+    for (let k = 0; k < 5; k++) box(pivot, 21, 1.2, 0.8, 10.8, 2.8 + k * 2.6, 0, oak, { ink: 0.04 }); box(pivot, 1.2, 13.5, 0.9, 1, 8, 0.2, oak, { ink: 0.04 }); box(pivot, 1.2, 13.5, 0.9, 20.6, 8, 0.2, oak, { ink: 0.04 });
+    box(pivot, 1, 14, 0.8, 10.8, 8, 0.3, oak, { rot: [0, 0, 0.85], ink: 0.04 }); box(g, 2, 0.8, 1.6, 11.6, 11, 0.9, iron, { ink: 0.03 });
+    world.gate = { pivot, open: 0, target: 0, swing: 1.6,
+      at: GATE.clone().addScaledVector(out, -8), beyond: GATE.clone().addScaledVector(out, 14), name: 'the gate', to: 'the meadow' };
+    world.obstacles.push({ x: GATE.x + along.x * 15, z: GATE.z + along.z * 15, r: 3 }, { x: GATE.x - along.x * 15, z: GATE.z - along.z * 15, r: 3 }); }
   // (trees, beyond the hedges and in the fields: scattered; thick to the north-west, where the wood is, across the meadow)
   const tree = (x, z, big) => { const h = (big ? 60 : 46) + r() * 20;
     if (r() < 0.8) { const tw = 1.8 + r() * 1.2; put(trunk, x, 0, z, tw, h * 0.7, tw, r() * 6); for (let k = 0; k < 3; k++) { const a = r() * 6.3, d = 3 + r() * 5, s = 10 + r() * 7; put(leaves[(k + Math.floor(r() * 3)) % 3], x + Math.cos(a) * d, h * (0.72 + 0.14 * k), z + Math.sin(a) * d, s, s * 0.72, s, r() * 6); } }
@@ -547,11 +557,12 @@ function build(scene, opts) {
 
   // ── Where she can be: inside the hedges (and out at the meadow gate, to the wood). ──
   world.bounds = null;
-  world.constrain = (q, rad) => { const p = q.clone(), inGate = Math.hypot(p.x - GATE.x, p.z - GATE.z) < 60;
-    if (!inGate) { p.x = clamp(p.x, B.x0 + 10 + rad, B.x1 - 10 - rad); p.z = clamp(p.z, B.z0 + 10 + rad, B.z1 - 10 - rad); }
+  // (inside the hedges; and, with the gate open, a step out through it)
+  world.constrain = (q, rad) => { const p = q.clone(), through = world.gate && world.gate.open > 0.5 && Math.hypot(p.x - GATE.x, p.z - GATE.z) < 26;
+    if (!through) { p.x = clamp(p.x, B.x0 + 10 + rad, B.x1 - 10 - rad); p.z = clamp(p.z, B.z0 + 10 + rad, B.z1 - 10 - rad); const lim = -1100 + 6 + rad; if (p.x + p.z < lim) { const k = (lim - p.x - p.z) / 2; p.x += k; p.z += k; } }      // (the hedge across the corner, on the diagonal, x + z = -1100)
     return p; };
-  world.exits.push({ name: 'the wood', at: V(-566, -556), r: 18 });
-  world.entries.wood = { at: [-508, -486], yaw: Math.atan2(40, 70) };      // (in at the meadow gate, facing down the lane)
+  world.exits.push({ name: 'the meadow', get at() { return world.gate.beyond; }, r: 6, when: () => world.gate.open > 0.6 });
+  world.entries.wood = { at: [GATE.x + 18, GATE.z + 18], yaw: Math.PI * 0.25 };      // (in at the meadow gate, the gate behind her, facing down the lane)
 
   // ── The camera, outdoors: kept out of the houses (in front of whatever's between it and her), so a wall or a roof never fills the view. ──
   const inBox = (s, p) => !(p.x < s.x0 || p.x > s.x1 || p.z < s.z0 || p.z > s.z1 || p.y > s.top);
@@ -584,6 +595,7 @@ function build(scene, opts) {
     for (const g of glows) if (g.color) g.color.setHSL(0.06, 1, 0.55 + 0.06 * Math.sin(clock * 3.1) + 0.03 * Math.sin(clock * 7.7));
     // (her door: swinging to where it's been sent)
     const d = world.door; if (d) { d.open += (d.target - d.open) * (1 - Math.exp(-dt * 5)); d.pivot.rotation.y = d.swing * d.open; }
+    const gt = world.gate; if (gt) { gt.open += (gt.target - gt.open) * (1 - Math.exp(-dt * 4)); gt.pivot.rotation.y = gt.swing * gt.open; }      // (the meadow gate, likewise)
   }
   // ── Where things are done (js/chores.js's errands, the garden): a place to stand, which way to face, and what to look at.
   root_.updateMatrixWorld(true);

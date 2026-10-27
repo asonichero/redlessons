@@ -1,11 +1,12 @@
 // Little Red’s Lessons — the wood between her grandmother's cabin and the village: a path of trodden earth winding a long way through oaks, beeches,
 // birches and pines, ferns and brambles, moss and toadstools. On the way: a glade of bluebells, a stream with a plank bridge and a flat stone on
-// the bank to sit on, an old beech with initials carved in it, a fallen trunk across a clearing. At the far end the trees thin to a meadow, and
-// over it the village: cottages with their windows lit and smoke going up. The light goes from late gold to dusk to blue (stage.setLight), and
-// the fog closes in with it.
+// the bank to sit on, an old beech with initials carved in it, a fallen trunk across a clearing. At the far end the trees thin to the meadow:
+// open grass full of flowers, lone oaks, hedges, and the meadow gate at its far side, through to the village. The light goes from late gold
+// to dusk to blue (stage.setLight), and the fog closes in with it.
 //
 //   const wood = Wood.build(scene)   → { group, update, tick, light(t, stage), follow(pos), world, progress(pos) → 0..1, path, spots }
-//   world.constrain(p, r) keeps her on the path (and round the cabin at the start); world.exits: the edge of the wood, toward the village.
+//   world.constrain(p, r) keeps her on the path (and round the cabin at the start), and in the meadow within its hedges; world.gate: the
+//   meadow gate (js/world.js offers to go through it, to the village).
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
@@ -81,7 +82,8 @@ function build(scene, opts) {
   const trees = [];
   const put = (k, x, y, z, sx, sy, sz, ry, rx) => { E.set(rx || 0, ry || 0, 0); Q.setFromEuler(E); M.compose(P.set(x, y, z), Q, SC.set(sx, sy, sz)); k.list.push(M.clone()); if (cur) cur.parts.push([k, k.list.length - 1]); };
   const r = rnd(97);
-  const clear = (x, z, pad) => { const n = nearest(new V3(x, 0, z)); if (n.d < widthAt(n.i) + pad) return false; for (const k in spots) if (Math.hypot(x - spots[k].at.x, z - spots[k].at.z) < 14 + pad) return false; if (Math.abs(x) < 52 && z > -50 && z < 50) return false; return true; };
+  const clear = (x, z, pad) => { if (z > S[N].z - 30 && Math.abs(x) < 245) return false;      // (none in the meadow)
+    const n = nearest(new V3(x, 0, z)); if (n.d < widthAt(n.i) + pad) return false; for (const k in spots) if (Math.hypot(x - spots[k].at.x, z - spots[k].at.z) < 14 + pad) return false; if (Math.abs(x) < 52 && z > -50 && z < 50) return false; return true; };
   // (near the path the trees are tall, their crowns high over her head and the camera's; the pines, which branch low, keep further off)
   const tree = (x, z, big) => {
     const near = !big, t = near ? r() * 0.72 : r(), h = (big ? 52 : 64) + r() * 24;
@@ -168,27 +170,54 @@ function build(scene, opts) {
     s.seat = { name: 'the fallen tree', at: s.at.clone().addScaledVector(s.side3, -2.6).setY(5.4), facing: Math.atan2(-s.side3.x, -s.side3.z), kind: 'stool' };
     s.label = 'Sit on the fallen tree'; }
 
-  // ── The village, over the meadow at the end: cottages with thatch and lit windows and smoke, a well, a low stone wall along the meadow.
-  const windows = [], smoke = [];
-  { const end = S[N], g = new THREE.Group(); root_.add(g); const r2 = rnd(99), lime = T.mat('#efe6d6'), thatch = T.mat('#b89a5a'), timber = T.mat('#5e4430');
-    const winM = new THREE.MeshBasicMaterial({ color: srgb('#3a3028') }); windows.push(winM);
-    const homes = [[-70, 120, 0.3], [-20, 150, -0.2], [40, 130, 0.5], [95, 160, -0.4], [-110, 175, 0.2], [10, 210, 0.1], [70, 230, -0.3], [-60, 240, 0.4]];
-    for (const [hx, hz, ry] of homes) {
-      const h = new THREE.Group(); h.position.set(end.x + hx, 0, end.z + hz); h.rotation.y = ry; g.add(h);
-      box(h, 30, 18, 20, 0, 9, 0, lime); for (const x of [-15, 15]) box(h, 1.2, 18, 20.4, x, 9, 0, timber);
-      const roof = new THREE.CylinderGeometry(1, 1, 34, 3, 1); roof.rotateZ(Math.PI / 2); roof.scale(1, 14, 15); solid(h, roof, thatch, 0, 24, 0, { ink: 0.2 });
-      box(h, 3, 12, 3, 9, 30, 2, T.mat('#8a8a82'));
-      for (const x of [-7, 7]) { const wdw = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), winM); wdw.position.set(x, 10, -10.1); wdw.rotation.y = Math.PI; h.add(wdw); }
-      for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(T.ell(2, 2, 2, 8, 6), new THREE.MeshBasicMaterial({ color: srgb('#c8c4c0'), transparent: true, opacity: 0.5, depthWrite: false })); h.add(p); smoke.push({ m: p, base: new V3(9, 37, 2), ph: k / 4 + r2() * 0.1 }); }
-    }
-    // (the low stone wall along the far side of the meadow, with a gap where the path goes through)
-    const wall = toonMap(canvasTex(128, 32, (x, w, h) => { x.fillStyle = '#9a968a'; x.fillRect(0, 0, w, h); const rr = rnd(101); for (let i = 0; i < 30; i++) { x.fillStyle = `rgb(${120 + rr() * 40},${118 + rr() * 36},${108 + rr() * 30})`; x.beginPath(); x.ellipse(rr() * w, rr() * h, 6 + rr() * 6, 4 + rr() * 3, 0, 0, 7); x.fill(); } }, [8, 1]));
-    for (const [x0, x1] of [[-200, -8], [8, 200]]) box(g, x1 - x0, 4, 2.4, end.x + (x0 + x1) / 2, 2, end.z + 70, wall);
-    solid(g, new THREE.CylinderGeometry(4, 4.4, 4, 14), T.mat('#9a968a'), end.x + 24, 2, end.z + 100, { ink: 0.1 });
+  const smoke = [], world_obstacles = [];
+  // ── The meadow, past the wood's edge: open grass full of flowers, a few lone oaks, the lane across it to the meadow gate in the hedge at the
+  // far side (and the village beyond: js/village.js). Hedges down either side, the wood behind.
+  const MZ0 = S[N].z - 40, MZ1 = MZ0 + 300, MX = 230, GATE = new V3(14, 0, MZ1);
+  { const r2 = rnd(99), lane = [S[N].clone(), new V3(-14, 0, MZ0 + 120), new V3(-2, 0, MZ0 + 220), GATE.clone().setZ(MZ1 - 10)];
+    // (the lane across it: trodden earth, as the path is)
+    const lc = new THREE.CatmullRomCurve3(lane), LS = lc.getSpacedPoints(80), pos = [], uv = [], idx = [];
+    for (let i = 0; i <= 80; i++) { const d = LS[Math.min(80, i + 1)].clone().sub(LS[Math.max(0, i - 1)]).normalize(), side = new V3(d.z, 0, -d.x);
+      for (const sx of [-1, 1]) { const p = LS[i].clone().addScaledVector(side, sx * 4); pos.push(p.x, 0.05, p.z); uv.push(sx < 0 ? 0 : 1, i / 6); } }
+    for (let i = 0; i < 80; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); lg.setIndex(idx); lg.computeVertexNormals();
+    const lm = new THREE.Mesh(lg, toonMap(dirtT)); lm.receiveShadow = true; root_.add(lm);
+    const onLane = (x, z) => LS.some(q => Math.hypot(q.x - x, q.z - z) < 8);
+    // (the flowers: buttercups, clover, ox-eye daisies and cornflowers, everywhere in the grass; and long tufts)
+    const fg = new THREE.SphereGeometry(0.5, 6, 4), cols = ['#f2d24a', '#e8e4f0', '#c86a9a', '#5a7ad8'];
+    const fl = cols.map(c => new THREE.InstancedMesh(fg, T.mat(c), 700)), tuft = new THREE.InstancedMesh(new THREE.ConeGeometry(0.6, 3, 4).translate(0, 1.5, 0), T.mat('#7a9a48'), 1400);
+    const n = [0, 0, 0, 0]; let nt = 0;
+    for (let k = 0; k < 4200 && (n.some(v => v < 700) || nt < 1400); k++) { const x = (r2() * 2 - 1) * MX, z = MZ0 + 10 + r2() * (MZ1 - MZ0 - 14); if (onLane(x, z)) continue;
+      if (k % 3) { const c = Math.floor(r2() * 4); if (n[c] < 700) { M.compose(P.set(x, 1.2 + r2() * 0.8, z), Q.identity(), SC.set(1, 0.8, 1)); fl[c].setMatrixAt(n[c]++, M); } }
+      else if (nt < 1400) { M.compose(P.set(x, 0, z), Q.setFromEuler(E.set((r2() - 0.5) * 0.4, r2() * 6, (r2() - 0.5) * 0.4)), SC.set(1, 0.7 + r2() * 0.7, 1)); tuft.setMatrixAt(nt++, M); } }
+    fl.forEach((m, c) => { m.count = n[c]; m.castShadow = false; root_.add(m); }); tuft.count = nt; tuft.castShadow = false; root_.add(tuft);
+    // (lone oaks, out in it)
+    for (const [x, z] of [[-150, MZ0 + 90], [120, MZ0 + 60], [170, MZ0 + 210], [-110, MZ0 + 250]]) { const h = 56; const tw = 2.6;
+      solid(root_, new THREE.CylinderGeometry(0.75 * tw, tw, h * 0.7, 9).translate(0, h * 0.35, 0), toonMap(barkT), x, 0, z, { ink: 0.12 });
+      for (let k = 0; k < 4; k++) { const a = k * 1.7, s1 = 13 + k; solid(root_, T.ell(s1, s1 * 0.72, s1, 14, 10), [T.mat('#5e8a3e'), T.mat('#6f9a46')][k % 2], x + Math.cos(a) * 7, h * (0.7 + 0.1 * k), z + Math.sin(a) * 7, { ink: 0.06 }); }
+      world_obstacles.push({ x, z, r: 4 }); }
+    // (the hedges: down either side, and across the far end, with the gate in it)
+    const hedgeM = [T.mat('#3e6230'), T.mat('#4a6e36')];
+    const hedge = (a, b, gap) => { const d = b.clone().sub(a), L = d.length(), k0 = Math.ceil(L / 7); for (let k = 0; k <= k0; k++) { const p = a.clone().lerp(b, k / k0); if (gap && Math.hypot(p.x - gap.x, p.z - gap.z) < 15) continue; const s1 = 6 + r2() * 2.5; solid(root_, T.ell(s1, s1 * (1.1 + r2() * 0.4), s1, 10, 8), hedgeM[k % 2], p.x, s1 * 0.8, p.z, { ink: 0.05, shadow: false }); } };
+    hedge(new V3(-MX - 10, 0, MZ1), new V3(MX + 10, 0, MZ1), GATE); hedge(new V3(-MX - 10, 0, MZ0 + 30), new V3(-MX - 10, 0, MZ1)); hedge(new V3(MX + 10, 0, MZ0 + 30), new V3(MX + 10, 0, MZ1));
+    // (beyond the far hedge: the village's trees, and its roofs' smoke going up)
+    for (let k = 0; k < 14; k++) { const x = -260 + k * 40 + r2() * 20, z = MZ1 + 60 + r2() * 80; solid(root_, T.ell(14, 11, 14, 12, 8), [T.mat('#4e7a36'), T.mat('#5e8a3e')][k % 2], x, 30 + r2() * 12, z, { ink: 0.08 });
+      solid(root_, new THREE.CylinderGeometry(1.5, 2, 30, 8), toonMap(barkT), x, 15, z, { ink: 0.08 }); }
+    for (const [x, z] of [[60, MZ1 + 110], [-80, MZ1 + 140]]) for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(T.ell(2.4, 2.4, 2.4, 8, 6), new THREE.MeshBasicMaterial({ color: srgb('#c8c4c0'), transparent: true, opacity: 0.5, depthWrite: false })); root_.add(p); smoke.push({ m: p, base: new V3(x, 34, z), ph: k / 4 }); }
   }
+  // The meadow gate, this side: a field gate between two posts, swinging out to the village (js/world.js offers to go through it).
+  const gate = (() => { const g = new THREE.Group(); g.position.copy(GATE); root_.add(g); const oak = toonMap(barkT);
+    for (const sx of [-1, 1]) box(g, 2.6, 16, 2.6, sx * 12, 8, 0, oak);
+    const pivot = new THREE.Group(); pivot.position.set(-11, 0, 0); g.add(pivot);
+    for (let k = 0; k < 5; k++) box(pivot, 21, 1.2, 0.8, 10.8, 2.8 + k * 2.6, 0, oak, { ink: 0.04 }); box(pivot, 1, 14, 0.8, 10.8, 8, 0.3, oak, { rot: [0, 0, 0.85], ink: 0.04 });
+    world_obstacles.push({ x: GATE.x - 15, z: GATE.z, r: 3 }, { x: GATE.x + 15, z: GATE.z, r: 3 });
+    return { pivot, open: 0, target: 0, swing: -1.6, at: GATE.clone().add(new V3(0, 0, -10)), beyond: GATE.clone().add(new V3(0, 0, 14)), name: 'the gate', to: 'the village' }; })();
 
   // ── Keeping her on the path (a corridor of the width it has there), and off the cabin and its oak at the start.
   const constrain = (q, rad) => {
+    // (in the meadow: anywhere within its hedges; out through the gate, when it's open)
+    if (q.z > MZ0 + 40) { const p = q.clone(), through = gate.open > 0.5 && Math.abs(p.x - GATE.x) < 10;
+      p.x = clamp(p.x, -MX + rad, MX - rad); p.z = Math.min(p.z, through ? MZ1 + 20 : MZ1 - 4 - rad); return p; }
     const p = q.clone(), n = nearest(p), w = widthAt(n.i) - rad;
     if (n.d > w) { const c = S[n.i]; p.x = c.x + (p.x - c.x) * w / n.d; p.z = c.z + (p.z - c.z) * w / n.d; }
     // (the cabin's walls, with the oak, behind her at the start)
@@ -198,10 +227,10 @@ function build(scene, opts) {
   const progress = p => nearest(p).i / N;
   // (the ways out: the village at the far end; back in at her grandmother's door. And where she comes in: from the cabin's door, or from the
   // village end, a little way in, facing along the path into the wood)
-  const inAt = S[N - 80], inTo = S[N - 110];      // (far enough in that the camera behind her is among the trees, not the village's houses)
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, constrain, bounds: null,
-    exits: [{ name: 'the village', at: S[N].clone(), r: 18 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5 }],
-    entries: { cabin: { at: [-12, 52], yaw: 0, camTurn: Math.PI }, village: { at: [inAt.x, inAt.z], yaw: Math.atan2(inTo.x - inAt.x, inTo.z - inAt.z) } } };
+  const inAt = gate.at.clone().add(new V3(0, 0, -8));      // (in at the meadow gate, it behind her, facing across the meadow to the wood)
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: null, chest: null, constrain, bounds: null, gate,
+    exits: [{ name: 'the village', get at() { return gate.beyond; }, r: 6, when: () => gate.open > 0.6 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5 }],
+    entries: { cabin: { at: [-12, 52], yaw: 0, camTurn: Math.PI }, village: { at: [inAt.x, inAt.z], yaw: Math.PI } } };
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);
 
   // ── Light: the sky through the leaves, the fog closing in, the village windows lighting up, the sun's shadows following her.
@@ -212,7 +241,6 @@ function build(scene, opts) {
   function light(t, stage) {
     api = stage || api; const c = sky(t);
     scene.background = c; scene.fog.color.copy(c); scene.fog.near = lerp(140, 50, t); scene.fog.far = lerp(560, 260, t);
-    windows[0].color.copy(new THREE.Color(srgb('#3a3028')).lerp(new THREE.Color(srgb('#ffcc6a')), ss(0.45, 0.8, t)));
     if (cabin && cabin.light) cabin.light(t);
   }
   function follow(pos, dt, camera, at) {
@@ -223,6 +251,7 @@ function build(scene, opts) {
   function tick(dt) {
     clock += dt; if (cabin) cabin.tick(dt);
     waterT.offset.y = (waterT.offset.y + dt * 0.25) % 1;
+    gate.open += (gate.target - gate.open) * (1 - Math.exp(-dt * 4)); gate.pivot.rotation.y = gate.swing * gate.open;
     for (const p of smoke) { const k = (clock * 0.08 + p.ph) % 1; p.m.position.copy(p.base).add(new V3(k * 4, k * 26, 0)); p.m.scale.setScalar(0.6 + k * 1.6); p.m.material.opacity = 0.45 * (1 - k); }
   }
   return { group: root_, update() {}, tick, light, follow, world, progress, path: { curve, S, N, LEN, nearest, widthAt }, spots, cabin };

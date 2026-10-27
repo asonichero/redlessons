@@ -37,7 +37,7 @@ const AREAS = {
   village: {
     name: 'The village', music: 'village', set: s => root.Village.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
-    exits: { 'the wood': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },
+    exits: { 'the meadow': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },      // (the meadow: through the meadow gate, js/wood.js's far end)
   },
   // The bakery, inside (js/bakery.js): Mistress Pennock's. (Where the morning's help is worked (js/work.js), and the pie's end.)
   bakery: {
@@ -188,10 +188,20 @@ function create(view, ui) {
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });
-      o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : []); }
+      o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], gateAction()); }
+    if (name === 'wood') o.actions = () => gateAction();
     return o;
   }
   const chain = (a, b) => a ? P_ => { a(P_); b(P_); } : b;
+  // The meadow gate (a set's world.gate: the village's, and the meadow's at the wood's far end): offered from close by, it's opened, and she
+  // walks through it, out of the one place and into the other (by the exit just past it). Not while it's barred to her.
+  function gateAction() {
+    const P_ = P, g = P_ && P_.world.gate; if (!g) return [];
+    if (g.barred && g.barred()) return [];      // (barred: the Watchman walking her home)
+    return [{ label: 'Go through the gate', at: g.at.clone().setY(14), run: async () => { const m = P_.motion, yaw = Math.atan2(g.beyond.x - g.at.x, g.beyond.z - g.at.z);
+      const hand = m.carry ? 'L' : 'R';      /* (a free hand for the latch: the bluebells, or a basket, in the other) */
+      await m.goTo(g.at, yaw); m.reach(hand, g.at.clone().lerp(g.beyond, 0.4).setY(11)); await P_.wait(0.3); g.target = 1; await m.release(hand); await P_.wait(0.6); await m.goTo(g.beyond, yaw); } }];
+  }
   // (from the wood's own entries, the camera behind her as she comes in)
   function placeCam(P_, x) {
     const st = P_.stage, t = P_.motion.pos.clone().setY(20 * P_.rig.scaleW), y = x.yaw + (x.camTurn || 0), back = new V3(-Math.sin(y), 0, -Math.cos(y)).multiplyScalar(34);      // (camTurn: round from behind her, as the entry asks)

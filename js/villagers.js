@@ -292,8 +292,8 @@ function attach(P, w) {
   // (her, by the ways about, to a place)
   async function lead(to, yaw, o) { const pts = net.route(P.motion.pos, to); for (let i = 0; i < pts.length; i++) await P.motion.goTo(pts[i], i === pts.length - 1 ? yaw : null, o); }
 
-  // ── The Watchman, on his round after the bell: if he sees her out, he stops her, and walks her home (a few steps behind her; the way to
-  // the wood shut to her while he does). At her door, js/evening.js has him hand her over.
+  // ── The Watchman, on his round after the bell: if he sees her out, he stops her, and walks her home (a few steps behind her; the meadow
+  // gate shut to her while he does). At her door, js/evening.js has him hand her over.
   function willieWatch() {
     const f = figs.willie; if (!f || f.follow || f.held || !cal.curfew() || !root.Evening || root.Evening.watchman(w) || P.busy) return;
     const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < 110) P.act(() => catchHer(f));
@@ -304,7 +304,7 @@ function attach(P, w) {
     try { await meet(f, 14); await P.converse(S.willieCatch(n), { shot: ['red', 'willie'] }); }
     finally { f.held = false; f.follow = true; f.path = null; }
   }
-  { const ex = (W.exits || []).find(e => e.name === 'the wood'); if (ex) { const was = ex.when; ex.when = () => !(root.Evening && root.Evening.watchman(w)) && (!was || was()); } }
+  if (W.gate) W.gate.barred = () => !!(root.Evening && root.Evening.watchman(w));
   if (root.Evening && root.Evening.watchman(w) && cal.curfew()) { const f0 = () => figs.willie; setTimeout(() => { const f = f0(); if (f) f.follow = true; }, 0); }      // (still walking her home, as she comes back out)
 
   // Each frame (while the place is played): who's where, their walking, and the figures themselves.
