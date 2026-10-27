@@ -48,7 +48,7 @@ From 1.2 the days have a pattern, agreed with Maren in the chores conversation.
 **An errand is a request, not an order.** Red can say yes or no, and how she says no is coloured by her temperament (her stats and what's happened lately):
 
 - **An honest refusal** that's about feeling too Little for it that day, however she puts it ("Not today, Mama. I can't be anybody's today."), carries no penalty. Maren takes it as it's meant.
-- **An obstinate refusal** (sulking, flat defiance, a flounce) counts against her. Too many of them, and Maren gives her a **maintenance correction**: not for any one thing, but to set her right. It reminds the player of the loop (the errands, the promises, the bell) and settles the stats the refusals built up.
+- **An obstinate refusal** (sulking, flat defiance, a flounce) is wilful. Three in a week, and Maren gives her a **maintenance correction**: not for any one thing, but to set her right. It reminds the player of the loop (the errands, the promises, the bell) and settles her wilfulness.
 
 **Once she's said yes, it's a promise.** Each errand has a time by which it must be done, or at least begun: a window, shown in the journal, so the day has some jeopardy. Begun in time, it's kept, however long it takes. Let slide, it's a broken promise: naughty, and the kind of thing Mistress Abney minds.
 
@@ -275,4 +275,4 @@ In it, Master Fowler is a corrector: Peter disobeys him and leaves the meadow ga
 
 ## Open questions
 
-- **An obstinate refusal: wilful or naughty?** The stats table counts refusing a task as wilful, and a broken promise as naughty. As written, the maintenance correction settles both. Which should an obstinate refusal raise, and how many before Maren steps in (say, three in a week)?
+None open.
