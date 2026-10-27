@@ -7,7 +7,7 @@
 // a second, not while she's talking or busy), the light follows it, and where she is is kept, so the game can be taken up again where it was left.
 //
 //   const w = World.create(view, { fade, objective, card, clock, hud })
-//   w.newGame() · w.resume() · w.startAt('wood' | 'home') (a new game, from there) · w.go(area, entry) · w.P (the place being played)
+//   w.newGame() · w.resume() · w.startAt('wood' | 'home' | 'village') (a new game, from there; the village: the morning after chapter one) · w.go(area, entry) · w.P (the place being played)
 //   w.save · w.cal · w.rep · w.q · w.complete('line.step') · w.objective(text) · w.journal()
 (function (root) {
 'use strict';
@@ -214,7 +214,9 @@ function create(view, ui) {
     save.reset();
     if (where === 'wood' || where === 'home') { q.complete('hulda.cloak'); cal.until('17:00'); }
     if (where === 'home') { q.complete('maren.walk'); cal.until('19:40'); }
-    await go(where, where === 'wood' ? 'cabin' : 'door');
+    // (the village: chapter one done, the next morning, out of her door)
+    if (where === 'village') { q.complete('hulda.cloak'); q.complete('maren.walk'); q.complete('maren.homecoming'); save.change(s => { s.day = 2; s.minute = 10 * 60; }, { time: true }); }
+    await go(where, where === 'wood' ? 'cabin' : where === 'village' ? 'home' : 'door');
   }
   q.on(() => refresh());
   return w;
