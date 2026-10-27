@@ -1,10 +1,11 @@
-// Little Red’s Lessons — a shift of work, played: the morning at the bakery (and the inn's afternoon, when it's built). Asked for over
+// Little Red’s Lessons — a shift of work, played: the afternoon at the bakery (the clearing down after the morning's baking, and the next
+// day begun), and the inn's afternoon. Asked for over
 // breakfast as an errand (js/chores.js), begun at its door; inside, its tasks one after another, each offered where it's done, each with its
 // share of the morning or the afternoon (so the clock comes out where the errand's time says), and whoever she's working for talking the
 // whole while. When the last is done, the errand's done; and until then, the door stays shut on her.
 //
 //   Work.begin(w, id) (chores: in through the door to it) · Work.attach(P, w) (the place, played: if a shift's under way here) · Work.SHIFTS
-//   (the bakery's morning; the inn's afternoon, Bess calling the work from her chair)
+//   (the bakery's afternoon; the inn's afternoon, Bess calling the work from her chair)
 // Kept in the save (state.work): { day, id, step }.
 (function (root) {
 'use strict';
@@ -12,14 +13,14 @@ const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 
 // The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it.
 const SHIFTS = {
-  bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', tasks: [
-    { id: 'knead', label: 'Knead the dough', place: 'trough', mins: 40, kind: 'knead' },
-    { id: 'shape', label: 'Shape the loaves', place: 'table', mins: 30, kind: 'shape' },
-    { id: 'load', label: 'Load the oven', place: 'oven', mins: 20, kind: 'oven' },
-    { id: 'sweep', label: 'Sweep the floor while they bake', place: 'floor', mins: 30, kind: 'sweep' },
-    { id: 'draw', label: 'Draw the loaves out', place: 'oven', mins: 20, kind: 'draw' },
-    { id: 'racks', label: 'Set the loaves on the racks', place: 'racks', mins: 25, kind: 'racks' },
-    { id: 'serve', label: 'Serve at the counter', place: 'counter', mins: 60, kind: 'serve' },
+  bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', tasks: [      // (the afternoon: the clearing down after the morning's baking, and the next day begun)
+    { id: 'trough', label: 'Scrape out the dough trough', place: 'trough', mins: 25, kind: 'shape' },
+    { id: 'boards', label: 'Scrub down the boards', place: 'table', mins: 25, kind: 'shape' },
+    { id: 'ash', label: 'Rake the ash out of the oven', place: 'oven', mins: 20, kind: 'oven' },
+    { id: 'racks', label: 'Clear the racks', place: 'racks', mins: 15, kind: 'reach' },
+    { id: 'sift', label: 'Sift tomorrow’s flour', place: 'table', mins: 25, kind: 'shape' },
+    { id: 'sponge', label: 'Set the sponge for the morning', place: 'trough', mins: 30, kind: 'knead' },
+    { id: 'sweep', label: 'Sweep out', place: 'floor', mins: 30, kind: 'sweep' },
   ] },
   inn: { area: 'inn', boss: 'bess', errand: 'inn', tasks: [
     { id: 'pots', label: 'Scour the pots', place: 'tub', mins: 30, kind: 'shape' },

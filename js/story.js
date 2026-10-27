@@ -399,13 +399,10 @@ const ERRANDS = {
     ask: 'I’ve a pie for the Dunns: Master William’s been on his rounds all week. Will you take it over this afternoon? Quietly, mind. He’ll be sleeping.',
     there: [{ who: 'red', face: 'calm', thought: true, text: 'Shutters closed upstairs: Master William’s asleep. On the step, then, and no knocking.' },
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
-  bakery: { title: 'Help at the bakery', by: '07:45', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock', quest: 'pennock.helps', shift: 'bakery',      // (played inside: js/work.js)
-    ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’s been baking since before it was light: she’ll want you straight after breakfast, by a quarter to eight.',
-    met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on, and mind the oven: it bites.' },
-      { who: 'red', face: 'smile', thought: true, text: 'Flour to my elbows, and Mistress Pennock talking the whole morning, about everything and everyone.' },
-      { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }],
-    there: [{ who: 'red', face: 'smile', thought: true, text: 'Flour to my elbows, and Mistress Pennock talking the whole morning, about everything and everyone.' },
-      { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }] },
+  bakery: { title: 'Help at the bakery', by: '13:00', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 170, who: 'pennock', trust: 'pennock', quest: 'pennock.helps', shift: 'bakery',      // (played inside: js/work.js)
+    ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. The baking’s done by noon, but there’s the clearing down after, and tomorrow’s to get ready. Will you go and help her this afternoon? By one, she said.',
+    met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on. It’s all the dull half of baking, I’m afraid.' }],
+    there: [{ who: 'red', face: 'smile', thought: true, text: 'Flour to my elbows, and Mistress Pennock talking the whole afternoon, about everything and everyone.' }] },
   inn: { title: 'Work at the inn', by: '14:00', place: 'inn', action: 'Go in to work for Mistress Abney', mins: 180, who: 'abney', trust: 'abney', quest: 'abney.work', shift: 'inn',      // (played inside: js/work.js)
     ask: 'Mistress Abney could use you this afternoon: the carrier’s due, and Bess can’t be on her feet all day. Will you go along by two?',
     met: [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'There you are. Pots first, then the tables, then Bess, who’ll tell you she needs nothing. She’s lying.' },
@@ -1027,25 +1024,19 @@ const dayTalk = (how, day) => {
 const WORK = {
   bakery: {
     start: [
-      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love. Apron’s on the hook. The dough’s been proving since four, so we’ll start there.' },
+      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love. Apron’s on the hook. Master Pennock’s been at it since four and he’s gone to his bed, so it’s you and me and the mess he’s left.' },
       { who: 'red', face: 'calm', text: 'Where do you want me?' },
-      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'Trough first. Knead it till it fights back. Then shape, then the oven, and I’ll tell you the rest as we go.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The trough first, then the boards, then the oven. And tomorrow’s flour and the sponge before you go. I’ll tell you as we go.' },
     ],
-    knead: ['Heels of your hands, not your fingers. Push it away, fold it back. My mother used to say you could tell a girl’s temper by her bread.', 'calm'],
-    shape: ['Tuck it under, round and round, till it sits up on its own. That’s it. Your grandmother taught me that, would you believe.', 'smile'],
-    load: ['Quick, now: in and out, and don’t let the heat out. Mind your knuckles on the mouth.', 'stern'],
-    sweep: ['While they bake. Flour gets everywhere: in the cracks, in my hair, in Master Pennock’s moustache. He says it keeps him handsome.', 'smile'],
-    draw: ['Knock on the bottom: if it sounds hollow, it’s done. Hear that? That’s a good loaf.', 'calm'],
-    racks: ['Crust out, so they breathe. And the rye on the top shelf, or the Hallorans will be on at me again.', 'calm'],
-    customers: [
-      { who: 'red', face: 'smile', thought: true, text: 'The Hallorans’ boy counts his farthings out one at a time. Nobody hurries him.' },
-      { who: 'pennock', face: 'smile', text: 'Agnes Thatcher, as I live. Two of the brown, and tell your mother she still owes me for Tuesday.' },
-      { who: 'red', face: 'cheeky', thought: true, text: 'Agnes, at the hatch, grinning as if she’s caught me at something.' },
-      { who: 'red', face: 'shy', thought: true, text: 'She’ll be at the well telling everyone I’ve gone into trade.' },
-      { who: 'pennock', face: 'calm', text: 'Don’t mind her. Count the change back into their hands, love, not onto the board. People trust you more for it.' },
-    ],
+    trough: ['Scrape it right into the corners. Leave a crust of old dough and tomorrow’s bread tastes of yesterday.', 'calm'],
+    boards: ['Hot water and the brush, with the grain, not across it. My mother used to say you could tell a girl’s temper by her bread. I say by her boards.', 'smile'],
+    ash: ['Rake it to the front and out into the bucket. Mind your sleeves: it holds its heat longer than you’d think.', 'stern'],
+    racks: ['What’s left goes on the end shelf, for the Hallorans and the bargain hunters. Nothing’s wasted in this house.', 'calm'],
+    sift: ['Through the fine sieve, and shake it, don’t press. Flour gets everywhere: in the cracks, in my hair, in Master Pennock’s moustache. He says it keeps him handsome.', 'smile'],
+    sponge: ['A handful of this morning’s dough in the warm water, and the flour on top. Cover it, and by four tomorrow it’ll be up and wanting him.', 'calm'],
+    sweep: ['And the floor, last thing, out of the door. Then we’re done, and you can sit.', 'smile'],
     end: [
-      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'That’s the morning, and a good one. You’ve good hands for bread. Off you go, and take your mother a bun from me.' },
+      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'That’s us cleared, and tomorrow begun. You’ve good hands for it. Off you go, and take your mother a bun from me.' },
       { who: 'red', face: 'smile', text: 'Thank you, Mistress Pennock.' },
       { who: 'red', face: 'smile', thought: true, text: 'She talked the whole while, about everything and everyone. It was nicer than I thought it would be.' },
     ],
@@ -1481,10 +1472,10 @@ const smithAfter = r => r && r.rose ? [
   { who: 'tom', face: 'bashful', listen: { red: 'shy' }, text: 'Told you he was fair.' },
   { who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'I’ll walk up and see your mother tonight. She’ll hear it straight from me.' },
 ];
-// Mistress Pennock, after a morning's work, once she trusts her: the key under the pot.
+// Mistress Pennock, after an afternoon's work, once she trusts her: the key under the pot.
 const pennockTrust = () => [
   { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'Rose. Sit down a minute. No, the loaves’ll keep.' },
-  { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'You’ve been good to me, these mornings. Up before it’s light and never a sulk. And honest with me, when it would have been easier not to be.' },
+  { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'You’ve been good to me, these afternoons. The dull half of the work, and never a sulk. And honest with me, when it would have been easier not to be.' },
   { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'There’s a key to my back door, under the third pot along. If ever you need somewhere, any hour, and don’t want to say why, you let yourself in. There’s always bread.' },
   { who: 'red', face: 'shy', text: 'Mistress Pennock… thank you.' },
   { who: 'pennock', face: 'stern', listen: { red: 'smile' }, text: 'And if you ever need setting straight, you know where I am for that, too. Off you go.' },

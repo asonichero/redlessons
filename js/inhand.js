@@ -5,7 +5,7 @@
 //   • The same standard as Tom (tom.smith, once Tom knows): talking to Master Ferrier, she asks to answer to him as Tom does, for what they do
 //     together. Agreed, the next dare she takes with Tom, he's heard it from the anvil: home the both of them, to the Ferriers' cottage, Tom
 //     first, then her, the other watching; and he tells her mother himself (a reprieve at home: js/evening.js).
-//   • Mistress Pennock's trust (pennock.trust, once she trusts her enough, after the pie): at the end of a morning's work, the key under the pot.
+//   • Mistress Pennock's trust (pennock.trust, once she trusts her enough, after the pie): at the end of an afternoon's work, the key under the pot.
 //   • Mistress Abney (abney.inhand, once she trusts her enough): at the end of an afternoon's work, she says Red's something on her mind; Red
 //     can tell her, and ask to know where she stands with her; and she does it there, by the fire, Bess watching. (Or not yet: another day.)
 //

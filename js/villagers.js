@@ -51,8 +51,8 @@ function station(key, day, min) {
     case 'smith': return min >= H('7:00') && min < H('17:00') ? { stand: 'anvil' } : null;
     case 'bess': return min >= H('9:30') && min < H('18:30') ? { sit: SEAT.inn, n: 0 } : null;
     case 'abney': return (min >= H('11:00') && min < H('13:30')) || (min >= H('17:00') && min < H('20:00')) ? { stand: 'innDoor' } : null;
-    case 'pennock': return min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;
-    case 'baker': return min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;
+    case 'pennock': return min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;      // (the counter till the bread's sold; the clearing down inside, of an afternoon)
+    case 'baker': return min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;      // (baking from four, at the door with it till mid-morning; then to his bed)
     case 'peter': { if (min < H('10:00') || min >= H('18:00')) return null; const k = r(7); return k < 0.4 ? { wander: true } : k < 0.7 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (only on his days off: see update)
     case 'willie': return min >= H('22:00') || min < H('5:30') ? { round: true } : min >= H('21:15') ? { stand: 'bell' } : null;      // (out to the bell for half past nine, by it till ten, the village's curfew; then round till first light)
   }
