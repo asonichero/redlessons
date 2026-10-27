@@ -147,11 +147,11 @@ function attach(P, w) {
   function walk(f, at, yaw) { f.path = net.route(f.motion.pos, flat(at)); f.i = 0; f.endYaw = yaw; f.motion.auto = null; }
   // Each moment: along their way, a point at a time; at the end of it, settled there (facing their work, sat down, or in, and gone).
   function step(f, dt) {
-    const m = f.motion; if (f.held || f.standing) return;
+    const m = f.motion; if ((f.held && !f.scene) || f.standing) return;
     if (f.path) {
       if (!m.auto) {
         if (f.i >= f.path.length) { const end = f.path; f.path = null; arrive(f, end); return; }
-        const p = f.path[f.i++], last = f.i >= f.path.length; m.goTo(p, last && f.endYaw != null ? f.endYaw : null, { speed: f.key === 'tom' && f.chasing ? 0.9 : 0.55 }); f.stuck = 0;
+        const p = f.path[f.i++], last = f.i >= f.path.length; m.goTo(p, last && f.endYaw != null ? f.endYaw : null, { speed: f.speed || (f.key === 'tom' && f.chasing ? 0.9 : 0.55) }); f.stuck = 0;
       } else { f.stuck = m.speed < 1 ? f.stuck + dt : 0; if (f.stuck > 4) { m.auto = null; f.stuck = 0; } }      // (held up: on to the next point)
       return;
     }
@@ -164,6 +164,7 @@ function attach(P, w) {
     }
   }
   function arrive(f) {
+    if (f.scene) { const r = f.scene.arrived; f.scene.arrived = null; if (r) r(); return; }      // (where a scene sent them)
     if (!f.want) { gone(f); return; }      // (in at their door)
     if (f.goal && f.goal.seat) { const seat = f.goal.seat; f.goal = null; f.motion.warp(f.motion.pos, seat.facing); f.motion.sit(seat); return; }
     if (f.want.wander) f.wait = clock + 3 + Math.random() * 8;
@@ -175,7 +176,8 @@ function attach(P, w) {
   function update(first) {
     const day = cal.day, min = cal.minute;
     for (const key in PEOPLE) {
-      const want = station(key, day, min), f = figs[key];
+      const want = vs().away && vs().away[key] === day ? null : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
+      if (f && f.scene) continue;      // (a scene has them)
       if (want && !f) spawn(key, want, !first);
       else if (f && !want && f.want) { if (!f.held) send(f, null); }
       else if (f && want && !same(f.want, want) && !f.held) send(f, want);
@@ -262,6 +264,24 @@ function attach(P, w) {
     await m.goTo(P.collide(flat(f.motion.pos).add(new V3(10, 0, 8)), 3.2), yawTo(m.pos, f.motion.pos), { run: true });
   }
 
+  // ── For a scene: someone fetched out (at a spot, if they're not about), walked where it wants them (by the ways about), and let go again;
+  // or kept in for the rest of the day.
+  function summon(key, spot) {
+    let f = figs[key]; if (!f) { f = spawn(key, { stand: spot }, false); }
+    f.scene = {}; f.held = true; f.motion.auto = null; f.path = null; if (f.sat) { untake(f); f.motion.stand(); }
+    return f;
+  }
+  function walkTo(key, at, yaw, speed) {
+    const f = figs[key]; if (!f) return Promise.resolve();
+    return new Promise(res => { f.scene = f.scene || {}; f.scene.arrived = res; walk(f, at, yaw); f.speed = speed; });
+  }
+  function letGo(key, awayToday) {
+    const f = figs[key]; if (awayToday) change(s => { s.away = s.away || {}; s.away[key] = cal.day; });
+    if (!f) return; f.scene = null; f.held = false; f.speed = null; if (awayToday) send(f, null); else if (f.want) send(f, f.want);
+  }
+  // (her, by the ways about, to a place)
+  async function lead(to, yaw, o) { const pts = net.route(P.motion.pos, to); for (let i = 0; i < pts.length; i++) await P.motion.goTo(pts[i], i === pts.length - 1 ? yaw : null, o); }
+
   // Each frame (while the place is played): who's where, their walking, and the figures themselves.
   const off = P.tick(dt => {
     clock += dt; if ((think -= dt) <= 0) { think = 0.5; update(false); }
@@ -273,7 +293,7 @@ function attach(P, w) {
     tomWatch(dt);
   });
   update(true);
-  return { actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom) };
+  return { actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };
 }
 
 const api = { attach, station, PEOPLE, tomFree, tomComes, hash };

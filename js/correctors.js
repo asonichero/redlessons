@@ -24,7 +24,7 @@ const CORRECTORS = {
     stop: 'All right, love. It’s over, all of it. Sit up with me, slowly. Talk to me.',
     harsh: 'That’s enough. More than enough. Up you get.',
   } },
-  pennock: { name: 'Mistress Pennock', rig: 'pennock', voice: 'gerda', implement: 'bakersPaddle', minds: 'naughty', seat: 'bench', lines: {
+  pennock: { name: 'Mistress Pennock', rig: 'pennock', voice: 'pennock', implement: 'bakersPaddle', minds: 'naughty', seat: 'bench', lines: {
     start: 'Pies don’t walk off by themselves, {name}. Over you come.',
     skirt: 'Up with it. Flour washes out; lessons don’t.',
     drawers: 'Those too. I’ve three dozen loaves to see to and no patience left.',
@@ -48,7 +48,7 @@ const CORRECTORS = {
     stop: '{word}. Stopped. That’s that. Sit a while.',
     harsh: 'Enough. That’s more than you were owed. Up.',
   } },
-  abney: { name: 'Mistress Abney', rig: 'abney', voice: 'gerda', implement: 'spoon', minds: 'naughty', seat: 'chair', lines: {
+  abney: { name: 'Mistress Abney', rig: 'abney', voice: 'abney', implement: 'spoon', minds: 'naughty', seat: 'chair', lines: {
     start: 'A promise is a promise, {name}. Over my knee.',
     skirt: 'Up with your skirts. I’ve seen worse in the taproom.',
     drawers: 'Down with those as well. Broken promises cost.',
@@ -62,7 +62,7 @@ const CORRECTORS = {
   } },
   // (only ever Red, agreed between the two of them with her mother's blessing, and never on his round: he walks her home, and it's done there, by her
   // own fire, with her own slipper from the hearth)
-  willie: { name: 'Sir', rig: 'willie', voice: 'smith', implement: 'slipper', minds: 'wilful', seat: 'chair', lines: {
+  willie: { name: 'Sir', rig: 'willie', voice: 'willie', implement: 'slipper', minds: 'wilful', seat: 'chair', lines: {
     start: 'Past nine, {name}, and you still out on the lane. Your mother and I agreed what happens now. Come here.',
     skirt: 'Skirt up, lass. I’d sooner be sat by my own fire, and so would you.',
     drawers: 'And down. We said we’d do it properly, the three of us.',

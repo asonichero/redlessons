@@ -597,6 +597,7 @@ function build(scene, opts) {
     bell: { at: BELL.clone().add(V(0, 9)), yaw: Math.PI, look: BELL.clone().setY(14) },
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
+  world.entries.bakery = { at: [world.spots.bakeryDoor.at.x - Math.sin(world.spots.bakeryDoor.yaw) * 10, world.spots.bakeryDoor.at.z - Math.cos(world.spots.bakeryDoor.yaw) * 10], yaw: world.spots.bakeryDoor.yaw + Math.PI };      // (out of Mistress Pennock's door, onto the street)
   world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
   // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)
   world.wander = [STREET, LOOP].flatMap(S => S.filter((_, i) => i % 9 === 4).map(p => p.clone())).filter(p => p.x > -380 && p.x < 400)
