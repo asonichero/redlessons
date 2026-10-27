@@ -37,6 +37,44 @@ Tom makes mischievous and wilful options come up more often; Peter makes steadie
 
 Rose's name works the same with everyone who might correct her, Willie Winkie and Holt included. Each answers it in character, and each stops at once. The Shoe is the inversion: there she's Rose, the house uses traffic lights, and her word is Red, which is also the house's word for stop.
 
+## Days and errands
+
+From 1.2 the days have a pattern, agreed with Maren in the chores conversation.
+
+- **Mama's garden** each morning: the one chore that's hers every day. (Mary, quite contrary: it's Maren's garden, and Red tends it.)
+- **An errand on most days.** Over breakfast Maren mentions something that's been asked for, and asks Red whether she'll do it. Some days there's none, and the day is Red's own.
+- **The rest of the day** is hers: the work at the bakery and the inn, Hulda's herbs, Halloran's farm, Tom's dares, and home by the curfew bell.
+
+**An errand is a request, not an order.** Red can say yes or no, and how she says no is coloured by her temperament (her stats and what's happened lately):
+
+- **An honest refusal** that's about feeling too Little for it that day, however she puts it ("Not today, Mama. I can't be anybody's today."), carries no penalty. Maren takes it as it's meant.
+- **An obstinate refusal** (sulking, flat defiance, a flounce) counts against her. Too many of them, and Maren gives her a **maintenance correction**: not for any one thing, but to set her right. It reminds the player of the loop (the errands, the promises, the bell) and settles the stats the refusals built up.
+
+**Once she's said yes, it's a promise.** Each errand has a time by which it must be done, or at least begun: a window, shown in the journal, so the day has some jeopardy. Begun in time, it's kept, however long it takes. Let slide, it's a broken promise: naughty, and the kind of thing Mistress Abney minds.
+
+**Scenes don't use the clock.** Once she's begun an errand's scene (the shift at the bakery, sitting with Bess), it plays out without the day passing under it; when she's done, the clock moves on by the time the work would have taken. Walking between places, idling and dawdling are what spend the day.
+
+**The errands** (Maren's requests: each is something someone has asked for, and each puts Red with someone):
+
+| Errand | Where | With | Leads to |
+| --- | --- | --- | --- |
+| Gather the herbs Grandmother asked for | The wood, then the cabin | Hulda | Her quest line; Holt at the cabin (1.3) |
+| Help at the bakery | The bakery | Mistress Pennock | Her quest line; the pie |
+| Work at the inn | The inn | Mistress Abney | Her quest line; the promise |
+| Help on the farm (as Rose) | Halloran's | Halloran, Bo Peep | His standing at the end |
+| Water from the well | The green | Agnes, and whoever's about | Gossip; Georgie's poem |
+| Bread, on a day she isn't helping | The bakery | Master Pennock | Colour |
+| A pot to the forge for mending, and fetching it back | The forge | Tom, the smith | Colour; trust with Tom |
+| A jug from the inn | The inn | Bess Abney | Colour; Bess before her confinement |
+| Something for the Dunns | The Dunns' | Georgie, Master William asleep after his night | Colour |
+| Eggs from the Fowlers' | The smallholding | Master Fowler, Peter | Colour; trust with Peter |
+| Corn to the mill | The mill | Georgie at work | Colour |
+| Help Bo Peep pen the flock at dusk | The pinfold | Bo Peep | Colour; cutting it fine for the curfew bell |
+
+Later, two of Maren's requests are the story itself: the mending for the Shoe (2.2) and the cake and wine (2.3).
+
+The errands that only meet people are what build trust day by day (it grows with time spent together, and opens steps like telling Tom), so a day well spent moves things on even when nothing happens.
+
 ## Phase by phase
 
 Key: ● active quest · ○ paused · – in the background (done, or a side thread) · blank: not yet started. Wolfe is the main story.
@@ -237,4 +275,4 @@ In it, Master Fowler is a corrector: Peter disobeys him and leaves the meadow ga
 
 ## Open questions
 
-None open.
+- **An obstinate refusal: wilful or naughty?** The stats table counts refusing a task as wilful, and a broken promise as naughty. As written, the maintenance correction settles both. Which should an obstinate refusal raise, and how many before Maren steps in (say, three in a week)?

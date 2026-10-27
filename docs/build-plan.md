@@ -17,7 +17,7 @@ The game today is a linear chapter plus a free-roam cottage. The quest plan need
 | Calendar and day/night | Days advance when quests need them; dusk and night in the village and wood; curfew | *new* `js/calendar.js`; light from `stage.js`, `wood.js` |
 | Open-world correctors | Willie Winkie after curfew; Holt in the wood from 3.1; completed figures weighted by their stat | `js/quests.js` rules, scenes in `js/correction.js` |
 | Dialogue conditions | Lines and choices shown by flags, stats and openness; choices that set them | `js/talk.js`, scripts in `js/story.js` (split per act as it grows) |
-| Chores | Mary's garden as a daily loop; small errands for Maren | *new* `js/chores.js` |
+| Chores and errands | Mama's garden each morning; an errand on most days, asked for at breakfast and Red's to accept or decline (honestly, or obstinately: too many obstinate refusals and Maren gives a maintenance correction); each accepted errand a promise with a time to begin by; its scenes off the clock (the day moves on when she's done) | *new* `js/chores.js` |
 | Tests | Gate logic, stat changes, save and load, safe-word handling for every corrector | `tests/` |
 
 ## The correction scene
