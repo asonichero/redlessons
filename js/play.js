@@ -291,7 +291,7 @@ function create(view, opts) {
     // Keys move her relative to the camera.
     const cf = flat(st.controls.target.clone().sub(st.camera.position)).normalize(), cr = new V3(-cf.z, 0, cf.x);
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
-    m.update(dt, { move: mv, run: input.run && !opts.noRun });      // (opts.noRun: walking only, there) rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }
+    m.update(dt, { move: mv, run: input.run && !opts.noRun }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there)
     // Exits: walking into one tells the page (once).
     if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; opts.onExit(e); break; }
     // (the set: anything between the camera and her is cut away; only in play, with her there to be seen, not in a shot of the page's own)
