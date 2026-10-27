@@ -61,7 +61,7 @@ Rose, Maren and Hulda exist. Twenty more figures are needed (all now built in `j
 | Mother Brannock | 2.2 | Runs the Shoe | Yes, at the Shoe, as Rose |
 | Kitty Fisher | 2.2 | Longest resident of the Shoe (optional) | No |
 
-The village's grown men go by Master and their surname (Master Ferrier the smith, Master Pennock the baker, Master Halloran, Master Fowler), Holt aside; other adults call Tom and Georgie "young Master Ferrier" and "young Master Dunn" when they mean business. The Barrows are a household of three, a hierarchical polycule, not a family; any or all of them can speak as Scots. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
+The village's grown men go by Master and their surname (Master Ferrier the smith, Master Pennock the baker, Master Halloran, Master Fowler), Holt aside; other adults call Tom and Georgie "young Master Ferrier" and "young Master Dunn" when they mean business. Rose and Maren are Ridleys, the name Rose's late father left them: Maren is Mistress Ridley; Rose is Miss Rose to most of the village (as she is to Halloran), Miss Ridley when a villager means business (her counterpart to young Master Ferrier), and Rose Ridley in full when her mother is at her angriest. Only those let into what being Little Red means call her Little Red. The Barrows are a household of three, a hierarchical polycule, not a family; any or all of them can speak as Scots. Hulda needs an injured variant for 3.2, and Red needs her Rose look without the cloak for the Shoe and the finale.
 
 ## New locations
 

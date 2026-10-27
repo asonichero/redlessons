@@ -16,6 +16,8 @@ The principle running through all three acts: every authority over Red is one sh
 
 The village is somewhere in the north of England, in a time when few people travel far. Villagers speak the local Northern English, most broadly the old ones. **Old Halloran** is the place to enjoy it: *aye*, *nay*, *nowt* and *owt*, *summat*, *lass*, *happen* ("perhaps"), *mind*, *reckon*, the odd *thee* and *tha*, *gradely* ("fine, proper"), *mardy* ("sulky"). He's still always formal with her: "Miss Rose". **The Barrows** aren't local, and it shows the moment they speak. They're Scots from not far over the Border: *aye*, *ken*, *wee*, *bairn*, *dinnae*, *cannae*, *hame*, *hen*. That puts the two dialects side by side, near each other but plainly not the same.
 
+Rose and her mother are **the Ridleys** (her late father's name). To the village Rose is Miss Rose, and Miss Ridley when someone means business, as the boys are "young Master Ferrier" and "young Master Dunn"; Maren is Mistress Ridley. Little Red is only for those she's let in.
+
 ## Systems the quest lines rely on
 
 Four systems gate and colour the quests: reputation, openness, time, and the safe word.
