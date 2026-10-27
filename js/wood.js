@@ -109,6 +109,12 @@ function build(scene, opts) {
       if (r() < 0.04 * dense) { const o = widthAt(i) - 1 + r() * 6, p = S[i].clone().addScaledVector(side, sx * o); for (let k = 0; k < 5; k++) { const a = k / 5 * 6.3; put(toad, p.x + Math.cos(a) * 1.8, 0.9, p.z + Math.sin(a) * 1.8, 0.7, 0.5, 0.7, 0); } }
     }
   }
+  // (the wood's edge round the meadow, all along it: across its north side, either side of where the path comes out, and down both its sides
+  // behind the hedges; a gap on the east for the Fowlers' lane)
+  { const z0 = S[N].z - 40, fz = z0 + 150;
+    for (let x = -360; x <= 360; x += 9) for (let k = 0; k < 2; k++) { const z = z0 - 8 - k * 26 - r() * 22, xx = x + (r() - 0.5) * 8; if (clear(xx, z, 6)) tree(xx, z, true); }
+    for (const sx of [-1, 1]) for (let z = z0; z <= z0 + 300; z += 10) for (let k = 0; k < 3; k++) { const x = sx * (262 + k * 30 + r() * 24), zz = z + (r() - 0.5) * 8;
+      if (sx > 0 && Math.abs(zz - fz) < 34) continue; tree(x, zz, true); } }
   // (the clearing round the cabin: a ring of trees behind it and to the sides)
   for (let k = 0; k < 26; k++) { const a = Math.PI * (0.9 + k / 26 * 1.2) + (r() - 0.5) * 0.1, d = 70 + r() * 40; tree(Math.cos(a) * d, Math.sin(a) * d + 6, true); }
   cur = null;
@@ -174,15 +180,22 @@ function build(scene, opts) {
   // ── The meadow, past the wood's edge: open grass full of flowers, a few lone oaks, the lane across it to the meadow gate in the hedge at the
   // far side (and the village beyond: js/village.js). Hedges down either side, the wood behind.
   const MZ0 = S[N].z - 40, MZ1 = MZ0 + 300, MX = 230, GATE = new V3(14, 0, MZ1);
+  // The fork to the Fowlers': off the meadow lane at a finger-post (on the beech's side), across the meadow and out through the east hedge,
+  // and on along the wood's edge to their smallholding (js/holding.js). (The Barrows' way will fork off the other side, one day.)
+  const FORK = { z: MZ0 + 150, x0: MX - 20, x1: MX + 170, at: new V3(-12, 0, MZ0 + 118) };
+  const forkPts = new THREE.CatmullRomCurve3([FORK.at.clone(), new V3(70, 0, MZ0 + 126), new V3(160, 0, MZ0 + 146), new V3(MX + 10, 0, FORK.z), new V3(FORK.x1, 0, FORK.z)]).getSpacedPoints(60);
+  // (a ribbon of trodden earth along a line of points)
+  const ribbon = (LS, wd) => { const n = LS.length - 1, pos = [], uv = [], idx = [];
+    for (let i = 0; i <= n; i++) { const d = LS[Math.min(n, i + 1)].clone().sub(LS[Math.max(0, i - 1)]).normalize(), side = new V3(d.z, 0, -d.x);
+      for (const sx of [-1, 1]) { const p = LS[i].clone().addScaledVector(side, sx * wd); pos.push(p.x, 0.05, p.z); uv.push(sx < 0 ? 0 : 1, i / 6); } }
+    for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); lg.setIndex(idx); lg.computeVertexNormals();
+    const lm = new THREE.Mesh(lg, toonMap(dirtT)); lm.receiveShadow = true; root_.add(lm); };
+  ribbon(forkPts, 3.5);
   { const r2 = rnd(99), lane = [S[N].clone(), new V3(-14, 0, MZ0 + 120), new V3(-2, 0, MZ0 + 220), GATE.clone().setZ(MZ1 - 10)];
     // (the lane across it: trodden earth, as the path is)
-    const lc = new THREE.CatmullRomCurve3(lane), LS = lc.getSpacedPoints(80), pos = [], uv = [], idx = [];
-    for (let i = 0; i <= 80; i++) { const d = LS[Math.min(80, i + 1)].clone().sub(LS[Math.max(0, i - 1)]).normalize(), side = new V3(d.z, 0, -d.x);
-      for (const sx of [-1, 1]) { const p = LS[i].clone().addScaledVector(side, sx * 4); pos.push(p.x, 0.05, p.z); uv.push(sx < 0 ? 0 : 1, i / 6); } }
-    for (let i = 0; i < 80; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
-    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); lg.setIndex(idx); lg.computeVertexNormals();
-    const lm = new THREE.Mesh(lg, toonMap(dirtT)); lm.receiveShadow = true; root_.add(lm);
-    const onLane = (x, z) => LS.some(q => Math.hypot(q.x - x, q.z - z) < 8);
+    const LS = new THREE.CatmullRomCurve3(lane).getSpacedPoints(80); ribbon(LS, 4);
+    const onLane = (x, z) => LS.some(q => Math.hypot(q.x - x, q.z - z) < 8) || forkPts.some(q => Math.hypot(q.x - x, q.z - z) < 7);
     // (the flowers: buttercups, clover, ox-eye daisies and cornflowers, everywhere in the grass; and long tufts)
     const fg = new THREE.SphereGeometry(0.5, 6, 4), cols = ['#f2d24a', '#e8e4f0', '#c86a9a', '#5a7ad8'];
     const fl = cols.map(c => new THREE.InstancedMesh(fg, T.mat(c), 700)), tuft = new THREE.InstancedMesh(new THREE.ConeGeometry(0.6, 3, 4).translate(0, 1.5, 0), T.mat('#7a9a48'), 1400);
@@ -199,20 +212,18 @@ function build(scene, opts) {
     // (the hedges: down either side, and across the far end, with the gate in it)
     const hedgeM = [T.mat('#3e6230'), T.mat('#4a6e36')];
     const hedge = (a, b, gap) => { const d = b.clone().sub(a), L = d.length(), k0 = Math.ceil(L / 7); for (let k = 0; k <= k0; k++) { const p = a.clone().lerp(b, k / k0); if (gap && Math.hypot(p.x - gap.x, p.z - gap.z) < 15) continue; const s1 = 6 + r2() * 2.5; solid(root_, T.ell(s1, s1 * (1.1 + r2() * 0.4), s1, 10, 8), hedgeM[k % 2], p.x, s1 * 0.8, p.z, { ink: 0.05, shadow: false }); } };
-    hedge(new V3(-MX - 10, 0, MZ1), new V3(MX + 10, 0, MZ1), GATE); hedge(new V3(-MX - 10, 0, MZ0 + 30), new V3(-MX - 10, 0, MZ1)); hedge(new V3(MX + 10, 0, MZ0 + 30), new V3(MX + 10, 0, MZ1), new V3(MX + 10, 0, MZ0 + 70));      // (a gap at the fork to the Fowlers')
+    hedge(new V3(-MX - 10, 0, MZ1), new V3(MX + 10, 0, MZ1), GATE); hedge(new V3(-MX - 10, 0, MZ0 + 30), new V3(-MX - 10, 0, MZ1)); hedge(new V3(MX + 10, 0, MZ0 + 30), new V3(MX + 10, 0, MZ1), new V3(MX + 10, 0, FORK.z));      // (a gap at the fork to the Fowlers')
     // (beyond the far hedge: the village's trees, and its roofs' smoke going up)
     for (let k = 0; k < 14; k++) { const x = -260 + k * 40 + r2() * 20, z = MZ1 + 60 + r2() * 80; solid(root_, T.ell(14, 11, 14, 12, 8), [T.mat('#4e7a36'), T.mat('#5e8a3e')][k % 2], x, 30 + r2() * 12, z, { ink: 0.08 });
       solid(root_, new THREE.CylinderGeometry(1.5, 2, 30, 8), toonMap(barkT), x, 15, z, { ink: 0.08 }); }
     for (const [x, z] of [[60, MZ1 + 110], [-80, MZ1 + 140]]) for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(T.ell(2.4, 2.4, 2.4, 8, 6), new THREE.MeshBasicMaterial({ color: srgb('#c8c4c0'), transparent: true, opacity: 0.5, depthWrite: false })); root_.add(p); smoke.push({ m: p, base: new V3(x, 34, z), ph: k / 4 }); }
   }
-  // The fork to the Fowlers': a lane off the meadow's east side (the beech's side of the path), along the wood's edge to their smallholding.
-  // (The Barrows' way will fork off the other side, one day.)
-  const FORK = { z: MZ0 + 70, x0: MX - 20, x1: MX + 170 };
-  { const lm = new THREE.Mesh(new THREE.PlaneGeometry(FORK.x1 - FORK.x0, 9), toonMap(dirtT)); lm.rotation.x = -Math.PI / 2; lm.rotation.z = Math.PI / 2; lm.material = lm.material.clone(); lm.rotation.set(-Math.PI / 2, 0, 0); lm.position.set((FORK.x0 + FORK.x1) / 2, 0.05, FORK.z); lm.receiveShadow = true; root_.add(lm);
-    const r3 = rnd(131); for (let x = FORK.x0 + 30; x < FORK.x1 + 60; x += 14) for (const sz of [-1, 1]) { const z = FORK.z + sz * (34 + r3() * 26);      /* (set back from the lane: the camera behind her keeps a clear way along it) */ const h = 56 + r3() * 20, tw = 1.6 + r3();
+  // (the fork's lane on past the hedge, trees either side)
+  { const r3 = rnd(131); for (let x = FORK.x0 + 30; x < FORK.x1 + 60; x += 14) for (const sz of [-1, 1]) { const z = FORK.z + sz * (34 + r3() * 26);      /* (set back from the lane: the camera behind her keeps a clear way along it) */ const h = 56 + r3() * 20, tw = 1.6 + r3();
       solid(root_, new THREE.CylinderGeometry(0.75 * tw, tw, h * 0.7, 9).translate(0, h * 0.35, 0), toonMap(barkT), x, 0, z, { ink: 0.1, shadow: false }); solid(root_, T.ell(11, 8, 11, 12, 8), [T.mat('#4e7a36'), T.mat('#5e8a3e')][(x / 14 | 0) % 2], x, h * 0.78, z, { ink: 0.06 }); }
-    // (a finger-post where it leaves the meadow)
-    pole(root_, new V3(MX - 14, 0, FORK.z - 7), new V3(MX - 14, 14, FORK.z - 7), 0.45, toonMap(barkT)); box(root_, 8, 2, 0.6, MX - 10, 12.5, FORK.z - 7, toonMap(barkT), { ink: 0.04 }); }
+    // (a finger-post where it leaves the lane, its arm pointing along it)
+    const fp = FORK.at.clone().add(new V3(-8, 0, -6)), arm = box(root_, 9, 2, 0.6, fp.x + 4, 12.5, fp.z + 1, toonMap(barkT), { ink: 0.04 }); arm.rotation.y = -0.1;
+    pole(root_, fp, fp.clone().setY(14), 0.45, toonMap(barkT)); world_obstacles.push({ x: fp.x, z: fp.z, r: 1.5 }); }
 
   // The meadow gate, this side: a field gate between two posts, swinging out to the village (js/world.js offers to go through it).
   const gate = (() => { const g = new THREE.Group(); g.position.copy(GATE); root_.add(g); const oak = toonMap(barkT);

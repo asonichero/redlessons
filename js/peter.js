@@ -1,16 +1,19 @@
 // Little Red’s Lessons — Peter: the first visit to the Fowlers', the notes he leaves in the knot of the old beech, and meeting him there.
 //
-//   • The first visit: the first time she comes to the Fowlers' (with her mother's basket for the eggs: the first errand asked once the chores
-//     are agreed, and asked more often until she's been; or of her own accord). Master Fowler talks Hulda and the wood; then he sends Peter to
-//     walk her back as far as the fork, and on the way Peter tells her to look in the old beech, now and then. After it: his notes, his days
-//     off in the village (js/villagers.js), and the eggs an errand like any other.
+//   • The first visit: the first time she comes up the Fowlers' lane (with her mother's basket for the eggs: the first errand asked once the
+//     chores are agreed; or of her own accord), Master Fowler meets her at his gate: the eggs, Hulda, the wood. Then he lets her in, and
+//     points out Peter, and leaves her to find him. Talking to him (shy, at first; then the linnets, Tom in the duck pond, the nets), his
+//     grandfather crosses the yard to them, reaching them as the talk ends, and sends Peter to walk her back. Then the two of them at the
+//     meadow gate, on the wood's side: the old beech; and Peter off home across the meadow. After it: his notes, his days off in the village
+//     (js/villagers.js), the gate open to her, and the eggs an errand like any other.
 //   • The notes: every few days, a note in the knot of the beech (js/wood.js's spot): "the beech, at five". Read, it's a meeting, and he's
 //     there at that hour, and a while after; she can go, or not. Two met, and the meetings at the beech are theirs (peter.friends). Missed, he
 //     says so, next time, and minds a little.
 //
-//   Peter.visited(w) · Peter.firstVisit(P, w, eggs) · Peter.atHolding(P, w) (the first visit, if she comes of her own accord) · Peter.wood(P, w)
+//   Peter.visited(w) · .letIn(w) · .fowlerAtGate(w) · .awaiting(w) · .atHolding(P, w) (the gate, the first time) · .firstTalk / .sendHome (js/holding.js:
+//   Peter, the first time) · Peter.wood(P, w)
 //   (the beech: the note, the meeting) · Peter.offToday(w) → his day off in the village, or not · Peter.stateOf(w)
-// Kept in the save (state.peter): { visited (a day), noted (the day of the last note read), meet: { day, at }, met: n, missed: n, owed (a word
+// Kept in the save (state.peter): { letIn (a day: Master Fowler's let her in), visited (a day), noted (the day of the last note read), meet: { day, at }, met: n, missed: n, owed (a word
 // about a missed meeting, next time) }.
 (function (root) {
 'use strict';
@@ -33,30 +36,77 @@ function noteToday(w) {
 // (the hour he names: an afternoon one)
 const meetAt = day => H('15:00') + 60 * Math.floor(hash(day, 25) * 3);
 
-// ── The first visit (P: the Fowlers'; eggs: she's come for her mother's eggs).
-async function firstVisit(P, w, eggs) {
-  const S = root.Story, F = P.fowlers, m = P.motion; if (visited(w)) return;
-  change(w, s => { s.visited = w.cal.day; });
-  const fig = k => F && F.figs[k];
-  for (const k of ['peter', 'fowler']) if (fig(k)) fig(k).held = true;
+// ── The first visit. Master Fowler at his gate, the first time she comes up the lane (P: the Fowlers'): the eggs, if she's come for them;
+// Hulda, the wood; then he lets her in, and points out Peter.
+const letIn = w => !!stateOf(w).letIn;
+const fowlerAtGate = w => !letIn(w);
+const awaiting = w => letIn(w) && !visited(w);      // (let in, and Peter not talked to yet)
+function atHolding(P, w) {
+  const F = P.fowlers, fw = F && F.figs.fowler, pe = F && F.figs.peter; if (letIn(w) || P.busy || !fw || !pe || fw.held || fw.where !== 'gate') return;      // (both of them about: not at night)
+  if (P.motion.pos.distanceTo(fw.motion.pos) < 70) P.act(() => atGate(P, w));
+}
+async function atGate(P, w) {
+  const S = root.Story, F = P.fowlers, fw = F.figs.fowler, pe = F.figs.peter, m = P.motion, W = P.world, sp = W.spots;
+  const eggs = !!(w.chores && w.chores.owes && w.chores.owes('eggs')); fw.held = true;
   try {
-    // Master Fowler, by his door: the eggs (if she's come for them), Hulda, the wood.
-    const fw = fig('fowler'); if (fw) { const at = P.collide(fw.motion.pos.clone().setY(0).add(new V3(0, 0, 14)), 3.2); await m.goTo(at, Math.atan2(fw.motion.pos.x - at.x, fw.motion.pos.z - at.z)); if (!fw.motion.seat) fw.motion.face(Math.atan2(m.pos.x - fw.motion.pos.x, m.pos.z - fw.motion.pos.z)); }
+    await m.goTo(sp.lane.at, sp.lane.yaw); fw.motion.lookAt(null); fw.motion.face(Math.atan2(m.pos.x - fw.motion.pos.x, m.pos.z - fw.motion.pos.z));
     await P.converse(S.firstVisit({ eggs }), { shot: ['red', 'fowler'] });
-    // Peter walks her back to the fork: down the lane together, and a word on the way.
-    const pe = fig('peter'); const lane = P.world.entries.lane, end = new V3(lane.at[0] + 30, 0, lane.at[1]);
-    if (pe) { pe.motion.lookAt(null); pe.motion.goTo(P.collide(end.clone().add(new V3(6, 0, 8)), 3.2), -Math.PI / 2, { speed: 0.6 }); }
-    await m.goTo(end, -Math.PI / 2, { speed: 0.6 });
-    if (pe) { pe.motion.face(Math.atan2(m.pos.x - pe.motion.pos.x, m.pos.z - pe.motion.pos.z)); await m.face(Math.atan2(pe.motion.pos.x - m.pos.x, pe.motion.pos.z - m.pos.z)); }
-    await P.converse(S.walkWithPeter(), { shot: ['red', 'peter'] });
-    w.rep.trusts('peter', 0.5);
-    w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met.peter = s.fowlers.met.fowler = true; s.fowlers.talked.peter = s.fowlers.talked.fowler = w.cal.day; }, { fowlers: true });
-  } finally { for (const k of ['peter', 'fowler']) if (fig(k)) { fig(k).held = false; fig(k).where = null; } }
+    if (eggs) w.chores.fulfil(P, 'eggs');      // (the basket, over the gate)
+    // (the gate swung open; and he points out the boy, wherever he is)
+    W.holdingGate.target = 1; change(w, s => { s.letIn = w.cal.day; });
+    fw.motion.face(Math.atan2(pe.motion.pos.x - fw.motion.pos.x, pe.motion.pos.z - fw.motion.pos.z)); await P.wait(0.8);
+    await P.converse(S.letIn(pe.where), { shot: ['red', 'fowler'] });
+    w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met.fowler = true; s.fowlers.talked.fowler = w.cal.day; }, { fowlers: true });
+    // (and back to his own work: the garden, walked to)
+    const g = sp.garden; fw.motion.goTo(g.at, g.yaw, { speed: 0.5 }).then(() => { if (!fw.held || fw.going) return; fw.held = false; fw.where = 'garden'; fw.motion.lookAt(g.look); });
+  } catch (e) { fw.held = false; throw e; }
   w.refresh();
 }
-// (coming to the Fowlers' of her own accord, the first time: the visit plays, without the eggs)
-function atHolding(P, w) { if (visited(w) || P.busy || !P.fowlers || !P.fowlers.figs.peter || !P.fowlers.figs.fowler) return;      // (both of them about: not at night)
- const e = w.chores && w.save.state.chores && w.save.state.chores.errand; if (e && e.id === 'eggs' && (e.state === 'accepted' || e.state === 'broken')) return; P.act(() => firstVisit(P, w, false)); }
+// The first talk with Peter (js/holding.js's talk): shy, and then easier; and his grandfather crossing the yard to them as it ends, timed to
+// reach them with its last line, to send Peter to walk her home. → the conversation, his grandfather's walk in it.
+function firstTalk(P, w, fw, pe) {
+  const S = root.Story, m = P.motion, lines = S.peterFirst();
+  fw.held = true; fw.going = true; if (fw.motion.seat) fw.motion.stand(); fw.motion.lookAt(null);
+  const mid = m.pos.clone().add(pe.motion.pos).multiplyScalar(0.5).setY(0), from = fw.motion.pos.clone().setY(0), dir = from.clone().sub(mid).setY(0); if (dir.lengthSq() < 1) dir.set(1, 0, 0); dir.normalize();
+  const hold = P.collide(mid.clone().addScaledVector(dir, 40), 3.2), near = P.collide(mid.clone().addScaledVector(dir, 15), 3.2);
+  // (paced to the talk: about three seconds a line, at least a slow walk, at most his own)
+  const secs = lines.length * 3, d = from.distanceTo(hold), speed = Math.max(0.3, Math.min(1, d / (28 * secs)));
+  const walking = fw.motion.goTo(hold, null, { speed });
+  return lines.concat([
+    { run: async () => { await walking; await fw.motion.goTo(near, Math.atan2(mid.x - near.x, mid.z - near.z), { speed: 0.6 });
+      m.face(Math.atan2(fw.motion.pos.x - m.pos.x, fw.motion.pos.z - m.pos.z)); pe.motion.face(Math.atan2(fw.motion.pos.x - pe.motion.pos.x, fw.motion.pos.z - pe.motion.pos.z)); } },
+  ], S.fowlerSends());
+}
+// Sent home: the fade, and the two of them at the meadow gate, on the wood's side (js/wood.js); the beech; and Peter off back across the
+// meadow, and her day her own again. (figs: the Fowlers' figures, held)
+async function sendHome(P, w) {
+  const S = root.Story;
+  change(w, s => { s.visited = w.cal.day; }); w.rep.trusts('peter', 0.5);
+  w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met.peter = s.fowlers.met.fowler = true; s.fowlers.talked.peter = s.fowlers.talked.fowler = w.cal.day; }, { fowlers: true });
+  w.cal.advance(30);
+  // (Peter put beside her the moment the meadow's built, under the fade)
+  const going = w.go('wood', 'village'); let Q = null;
+  for (let k = 0; k < 400 && !(Q = w.P !== P && w.P); k++) await new Promise(r => setTimeout(r, 20));
+  if (!Q) { await going; return; }
+  const m = Q.motion, side = new V3(Math.cos(m.yaw), 0, -Math.sin(m.yaw)), at = Q.collide(m.pos.clone().addScaledVector(side, 13), 3.2);
+  const fig = figure(Q, at, Math.atan2(m.pos.x - at.x, m.pos.z - at.z)); let gone = false;
+  Q.tick(dt => { if (gone) return; fig.motion.update(dt, null); fig.rig.tick(dt); });
+  await going;
+  Q.act(async () => {
+    await m.face(Math.atan2(fig.motion.pos.x - m.pos.x, fig.motion.pos.z - m.pos.z));
+    await Q.converse(S.walkWithPeter(), { shot: ['red', 'peter'] });
+    // (and off he goes, back across the meadow to the fork, and his nets)
+    const away = Q.collide(fig.motion.pos.clone().add(new V3(90, 0, -160)), 3.2); await Promise.race([fig.motion.goTo(away, null), Q.wait(5)]);
+    gone = true; Q.removeFigure('peter'); w.refresh();
+  });
+}
+// (Peter, as a figure in a place that hasn't its own: the wood)
+function figure(P, at, yaw) {
+  const looks = root.Looks && root.Looks.load ? root.Looks.load() : {}; const rig = root.Toon.make('peter', looks.peter || {}), motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, 'peter') });
+  motion.warp(at, yaw); rig.root.position.copy(at);
+  P.addFigure('peter', { rig, motion, cast: { name: 'Peter', voice: 'peter', tint: '#4a5a3a', bg: '#e2e8d8' } });
+  return { rig, motion };
+}
 
 // ── The beech (P: the wood): the note in the knot, when there is one; and Peter there, at the hour he named.
 function wood(P, w) {
@@ -73,9 +123,7 @@ function wood(P, w) {
   let fig = null, held = false;
   const meeting = () => { const st = stateOf(w), mt = st.meet; return mt && mt.day === w.cal.day && w.cal.minute >= mt.at - 5 && w.cal.minute < mt.at + WAITS ? mt : null; };
   function show(on) {
-    if (on && !fig) { const looks = root.Looks && root.Looks.load ? root.Looks.load() : {}; const rig = root.Toon.make('peter', looks.peter || {}), motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, 'peter') });
-      const at = sp.at.clone().addScaledVector(sp.side3, 2).addScaledVector(sp.dir, 6); motion.warp(at, Math.atan2(-sp.dir.x, -sp.dir.z)); rig.root.position.copy(at); fig = { rig, motion };
-      P.addFigure('peter', { rig, motion, cast: { name: 'Peter', voice: 'peter', tint: '#4a5a3a', bg: '#e2e8d8' } }); }
+    if (on && !fig) fig = figure(P, sp.at.clone().addScaledVector(sp.side3, 2).addScaledVector(sp.dir, 6), Math.atan2(-sp.dir.x, -sp.dir.z));
     if (!on && fig) { P.removeFigure('peter'); fig = null; }
   }
   P.tick(dt => {
@@ -101,7 +149,7 @@ function wood(P, w) {
 function lapse(w) { const st = stateOf(w); if (st.meet && (st.meet.day < w.cal.day || w.cal.minute >= st.meet.at + WAITS)) change(w, s => { s.meet = null; s.missed++; s.owed = true; }); }
 function objective(w) { lapse(w); const mt = stateOf(w).meet; return mt && mt.day === w.cal.day && w.cal.minute < mt.at + WAITS ? 'Peter, at the old beech, at ' + root.Calendar.clockOf(mt.at).replace(/ in the (morning|afternoon|evening)| at night/, '') + '.' : null; }
 
-const api = { lapse, visited, firstVisit, atHolding, wood, offToday, noteToday, meetAt, objective, stateOf, hash, WAITS };
+const api = { lapse, visited, letIn, fowlerAtGate, awaiting, atHolding, firstTalk, sendHome, wood, offToday, noteToday, meetAt, objective, stateOf, hash, WAITS };
 root.Peter = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

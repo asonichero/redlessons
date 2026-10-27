@@ -123,9 +123,11 @@ function create(w) {
     // (the one it's for, if they're there: facing her, and their own word for it)
     const f = e.who && P.figure ? P.figure(e.who) : null;
     if (f && e.met) { if (!f.sat) f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); m.face(Math.atan2(f.motion.pos.x - m.pos.x, f.motion.pos.z - m.pos.z)); }
-    // (the eggs, the first time: the first visit to the Fowlers', in full: js/peter.js)
-    if (e.key === 'eggs' && root.Peter && !root.Peter.visited(w) && P.fowlers && P.fowlers.figs.peter && P.fowlers.figs.fowler) await root.Peter.firstVisit(P, w, true);
-    else await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
+    await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
+    fulfilled(P, e);
+  }
+  // (the errand's done, its work or its word given: what it was for, and whatever she's to carry home)
+  function fulfilled(P, e) {
     if (e.trust) rep.trusts(e.trust, 1);
     if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest);      // (a step of a line, done by the work: the first morning at the bakery)
     const late = e.state === 'broken';
@@ -133,6 +135,9 @@ function create(w) {
     else change(c => { c.errand.state = 'done'; c.errand.late = late; });
     cal.advance(e.mins); w.refresh();
   }
+  // (handed over somewhere else than its place: the eggs, at the Fowlers' gate, the first time; → whether it was this errand, and still owed)
+  function fulfil(P, key) { const e = errand(); if (!e || e.key !== key || !(e.state === 'accepted' || e.state === 'broken')) return false; fulfilled(P, e); return true; }
+  const owes = key => { const e = errand(); return !!(e && e.key === key && (e.state === 'accepted' || e.state === 'broken')); };
   // A shift's work done (js/work.js): the errand with it, and what it was for.
   function shiftDone(id) {
     const e = errand(); if (!e || e.key !== id) return;
@@ -191,7 +196,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { on, breakfast, answer, wont, due, settled, shiftDone, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

@@ -38,7 +38,7 @@ function create(view, opts) {
       }
       // The door leaf: a line from the hinge, 13 long.
       if (W.door && W.door.open > 0.15) { const { h, dir } = doorAt(), v = new V3(q.x - h.x, 0, q.z - h.z), t = clamp(v.dot(dir), 0, 13), c = h.clone().setY(0).addScaledVector(dir, t), d = new V3(q.x - c.x, 0, q.z - c.z), l = d.length(); if (l < r + 0.8 && l > 1e-4) { d.multiplyScalar((r + 0.8) / l); q.x = c.x + d.x; q.z = c.z + d.z; } }
-      if (W.constrain) q.copy(W.constrain(q, r));      // (a set's own limits: the path through the wood)
+      if (W.constrain) q.copy(W.constrain(q, r, who));      // (a set's own limits: the path through the wood; who, as above)
       if (B) { q.x = clamp(q.x, B.x0 + r - 2.4, B.x1 - r + 2.4); q.z = clamp(q.z, B.z0 + r - 2.4, B.z1 - r + 2.4); }
     }
     return q;

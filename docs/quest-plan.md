@@ -70,7 +70,7 @@ From 1.2 the days have a pattern, agreed with Maren in the chores conversation.
 | A pot to the forge for mending, and fetching it back | The forge | Tom, the smith | Colour; trust with Tom |
 | A jug from the inn | The inn | Bess Abney | Colour; Bess before her confinement |
 | Something for the Dunns | The Dunns' | Georgie, Master William asleep after his night | Colour |
-| Eggs from the Fowlers' | The smallholding | Master Fowler, Peter | The first errand asked (and often, until she's been): the first visit, Peter walking her back to the fork and telling her of the knot in the beech. Then colour; trust |
+| Eggs from the Fowlers' | The smallholding | Master Fowler, Peter | The first errand asked: the first visit, Master Fowler at his gate, then Peter (his grandfather sending him to walk her back), and the knot in the beech, said at the meadow gate. Then colour; trust |
 | Corn to the mill | The mill | Georgie at work | Colour |
 | Help Bo Peep pen the flock at dusk | The pinfold | Bo Peep | Colour; cutting it fine for the curfew bell |
 
