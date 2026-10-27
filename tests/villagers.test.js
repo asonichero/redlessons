@@ -27,7 +27,7 @@ test('the rest keep to their work: Bess at the inn, the smith at his anvil, the 
     const b = V.station('bess', d, H(h)); if (b) assert.equal(b.sit, 'the bench outside the inn');
     const sm = V.station('smith', d, H(h)); if (sm) assert.equal(sm.stand, 'anvil');
     for (const k of ['pennock', 'baker']) { const s = V.station(k, d, H(h)); if (s) assert.ok(['counter', 'bakeryDoor'].includes(s.stand)); }
-    const w = V.station('willie', d, H(h)); assert.equal(!!w, h >= 20.75 || h < 5.5);
+    const w = V.station('willie', d, H(h)); assert.equal(!!w, h >= 21.25 || h < 5.5); if (w) assert.equal(w.stand === 'bell', h >= 21.25 && h < 22);      // (by the bell from quarter past nine (he rings it at half past), his round from ten)
   }
 });
 
