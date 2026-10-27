@@ -394,8 +394,8 @@ const ERRANDS = {
     ask: 'I’ve a pie for the Dunns: Master William’s been on his rounds all week. Will you take it over this afternoon? Quietly, mind. He’ll be sleeping.',
     there: [{ text: 'The shutters are closed upstairs. She leaves the basket on the step, under the cloth, and doesn’t knock.' },
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
-  bakery: { title: 'Help at the bakery', by: '09:00', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock',
-    ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’ll want you by nine.',
+  bakery: { title: 'Help at the bakery', by: '07:45', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock',
+    ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’s been baking since before it was light: she’ll want you straight after breakfast, by a quarter to eight.',
     met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on, and mind the oven: it bites.' },
       { text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
       { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }],
@@ -583,11 +583,12 @@ const villager = (key, ctx) => {
 
 // ── Tom finds her, with something she ought to be doing: he keeps her, while the clock runs (ctx.mins(n): n minutes gone, each beat). She can
 // get away early, or stay: then a chat (kind 'chat'), or a dare (the curfew bell, 'bell'; or a knock at the Dunns' door, 'knock').
-// ctx: { kind, errand, first, mins(n), ringBell(), knock(), dared(), chatted() }
+// ctx: { kind, busy (she has something she ought to be doing), errand, first, mins(n), ringBell(), knock(), dared(), chatted() }
 const tomStops = ctx => {
   const T = (face, text, red) => ({ who: 'tom', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, text }), M = n => ({ run: () => ctx.mins(n) });
   const hello = ctx.first ? T('cheeky', 'Ridley! There she is. Where are you off to with that face on?', 'cheeky') : T('cheeky', 'Ridley! Hold up. Where’s the fire?', 'cheeky');
-  const out = [R('calm', 'Mama’s asked a thing of me, Tom, and I said I’d do it. I can’t stop.'), M(2), T('pout', 'Can’t stop. Listen to her. All right, all right. Off you go, good girl.', 'pout'), R('pout', 'Don’t you “good girl” me, Tom Ferrier.'), T('cheeky', 'Then come back when you’re bad again.', 'pout')];
+  const out = ctx.busy ? [R('calm', 'Mama’s asked a thing of me, Tom, and I said I’d do it. I can’t stop.'), M(2), T('pout', 'Can’t stop. Listen to her. All right, all right. Off you go, good girl.', 'pout'), R('pout', 'Don’t you “good girl” me, Tom Ferrier.'), T('cheeky', 'Then come back when you’re bad again.', 'pout')]
+    : [R('calm', 'Not today, Tom. I’ve done my work and I want my own company for a bit.'), M(2), T('pout', 'Your own company. Dull company, that.', 'calm'), R('cheeky', 'Better than yours.'), T('cheeky', 'Liar. Go on, then. I’ll find you tomorrow.', 'cheeky')];
   const away = (face, text) => ({ text: 'I really must go, Tom.', face: 'shy', then: [M(2), T(face, text, 'shy')] });
   let middle;
   if (ctx.kind === 'chat') middle = [

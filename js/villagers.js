@@ -4,7 +4,7 @@
 //   • Agnes Thatcher has no trade to keep her: out from eight till dusk, here and there, but most often by the well.
 //   • Georgie Dunn is at the mill all day; on most afternoons he's back in the village by three or so, till the bell (and never far from Agnes).
 //   • Tom Ferrier is at the forge with his father in smithing hours (seven till four), and out and about after; about one day in five his father
-//     gives him off. Out, and Red with something she ought to be doing, he finds her (on some days, not all): a word, or a dare, while the clock runs.
+//     gives him off. Out, he comes and finds her (on some days, not all): a word, or a dare, while the clock runs; keeping her from her chores if she has any.
 //   • Master Ferrier at his anvil, seven till five. Bess Abney on the bench outside the inn; her mother at the inn's door at the busy times.
 //   • Mistress Pennock at the bakery's counter in the morning, Master Pennock at its door early on. Master William on his rounds at night.
 //   (Peter Fowler's days off in the village come after the first visit to the Fowlers'.)
@@ -214,12 +214,12 @@ function attach(P, w) {
     } finally { release(f); }
   }
 
-  // ── Tom, out and about, and Red with something she ought to be doing: he comes to find her (on the days he's minded to, once). A word with
+  // ── Tom, out and about: he comes to find her, busy or not (on the days he's minded to, once). A word with
   // him, or a dare; and the clock runs while he keeps her, unless she gets away.
   function tomWatch(dt) {
     const f = figs.tom, v = vs(); if (!f || !f.want || !f.want.wander || f.held) return;
     if (v.tom.day === cal.day && (v.tom.done || v.tom.tries > 2)) return;
-    if (!tomComes(cal.day) || cal.minute < H('9:00') || !w.chores || !w.chores.objective() || cal.curfew()) return;
+    if (!tomComes(cal.day) || cal.minute < H('9:00') || cal.curfew()) return;      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
     const red = P.motion, d = flat(f.motion.pos).distanceTo(flat(red.pos));
     if (P.busy || P.sitting) { f.chasing = false; return; }
     if (!f.chasing) { if (d > 260) return; f.chasing = true; f.since = clock; f.re = 0; }
@@ -232,7 +232,7 @@ function attach(P, w) {
     const v = vs(), dare = hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0;
     const ctx = {
-      kind, errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares,
+      kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares,
       mins: n => { spent += n; cal.advance(n); w.refresh(); },
       ringBell: () => ringBell(f), knock: () => knock(f),
       dared: () => { change(s => { s.dares = (s.dares || 0) + 1; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares'); },
@@ -243,7 +243,7 @@ function attach(P, w) {
       await P.converse(S.tomStops(ctx), { shot: ['red', 'tom'] });
       change(s => { s.met.tom = true; s.talked.tom = cal.day; });
       if (w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
-      if (spent >= 20 && P.talk) P.talk.muse(S.tomCost(spent), { face: 'wince' });
+      if (ctx.busy && spent >= 20 && P.talk) P.talk.muse(S.tomCost(spent), { face: 'wince' });
     } finally { release(f); }
   }
   // The dares. The curfew bell, rung at midday: across to it, three strokes, and back to Tom, quick, the green all turning round.
