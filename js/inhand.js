@@ -48,18 +48,22 @@ async function caught(P, w, kind) {
   V.letGo('smith'); if (tom) V.letGo('tom', true);
   await w.go('ferriers', 'door');
   const Q = w.P; if (!Q) return true;
+  Q.act(() => atTheFerriers(Q, w));      // (in their cottage: hers to sit through, not walk out of)
+  return true;
+}
+async function atTheFerriers(Q, w) {
+  const S = root.Story;
   await Q.wait(0.6);
   await Q.converse(S.smithIndoors(), { shot: ['red', 'smith'] });
   const r = await root.Correction.run(Q, { corrector: 'smith', fade: on => w.fade(on),
     turns: [{ subject: 'tom', script: S.smithTom, corner: true, cornerDress: { skirt: 'up', drawers: 'down' } }, { subject: 'red', script: S.smithRed }],
     watchers: [{ who: 'red', at: [-26, 14], until: 'red', face: 'shy' }], cornerTime: 6 });
-  if (Q !== w.P) return true;
+  if (Q !== w.P) return;
   await Q.converse(S.smithAfter(r), { shot: ['red', 'smith'] });
   w.rep.settle('mischievous', 0.6); w.rep.settle('wilful', 0.3); w.rep.trusts('smith', 1);
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
   if (root.Evening) root.Evening.record(w, { what: 'dare', by: 'smith', informs: true });      // (he tells her mother himself: a reprieve at home)
   w.complete('tom.smith'); w.cal.advance(30); w.refresh();
-  return true;
 }
 
 // ── The end of a shift: Mistress Pennock's trust; Mistress Abney's taking her in hand.
