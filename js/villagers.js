@@ -19,16 +19,17 @@ const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m |
 // (a number from 0 to 1 for a day and a question: the same each time it's asked)
 function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h = Math.imul(h ^ (h >>> 16), 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
 
-// Who they are: their rig (js/toon.js), how they're named in conversation, their voice (js/audio.js), and where they come out and go in.
+// Who they are: their rig (js/toon.js), how they're named in conversation, their voice (js/audio.js), and where they come out and go in (their
+// own front doors: the Pennocks' cottage past the inn, the Ferriers' by the mill lane; they walk to work and home again).
 const PEOPLE = {
   agnes: { rig: 'agnes', name: 'Agnes', voice: 'agnes', tint: '#7a5a2a', bg: '#efe4cc', door: 'thatchers' },
   georgie: { rig: 'georgie', name: 'Georgie', voice: 'georgie', tint: '#6a6a5a', bg: '#e8e6dc', door: 'millGate' },
-  tom: { rig: 'tom', name: 'Tom', voice: 'tom', tint: '#5a3a2a', bg: '#ead8c8', door: 'forge' },
-  smith: { rig: 'smith', name: 'Master Ferrier', voice: 'smith', tint: '#3a3634', bg: '#ddd8d2', door: 'forge' },
+  tom: { rig: 'tom', name: 'Tom', voice: 'tom', tint: '#5a3a2a', bg: '#ead8c8', door: 'ferriersDoor' },
+  smith: { rig: 'smith', name: 'Master Ferrier', voice: 'smith', tint: '#3a3634', bg: '#ddd8d2', door: 'ferriersDoor' },
   bess: { rig: 'abneyDaughter', name: 'Bess', voice: 'bess', tint: '#6a4a5a', bg: '#ecdde4', door: 'innDoor' },
   abney: { rig: 'abney', name: 'Mistress Abney', voice: 'abney', tint: '#4a4a6a', bg: '#e0e0ea', door: 'innDoor' },
-  pennock: { rig: 'pennock', name: 'Mistress Pennock', voice: 'pennock', tint: '#8a5a3a', bg: '#f0e2d2', door: 'bakeryDoor' },
-  baker: { rig: 'baker', name: 'Master Pennock', voice: 'baker', tint: '#8a7a5a', bg: '#f2ecdc', door: 'bakeryDoor' },
+  pennock: { rig: 'pennock', name: 'Mistress Pennock', voice: 'pennock', tint: '#8a5a3a', bg: '#f0e2d2', door: 'pennocksDoor' },
+  baker: { rig: 'baker', name: 'Master Pennock', voice: 'baker', tint: '#8a7a5a', bg: '#f2ecdc', door: 'pennocksDoor' },
   willie: { rig: 'willie', name: 'Master William', voice: 'willie', tint: '#2a3a4a', bg: '#d8dde4', door: 'dunnsDoor' },
 };
 const FAR = 380;
@@ -221,7 +222,8 @@ function attach(P, w) {
   function tomWatch(dt) {
     const f = figs.tom, v = vs(); if (!f || !f.want || !f.want.wander || f.held) return;
     if (v.tom.day === cal.day && (v.tom.done || v.tom.tries > 2)) return;
-    if (!tomComes(cal.day) || cal.minute < H('9:00') || cal.curfew()) return;      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
+    const pie = root.Pie && root.Pie.ready(w);      // (he's had an idea: he'll come looking for her, whatever the day)
+    if ((!tomComes(cal.day) && !pie) || cal.minute < H('9:00') || cal.curfew()) return;      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
     const red = P.motion, d = flat(f.motion.pos).distanceTo(flat(red.pos));
     if (P.busy || P.sitting) { f.chasing = false; return; }
     if (!f.chasing) { if (d > 260) return; f.chasing = true; f.since = clock; f.re = 0; }
@@ -231,6 +233,8 @@ function attach(P, w) {
   }
   async function tomStops(f) {
     hold(f); change(s => { s.tom = { day: cal.day, done: true, tries: 0 }; });
+    // (his idea about the pies, when he has it: js/pie.js plays it out)
+    if (root.Pie && root.Pie.ready(w)) { try { await meet(f, 13); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
     const v = vs(), dare = hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0;
     const ctx = {

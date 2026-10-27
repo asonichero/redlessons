@@ -59,7 +59,7 @@ The village from outside, built as the cottage and the cabin are (limewashed dau
 - **The inn** (Mistress Abney's): across the street from the green, two floors, its sign (a wheatsheaf) over the street, benches and a table, barrels, a lantern by the door.
 - **The bakery** (Mistress Pennock's): at the green's east end, the bread oven a stone dome against its gable, a loaf on its sign, the window's board let down as a counter with loaves on it.
 - **The forge** (Master Ferrier's): stone, its front open onto the lane, the hearth glowing inside, the anvil on its stump, the slack tub, a cart wheel.
-- **The cottages**: next door to Maren's, the Thatchers' (Agnes's), the Dunns' (the Watchman's, a lantern by the door for his rounds), and four more; gardens of vegetables and flowers in hurdle fences.
+- **The cottages**: next door to Maren's, the Pennocks' (past the inn, a step up the street from the bakery), the Ferriers' (by the mill lane, round the corner from the forge), the Thatchers' (Agnes's), the Dunns' (the Watchman's, a lantern by the door for his rounds), and three more; gardens of vegetables and flowers in hurdle fences. The bakery and the forge are workplaces: the Pennocks and the Ferriers walk to them from home, and back.
 - **The pinfold**, just inside the east gate on the way to Halloran's farm: a round pound of dry stone with a gate, where Bo Peep's flock is penned overnight (in at dusk; by day they graze at the farm), and where strays are put.
 - **Round it**: low stone walls along the street and lanes, an orchard, ploughed strips and a hayfield with its stacks, hedges, and trees thickening toward the wood. The east and south lanes end at gates, shut for now.
 
@@ -101,6 +101,15 @@ The village's people keep to their days. Where each is, is worked out from the d
 - **Master William**, the Watchman, on his round at night, lantern in hand, from a little before the bell till first light.
 
 Each can be talked to (*Talk to Agnes*, and so on): a word by the time of day, something else if they've talked already today, and a little trust the first time each day. Peter Fowler's days off in the village come after the first visit to the Fowlers'. They walk the lanes and paths as a net of points (the shortest way, cutting corners where it's clear); those too far from the camera to make out aren't drawn.
+
+## The pie (`js/pie.js`, the bakery inside: `js/bakery.js`)
+
+Phase 1.2's pie, once Mistress Pennock and Tom both trust Red enough (trust 2 with each; Tom's dares behind them; her first morning helping at the bakery counts toward Mistress Pennock's). One afternoon (between one and a quarter to five: the pies out to cool, the smith at his anvil) Tom comes looking for her with an idea: *I dare you*. She can refuse (the idea keeps), or take one off the bakery's board; Mistress Pennock is out of her door before she's turned round, catches Tom too (*I can see your boots*), takes her pie back, and marches the pair of them to the forge. Master Ferrier, busy at his anvil, leaves Tom to her. Then Mistress Pennock sends Red home: she'll be speaking to her mother herself. Red can:
+
+- **Obey**: home (the objective says so). There her mother sees her face: she can **tell her**, and she's corrected for the pie, and that's the end of it; or **keep it back**, and the next evening her mother's had a visit from Mistress Pennock, and she's corrected for the pie and for keeping it from her. Tom's kept in the rest of the day. Some days on (four or more), Tom has the same idea again (*it went fine, last time*), and the choice comes round again.
+- **Tell Mistress Pennock**, aside, out of the smith's hearing: it was her hand on the pie; whatever Tom gets, she's earned it too; her mother takes her in hand, and would want Mistress Pennock to, for this. Mistress Pennock takes them both into the bakery: Tom across her knee first (Red watching), then to the corner; then Red, as she asked; the baker's paddle to finish each. She tells Red's mother herself, that evening, and her mother has a word, but no more. (Mistress Pennock now knows what being Little Red means.)
+
+The bakery inside: the oven glowing in the back wall, the kneading table, racks of loaves, sacks of flour, the counter under the half-door, a bench, and corners. For now it's only where the pie takes her.
 
 ## Conversations (`js/talk.js`, `js/story.js`)
 
@@ -215,6 +224,8 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/chores.js` | The days: Mama's garden, the errands asked over breakfast (yes, an honest no, or a won't), promises kept or broken, the maintenance correction |
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
+| `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
+| `js/bakery.js` | The bakery inside: the oven, the kneading table, the loaves, the counter |
 | `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |

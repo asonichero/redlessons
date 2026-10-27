@@ -141,7 +141,7 @@ const CORRECTORS = {
 // The subjects: their safe word, what correctors call them, and their voice (the cry's pitch). Every one of them a grown woman or man.
 const SUBJECTS = {
   red: { rig: 'red', pitch: 215, word: 'Rose', names: ['Little Red', 'Red'], player: true },
-  tom: { rig: 'tom', pitch: 140, word: 'Bellows', names: ['young Master Ferrier', 'Tom'] },      // (his own word; he doesn't use it)
+  tom: { rig: 'tom', pitch: 140, word: 'Bellows', names: ['young Master Ferrier', 'Tom'], display: 'Tom' },      // (his own word; he doesn't use it)
   lucy: { rig: 'lucy', pitch: 225, word: 'Red', names: ['Lucy'] },
   maren: { rig: 'gerda', pitch: 190, word: 'Maren', names: ['Maren'] },                          // (Holt, at her asking, in 3.1)
   motherBarrow: { rig: 'motherBarrow', pitch: 180, word: 'Honey', names: ['Mother'] },

@@ -245,6 +245,7 @@ function build(scene, opts) {
       .concat([{ side: 'left', at: -10, y: 17, w: 10, h: 9 }, { side: 'right', at: 10, y: 17, w: 10, h: 9 }, { side: 'left', at: 12, y: 58, w: 9, h: 8, shutters: false }]),
     chimney: { x: -75 + 6, z: 0, w: 9, d: 9 } });
   // Past the inn, on the same side: a cottage.
+  // The Pennocks' cottage, past the inn: home, a step up the street from the bakery.
   const ne = house({ x: 196, z: -202, w: 90, d: 64, eave: 44, ridge: 78, walls: 'frame',
     doors: [{ side: 'front', at: -10, w: 12 }], windows: [{ side: 'front', at: 18, y: 16, w: 12, h: 10 }, { side: 'right', at: 0, y: 16, w: 9, h: 8 }], chimney: { x: 34, z: 0, w: 8, d: 8 } });
   // The bakery, Mistress Pennock's: on the street at the green's east end, facing it; the bread oven a stone dome against its east end, a sign
@@ -261,7 +262,7 @@ function build(scene, opts) {
     doors: [{ side: 'front', at: 20, w: 12, colour: '#5a6a8a' }],
     windows: [{ side: 'front', at: -20, y: 16, w: 12, h: 10, box: true }, { side: 'right', at: 0, y: 16, w: 10, h: 9 }],
     chimney: { x: -44, z: 0, w: 8, d: 8 } });
-  // A cottage by the lane south to the mill.
+  // The Ferriers' cottage, by the lane south to the mill: home, round the corner from the forge.
   const millLane = house({ x: 196, z: 330, ry: -Math.PI / 2, w: 84, d: 60, eave: 43, ridge: 76, walls: 'frame',
     doors: [{ side: 'front', at: 10, w: 12, colour: '#4a5a3a' }], windows: [{ side: 'front', at: -16, y: 16, w: 11, h: 9 }], chimney: { x: -30, z: 0, w: 8, d: 8 } });
   // The Dunns' (the Watchman's, and Georgie's): west of the green, a lantern on a hook by the door for his rounds.
@@ -398,7 +399,13 @@ function build(scene, opts) {
     const fr = bakery.face('front'), sg = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: vt.loafSign })); sg.position.set(-24, 34, 1.4); fr.add(sg); box(fr, 13.2, 13.2, 0.6, -24, 34, 0.9, oakDk, { ink: 0.04 });
     // (the window's board, let down as a counter, loaves on it)
     box(fr, 22, 1, 6, -24, 11.6, 3.2, plank); for (const sx of [-1, 1]) pole(fr, new V3(-24 + sx * 9, 0.6, 5.6), new V3(-24 + sx * 9, 11.2, 5.6), 0.4, oakDk, { ink: 0.03 });
-    for (let k = 0; k < 6; k++) solid(fr, T.ell(1.8, 1.1, 1.2, 10, 6), T.mat(k % 2 ? '#b8743a' : '#c98a4a'), -31 + k * 2.8, 13, 3.2, { ink: 0.05 });
+    for (let k = 0; k < 4; k++) solid(fr, T.ell(1.8, 1.1, 1.2, 10, 6), T.mat(k % 2 ? '#b8743a' : '#c98a4a'), -33 + k * 2.8, 13, 3.2, { ink: 0.05 });
+    // (and Mistress Pennock's pies, set out to cool: one of them can be taken, which is the trouble)
+    world.pies = [];
+    for (const x of [-22, -18.2, -14.4]) { const pg = new THREE.Group(); pg.position.set(x, 12.1, 3.2); pg.userData.keep = true; fr.add(pg);
+      solid(pg, new THREE.CylinderGeometry(1.75, 1.5, 0.7, 14), T.mat('#8a7a6a'), 0, 0.35, 0, { ink: 0.04 }); solid(pg, new THREE.SphereGeometry(1.7, 14, 5, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.45, 1), T.mat('#d89a50'), 0, 0.65, 0, { ink: 0.04 });
+      for (let k = 0; k < 3; k++) box(pg, 0.2, 0.1, 1.6, (k - 1) * 0.6, 1.4, 0, T.mat('#a8642e'), { ink: 0, rot: [0, 0.5, 0] });
+      world.pies.push(pg); }
     root_.updateMatrixWorld(true); const cp = new V3(-24, 0, 4).applyMatrix4(fr.matrixWorld); world.obstacles.push({ x0: cp.x - 4, x1: cp.x + 4, z0: cp.z - 12, z1: cp.z + 12 }); }
 
   // ── The forge: the open bay, the hearth inside it glowing, the anvil on its stump out at the front, a trough, a cart wheel against the wall. ──
@@ -590,7 +597,7 @@ function build(scene, opts) {
     pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },
     // (where the village's people are found: js/villagers.js)
     anvil: before(forge, 'front', 8, 17), tub: before(forge, 'front', -30, 16), bakeryDoor: before(bakery, 'front', 14, 4), counter: before(bakery, 'front', -24, 10),
-    innDoor: before(inn, 'front', -6, 4), thatchers: before(thatchers, 'front', 20, 8), dunnsDoor: before(dunns, 'front', -16, 6),
+    pieSill: before(bakery, 'front', -15, 10), innDoor: before(inn, 'front', -6, 4), pennocksDoor: before(ne, 'front', -10, 6), ferriersDoor: before(millLane, 'front', 10, 6), thatchers: before(thatchers, 'front', 20, 8), dunnsDoor: before(dunns, 'front', -16, 6),
     wellSide: { at: wellAt.clone().add(V(10, -8)), yaw: Math.atan2(-10, 8), look: wellAt.clone().setY(8) },
     pondSide: { at: POND.clone().add(V(0, 26)), yaw: Math.PI, look: POND.clone().setY(2) },
     wellNear: { at: wellAt.clone().add(V(-16, 14)), yaw: Math.atan2(16, -14), look: wellAt.clone().setY(8) },      // (near enough to the well to be seen there, and to see who's at it)

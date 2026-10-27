@@ -115,6 +115,7 @@ function create(w) {
     if (f && e.met) { if (!f.sat) f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); m.face(Math.atan2(f.motion.pos.x - m.pos.x, f.motion.pos.z - m.pos.z)); }
     await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
     if (e.trust) rep.trusts(e.trust, 1);
+    if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest);      // (a step of a line, done by the work: the first morning at the bakery)
     const late = e.state === 'broken';
     if (e.carry) { hand(P, e.carry); change(c => { c.errand.state = 'carrying'; c.errand.late = late; }); }
     else change(c => { c.errand.state = 'done'; c.errand.late = late; });
@@ -150,6 +151,7 @@ function create(w) {
   // What's hers to do now, for the objective: the errand (begun by when), what to take home, the garden.
   function objective() {
     if (!on()) return null;
+    { const t = root.Pie && root.Pie.objective(w); if (t) return t; }      // (sent home by Mistress Pennock)
     const e = errand(), c = st();
     if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';
     if (e && e.state === 'carrying') return 'Take ' + NAME[e.carry] + ' home to Mama.';

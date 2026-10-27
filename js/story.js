@@ -397,7 +397,7 @@ const ERRANDS = {
     ask: 'I’ve a pie for the Dunns: Master William’s been on his rounds all week. Will you take it over this afternoon? Quietly, mind. He’ll be sleeping.',
     there: [{ text: 'The shutters are closed upstairs. She leaves the basket on the step, under the cloth, and doesn’t knock.' },
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
-  bakery: { title: 'Help at the bakery', by: '07:45', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock',
+  bakery: { title: 'Help at the bakery', by: '07:45', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock', quest: 'pennock.helps',
     ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’s been baking since before it was light: she’ll want you straight after breakfast, by a quarter to eight.',
     met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on, and mind the oven: it bites.' },
       { text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
@@ -725,6 +725,165 @@ const afterGarden = how => how.lied ? [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you will. Leave the garden to me tomorrow: I’ll set my flowers straight myself.' },
 ];
 
+// ── The pie (js/pie.js). Tom's idea, the board, Mistress Pennock out of her door, the forge, and what Red does then.
+// The dare. ctx: { again (it went how it went, last time), mins(n), done(), no() }
+const pieDare = ctx => {
+  const T = (face, text, red) => ({ who: 'tom', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, text }), M = n => ({ run: () => ctx.mins(n) });
+  const opening = ctx.again ? [
+    T('cheeky', 'Ridley. Smell that? She’s had the pies out on the board since dinner.', 'surprised'), M(2),
+    R('pout', 'Tom Ferrier. Last time you got Mistress Pennock and I got my mother.'),
+    T('smile', 'Water under the bridge. And you’ve forgotten how good they were.', 'pout'),
+    R('cheeky', 'We never got to taste them.'), T('cheeky', 'Then it’s high time we did.', 'cheeky'),
+  ] : [
+    T('cheeky', 'Ridley. Smell that? Mistress Pennock’s pies, out on the board to cool, and her inside with her back to the window.', 'surprised'), M(2),
+    R('shy', 'Tom…'),
+    T('cheeky', 'One pie. She bakes a dozen. She’ll never miss it. I dare you.', 'cheeky'),
+  ];
+  return opening.concat([M(2), { choose: [
+    { text: 'Watch me.', face: 'cheeky', then: [{ run: ctx.done }] },
+    { text: 'Not her pies, Tom. Not today.', face: 'shy', then: [{ run: ctx.no }, M(2), T('pout', 'Coward. Well, they’ll be there tomorrow, and the day after.', 'shy')] },
+  ] }]);
+};
+// Mistress Pennock, out of her door before Red's turned round; and Tom, who thought he was out of sight.
+const pieCaught = () => [
+  { who: 'pennock', face: 'stern', listen: { red: 'surprised' }, text: 'Rose Ridley.' },
+  { who: 'red', face: 'surprised', text: 'Mistress Pennock! I was only— it was—' },
+  { who: 'pennock', face: 'stern', listen: { red: 'wince' }, text: 'You were only walking off up the street with my pie. I can see that. And you can come out from behind there, Tom Ferrier. I can see your boots.' },
+  { who: 'tom', face: 'wince', listen: { red: 'wince' }, text: '…Afternoon, Mistress Pennock.' },
+  { who: 'pennock', face: 'stern', listen: { red: 'shy' }, text: 'Give it here. Thank you. Now the pair of you, with me. We’re going to see your father, young Master Ferrier.' },
+];
+// At the forge: the smith leaves Tom to her; and Red's sent home, or she says what she wants to say. ctx: { again, obey(), tell() }
+const pieForge = ctx => [
+  { who: 'pennock', face: 'stern', listen: { red: 'shy' }, text: 'Master Ferrier. Your lad, and Maren Ridley’s girl, and one of my pies.' },
+  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: ctx.again ? 'Again.' : 'Was it, now.' },
+  { text: 'He doesn’t stop his hammer. He looks at Tom, a long look, and then at the iron again.' },
+  { who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'I’ve this to finish before it cools, Mistress. Deal with him as you see fit. He knows you have my leave.' },
+  { who: 'tom', face: 'wince', listen: { red: 'wince' }, text: 'Father—' },
+  { who: 'smith', face: 'stern', text: 'You heard me.' },
+  { who: 'pennock', face: 'stern', listen: { red: 'shy' }, text: 'As for you, Miss Rose: straight home to your mother. I’ll be speaking with her myself, and you can be sure she’ll hear all of it.' },
+  { choose: [
+    { text: 'Yes, Mistress Pennock.', face: 'shy', then: [{ run: ctx.obey }, { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Go on, then. Straight home, mind. Come along, Tom.' }] },
+    { text: 'Mistress Pennock… may I say something? Just to you.', face: 'shy', then: [{ run: ctx.tell },
+      { text: 'Mistress Pennock looks at her, and then she steps aside with her, out of the smith’s hearing, with Tom left standing by the anvil.' },
+      { who: 'red', face: 'shy', listen: { pennock: 'calm' }, text: 'It was my hand on the pie, not his. Whatever you give Tom, I’ve earned it too.' },
+      { who: 'red', face: 'shy', listen: { pennock: 'concerned' }, text: 'Mama takes me in hand, when I’ve earned it. I asked her to. And I think she’d want you to, for this. I’d rather it was you, now, than carry it home.' },
+      { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Your mother does, does she. I did wonder, once or twice.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Well. You were honest with me, and that took some doing. Then you’ll come along with us, and I’ll speak to your mother after.' }] },
+  ] },
+];
+// In the bakery, before it.
+const pieBakery = () => [
+  { who: 'pennock', face: 'stern', listen: { red: 'shy' }, text: 'Tom first. You’ll stand there and see it, Rose, and then it’s your turn, as you asked.' },
+  { who: 'red', face: 'shy', text: 'Yes, Mistress Pennock.' },
+];
+// Tom across her knee: he jokes, and stops joking; his word's his own, and he doesn't use it.
+const pieTom = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.4 });
+  await S.wait(0.6);
+  await S.say(R, 'You know, Mistress Pennock, it was a very good pie.');
+  await S.say(M, 'It was. And it’s still on my board, no thanks to you.', 'stern');
+  await S.step([M, 'A dare, was it? Every time, Tom Ferrier. Every time it’s a dare.'], 8);
+  await S.step([R, 'Ow— she didn’t have to take it!'], 4);
+  await S.step([M, 'No. And you didn’t have to ask her. That’s what this is for.'], 8);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.8, pace: 1.6 });
+  await S.step([M, 'You’re a grown man and a good smith’s apprentice, and you still can’t walk past a windowsill.'], 10);
+  await S.step([R, 'I can walk past it— ow!— I just don’t—'], 4);
+  await S.set({ implement: 'bakersPaddle', strength: 1.7, pace: 1 });
+  await S.say(M, 'And now the paddle. Six.', 'stern');
+  await S.smacks(6);
+  await S.say(R, '…Fair.');
+  await S.say(M, 'Into the corner, Tom. Hands on your head.', 'calm');
+};
+// Then Red: the same, as she asked, and a word for the asking.
+const pieRed = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.4, pace: 1.35 });
+  await S.wait(0.6);
+  await S.say(M, 'Over you come, Rose. You asked for the same, and you’ll have it.', 'calm');
+  await S.step([M, 'A pie is a morning’s work. Up before it’s light, the oven, the pastry, all of it.', 'stern'], 8);
+  await S.step([R, 'I know— I’m sorry—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.7, pace: 1.6 });
+  await S.step([M, 'And you’ll not let Tom Ferrier talk you into anything again without thinking twice. Not for a pie. Not for anything.'], 10);
+  await S.step([R, 'Ow— no, Mistress Pennock—'], 4);
+  await S.step([M, 'You told me the truth today, and that was brave. I’ll not forget it.'], 8);
+  S.set({ implement: 'bakersPaddle', strength: 1.6, pace: 1 });
+  await S.say(M, 'Six with the paddle, the same as he had. Then it’s done, and we’re even.', 'stern');
+  await S.smacks(6);
+  await S.say(M, 'There. Up you get, love.', 'calm');
+  await S.wait(1.0);
+};
+// After: Mistress Pennock's word to her (r: how it went), and Tom sent home.
+const pieAfter = r => r && r.rose ? [
+  { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Sit a minute, Rose. There’s milk. You did right to stop me.' },
+] : [
+  { who: 'pennock', face: 'calm', listen: { red: 'teary' }, text: 'There. Done, and we’re even, the three of us. Tom can knead my dough for an hour, and then home with his ears ringing.' },
+  { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'And you. Come and see me, any time. Not for pies. Just come.' },
+  { who: 'red', face: 'shy', text: 'Thank you, Mistress Pennock.' },
+  { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'I’ll walk up and see your mother this evening. She’ll hear it from me, all of it, the good part too.' },
+];
+// That evening, at home: Mistress Pennock's been.
+const pieMotherKnows = () => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Mistress Pennock came by. She told me about the pie. And she told me what you asked her for.' },
+  { who: 'red', face: 'shy', text: 'Are you cross?' },
+  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'About the pie, a little. About the rest, no. That was yours to tell, love, and you told it well.' },
+];
+// Sent home: her mother, as soon as she's in. ctx: { tell(), keep() }
+const pieHome = ctx => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'You’re home early. And you’ve a face like a wet Sunday. What is it?' },
+  { choose: [
+    { text: 'Mama… I took one of Mistress Pennock’s pies. On Tom’s dare. She caught us.', face: 'shy', then: [{ run: ctx.tell },
+      { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Did she, now.' },
+      { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me yourself. It counts. And it doesn’t change what the pie earned you.' }] },
+    { text: 'Nothing, Mama. I’m just tired.', face: 'shy', then: [{ run: ctx.keep },
+      { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Hm. Sit down, then. I’ll put the kettle on.' },
+      { who: 'red', face: 'shy', thought: true, text: 'She’ll hear. Mistress Pennock said she’d tell her. Tomorrow, maybe.' }] },
+  ] },
+];
+// A day on: her mother's had a visit.
+const pieFoundOut = () => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Mistress Pennock came by this afternoon.' },
+  { who: 'red', face: 'wince', text: 'Oh.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: '“Oh.” A pie off her board, on Tom Ferrier’s say-so, and the two of you marched to the forge. And you sat at my table last night and said you were tired.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Come here, Little Red.' },
+];
+// Her mother's correction for the pie: her hand, longer for keeping it back (how: { withheld }).
+const pieMaren = async (S, how) => {
+  const M = 'corrector', R = 'subject', more = how.withheld ? 0.25 : 0;
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.4 + more, pace: 1.35 });
+  await S.wait(0.8);
+  await S.say(M, 'A pie, Little Red. Off a neighbour’s board, in broad day.', 'stern');
+  await S.step([M, 'Mistress Pennock fed you crusts over that counter when you were knee-high.'], 8);
+  await S.step([R, 'I know, Mama—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.6 + more, pace: 1.55 });
+  await S.step([M, 'And Tom Ferrier dares, and you jump. Every time.'], 10);
+  await S.step([R, 'Ow— not every time—'], 4);
+  await S.step([M, 'Often enough.'], 8);
+  if (how.withheld) {
+    await S.gesture('drawers'); await S.wait(0.5);
+    await S.say(R, 'Mama—');
+    await S.say(M, 'You let me hear it from a neighbour, a day late. That’s the part I mind most.', 'stern');
+    S.set({ strength: 1.85, pace: 1.8 });
+    await S.step([M, 'When you’ve done something, you come home and you tell me. You don’t make me find out.'], 12);
+    await S.step([R, 'I’m sorry! I’m sorry, Mama!'], 6);
+    await S.smacks(8);
+  } else {
+    await S.smacks(8);
+  }
+  await S.say(M, 'There. It’s done. Up you get.', 'calm');
+  await S.wait(1.2);
+};
+const pieMarenAfter = how => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: how.withheld ? 'Next time you come straight to me. Yes?' : 'You told me yourself. That’s the bit I’ll remember.' },
+  { who: 'red', face: 'shy', text: how.withheld ? 'Yes, Mama.' : 'I’m sorry about the pie.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Tomorrow you’ll go and say so to Mistress Pennock. Now wash your face.' },
+];
+
+// Mistress Pennock in her bakery, any other time.
+const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
 const marenIdle = part => ({
   morning: [{ who: 'mother', face: 'smile', text: 'The garden won’t weed itself, love.' }],
@@ -741,5 +900,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

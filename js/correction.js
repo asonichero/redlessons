@@ -13,7 +13,7 @@
 //   const r = await Correction.run(play, {
 //     corrector: 'maren', context, player: 'red', fade: (on, text) => …,
 //     turns: [{ subject: 'red', tier: 'light', implement: true | 'id', implementFrom, corner: true, cornerDress: { skirt: 'up' } }, …],
-//     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z] }],      (who: a rig; seated on a seat of the room, or standing)
+//     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z], until: 'red' }],      (who: a rig; seated on a seat of the room, or standing; until: watching till that subject's own turn)
 //     cornerTime: 20, after: r => script })      (seconds, at the end, for those in the corner; after: the story's lines for after the player's
 //     own turn, played on the giver's lap: see run's end)      (a turn's script: the story's own correction as a dialogue: see scripted())
 //   → the first turn's result (Discipline.run's: { hits, peak, stopped, rose, tooHarsh, done, implement }), and turns: every turn's
@@ -86,7 +86,7 @@ async function run(P, o) {
     const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
     const seat = w.seat && P.world.seats.find(x => x.name === w.seat);
     if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, new V3())); f.rig.root.position.copy(at); }
-    f.rig.setExpr(w.face || 'shy'); figs.push(f);
+    f.rig.setExpr(w.face || 'shy'); f.until = w.until; figs.push(f);      // (until: watching up to their own turn, then off the floor and across the lap)
   }
   document.body.classList.add('correcting');
   const castKey = c.id === 'maren' && talk.cast.mother ? 'mother' : 'corrector', castWas = talk.cast[castKey];
@@ -165,7 +165,7 @@ async function run(P, o) {
   }
   async function scripted(script, lap, c, sub, castKey) {
     const subKey = sub.id === player && talk.cast.red ? 'red' : 'subject', subWas = talk.cast[subKey];
-    talk.cast[subKey] = Object.assign({ name: sub.names[0], side: 'left', voice: sub.rig === 'red' ? 'red' : 'gerda' }, subWas || {}, { rig: lap.subjectRig });
+    talk.cast[subKey] = Object.assign({ name: sub.display || sub.names[0], side: 'left', voice: sub.rig === 'red' ? 'red' : sub.voice || sub.id }, subWas || {}, { rig: lap.subjectRig });      // (display: the name over their lines, where it isn't the first they're called by)
     lap.set({ noHarsh: true });      // (the story's own: only her word stops it, never the pain model's "too harsh")
     const ended = () => lap.st.rose || lap.st.ended;
     const keyOf = w => w === 'subject' || w === sub.id || w === 'red' && sub.id === player ? subKey : castKey;
@@ -200,6 +200,7 @@ async function run(P, o) {
     for (let i = 0; i < turns.length && !stoppedAll; i++) {
       const t = turns[i]; sub = Cs.subject(t.subject || 'red', o.context);
       if (i > 0) await fade(true);
+      for (const f of figs) if (f.until === sub.id && !f.gone) { f.remove(); f.gone = true; }      // (who was watching, now it's their turn)
       // (whoever's turn it is comes out of the corner for it)
       if (cornerOf[sub.id]) { cornerOf[sub.id].remove(); corners.push(cornerOf[sub.id].corner); delete cornerOf[sub.id]; }
       if (lap) { untick(); lap.end(); st.scene.remove(lap.stage); }
@@ -262,7 +263,7 @@ async function run(P, o) {
     el.classList.remove('on'); hint.classList.remove('on'); removeEventListener('keydown', keys);
     await fade(true);
     talk.captionOff(); if (untick) untick(); if (lap) { lap.end(); st.scene.remove(lap.stage); }
-    for (const f of figs) f.remove();
+    for (const f of figs) if (!f.gone) f.remove();
     if (castWas) talk.cast[castKey] = castWas; else delete talk.cast[castKey];
     walkers.forEach(r => { r.visible = true; });
     document.body.classList.remove('correcting');

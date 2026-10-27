@@ -88,7 +88,7 @@ const lines = [
   { id: 'tom', name: 'Tom and the smith', steps: [
     s('meet', '1.1', 'Tom', 'village', 'tom', { optional: true }),
     s('dares', '1.2', 'Dares', 'village', 'tom'),
-    s('pie', '1.2', 'The pie', 'bakery', 'pennock', { hint: 'Tom has an idea about Mistress Pennock’s pies.' }),
+    s('pie', '1.2', 'The pie', 'village', 'tom', { when: { all: [{ trust: 'pennock', gte: 2 }, { trust: 'tom', gte: 2 }] } }),      // (Tom's idea, once they both trust her enough that she might be open with either: js/pie.js)
     s('told', '1.2', 'Telling Tom', 'forge', 'tom', { optional: true, when: { trust: 'tom', gte: 3 } }),
     s('smith', '1.3', 'By the same standard as Tom', 'forge', 'smith', { gate: 'smith' }),
     s('lock', '3.2', 'A lock or a chain', 'forge', 'smith'),

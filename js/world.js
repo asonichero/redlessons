@@ -39,6 +39,13 @@ const AREAS = {
     entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
     exits: { 'the wood': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },
   },
+  // The bakery, inside (js/bakery.js): Mistress Pennock's. (For now, only where a scene takes her: the pie.)
+  bakery: {
+    name: 'The bakery', music: 'home', set: s => root.Bakery.build(s), npc: () => ({ id: 'pennock', key: 'pennock', name: 'Mistress Pennock', at: [8, -4], yaw: Math.PI, voice: 'pennock', tint: '#8a5a3a', bg: '#f0e2d2' }),
+    talk: () => root.Story.pennockIdle(),
+    entries: { door: { at: [-22, 26], yaw: Math.PI } },
+    exits: { 'the door': { area: 'village', entry: 'bakery' } },
+  },
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
@@ -196,6 +203,7 @@ function create(view, ui) {
     if (late) { save.flag(key); rep.add('wilful', 1, 'home after the curfew bell'); }
     const P_ = P; P_.act(async () => {
       if (late) { await P_.wait(0.8); await P_.approach(); await P_.converse(root.Story.lateHome(), { shot: ['red', 'mother'] }); }
+      if (root.Pie) await root.Pie.evening(P_, w);      // (the pie: told, kept back, or heard of)
       if (chores && chores.on() && root.Garden) await root.Garden.evening(P_, w);
     });
   }
@@ -203,7 +211,7 @@ function create(view, ui) {
   function sleepAction() {
     const P_ = P; if (!P_ || !['evening', 'dusk', 'night'].includes(cal.part)) return [];
     const bed = P_.world.seats.find(s => s.kind === 'bed'); if (!bed) return [];
-    return [{ label: 'Sleep until morning', at: bed.at, run: async () => { if (chores && chores.on() && root.Garden) await root.Garden.evening(P_, w, true); if (P_ === P) await morning(); } }];      // (her mother's look round the garden, if it's tonight, before bed)
+    return [{ label: 'Sleep until morning', at: bed.at, run: async () => { if (root.Pie) await root.Pie.evening(P_, w, true); if (P_ === P && chores && chores.on() && root.Garden) await root.Garden.evening(P_, w, true); if (P_ === P) await morning(); } }];      // (her mother's look round the garden, if it's tonight, before bed)
   }
 
   // Each frame: time passing as she goes about, the light with it, her place kept every few seconds.

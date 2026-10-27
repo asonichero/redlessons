@@ -162,7 +162,7 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 
 1. **1.1** Tom, her partner in mischief. Impulsive where Peter is steady.
 2. **1.2** Dares. She sees or hears how his father, as master and father, takes him in hand. His father has also given other villagers authority over him.
-3. **1.2** The pie: Tom dares her to take it, and Mistress Pennock disciplines them together. Tom has his own safe word and doesn't use it.
+3. **1.2** The pie: once both Mistress Pennock and Tom trust her enough that she could be open with either, Tom dares her to take it. Mistress Pennock catches them and marches them both to the smith, who gives her leave to deal with Tom herself; she sends Red home to her mother. Red obeys (then tells her mother, or keeps it back and is found out the next evening, when her mother and Mistress Pennock have talked), or tells Mistress Pennock what being Little Red means and asks for the same as Tom. Obeying, the pie comes round again some days on ("it went fine last time", Tom says), the choice with it. Telling, Mistress Pennock disciplines them together in the bakery. Tom has his own safe word and doesn't use it.
 4. **1.2** She tells Tom her truth (optional, gated on trust).
 5. **1.3** Folded in: the smith takes her in hand by the same standard as Tom, sometimes together after shared mischief. Quest complete.
 6. **3.2** Called back: the smith opens a lock or chain; Tom's recklessness is finally useful.
