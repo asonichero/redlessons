@@ -354,9 +354,10 @@ function build(scene, opts) {
       if (cut) { seg(0, cut[0]); seg(cut[1], L); } else seg(0, L); }
     const rr = rnd(Math.round(Math.abs(x0 * 7 + z0 * 13)) + 11);
     if (kind === 'flowers') for (let k = 0; k < 90; k++) solid(root_, T.ell(1.2, 1.2, 1.2, 6, 4), flowers[k % flowers.length], lerp(x0 + 3, x1 - 3, rr()), 1.8 + rr(), lerp(z0 + 3, z1 - 3, rr()), { ink: 0 });
-    else for (let row = z0 + 6; row < z1 - 4; row += 7) for (let x = x0 + 5; x < x1 - 4; x += 5) solid(root_, T.ell(2 + rr(), 1.6 + rr(), 2 + rr(), 7, 5), veg[Math.floor(rr() * 3)], x, 1.4, row, { ink: 0.04, shadow: false });
+    else if (kind === 'veg') for (let row = z0 + 6; row < z1 - 4; row += 7) for (let x = x0 + 5; x < x1 - 4; x += 5) solid(root_, T.ell(2 + rr(), 1.6 + rr(), 2 + rr(), 7, 5), veg[Math.floor(rr() * 3)], x, 1.4, row, { ink: 0.04, shadow: false });
   }
-  garden(-330, -440, -232, -384, { side: 3, at: 12 }, 'veg');      // (Maren's, behind her cottage)
+  garden(-344, -482, -214, -384, { side: 3, at: 6 }, null);      // (Maren's, behind her cottage: its rows, flowers and beds are js/garden.js's)
+  if (root.Garden) root.Garden.build(root_, world);
   garden(-184, -300, -116, -262, { side: 2, at: 20 }, 'flowers');      // (next door's: roses and hollyhocks)
   garden(-360, -90, -322, 0, { side: 1, at: 40 }, 'flowers');      // (the west cottage's)
   garden(-50, 280, 30, 330, { side: 0, at: 20 }, 'veg');      // (the Thatchers')
@@ -583,7 +584,7 @@ function build(scene, opts) {
     return { at: p, yaw: Math.atan2(q.x - p.x, q.z - p.z), look: q.clone().setY(20) }; };
   const wellAt = new V3(GREEN.x + 46, 0, GREEN.z + 30);
   world.spots = {
-    garden: { at: V(-322, -398), yaw: Math.PI / 2, look: new V3(-300, 1, -406) },      // (just in at the gate of Maren's garden, the beds before her)
+    garden: { at: V(-338, -390), yaw: Math.PI / 2, look: new V3(-300, 1, -399) },      // (just in at the gate of Maren's garden, the rows before her)
     well: { at: wellAt.clone().add(V(0, 12)), yaw: Math.PI, look: wellAt.clone().setY(8) },
     bakery: before(bakery, 'front', 14, 13), inn: before(inn, 'front', -6, 13), dunns: before(dunns, 'front', -16), forge: before(forge, 'front', 0, 20),
     pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },

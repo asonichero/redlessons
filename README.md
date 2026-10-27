@@ -69,11 +69,24 @@ Only the outsides for now: her door is the one that opens. At dusk the windows a
 
 Once the chores are agreed with her mother (the morning after the homecoming), the days have a shape:
 
-- **Mama's garden**, behind the cottage, every day before dusk: *Tend Mama's garden* at its gate, and a while there with her thoughts. Left till dusk, it's a little broken promise.
+- **Mama's garden**, behind the cottage, every day before dusk (see *Mama's garden*, below). Left till dusk, it's a little broken promise.
 - **An errand on most days**, asked over breakfast: her mother says what's been asked of them and asks if she'll do it. *Yes* is a promise, to be begun by its time (shown as the objective and in the journal); *not today, I can't be anybody's today* is an honest no, and costs nothing; a *won't* is wilful, and three in a week bring a **maintenance correction** there and then (her hand; the shape of her days put back: the garden, what's asked, the bell), which settles her wilfulness. Let the time go by without beginning it, and it's a broken promise: naughty, and she knows it.
 - **The errands**: water from the well, bread from the bakery, a pot to the forge, a jug from the inn, a basket for the Dunns, a morning helping at the bakery, an afternoon working at the inn, helping Bo Peep pen the flock at dusk. Each is done at its place in the village, some carried home to her mother after. Their scenes don't spend the day: the clock stops while they play, and moves on by the work's own time when she's done.
 
 When the one an errand is for is there (Master Pennock at the bakery's door, the smith at his anvil, Mistress Abney at the inn), they say their own word for it; when they're indoors or about elsewhere, what happens is told, around Red's own thoughts.
+
+## Mama's garden (`js/garden.js`)
+
+Mary's garden, of the rhyme: Maren's, and Red's to tend. Three rows of flowers, the **silver bells** (pale hanging bells), the **cockle shells** (scalloped coral fans) and the **pretty maids** (white daisies, all in a row), each between beds that feed the house: onions, cabbages, and beans up their poles. Paths run between the rows, with a headland down either side; the gate is on the west, by the cottage, and the water butt is in the far corner with the can at its foot.
+
+Each day's work (the objective shows what's left):
+- **Weeds**: five, come up anywhere, between the flowers or among the greens. *Pull up the weed*, from the path beside it.
+- **Watering**: the flowers, and only the flowers. *Take the watering can*, *Fill the can at the butt* (enough for two rows), and *Water the silver bells* from the path beside them, walking its length with the can held out; the bed darkens as it's watered. Then *Put the can back by the butt*.
+- **The vegetables**: two jobs a day of *Hoe between the onions*, *Pick the caterpillars off the cabbages*, *Tie the beans up their poles*.
+
+Each piece of work is offered only from close by, and spends a few minutes; the whole is the better part of an hour. **Walk carefully**: steer her off a path into a row of flowers and they go down, tipped out of their row, and their petals cling to her boots for a few hours (on her ankles, wherever she goes). Anyone in the village near enough to see is remembered.
+
+**Every few days** (never the next day, sometimes the second, always by the third) her mother goes round the garden at dusk; the first time Red's home that evening (coming in, or before bed), she says what she found. Nothing amiss, a word of praise. Trodden flowers, and she asks: owning up brings a correction for the carelessness (her hand). A lie is believed, unless it was that same day and the petals are still on her boots: then the correction is for both, longer, with the hairbrush to finish. A lie believed may not hold: if anyone saw (or, one time in three, someone in the lane), her mother hears it the next day, and that evening it's the correction for both. Either way she sets her flowers straight again.
 
 ## The village's people (`js/villagers.js`)
 
@@ -81,7 +94,7 @@ The village's people keep to their days. Where each is, is worked out from the d
 
 - **Agnes Thatcher** has no trade to keep her: out from eight till dusk, here and there (the lime-tree bench, the pond, a walk round the green), but most often by the well.
 - **Georgie Dunn** is at the mill all day. On most afternoons he's back by three or so, till the bell: on the inn's bench, about the green, or near the well, where he can see Agnes.
-- **Tom Ferrier** is at the forge's slack tub in smithing hours (seven till four), out and about after; about one day in five his father gives him the day off. On some of his free days he comes and finds her, whether or not she has something she ought to be doing (an errand, the garden: then he's keeping her from it). She can get away early (a few minutes gone), or ask what it is: then it's a story (half an hour, and a little of his trust), or a dare: **ring the curfew bell** in broad day, or **knock at the Dunns' door** with Master William asleep upstairs (mischievous, either). The clock runs while he keeps her.
+- **Tom Ferrier** is at the forge's slack tub in smithing hours (seven till four), out and about after; about one day in three his father gives him the day off. On some of his free days he comes and finds her, whether or not she has something she ought to be doing (an errand, the garden: then he's keeping her from it). She can get away early (a few minutes gone), or ask what it is: then it's a story (half an hour, and a little of his trust), or a dare: **ring the curfew bell** in broad day, or **knock at the Dunns' door** with Master William asleep upstairs (mischievous, either). The clock runs while he keeps her.
 - **Master Ferrier** at his anvil, seven till five. **Bess Abney** on the bench outside the inn through the day; **Mistress Abney** at the inn's door at the busy times (midday, and from five).
 - **Mistress Pennock** at the bakery's counter in the morning, **Master Pennock** at its door early on.
 - **Master William**, the Watchman, on his round at night, lantern in hand, from a little before the bell till first light.
@@ -200,6 +213,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/chores.js` | The days: Mama's garden, the errands asked over breakfast (yes, an honest no, or a won't), promises kept or broken, the maintenance correction |
+| `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
 | `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |

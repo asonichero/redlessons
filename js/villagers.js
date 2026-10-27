@@ -3,7 +3,7 @@
 //
 //   • Agnes Thatcher has no trade to keep her: out from eight till dusk, here and there, but most often by the well.
 //   • Georgie Dunn is at the mill all day; on most afternoons he's back in the village by three or so, till the bell (and never far from Agnes).
-//   • Tom Ferrier is at the forge with his father in smithing hours (seven till four), and out and about after; about one day in five his father
+//   • Tom Ferrier is at the forge with his father in smithing hours (seven till four), and out and about after; about one day in three his father
 //     gives him off. Out, he comes and finds her (on some days, not all): a word, or a dare, while the clock runs; keeping her from her chores if she has any.
 //   • Master Ferrier at his anvil, seven till five. Bess Abney on the bench outside the inn; her mother at the inn's door at the busy times.
 //   • Mistress Pennock at the bakery's counter in the morning, Master Pennock at its door early on. Master William on his rounds at night.
@@ -39,7 +39,7 @@ const SEAT = { lime: 'the bench round the lime tree', inn: 'the bench outside th
 // or away at work). (k: the hour's own roll, for those who move about through the day)
 function station(key, day, min) {
   const h = Math.floor(min / 60), r = s => hash(day * 24 + h, s);
-  const tomOff = hash(day, 4) < 0.2;
+  const tomOff = hash(day, 4) < 0.35;
   switch (key) {
     case 'agnes': { if (min < H('8:00') || min >= H('19:30')) return null; const k = r(1); return k < 0.55 ? { stand: 'wellSide' } : k < 0.7 ? { sit: SEAT.lime, n: 0 } : k < 0.8 ? { stand: 'pondSide' } : { wander: true }; }
     case 'georgie': { const from = H('15:00') + Math.floor(hash(day, 3) * 100); if (hash(day, 2) > 0.7 || min < from || min >= H('20:45')) return null;

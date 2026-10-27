@@ -19,7 +19,7 @@ test('Tom: at the forge in smithing hours, but for his days off; out and about a
   let off = 0;
   for (const d of DAYS) { const s = V.station('tom', d, H(11)); if (s.wander) off++; else assert.equal(s.stand, 'tub');
     assert.ok(V.station('tom', d, H(17)).wander); assert.equal(V.station('tom', d, H(22)), null); assert.equal(V.tomFree(d, H(17)), true); }
-  assert.ok(off / DAYS.length > 0.1 && off / DAYS.length < 0.3, 'days off: ' + off + ' of ' + DAYS.length);
+  assert.ok(off / DAYS.length > 0.25 && off / DAYS.length < 0.45, 'days off: ' + off + ' of ' + DAYS.length);
 });
 
 test('the rest keep to their work: Bess at the inn, the smith at his anvil, the Pennocks at the bakery; the Watchman only at night', () => {

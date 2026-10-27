@@ -4,14 +4,15 @@
 //   • Over breakfast her mother says what's been asked of them, if anything, and asks Red if she'll do it. Yes is a promise: it must be begun
 //     by its time. An honest no (she can't be anybody's today) costs nothing. A "won't" is wilful; three of those in a week, and her mother
 //     gives her a maintenance correction there and then, which sets her right (her wilfulness settled, the count begun again).
-//   • The garden's hers every day, any time before dusk; left untended, it's a little broken promise.
+//   • The garden's hers every day, any time before dusk (js/garden.js: the weeds, the flowers watered, the vegetables tended); left
+//     untended, it's a little broken promise.
 //   • An errand's work is done where it's asked for (the well, the bakery, the forge…), and some things are carried home to her mother after.
 //     What happens there doesn't spend the day: the clock stops while it plays, and moves on by the work's own time when she's done.
 //   • Let the time go by without beginning it, and it's a broken promise (naughty), and she knows it.
 //
 //   const chores = Chores.create(w)   (w: js/world.js's world)
 //   chores.on() · chores.breakfast(P) · chores.answer(id, 'yes' | 'little' | 'wont') · chores.due() · chores.actions(P, area) · chores.tick(P)
-//   chores.dress(P) · chores.objective() · chores.journalLine()
+//   chores.dress(P) · chores.objective() · chores.journalLine() · chores.gardenDone() · chores.gardenTended()
 // The day's state is kept in the save (state.chores): { day, garden, errand: { id, state, by }, refusals: [days], missed }.
 // Errand states: 'accepted' (said yes), 'carrying' (begun: something to take home), 'done', 'broken' (not begun in time), 'little' (an honest no),
 // 'wont' (a "won't").
@@ -95,20 +96,15 @@ function create(w) {
     if (!on() || !P) return [];
     const out = [], e = errand(), c = st(), W = P.world, sp = W.spots || {}, m = P.motion;
     if (area === 'village') {
-      if (!c.garden && cal.minute < H('19:00') && sp.garden) out.push({ label: 'Tend Mama’s garden', at: sp.garden.at, run: () => garden(P) });
+      if (!c.garden && P.garden) out.push(...P.garden.actions());      // (the garden's own work, from the paths between its rows: js/garden.js)
       if (e && (e.state === 'accepted' || e.state === 'broken') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
     if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + NAME[e.carry], at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     return out;
   }
-  // The garden: to its gate, down to the beds, a while there (her thoughts), and the morning's moved on.
-  async function garden(P) {
-    const sp = P.world.spots.garden, m = P.motion, n = st().day % S.GARDEN.length;
-    await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look);
-    for (let k = 0; k < 2; k++) { await m.reach('R', sp.look.clone().add(new V3((k - 0.5) * 3, 0.5, 0))); await P.wait(0.6); await m.release('R'); }
-    await P.converse(S.GARDEN[n].map(([face, text]) => ({ who: 'red', face, text, thought: true })), { shot: false, keepCamera: true });
-    m.lookAt(null); change(c => { c.garden = true; }); cal.advance(40); w.refresh();
-  }
+  // The garden: its work done (js/garden.js plays it), it's tended for the day.
+  const gardenDone = () => { change(c => { c.garden = true; }); w.refresh(); };
+  const gardenTended = () => st().garden;
   // The errand's work, where it's asked for: the scene (off the clock), then the time it took.
   async function doErrand(P, e) {
     const sp = P.world.spots[e.place], m = P.motion;
@@ -132,6 +128,7 @@ function create(w) {
   }
   // What she's carrying, as she comes into a place: in her hands still.
   function dress(P) {
+    if (P && root.Garden) root.Garden.boots(P, w);      // (petals still on her boots, from her mother's flowers)
     const e = errand(); if (!e || !P) return;
     const kind = e.state === 'carrying' ? e.carry : e.state === 'accepted' || e.state === 'broken' ? e.give : null;
     if (kind && !P.motion.carry) hand(P, kind);
@@ -157,7 +154,7 @@ function create(w) {
     if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';
     if (e && e.state === 'carrying') return 'Take ' + NAME[e.carry] + ' home to Mama.';
     if (e && e.state === 'broken') return e.title + ': late, but not too late to do it.';
-    if (!c.garden && cal.minute < H('19:00')) return 'Tend Mama’s garden.';
+    if (!c.garden && cal.minute < H('19:00')) return root.Garden && root.Garden.progress(w).begun ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.';
     return null;
   }
   function journalLine() {
@@ -168,7 +165,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { on, breakfast, answer, due, settled, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { on, breakfast, answer, due, settled, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

@@ -110,7 +110,7 @@ function create(view, ui) {
       save.change(s => { s.area = name; }, { area: name });
       refresh();
       if (sc && sc.run) sc.run(P, w, step);
-      else if (name === 'home' && entry === 'door') lateHome();
+      else if (name === 'home' && entry === 'door') homeAgain();
       // (under the fade, the scene's own first shot settles before it opens: its conversation under way, the camera on them)
       if (sc && sc.establish) { const t0 = performance.now(); while (performance.now() - t0 < 4000 && !(P.talk && P.talk.playing)) await new Promise(r => setTimeout(r, 50)); await new Promise(r => setTimeout(r, 150)); }
       await fade(false);
@@ -179,7 +179,7 @@ function create(view, ui) {
       o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : []);
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
-    if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; });
+    if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : []); }
     return o;
   }
@@ -190,17 +190,20 @@ function create(view, ui) {
     st.controls.target.copy(t); st.camera.position.copy(t).add(back).setY(t.y + 8); st.controls.update();
   }
   // Home after the curfew bell, once it's been agreed: her mother's word about it, once a night, and it's remembered.
-  function lateHome() {
-    const key = 'late-' + (cal.minute < 12 * 60 ? cal.day - 1 : cal.day);
-    if (!save.has('curfew-agreed') || !cal.curfew() || save.has(key)) return;
-    save.flag(key); rep.add('wilful', 1, 'home after the curfew bell');
-    const P_ = P; P_.act(async () => { await P_.wait(0.8); await P_.approach(); await P_.converse(root.Story.lateHome(), { shot: ['red', 'mother'] }); });
+  // (and, at dusk, her mother may have been round the garden: js/garden.js)
+  function homeAgain() {
+    const key = 'late-' + (cal.minute < 12 * 60 ? cal.day - 1 : cal.day), late = save.has('curfew-agreed') && cal.curfew() && !save.has(key);
+    if (late) { save.flag(key); rep.add('wilful', 1, 'home after the curfew bell'); }
+    const P_ = P; P_.act(async () => {
+      if (late) { await P_.wait(0.8); await P_.approach(); await P_.converse(root.Story.lateHome(), { shot: ['red', 'mother'] }); }
+      if (chores && chores.on() && root.Garden) await root.Garden.evening(P_, w);
+    });
   }
   // To bed, at home, from the evening on: the night passes, and it's the morning.
   function sleepAction() {
     const P_ = P; if (!P_ || !['evening', 'dusk', 'night'].includes(cal.part)) return [];
     const bed = P_.world.seats.find(s => s.kind === 'bed'); if (!bed) return [];
-    return [{ label: 'Sleep until morning', at: bed.at, run: () => morning() }];
+    return [{ label: 'Sleep until morning', at: bed.at, run: async () => { if (chores && chores.on() && root.Garden) await root.Garden.evening(P_, w, true); if (P_ === P) await morning(); } }];      // (her mother's look round the garden, if it's tonight, before bed)
   }
 
   // Each frame: time passing as she goes about, the light with it, her place kept every few seconds.

@@ -347,7 +347,10 @@ const chores = () => [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, Little Red. Sleep?' },
   { who: 'red', face: 'shy', text: 'Like a stone.' },
   { who: 'mother', face: 'calm', text: 'Good. Now, what we said last night. The Hallorans’ calving and the mending can go back to being mine. But you’ll not sit idle either.' },
-  { who: 'mother', face: 'calm', text: 'The garden, each morning: weeds, water, and whatever’s ready to pick. That one’s yours, every day.' },
+  { who: 'mother', face: 'calm', text: 'The garden, every day: the weeds, wherever they’ve come up, and the vegetables seen to. That one’s yours.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'And my flowers watered. Watered, mind, and nothing else. Keep to the paths between the rows.' },
+  { who: 'red', face: 'cheeky', text: 'Silver bells and cockle shells…' },
+  { who: 'mother', face: 'smile', listen: { red: 'cheeky' }, text: 'And pretty maids all in a row. In a row, Little Red. Not trodden flat.' },
   { who: 'mother', face: 'calm', text: 'And when somebody asks something of us, I’ll ask you over breakfast if you’ll do it. Say yes, and it’s a promise: done, or at least begun, by when they want it.' },
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Or say no. If it’s too much, if you can’t be anybody’s that day, tell me so, honestly, and that’s an end of it. It’s “won’t” I’ll mind, not “can’t”.' },
   { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'And home by the curfew bell. Nine o’clock, and not a minute past it.' },
@@ -621,6 +624,103 @@ const tomStops = ctx => {
 // Her thought after, when he's kept her long: the clock, and her errand.
 const tomCost = mins => mins >= 30 ? 'Half the hour gone, and Mama’s errand still waiting. Tom Ferrier, honestly.' : 'That was longer than I meant. I’d better get on.';
 
+// ── Mama's garden (js/garden.js): her flowers trodden on, and what comes of it. Rows: the flower rows trodden ('the silver bells', …).
+const mine = rows => rowsText(rows).replace(/\bthe /g, 'my ');
+const rowsText = rows => rows.length > 1 ? rows.slice(0, -1).join(', ') + ' and ' + rows[rows.length - 1] : rows[0];
+const FULL = { agnes: 'Agnes Thatcher', georgie: 'Georgie Dunn', tom: 'Tom Ferrier', smith: 'Master Ferrier', bess: 'Bess Abney', abney: 'Mistress Abney', pennock: 'Mistress Pennock', baker: 'Master Pennock', willie: 'Master William' };
+// (her own thought, the moment it happens)
+const trodden = row => pickOf(['Oh no. Mama’s ' + row.replace(/^the /, '') + '.', 'Oh— no, no. Off the path. Off ' + row + '.', 'That was ' + row + '. That was one of Mama’s.'], row.length);
+// Nothing amiss: a word as she comes in. (tended: the garden done today)
+const gardenFine = tended => [{ who: 'mother', face: 'smile', listen: { red: 'calm' }, text: tended ? 'I went round the garden at dusk. Not a flower out of its row. You’re a good gardener, love, when you put your mind to it.' : 'I went round the garden at dusk. My flowers are standing, at least. Mind the weeds tomorrow.' }];
+// Trodden: her mother asks. ctx.own(), ctx.lie(): run on her answer.
+const gardenAsk = (rows, n, ctx) => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'I went round the garden at dusk. ' + (n > 3 ? 'There’s a whole stretch of ' + mine(rows) + ' trodden flat, broken off and out of their rows.' : 'Some of ' + mine(rows) + ' are trodden down, broken off and out of their rows.') },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Was that you, Little Red?' },
+  { choose: [
+    { text: 'Yes, Mama. I stepped off the path. I’m sorry.', face: 'shy', then: [{ run: ctx.own }, { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me. That’s worth something. It doesn’t mend my flowers, though.' }] },
+    { text: 'No, Mama. It must have been a cat. Or the Thatchers’ goat.', face: 'shy', then: [{ run: ctx.lie }] },
+  ] },
+];
+// The lie, the same day, the petals still on her boots.
+const gardenBoots = rows => [
+  { text: 'Her mother’s eyes go down, to her boots, and stay there.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'A goat. And the goat walked in your boots, did it? There are petals off ' + mine(rows) + ' stuck all over them.' },
+  { who: 'red', face: 'wince', text: 'Mama, I—' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Don’t. Don’t make it worse.' },
+];
+// Believed: her mother lets it lie, and Red has it to think about.
+const gardenBelieved = () => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Hm. I’ll keep the gate latched, then.' },
+  { who: 'red', face: 'shy', thought: true, text: 'She believed me. I wish she hadn’t.' },
+];
+// The next evening: someone in the village saw.
+const gardenReport = r => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'I had a word with ' + (FULL[r.who] || 'someone') + ' today. In passing.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'They saw you in my garden. Walking straight through ' + rowsText(r.rows || ['my flowers']) + ', as if they were grass.' },
+  { who: 'red', face: 'wince', text: 'Mama…' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'A cat, you said. The Thatchers’ goat. You stood there and looked at me and said it.' },
+];
+// Before it: what it's for.
+const gardenTakeInHand = how => how.lied ? [
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'This is for my flowers, which you didn’t care about. And it’s for the lie, which is worse, because I do care about that.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Come here, Little Red.' },
+] : [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Walk the paths, I said. My flowers took me years.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You’ll learn to mind where you put your feet. Come here.' },
+];
+// The correction: her hand, for the carelessness; for a lie as well, longer, her drawers down, and the hairbrush to finish.
+const gardenCorrection = async (S, how) => {
+  const M = 'corrector', R = 'subject', lied = !!how.lied, more = lied ? 0.25 : 0;
+  const count = async (n, face) => { await S.smacks(1); if (face) S.face(face); await S.say(R, n); };
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.35 + more, pace: 1.3 });
+  await S.wait(0.8);
+  await S.say(M, 'Hands down. You know what this is for.', 'calm');
+  await S.step([M, 'Silver bells. Cockle shells. Pretty maids, all in a row.', 'stern'], 8);
+  await S.step([R, 'I know, Mama—'], 4);
+  await S.step([M, 'In a row, Little Red. Not under your boots.'], 8);
+  await S.smacks(6);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.55 + more, pace: 1.5 });
+  await S.step([M, 'The paths are there for a reason. You walk them slowly, and you look where you’re going.'], 10);
+  await S.step([R, 'Ow— I will, I will—'], 4);
+  await S.step([M, 'Somebody grew every one of those. Somebody knelt in the mud for them.'], 10);
+  if (!lied) {
+    await S.smacks(8);
+    await S.say(M, 'There. You owned it, and that’s the end of it. Up you get.', 'calm');
+    await S.wait(1.2); return;
+  }
+  await S.smacks(6);
+  await S.gesture('drawers'); await S.wait(0.5);
+  await S.say(R, 'Mama, please—');
+  await S.say(M, 'You had your chance to tell me, and you told me a cat.', 'stern');
+  S.set({ strength: 1.85, pace: 1.8 });
+  await S.step([M, how.caught === 'witness' ? 'And I had to hear the truth from ' + (FULL[how.who] || 'a neighbour') + ', over a fence, like gossip.' : 'With the petals on your boots, Little Red. On your boots.'], 10);
+  await S.step([R, 'I’m sorry! I’m sorry I said it!'], 6);
+  await S.step([M, 'Flowers grow back. Trust takes longer.'], 10);
+  await S.smacks(8);
+  await S.fetch('hairbrush', {
+    ask: [M, 'Up. The hairbrush, from the chest. You know where it is.'],
+    waitFace: 'concerned', presentFace: 'stern',
+    present: [R, '…Here, Mama.'],
+    back: [M, 'Back over my knee.', 'stern'],
+  });
+  S.set({ strength: 1.8, pace: 1 }); await S.wait(0.8);
+  await S.say(M, 'Six. Count them, and then it’s done with.', 'stern');
+  await S.say(R, '…Yes, Mama.');
+  await count('One…'); await count('Two…'); await count('Three…', 'concerned'); await count('Four…'); await count('Five…'); await count('Six… I’m sorry, Mama…', 'calm');
+  await S.say(M, 'I know you are. It’s done. Up you get.', 'calm');
+  await S.wait(1.2);
+};
+const afterGarden = how => how.lied ? [
+  { who: 'mother', face: 'calm', listen: { red: 'teary' }, text: 'Come here. There. It’s finished, and I’m not cross any more.' },
+  { who: 'red', face: 'teary', text: 'I should have said. The first time.' },
+  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'You should. Next time you will.' },
+] : [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Better?' },
+  { who: 'red', face: 'shy', text: 'Better. I’ll mind the paths.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you will. I’ll show you how I set them straight again, tomorrow.' },
+];
+
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
 const marenIdle = part => ({
   morning: [{ who: 'mother', face: 'smile', text: 'The garden won’t weed itself, love.' }],
@@ -637,5 +737,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
