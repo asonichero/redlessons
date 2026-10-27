@@ -997,6 +997,44 @@ const WORK = {
   },
 };
 
+// ── The Fowlers' (js/holding.js): Peter and his grandfather. Peter calls her Red, as he always has; Master Fowler, Miss Rose, or "girl" when
+// he forgets himself. ctx: { first, today, day, part }
+const FOWLERS = {
+  peter: {
+    first: [
+      { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: 'Red.' },
+      { text: 'Only her name, and he’s smiling as he says it, and then he seems to remember he’s holding a net, and looks at it as if it might help.' },
+      { who: 'red', face: 'shy', text: 'Hello, Peter.' },
+      { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'Grandad said you’d been to your grandmother’s. In the new cloak. He saw you go by the meadow.' },
+      { who: 'red', face: 'smile', text: 'Your grandad sees everything.' },
+      { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'He sees the wood. Everything else he hears from the hens.' },
+    ],
+    any: [
+      [{ who: 'peter', face: 'calm', listen: { red: 'calm' }, text: 'Linnets in the meadow this morning, a whole charm of them. I let them be. Some days I just like to watch.' },
+        { who: 'red', face: 'smile', text: 'A fowler who lets the birds go.' }, { who: 'peter', face: 'smile', text: 'Don’t tell Grandad.' }],
+      [{ who: 'peter', face: 'pout', listen: { red: 'cheeky' }, text: 'Tom came by yesterday. “Peter Piper picked a peck.” Every time. Every single time.' },
+        { who: 'red', face: 'cheeky', text: 'Did you?' }, { who: 'peter', face: 'smile', text: 'Pick a peck? I picked him up and put him in the duck pond. He went quiet for nearly an hour.' }],
+      [{ who: 'peter', face: 'calm', listen: { red: 'shy' }, text: 'You can sit, if you like. The nets don’t mind being watched.' },
+        { text: 'They sit a while, and he mends a tear with quick, sure fingers, and neither of them says much, and it doesn’t need saying.' }],
+    ],
+    again: [{ who: 'peter', face: 'smile', text: 'Back again. I’m glad.' }],
+  },
+  fowler: {
+    first: [
+      { who: 'fowler', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. You’ll be wanting the boy, I suppose. Everybody does.' },
+      { who: 'red', face: 'shy', text: 'Good morning, Master Fowler.' },
+      { who: 'fowler', face: 'stern', listen: { red: 'calm' }, text: 'How’s your grandmother keeping, out there? Tell her I asked. Tell her I said she’s a fool to live in that wood alone, and that I said it kindly.' },
+    ],
+    any: [
+      [{ who: 'fowler', face: 'stern', listen: { red: 'calm' }, text: 'Something’s been at the edge of the wood at night. I’ve heard it. Not a fox: too heavy. You keep to the path, girl.' }],
+      [{ who: 'fowler', face: 'calm', listen: { red: 'smile' }, text: 'Hulda and I go back further than either of us cares to count. She mended my leg once, when the doctor said it’d have to come off.' }],
+      [{ who: 'fowler', face: 'smile', listen: { red: 'calm' }, text: 'The boy’s a good lad. Too good, sometimes. Hasn’t given me cause to take my stick to him in years. I almost miss it.' }],
+    ],
+    again: [{ who: 'fowler', face: 'calm', text: 'Still here? The hens will start charging you rent.' }],
+  },
+};
+const fowlers = (key, ctx) => { const F = FOWLERS[key]; if (!F) return []; if (ctx.first) return F.first; if (ctx.today) return F.again; return pickOf(F.any, ctx.day); };
+
 // Mistress Pennock in her bakery, any other time.
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
@@ -1015,5 +1053,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -30,14 +30,20 @@ const AREAS = {
   },
   wood: {
     name: 'The wood', music: 'wood', noRun: true, set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    dress(P, w) { const ex = P.world.exits.find(e => e.name === 'the Fowlers’'); if (ex) ex.when = () => w.q.done('maren.walk'); },      // (not on chapter one's walk home: straight home, that night)
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
-    exits: { 'the village': { area: 'village', entry: 'wood' }, 'the cabin': { area: 'cabin', entry: 'door' } },
+    exits: { 'the village': { area: 'village', entry: 'wood' }, 'the cabin': { area: 'cabin', entry: 'door' }, 'the Fowlers’': { area: 'holding', entry: 'lane' } },
   },
   // The village (js/village.js): the green, the inn, the bakery, the forge, the cottages; her own door, and the lane back to the wood.
   village: {
     name: 'The village', music: 'village', set: s => root.Village.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
     exits: { 'the meadow': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },      // (the meadow: through the meadow gate, js/wood.js's far end)
+  },
+  // The Fowlers' smallholding (js/holding.js): where the meadow meets the wood, off the fork from the meadow. Peter and his grandfather.
+  holding: {
+    name: 'The Fowlers’', music: 'village', set: s => root.Holding.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    entries: 'set', exits: { 'the wood': { area: 'wood', entry: 'fowlers' } },
   },
   // The bakery, inside (js/bakery.js): Mistress Pennock's. (Where the morning's help is worked (js/work.js), and the pie's end.)
   bakery: {
@@ -190,6 +196,7 @@ function create(view, ui) {
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], gateAction()); }
     if (name === 'wood') o.actions = () => gateAction();
+    if (name === 'holding') { o.place = chain(o.place, P_ => { P_.fowlers = root.Holding ? root.Holding.people(P_, w) : null; }); o.actions = () => (P && P.fowlers ? P.fowlers.actions() : []); }
     return o;
   }
   const chain = (a, b) => a ? P_ => { a(P_); b(P_); } : b;

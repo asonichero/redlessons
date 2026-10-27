@@ -51,6 +51,10 @@ The scenes, played by the world as their steps come up:
 
 The title screen can begin again, continue, or start chapter one at the wood or at home. Her grandmother, **Hulda**, is a third character: shorter and softer through the middle, grey all through her hair, a knitted shawl over her shoulders, laugh lines.
 
+## The Fowlers' smallholding (`js/holding.js`)
+
+Where the meadow meets the wood: off the meadow's east side (the beech's side of the path; the Barrows' way will fork off the other side, one day), past a finger-post, a lane along the wood's edge to Peter and his grandfather's cottage, built as the village's are. The coop on its legs and the hens scratching in their run, the duck on her pond, the nets drying on their poles, the garden, the cat on the step, the bench by the door, and a field gate in the fence onto the meadow. Peter's at the nets in the morning, the coop at midday, the gate of an afternoon; Master Fowler on the bench, or in his garden. Each can be talked to (a little trust the first time each day): Peter calls her Red; Master Fowler asks after Hulda, and grumbles about the wood. (Not on chapter one's walk home: the fork opens once that's done.)
+
 ## The village (`js/village.js`)
 
 The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, the curfew bell on its frame, the stocks (only to look at, for now) and the duck pond, and a lane loops round the green's far side, with the lane south to the mill off it.
@@ -242,6 +246,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
 | `js/work.js` | A shift of work, played: the bakery's morning, task by task (the inn's to come) |
 | `js/bakery.js` | The bakery inside: the oven, the kneading table, the loaves, the counter |
+| `js/holding.js` | The Fowlers' smallholding: the cottage, coop and hens, the duck, the nets, the garden; Peter and Master Fowler about their day |
 | `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |

@@ -103,18 +103,12 @@ function mergeStatic(group) {
   }
 }
 
-function build(scene, opts) {
-  opts = opts || {};
-  const root_ = new THREE.Group(); scene.add(root_);
-  const tx = textures(), vt = tex(), r = rnd(203);
+// The village's way of building (houses with their doors and windows), for any set built in its style (the village; the Fowlers'
+// smallholding): put into root_, in world's obstacles, the camera kept out of them (solids), chimney smoke and lamplit glass shared.
+function builders(root_, world, solids, smoke, winM) {
+  const tx = textures(), vt = tex();
   const lime = toonMap(tx.lime), stone = toonMap(tx.stone), oak = toonMap(tx.oak), oakDk = T.mat('#4a3020'), plank = toonMap(tx.door), ashlar = toonMap(tx.ashlar);
-  const thatch = toonMap(vt.thatch), ridgeM = toonMap(vt.ridge), rubble = toonMap(vt.rubble), hurdle = toonMap(vt.hurdle), iron = T.mat('#2e2a28');
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [], entries: {} };
-  const solids = [];      // (what the camera mustn't go into: each building, as a box up to its roofline)
-  const windows = [], smoke = [], lamps = [], glows = [];
-  // (the windows' glass: dark by day, lamplit at dusk; one material for all of them, as the wood's village had)
-  const winM = new THREE.MeshBasicMaterial({ color: srgb('#2e2a2a') }); windows.push(winM);
-
+  const thatch = toonMap(vt.thatch), rubble = toonMap(vt.rubble), iron = T.mat('#2e2a28'), r = rnd(207);
   // ── A house, from outside. o: { x, z, ry (a quarter turn at a time: 0, ±π/2, π), w (along its ridge), d, eave, ridge, foot (the stone
   // footing's height), walls ('frame': limewashed daub in an oak frame; 'stone'), storey (where an upper floor's rail runs), doors and windows
   // ([{ side: 'front' | 'back' | 'left' | 'right', at (along the side, looking at it from outside, left to right), y, w, h }]), chimney ({ x, z,
@@ -204,6 +198,23 @@ function build(scene, opts) {
     if (op.shutters !== false) for (const sx of [-1, 1]) { const sh = box(gp, w / 2 + 0.6, h + 1.6, 0.6, sx * (w * 0.75 + 1.6), 0, 0.5, plank, { shadow: false, ink: 0.05 }); box(sh, w / 2 - 0.6, 0.7, 0.4, 0, h * 0.28, 0.4, oakDk, { ink: 0 }); box(sh, w / 2 - 0.6, 0.7, 0.4, 0, -h * 0.28, 0.4, oakDk, { ink: 0 }); }
     if (op.box) { box(gp, w + 1, 2.6, 2.4, 0, -h / 2 - 3.2, 2.4, oakDk, { ink: 0.04 }); for (let k = 0; k < 7; k++) solid(gp, T.ell(0.9, 0.9, 0.9, 6, 4), T.mat(['#d84a5a', '#f2d04a', '#e8e0f0', '#b05ad0'][k % 4]), -w / 2 + 1 + k * (w - 2) / 6, -h / 2 - 1.4, 2.6, { ink: 0 }); }
   }
+
+  return { house, door, win };
+}
+
+function build(scene, opts) {
+  opts = opts || {};
+  const root_ = new THREE.Group(); scene.add(root_);
+  const tx = textures(), vt = tex(), r = rnd(203);
+  const lime = toonMap(tx.lime), stone = toonMap(tx.stone), oak = toonMap(tx.oak), oakDk = T.mat('#4a3020'), plank = toonMap(tx.door), ashlar = toonMap(tx.ashlar);
+  const thatch = toonMap(vt.thatch), ridgeM = toonMap(vt.ridge), rubble = toonMap(vt.rubble), hurdle = toonMap(vt.hurdle), iron = T.mat('#2e2a28');
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [], entries: {} };
+  const solids = [];      // (what the camera mustn't go into: each building, as a box up to its roofline)
+  const windows = [], smoke = [], lamps = [], glows = [];
+  // (the windows' glass: dark by day, lamplit at dusk; one material for all of them, as the wood's village had)
+  const winM = new THREE.MeshBasicMaterial({ color: srgb('#2e2a2a') }); windows.push(winM);
+
+  const { house, door, win } = builders(root_, world, solids, smoke, winM);
 
   // ── The ground: grass everywhere; the green's turf; the lanes of trodden earth.
   { const g = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), toonMap(vt.grass)); g.rotation.x = -Math.PI / 2; g.position.y = -0.02; g.receiveShadow = true; root_.add(g); }
@@ -628,5 +639,5 @@ function build(scene, opts) {
   return { group: root_, update() {}, tick, light, follow, keepCamera, world, home: HOME, solids };
 }
 
-root.Village = { build };
+root.Village = { build, builders };
 })(typeof window !== 'undefined' ? window : globalThis);
