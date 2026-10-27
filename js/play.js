@@ -82,7 +82,7 @@ function create(view, opts) {
   const anchor = () => indoors ? roomMid() : chest();
   const camT = anchor();
   st.controls.minDistance = 14; st.controls.maxDistance = 200; st.controls.enablePan = false; st.controls.enableZoom = false;
-  st.controls.maxPolarAngle = indoors ? 2.3 : 1.5;      // (outdoors the camera stays above the ground; indoors a drag down goes on past level, and the camera slides along the floor toward the anchor: see inRoom)
+  st.controls.maxPolarAngle = 2.3;      // (a drag down goes on past level, and the camera slides along the floor or the ground toward the anchor: see inRoom, ground)
   // (indoors: the camera kept inside the room, so there's never the blank outside of it in view: within the walls, above the floor and under
   // the roof's slope. Pulled in along its line to the anchor as far as it must be: so on the floor, dragged further down, it slides along it
   // toward the anchor.)
@@ -92,7 +92,10 @@ function create(view, opts) {
   const inRoom = () => { if (!RB) return; const T = st.controls.target, off = st.camera.position.clone().sub(T); if (inside(st.camera.position) || !inside(T)) return;
     let lo = 0, hi = 1; for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (inside(T.clone().addScaledVector(off, mid))) lo = mid; else hi = mid; }
     st.camera.position.copy(T).addScaledVector(off, lo); };
-  st.afterControls = () => { if (!opts.camFree && !camHeld && !busy() && !st.moving && st.controls.enabled) { inRoom(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
+  // (outdoors: kept above the ground the same way, pulled in along its line toward the anchor, so looking up from low it slides along the grass)
+  const aboveGround = () => { if (RB) return; const T = st.controls.target, c = st.camera.position; if (c.y >= 3 || T.y <= 3.5) return; c.copy(T).addScaledVector(c.clone().sub(T), (T.y - 3) / (T.y - c.y)); };
+  const correcting = () => typeof document !== 'undefined' && document.body.classList.contains('correcting');      // (a correction: the camera the player's, within the room)
+  st.afterControls = () => { if (!opts.camFree && (correcting() || (!camHeld && !(talk && talk.playing))) && !st.moving && st.controls.enabled) { inRoom(); aboveGround(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
   // (its three distances from the anchor, across the floor and up: near, medium (the usual), far. Outdoors, from her, scaled to her; indoors,
   // from the middle of the room, medium holding the whole room)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
@@ -116,10 +119,12 @@ function create(view, opts) {
     on('touchmove', t => {
       if (t.length === 1 && one) { orbit(t[0].clientX - one.x, t[0].clientY - one.y); one = { x: t[0].clientX, y: t[0].clientY }; }
       else if (t.length >= 2 && pinch) { const k = pinch.d / Math.max(10, gap(t));      // (fingers apart: nearer)
-        if (!opts.camFree) camZ = Math.max(0, Math.min(2, pinch.z + Math.log(k) * 2.4));
+        if (!opts.camFree && !correcting()) camZ = Math.max(0, Math.min(2, pinch.z + Math.log(k) * 2.4));
         else { const off = st.camera.position.clone().sub(st.controls.target); off.setLength(Math.max(st.controls.minDistance, Math.min(st.controls.maxDistance, pinch.r * k))); st.camera.position.copy(st.controls.target).add(off); } }
     });
-    if (!opts.camFree) cv.addEventListener('wheel', e => { e.preventDefault(); if (!st.controls.enabled) return; const now = performance.now(); if (now - wheelAt < 220 || Math.abs(e.deltaY) < 1) return; wheelAt = now; camZ = Math.max(0, Math.min(2, Math.round(camZ) + (e.deltaY > 0 ? 1 : -1))); }, { passive: false });
+    if (!opts.camFree) cv.addEventListener('wheel', e => { e.preventDefault(); if (!st.controls.enabled) return;
+      if (correcting()) { const off = st.camera.position.clone().sub(st.controls.target); off.setLength(Math.max(12, Math.min(110, off.length() * (e.deltaY > 0 ? 1.12 : 0.89)))); st.camera.position.copy(st.controls.target).add(off); return; }      // (in a correction: nearer or further, freely)
+      const now = performance.now(); if (now - wheelAt < 220 || Math.abs(e.deltaY) < 1) return; wheelAt = now; camZ = Math.max(0, Math.min(2, Math.round(camZ) + (e.deltaY > 0 ? 1 : -1))); }, { passive: false });
     else st.controls.enableZoom = true;
   }
 
@@ -314,7 +319,7 @@ function create(view, opts) {
     for (const f of tickers.slice()) f(dt);
     // The camera between scenes (see above): the target easing to the anchor (the room's middle, or her), and the camera round it at the distance
     // chosen, at whatever turn it's been given. (Not while a scene has it, or a conversation, or it's on its way to a shot.)
-    if (!opts.camFree && !camHeld && !busy() && !st.moving && st.controls.enabled) {
+    if (!opts.camFree && !camHeld && !(talk && talk.playing) && !correcting() && !st.moving && st.controls.enabled) {      // (she's followed while she's about something too: watering down a row, walking to a door; not in a conversation, or a scene's own shot)
       const want = anchor(), k = 1 - Math.exp(-dt * (indoors ? 3 : 6));
       camT.copy(st.controls.target).lerp(want, k); const d = camT.clone().sub(st.controls.target); st.controls.target.add(d); st.camera.position.add(d);      // (from wherever a scene left it)
       // (the distance is the step's; which way it looks at the anchor from, round and over, is the player's: a drag goes any way about it)
@@ -322,7 +327,7 @@ function create(view, opts) {
       off.setLength(L + (dist - L) * Math.min(1, dt * 2.2)); st.camera.position.copy(st.controls.target).add(off);
       inRoom();      // (pulled in along its line, before anything lifts it off the floor: lifted, it would creep away along it)
     } else camT.copy(st.controls.target);
-    if (st.camera.position.y < 3) st.camera.position.y = 3;
+    if (indoors && st.camera.position.y < 3) st.camera.position.y = 3; else aboveGround();
     offer = busy() ? [] : options();
     if (opts.prompt) { const o = offer[0]; const txt = doing ? '' : o ? (o.alt ? 'E  ' + o.label + '   ·   Q  ' + o.altLabel : 'E  ' + o.label) : ''; if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }

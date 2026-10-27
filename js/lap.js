@@ -317,7 +317,8 @@ function create(view, opts) {
     g.torso.rotation.set(lerp(ta[0], tb[0], ph.e), lerp(ta[1], tb[1], ph.e), lerp(ta[2], tb[2], ph.e));
     // (her eyes on what she's doing: on the seat through a run, and at the clothes; between runs, when she speaks, on her face; eased between)
     const busy = !!st.swing || st.runLeft > 0 || !!st.gesture;
-    st.gazeW = lerp(st.gazeW == null ? 1 : st.gazeW, busy ? 1 : 0, 1 - Math.exp(-(st.dt || 0.016) * 3.5));
+    st.gazeW = lerp(st.gazeW == null ? 1 : st.gazeW, busy || st.gazeWork ? 1 : 0,      // (gazeWork: her eyes kept on her work between strokes too, as through a count)
+       1 - Math.exp(-(st.dt || 0.016) * 3.5));
     lookTo(g, world(red.headGroup).lerp(world(red.rear.C), st.gazeW), 0.85);
     g.root.updateMatrixWorld(true);
     // Left hand: flat between her shoulder blades, fingers across her back.

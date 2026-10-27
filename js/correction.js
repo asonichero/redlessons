@@ -239,7 +239,7 @@ async function run(P, o) {
       await wait(o.cornerTime == null ? 12 : o.cornerTime);
       // (and out of it: the corrector's last word)
       const last = cornered(); if (last) { const l = Cs.line(c, last.sub, 'after'); if (l) await talk.caption(castKey, l, { face: 'smile', wait }); }
-    } else await wait(results.length && (results[results.length - 1].stopped || results[results.length - 1].tooHarsh) ? 4.5 : 3.5);
+    } else await wait(results.length && (results[results.length - 1].stopped || results[results.length - 1].tooHarsh) ? 4.5 : turns.some(t => t.script) ? 0.3 : 3.5);      // (a story's own: the fade as soon as its last line's said)
     // After (o.after(r): the story's lines for it), the player's own turn having been the last: sat up on the giver's lap, still in the chair
     // (js/lap.js's after): after her word, upright and dressed again; in high distress (past the edge of resistance, or too much), held close
     // as she is. Otherwise it's played in the room after, as before.
@@ -257,7 +257,7 @@ async function run(P, o) {
             const v2 = lap.VIEWS.after(); st.go(v2.pos, v2.look, 0); await wait(0.4); await fade(false); } };
         if (A && A.startMusic) A.startMusic({ theme: 'after' });      // (and after it, the two of them: music again, its own)
         try { await talk.play(o.after(last, ctx), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
-        afterPlayed = true; await wait(0.6);
+        afterPlayed = true;
       }
     }
   } finally {

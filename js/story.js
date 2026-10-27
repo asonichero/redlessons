@@ -276,24 +276,26 @@ const homecomingCorrection = async (S, how) => {
   S.set({ strength: 1.85 + more, pace: 1 }); await S.wait(0.8);
   await S.say(M, 'You’ve twelve more coming. Count them for me, and then it’s finished.', 'stern');
   await S.say(R, '…Yes, Mama.');
+  S.set({ gazeWork: true });      // (her eyes on her work through the count: only the one she misses brings them up to her face)
   await count('One…'); await count('Two…'); await count('Three…'); await count('Owww, Four…', 'concerned');
   await count('Five…'); await count('Six, oh Mama…', 'calm'); await count('Seven…');
   await count('I’ll be good, Mama, I swear it!');
+  S.set({ gazeWork: false });
   await S.say(M, 'That’s what this is for, Little Red. To make sure of it. Do you need that one again?', 'stern');
   await S.say(R, 'No, Mama!');
   await S.say(M, 'Then count it, love.', 'calm');
   await S.say(R, 'Eight…');
+  S.set({ gazeWork: true });
   await count('Nine…');
   await count('Ten! I’m sorry, Mama!');
   await S.say(M, 'I know, love.', 'concerned');
   await count('Eleven!', 'stern');
   await count('Twelve.', 'stern');
-  S.face('pout'); await S.wait(0.8);
+  S.set({ gazeWork: false }); S.face('pout'); await S.wait(0.8);
   // (and the brush into her other hand, and her own laid on the sting, slowly, while she says it)
   await S.gesture('soothe', { hold: true });      // (it goes on until the scene fades)
   await S.say(M, 'There now. That’s done, and it stays done. You’re a good girl, Little Red. Just breathe. I’ve got you.', 'calm');
-  await S.wait(2.4);
-};
+};      // (and the fade, as soon as that's said)
 
 // After the correction (js/correction.js plays it, still in the chair): how it went decides it (Discipline.run's result). Taken all the way
 // through, she's held on her mother's lap, her face in her mother's shoulder, as she was the winter of the mill pond; stopped with her name, she

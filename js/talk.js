@@ -129,7 +129,12 @@ function create(stage, opts) {
       look.add(shift); pos.add(shift);
       n = dir;
     }
-    if (opts.clamp) opts.clamp(pos, look);      // (kept out of whatever's solid: outdoors, the houses' walls)
+    if (opts.clamp) {      // (kept out of whatever's solid: outdoors, the houses' walls; and if that would pull it in close, from the other side of them instead)
+      const perp = new V3(-across.z, 0, across.x), mirror = p => { const v = p.clone().sub(mid); return mid.clone().add(v.addScaledVector(perp, -2 * v.dot(perp))); };
+      const p1 = pos.clone(), l1 = look.clone(); opts.clamp(p1, l1); const d1 = p1.distanceTo(l1), d0 = pos.distanceTo(look);
+      if (d1 < d0 * 0.85) { const p2 = mirror(pos), l2 = mirror(look); opts.clamp(p2, l2); if (p2.distanceTo(l2) > d1 + 1) { pos.copy(p2); look.copy(l2); n.copy(mirror(mid.clone().add(n)).sub(mid)); } else { pos.copy(p1); look.copy(l1); } }
+      else { pos.copy(p1); look.copy(l1); }
+    }
     stage.go(pos, look, ms == null ? 900 : ms);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
     if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, ri >= 0 ? 0.12 : 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });      // (with Red, facing each other; otherwise opened toward us, as on a stage)
