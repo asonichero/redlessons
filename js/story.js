@@ -656,7 +656,7 @@ const gardenBelieved = () => [
 // The next evening: someone in the village saw.
 const gardenReport = r => [
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'I had a word with ' + (FULL[r.who] || 'someone') + ' today. In passing.' },
-  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'They saw you in my garden. Walking straight through ' + rowsText(r.rows || ['my flowers']) + ', as if they were grass.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'They saw you in my garden. Walking straight through ' + (r.rows ? mine(r.rows) : 'my flowers') + ', as if they were grass.' },
   { who: 'red', face: 'wince', text: 'Mama…' },
   { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'A cat, you said. The Thatchers’ goat. You stood there and looked at me and said it.' },
 ];
