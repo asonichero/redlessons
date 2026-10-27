@@ -53,13 +53,14 @@ The title screen can begin again, continue, or start chapter one at the wood or 
 
 ## The village (`js/village.js`)
 
-The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, and the curfew bell on its frame, and a lane loops round the green's far side, with the lane south to the mill off it.
+The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, the curfew bell on its frame, the stocks (only to look at, for now) and the duck pond, and a lane loops round the green's far side, with the lane south to the mill off it.
 
 - **Maren's cottage**, nearest the wood: its walls are the room's own, so her door (on the west end), her windows and the hearth's chimney are where they are inside. Her door opens and she goes in; out of it, she's on the path to the street. Her vegetable garden is behind.
 - **The inn** (Mistress Abney's): across the street from the green, two floors, its sign (a wheatsheaf) over the street, benches and a table, barrels, a lantern by the door.
 - **The bakery** (Mistress Pennock's): at the green's east end, the bread oven a stone dome against its gable, a loaf on its sign, the window's board let down as a counter with loaves on it.
 - **The forge** (Master Ferrier's): stone, its front open onto the lane, the hearth glowing inside, the anvil on its stump, the slack tub, a cart wheel.
 - **The cottages**: next door to Maren's, the Thatchers' (Agnes's), the Dunns' (the Watchman's, a lantern by the door for his rounds), and four more; gardens of vegetables and flowers in hurdle fences.
+- **The pinfold**, just inside the east gate on the way to Halloran's farm: a round pound of dry stone with a gate, where Bo Peep's flock is penned overnight (in at dusk; by day they graze at the farm), and where strays are put.
 - **Round it**: low stone walls along the street and lanes, an orchard, ploughed strips and a hayfield with its stacks, hedges, and trees thickening toward the wood. The east and south lanes end at gates, shut for now.
 
 Only the outsides for now: her door is the one that opens. At dusk the windows and lanterns light. Outdoors the camera is kept out of the buildings, pulled in toward her when one is in the way. The still parts are merged by material once built, so the whole village draws in a couple of hundred calls.

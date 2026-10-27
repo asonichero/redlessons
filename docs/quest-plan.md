@@ -189,6 +189,8 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 2. **2.x** More responsibility, building her standing as a grown woman.
 3. **3.3** The first to stand with Rose when she brings Wolfe before the village.
 
+**Bo Peep** (proposed) is Halloran's granddaughter. Her parents work the farm now that he can't, so she lives out there rather than in the village proper. The flock is hers to mind: they graze at the farm by day and are penned overnight in the village pinfold, just inside the east gate, for safety. The strays of 2.1 are hers.
+
 ## Characters without quest lines
 
 These figures have no steps to complete, but each has a job in every phase so the open world stays alive between quests.

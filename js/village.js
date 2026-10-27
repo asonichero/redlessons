@@ -367,7 +367,7 @@ function build(scene, opts) {
       const pa = a.clone().add(n), pb = b.clone().add(n); if (skip && skip.some(q => pa.distanceTo(q) < 22 || pb.distanceTo(q) < 22)) continue; if (solids.some(sd => pa.x > sd.x0 && pa.x < sd.x1 && pa.z > sd.z0 && pa.z < sd.z1)) continue; wallSeg(pa, pb, h, rubble); } };
   along(STREET, 2, 9, 1, 18, 5, [V(-396, -340), V(-230, -168)]);      // (the street's north side, from the meadow gate to the cottages)
   along(STREET, Math.floor(STREET.length * 0.78), STREET.length - 3, -1, 18, 6);      // (and its south side, out toward the east gate)
-  along(STREET, Math.floor(STREET.length * 0.8), STREET.length - 3, 1, 18, 6);
+  along(STREET, Math.floor(STREET.length * 0.8), STREET.length - 3, 1, 18, 6, [V(492, 6)]);      // (a gap in it for the way up to the pinfold)
   along(MILL, Math.floor(MILL.length * 0.45), MILL.length - 3, 1, 16, 5); along(MILL, Math.floor(MILL.length * 0.45), MILL.length - 3, -1, 16, 5);
   // (an orchard north of the street past the inn: old apple trees in rows, windfalls under them)
   const orchard = []; for (let i = 0; i < 4; i++) for (let k = 0; k < 4; k++) orchard.push([300 + k * 46 + (i % 2) * 18, -300 + i * 40]);
@@ -432,6 +432,61 @@ function build(scene, opts) {
   { const c = new THREE.Group(); c.position.set(-236, 0, 12); c.rotation.y = 0.5; root_.add(c); tbox(c, 14, 4, 9, 0, 6, 0, plank, 8);
     for (const sz of [-1, 1]) { solid(c, new THREE.TorusGeometry(4, 0.6, 6, 18), oakDk, -2, 4.4, sz * 5, { ink: 0.05 }); }
     pole(c, new V3(7, 6, -2.5), new V3(17, 2, -2.5), 0.4, oak); pole(c, new V3(7, 6, 2.5), new V3(17, 2, 2.5), 0.4, oak); world.obstacles.push({ x: -236, z: 12, r: 9 }); }
+
+  // ── The stocks, at the green's east end: two oak posts, a pair of boards with holes for the ankles (the upper lifts, on its pin), and a plank
+  // seat behind them, weathered. (Only to look at, for now.)
+  { const S0 = new V3(GREEN.x + 112, 0, GREEN.z + 6), g = new THREE.Group(); g.position.copy(S0); g.rotation.y = -0.35; root_.add(g); const old = T.mat('#6e5a44');
+    for (const sx of [-1, 1]) { box(g, 2.4, 13, 2.4, sx * 11, 6.5, 0, old); box(g, 3, 1.2, 3, sx * 11, 13.4, 0, old); }
+    const holes = canvasTex(128, 32, (x, w, h) => { x.fillStyle = '#7a6448'; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(40,28,18,0.25)'; for (let i = 0; i < 8; i++) x.fillRect(0, i * 4 + 1, w, 1);
+      x.fillStyle = '#2a1e14'; for (const cx of [22, 46, 82, 106]) { x.beginPath(); x.arc(cx, h, 7, Math.PI, 0); x.fill(); } });
+    holes.wrapS = holes.wrapT = THREE.ClampToEdgeWrapping;
+    const lower = box(g, 20, 3, 1.4, 0, 4.2, 0, old), upper = box(g, 20, 3, 1.4, 0, 7.4, 0, old);
+    for (const [bd, flip] of [[lower, false], [upper, true]]) for (const sz of [-1, 1]) { const f = new THREE.Mesh(new THREE.PlaneGeometry(20, 3), new THREE.MeshBasicMaterial({ map: holes })); f.position.z = sz * 0.75; if (sz < 0) f.rotation.y = Math.PI; if (flip) f.rotation.z = Math.PI; bd.add(f); }
+    solid(g, new THREE.CylinderGeometry(0.35, 0.35, 2.6, 6).rotateX(Math.PI / 2), T.mat('#3a3634'), 9.4, 7.4, 0, { ink: 0.03 });
+    box(g, 22, 1, 4, 0, 4.2, -6, old); for (const sx of [-1, 1]) box(g, 1.4, 4, 3, sx * 9, 2, -6, old);
+    world.obstacles.push({ x: S0.x, z: S0.z - 2, r: 12 }); }
+
+  // ── The pond, on the green's south side: still water in a grassy hollow, reeds at its edge, stones, and the ducks.
+  const ducks = [];
+  { const P0 = new V3(GREEN.x - 22, 0, GREEN.z + 50), RX = 30, RZ = 19, g = new THREE.Group(); g.position.copy(P0); root_.add(g);
+    const bank = new THREE.Mesh(new THREE.CircleGeometry(1, 40).scale(RX + 5, RZ + 4, 1), T.mat('#6a7a3e')); bank.rotation.x = -Math.PI / 2; bank.position.y = 0.06; bank.receiveShadow = true; g.add(bank);
+    const pondT = canvasTex(128, 128, (x, w, h) => { const gr = x.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w / 2); gr.addColorStop(0, '#3e5e6a'); gr.addColorStop(1, '#5a7e7a'); x.fillStyle = gr; x.fillRect(0, 0, w, h);
+      const r2 = rnd(221); for (let i = 0; i < 26; i++) { x.strokeStyle = 'rgba(220,240,240,.3)'; x.lineWidth = 1.5; x.beginPath(); const y = r2() * h; x.moveTo(r2() * w, y); x.lineTo(r2() * w + 18, y + 1); x.stroke(); } });
+    pondT.wrapS = pondT.wrapT = THREE.ClampToEdgeWrapping;
+    const water = new THREE.Mesh(new THREE.CircleGeometry(1, 40).scale(RX, RZ, 1), new THREE.MeshBasicMaterial({ map: pondT, color: srgb('#c8dce0') })); water.rotation.x = -Math.PI / 2; water.position.y = 0.12; g.add(water);
+    const rr = rnd(223), reed = T.mat('#5e7a36'), mace = T.mat('#6a4428');
+    for (let k = 0; k < 36; k++) { const a = rr() * Math.PI * 2; if (Math.cos(a) > 0.3 && Math.sin(a) > -0.2) continue; const x = Math.cos(a) * (RX + 1 - rr() * 3), z = Math.sin(a) * (RZ + 1 - rr() * 3), h = 6 + rr() * 5;
+      pole(g, new V3(x, 0, z), new V3(x + (rr() - 0.5) * 1.6, h, z + (rr() - 0.5) * 1.6), 0.18, reed, { ink: 0.03 }); if (k % 3 === 0) solid(g, new THREE.CylinderGeometry(0.45, 0.45, 2.2, 6), mace, x, h - 0.6, z, { ink: 0.03 }); }
+    for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + rr() * 0.3, s1 = 1.6 + rr() * 1.4; solid(g, new THREE.DodecahedronGeometry(1, 0), T.mat('#9a968a'), Math.cos(a) * (RX + 3), s1 * 0.4, Math.sin(a) * (RZ + 2.5), { ink: 0.05, rot: [rr(), rr(), 0] }).scale.set(s1, s1 * 0.6, s1); }
+    // (the ducks: white, orange-billed, drifting on slow circles)
+    for (let k = 0; k < 4; k++) { const d = new THREE.Group(); g.add(d); d.userData.keep = true;
+      solid(d, T.ell(1.6, 1.0, 2.4, 10, 6), T.mat('#f4f0e6'), 0, 0.8, 0, { ink: 0.05 }); solid(d, T.ell(0.8, 0.8, 0.8, 8, 6), T.mat('#f4f0e6'), 0, 2.0, 1.8, { ink: 0.04 });
+      solid(d, T.ell(0.3, 0.2, 0.6, 6, 4), T.mat('#e8902a'), 0, 1.9, 2.7, { ink: 0.02 }); solid(d, T.ell(0.7, 0.5, 0.8, 6, 4), T.mat('#e6e0d2'), 0, 1.5, -2.2, { ink: 0.03 });
+      ducks.push({ d, cx: (rr() - 0.5) * RX * 0.8, cz: (rr() - 0.5) * RZ * 0.6, r: 4 + rr() * 6, w: (0.08 + rr() * 0.08) * (k % 2 ? 1 : -1), ph: rr() * 6 }); }
+    // (she can't walk into it: a ring of the bank's edge)
+    for (let k = 0; k < 20; k++) { const a = k / 20 * Math.PI * 2; world.obstacles.push({ x: P0.x + Math.cos(a) * RX * 0.62, z: P0.z + Math.sin(a) * RZ * 0.62, r: Math.min(RX, RZ) * 0.55 }); }
+  }
+
+  // ── The pinfold, just inside the east gate, on the way to Halloran's farm: a round pound of dry stone with a gate, where the strays are put, and
+  // where Bo Peep's flock is penned overnight, safe in the village (they graze at the farm by day: in at dusk, out at dawn).
+  const sheep = new THREE.Group(); sheep.userData.keep = true;
+  { const C = new V3(492, 0, -58), Rr = 22, g = new THREE.Group(); g.position.copy(C); root_.add(g); g.add(sheep);
+    const n = 22, gap = [Math.PI / 2 - 0.26, Math.PI / 2 + 0.26];      // (the gate faces the street, south: +z)
+    for (let k = 0; k < n; k++) { const a0 = k / n * Math.PI * 2, a1 = (k + 1) / n * Math.PI * 2, am = (a0 + a1) / 2; if (am > gap[0] && am < gap[1]) continue;
+      const p0 = C.clone().add(new V3(Math.cos(a0) * Rr, 0, Math.sin(a0) * Rr)), p1 = C.clone().add(new V3(Math.cos(a1) * Rr, 0, Math.sin(a1) * Rr)); wallSeg(p0, p1, 7, rubble); }
+    const gt = new THREE.Group(); gt.position.set(0, 0, Rr); g.add(gt); for (const sx of [-1, 1]) box(gt, 2.2, 10, 2.2, sx * 6.2, 5, 0, oak);
+    for (let k = 0; k < 4; k++) box(gt, 11, 1, 0.7, 0, 2.2 + k * 2.2, 0, oak, { ink: 0.04 }); box(gt, 0.9, 9, 0.6, 0, 5, 0.2, oak, { rot: [0, 0, 0.75], ink: 0.04 });
+    world.obstacles.push({ x: C.x, z: C.z + Rr, r: 6.5 });
+    // (and inside, from dusk, the flock: woolly, black-faced, lying and standing)
+    const wool = T.mat('#ece6d6'), face = T.mat('#2e2a28'), rr = rnd(227);
+    for (let k = 0; k < 9; k++) { const a = rr() * Math.PI * 2, d = rr() * (Rr - 7), sh = new THREE.Group(); sh.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); sh.rotation.y = rr() * 6.3; sheep.add(sh);
+      const lying = rr() < 0.5, y = lying ? 2.4 : 4.6;
+      solid(sh, T.ell(3.2, 2.6, 4.4, 12, 8), wool, 0, y, 0, { ink: 0.07 }); solid(sh, T.ell(1.1, 1.4, 1.7, 8, 6), face, 0, y + 1.2, 4.4, { ink: 0.05 });
+      for (const sx of [-1, 1]) solid(sh, T.ell(0.9, 0.35, 0.5, 6, 4), face, sx * 1.4, y + 2.2, 3.8, { ink: 0.03 });
+      if (!lying) for (const [lx, lz] of [[-1.6, 2.4], [1.6, 2.4], [-1.6, -2.4], [1.6, -2.4]]) solid(sh, new THREE.CylinderGeometry(0.45, 0.4, 3.4, 6), face, lx, 1.7, lz, { ink: 0.03 }); }
+    sheep.visible = false;
+  }
+  lane([[492, 30], [492, -12], [492, -34]], 12);      // (the way up from the street to its gate)
 
   // ── The fields between the houses and the hedges: strips ploughed and sown (furrows, a crop coming up green), a hayfield with its stacks.
   { const strips = canvasTex(128, 128, (x, w, h) => { const r2 = rnd(211); for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#8a6a44' : '#7a9a44'; x.fillRect(i * 16, 0, 16, h); x.fillStyle = 'rgba(60,40,20,0.25)'; for (let k = 0; k < 4; k++) x.fillRect(i * 16 + 2 + k * 4, 0, 1, h); if (i % 2 === 0) { x.fillStyle = '#8eae52'; for (let k = 0; k < 30; k++) x.fillRect(i * 16 + r2() * 16, r2() * h, 2, 3); } } }, [1, 1]);
@@ -507,6 +562,7 @@ function build(scene, opts) {
     api = stage || api; const c = sky(t); scene.background = c; scene.fog.color.copy(c); scene.fog.near = lerp(300, 120, t); scene.fog.far = lerp(1200, 600, t);
     const k = ss(0.45, 0.8, t); winM.color.copy(dark).lerp(lit, k); for (const m of lamps) m.color.copy(dark).lerp(lit, ss(0.55, 0.85, t));
     for (const g of glows) if (g.glow) g.glow.opacity = 0.12 + 0.2 * t;
+    sheep.visible = t > 0.62;      // (the flock penned for the night)
   }
   function follow(pos, dt, camera, at) {
     if (!api) return; const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
@@ -514,6 +570,7 @@ function build(scene, opts) {
   let clock = 0;
   function tick(dt) {
     clock += dt;
+    for (const q of ducks) { const a = clock * q.w + q.ph; q.d.position.set(q.cx + Math.cos(a) * q.r, 0.2 + 0.15 * Math.sin(clock * 1.7 + q.ph), q.cz + Math.sin(a) * q.r * 0.6); q.d.rotation.y = Math.atan2(-Math.sin(a) * Math.sign(q.w), Math.cos(a) * 0.6 * Math.sign(q.w)); }
     for (const p of smoke) { const k = (clock * 0.07 + p.ph) % 1; p.m.position.copy(p.base).add(new V3(k * 5, k * 30, 0)); p.m.scale.setScalar(0.6 + k * 1.8); p.m.material.opacity = 0.42 * (1 - k); }
     for (const g of glows) if (g.color) g.color.setHSL(0.06, 1, 0.55 + 0.06 * Math.sin(clock * 3.1) + 0.03 * Math.sin(clock * 7.7));
     // (her door: swinging to where it's been sent)
