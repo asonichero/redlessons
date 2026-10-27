@@ -108,9 +108,10 @@ function build(scene) {
     p.x = clamp(p.x, onLane ? B.x0 - 60 : B.x0 + rad, B.x1 - rad); p.z = clamp(p.z, B.z0 + rad, B.z1 - rad); return p; };
   world.exits.push({ name: 'the wood', at: V(B.x0 - 50, 14), r: 12 });
   world.entries.lane = { at: [B.x0 - 20, 14], yaw: Math.PI / 2 };
-  // (where they're found: Peter at the nets, the coop, the gate; his grandfather on the bench, in the garden)
+  // (where they're found: Peter at the nets (on the yard side, facing them), the coop, the gate; his grandfather on the bench, in the garden)
   world.spots = Object.assign(world.spots, {
-    nets: { at: V(NETS.x + 6, NETS.z - 8), yaw: 0, look: NETS.clone().setY(10) },      // (on the yard side, facing the nets) coop: { at: V(RUN.x1 + 10, 4), yaw: -Math.PI / 2, look: V(RUN.x1 - 20, 0).setY(2) },
+    nets: { at: V(NETS.x + 6, NETS.z - 8), yaw: 0, look: NETS.clone().setY(10) },
+    coop: { at: V(RUN.x1 + 10, 4), yaw: -Math.PI / 2, look: V(RUN.x1 - 20, 0).setY(2) },
     garden: { at: V(GARDEN.x0 + 20, GARDEN.z1 + 8), yaw: Math.PI, look: V(GARDEN.x0 + 20, GARDEN.z1 - 10).setY(2) }, door: { at: doorAt.clone(), yaw: 0, look: doorAt.clone().setY(18) },
     yard: { at: V(-20, 30), yaw: 0, look: V(-20, 60).setY(10) },
   });
