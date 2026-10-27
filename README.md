@@ -124,6 +124,16 @@ Whenever Red comes home after six of her own accord (walking in at her door, not
 
 Only one correction an evening; whatever else is owed waits for the next. If nothing's owed, her mother asks if she'll help with supper: *Of course* (forty minutes at the table together), an honest *I'm worn through*, or *Must I?* (a "won't": wilful, and counted with the errands' toward the week's three). Then she's in for the night: supper and bed, and it's morning. ("Sleep until morning" has the same word with her first.) Before six, coming in only brings up what can't wait: being sent home by Mistress Pennock.
 
+## The inn (`js/inn.js`), and Mistress Abney's promise (`js/promise.js`)
+
+The Wheatsheaf's taproom: the great hearth with its fire and Bess's high-backed chair drawn up to it, the counter across the back with the barrels behind and tankards on their hooks, two long tables with benches, the stair up to the rooms, the door from the street. Mistress Abney at her counter; Bess in her chair (she's not to be on her feet), to talk to.
+
+**An afternoon's work, played** (`js/work.js`, as the bakery's): *Work at the inn* (by two) takes her in at the door; *Scour the pots*, *Wipe down the tables*, *Build up the fire*, *Draw the ale for the carrier's men*, *Serve the carrier's men* (four of them, smelling of horse and weather; a farthing from the oldest), *Take Bess her tea*, *Sweep out*, Bess calling the work from her chair the whole while. The first afternoon completes *Work at the inn*.
+
+**The promise.** Once she's worked there, Mistress Abney asks a favour (at the end of an afternoon, or when Red next talks to her): she's to market with the carrier tomorrow evening, and Bess mustn't be alone so near her time; will Red come at six and sit with her till nine? An honest no is allowed (she'll ask another day). Yes is a promise, and the next evening, about five, someone comes to find her in the village: Tom with the best dare there's ever been, Agnes off to the pond to hear Georgie read his poem, or Peter with the linnets coming in to roost. She can say she's promised, or go *just for a little while*.
+- **Kept**: at the inn by half past six, *Sit with Bess*: the evening by the fire, till Mistress Abney's back at nine and walks her home herself, squaring the hour with her mother (no curfew owed). Mistress Abney's trust (and Bess's), and *A promise* done.
+- **Broken**: half past six goes by, and Bess sits alone. Naughty (the kind Mistress Abney minds most), her trust down; the next evening her mother's heard of it from her, and corrects her for it; and Mistress Abney is cold with her until Red says sorry to her face. *A promise* is done either way.
+
 ## The pie (`js/pie.js`, the bakery inside: `js/bakery.js`)
 
 Phase 1.2's pie, once Mistress Pennock and Tom both trust Red enough (trust 2 with each; Tom's dares behind them; her first morning helping at the bakery counts toward Mistress Pennock's). One afternoon (between one and a quarter to five: the pies out to cool, the smith at his anvil) Tom comes looking for her with an idea: *I dare you*. She can refuse (the idea keeps), or take one off the bakery's board; Mistress Pennock is out of her door before she's turned round, catches Tom too (*I can see your boots*), takes her pie back, and marches the pair of them to the forge. Master Ferrier, busy at his anvil, leaves Tom to her. Then Mistress Pennock sends Red home: she'll be speaking to her mother herself. Red can:
@@ -249,8 +259,10 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/chores.js` | The days: Mama's garden, the errands asked over breakfast (yes, an honest no, or a won't), promises kept or broken, the maintenance correction |
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
 | `js/evening.js` | Evenings at home: the Watchman bringing her home, the curfew, reprieves for what others have dealt with, supper, and bed |
+| `js/inn.js` | The inn inside: the hearth, Bess's chair, the counter and barrels, the tables, the stair |
+| `js/promise.js` | Mistress Abney's promise: the asking, the evening's temptation, sitting with Bess, and a promise broken |
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
-| `js/work.js` | A shift of work, played: the bakery's morning, task by task (the inn's to come) |
+| `js/work.js` | A shift of work, played: the bakery's morning and the inn's afternoon, task by task |
 | `js/bakery.js` | The bakery inside: the oven, the kneading table, the loaves, the counter |
 | `js/peter.js` | Peter: the first visit to the Fowlers', his notes in the beech and meeting him there, his days off |
 | `js/holding.js` | The Fowlers' smallholding: the cottage, coop and hens, the duck, the nets, the garden; Peter and Master Fowler about their day |

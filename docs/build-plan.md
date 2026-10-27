@@ -73,7 +73,7 @@ The cottage, Hulda's cabin and the path through the wood exist. The village is t
 | The cottage's outside and Mary's garden | 1.2 | The daily chore loop | `js/village.js`, `js/garden.js` (built: the rows, the work, the trampling, her mother's look round) |
 | The village: lanes, green, the meadow edge | 1.1 | Walking between everything; curfew at night | `js/village.js` (outsides built: the street, the green, the inn, bakery, forge and cottages; interiors to come) |
 | The bakery | 1.2 | Helping out; the pie | `js/bakery.js` (built: the inside, for the pie; `js/pie.js` plays it) |
-| The inn | 1.2 | Mistress Abney's work; the confinement in 2.2 | *new*, in `js/village.js` |
+| The inn | 1.2 | Mistress Abney's work; the confinement in 2.2 | `js/inn.js` (built: the taproom; the afternoon's work and the promise, `js/work.js`, `js/promise.js`; the rooms upstairs to come) |
 | The forge | 1.2 | Tom and the smith | *new*, in `js/village.js` |
 | Halloran's farm | 1.1 | Rose's quests; perhaps the strays' fields | *new* |
 | The Fowlers' smallholding | 1.1 | Peter and his grandfather at home: the nets, the coop, the meadow gate | *new*, at the meadow's edge |

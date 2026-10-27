@@ -180,7 +180,7 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 ### Mistress Abney (the inn)
 
 1. **1.1** Asks Red to sit up with her daughter. Best played as Rose.
-2. **1.2** Work at the inn. A promise Red is tempted to break.
+2. **1.2** Work at the inn. A promise Red is tempted to break: to come at six and sit with Bess while Mistress Abney's at market. That evening Tom, Agnes or Peter comes to find her with something better; kept, an evening with Bess and Mistress Abney walking her home; broken, Bess alone, Mistress Abney cold until Red says sorry, and her mother told.
 3. **1.3** Trust, disclosure, and taken in hand. Quest complete.
 4. **2.2** Her daughter's confinement. Maren attends, and Red helps at the inn and at home for weeks, as Rose. This is what keeps Red out of the wood.
 5. **2.3** Supplies the wine.

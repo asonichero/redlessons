@@ -214,13 +214,16 @@ function attach(P, w) {
     const f = figs[key]; if (!f) return; hold(f);
     try {
       await meet(f);
+      if (key === 'abney' && root.AbneyPromise && root.AbneyPromise.wants(w)) { await root.AbneyPromise.ask(P, w); return; }      // (she's a favour to ask)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
-      const ctx = { part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone };
+      const ctx = { part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone,
+        brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });
       if (!today && key !== 'willie') rep.trusts(key, 0.25);
       change(s => { s.talked[key] = cal.day; s.met[key] = true; });
+      if (ctx.brokenPromise && key === 'abney') w.save.change(s => { s.promise.sorry = cal.day; }, { promise: true });      // (said sorry, to her face)
       if (key === 'tom' && w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
     } finally { release(f); }
   }
@@ -309,6 +312,22 @@ function attach(P, w) {
   if (W.gate) W.gate.barred = () => !!(root.Evening && root.Evening.watchman(w));
   if (root.Evening && root.Evening.watchman(w) && cal.curfew()) { const f0 = () => figs.willie; setTimeout(() => { const f = f0(); if (f) f.follow = true; }, 0); }      // (still walking her home, as she comes back out)
 
+  // ── The evening of Mistress Abney's promise, about five: whoever comes to find her (js/promise.js), fetched out if they're not about, and
+  // walked to her; then let go again.
+  let tempting = false;
+  function promiseWatch() {
+    const AP = root.AbneyPromise; if (!AP || tempting || P.busy) return;
+    const who = AP.tempter(w); if (!who) return;
+    tempting = true;
+    P.act(async () => {
+      try { const f = figs[who] || summon(who, PEOPLE[who].door); f.scene = f.scene || {}; f.held = true;
+        const red = P.motion.pos, to = flat(red).add(flat(f.motion.pos).sub(flat(red)).setLength(14));
+        await walkTo(who, to, yawTo(to, red), 0.9); await meet(f, 13);
+        await AP.tempt(P, w, who); }
+      finally { letGo(who); tempting = false; }
+    });
+  }
+
   // Each frame (while the place is played): who's where, their walking, and the figures themselves.
   const off = P.tick(dt => {
     clock += dt; if ((think -= dt) <= 0) { think = 0.5; update(false); }
@@ -317,7 +336,7 @@ function attach(P, w) {
       // (too far off to make out: not drawn; their walking goes on)
       const far = Math.hypot(f.motion.pos.x - cam.x, f.motion.pos.z - cam.z) > FAR; f.rig.root.visible = !far; if (f.lantern) f.lantern.obj.visible = !far;
       if (!far) f.rig.tick(dt); }
-    tomWatch(dt); willieWatch();
+    tomWatch(dt); willieWatch(); promiseWatch();
   });
   update(true);
   return { actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };

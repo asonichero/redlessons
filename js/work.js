@@ -4,6 +4,7 @@
 // whole while. When the last is done, the errand's done; and until then, the door stays shut on her.
 //
 //   Work.begin(w, id) (chores: in through the door to it) · Work.attach(P, w) (the place, played: if a shift's under way here) · Work.SHIFTS
+//   (the bakery's morning; the inn's afternoon, Bess calling the work from her chair)
 // Kept in the save (state.work): { day, id, step }.
 (function (root) {
 'use strict';
@@ -19,6 +20,15 @@ const SHIFTS = {
     { id: 'draw', label: 'Draw the loaves out', place: 'oven', mins: 20, kind: 'draw' },
     { id: 'racks', label: 'Set the loaves on the racks', place: 'racks', mins: 25, kind: 'racks' },
     { id: 'serve', label: 'Serve at the counter', place: 'counter', mins: 60, kind: 'serve' },
+  ] },
+  inn: { area: 'inn', boss: 'bess', errand: 'inn', tasks: [
+    { id: 'pots', label: 'Scour the pots', place: 'tub', mins: 30, kind: 'shape' },
+    { id: 'tables', label: 'Wipe down the tables', place: 'tables', mins: 20, kind: 'shape' },
+    { id: 'fire', label: 'Build up the fire', place: 'fire', mins: 10, kind: 'reach' },
+    { id: 'ale', label: 'Draw the ale for the carrier’s men', place: 'counter', mins: 25, kind: 'ale' },
+    { id: 'carriers', label: 'Serve the carrier’s men', place: 'table2', mins: 50, kind: 'serve' },
+    { id: 'tea', label: 'Take Bess her tea', place: 'bess', mins: 15, kind: 'reach' },
+    { id: 'sweep', label: 'Sweep out', place: 'floor', mins: 25, kind: 'sweep' },
   ] },
 };
 
@@ -72,7 +82,8 @@ function attach(P, w) {
       const tray = root.Chores ? root.Chores.prop('loaves') : null; if (tray) { P.stage.scene.add(tray.obj); m.hold(tray, 'front'); } },
     sweep: async sp => { const c = sp.at; for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) { const to = P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2); m.reach('R', () => m.pos.clone().add(new V3(Math.sin(m.yaw) * 5, 0.5, Math.cos(m.yaw) * 5))); await m.goTo(to, null, { speed: 0.5 }); } await m.release('R'); },
     racks: async sp => { const it = m.drop(); if (it) P.stage.scene.remove(it.obj); for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3(0, (k - 1) * 8, (k - 1) * 3)), 'R', 0.4); },
-    serve: async () => { await P.converse(lines.customers || [], { shot: false, keepCamera: true }); },
+    ale: async sp => { for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3((k - 1) * 3, 0, 0)), 'R', 0.6); const tray = root.Chores ? root.Chores.prop('jug') : null; if (tray) { P.stage.scene.add(tray.obj); m.hold(tray, 'hang'); } },
+    serve: async () => { const it = m.carry; if (it) { m.drop(); P.stage.scene.remove(it.obj); } await P.converse(lines.customers || [], { shot: false, keepCamera: true }); },
     reach: async sp => reachAt(sp.look),
   };
   // Done: the errand done (js/chores.js), her word for it, and the door open again.
@@ -80,6 +91,7 @@ function attach(P, w) {
     change(w, s => { s.id = null; });
     if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand);
     await P.converse(lines.end || [], { shot: ['red', sh.boss] });
+    if (st0.id === 'inn' && root.AbneyPromise && P.npc) await root.AbneyPromise.ask(P, w);      // (and, at the end of an afternoon at the inn, Mistress Abney's favour to ask)
     w.refresh();
   }
   return { task, action };

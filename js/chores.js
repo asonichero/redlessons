@@ -169,9 +169,9 @@ function create(w) {
   // What's hers to do now, for the objective: the errand (begun by when), what to take home, the garden.
   function objective() {
     if (!on()) return null;
-    { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)) || (root.Peter && root.Peter.objective(w)); if (t) return t; }      // (and Peter's note: the beech, at the hour)      // (walked home by the Watchman; sent home by Mistress Pennock)
+    { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)) || (root.AbneyPromise && root.AbneyPromise.objective(w)) || (root.Peter && root.Peter.objective(w)); if (t) return t; }      // (and Peter's note: the beech, at the hour)      // (walked home by the Watchman; sent home by Mistress Pennock)
     const e = errand(), c = st();
-    { const k = root.Work && root.Work.current(w); if (k && e) { const t = root.Work.SHIFTS[k.id].tasks[k.step]; if (t) return e.title + ': ' + t.label.toLowerCase() + '.'; } }      // (at work: the task in hand)
+    { const k = root.Work && root.Work.current(w); if (k && e) { const t = root.Work.SHIFTS[k.id].tasks[k.step]; if (t) return e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.'; } }      // (at work: the task in hand)
     if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';
     if (e && e.state === 'carrying') return 'Take ' + NAME[e.carry] + ' home to Mama.';
     if (e && e.state === 'broken') return e.title + ': late, but not too late to do it.';

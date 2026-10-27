@@ -31,7 +31,7 @@ const objective = w => watchman(w) ? 'Home, with Master William at your heels.' 
 
 async function home(P, w, o) {
   o = o || {};
-  const cal = w.cal, S = root.Story, st = stateOf(w), late = cal.curfew(), walked = !!watchman(w);
+  const cal = w.cal, S = root.Story, st = stateOf(w), excused = !!(root.AbneyPromise && root.AbneyPromise.excused(w)), late = cal.curfew() && !excused, walked = !!watchman(w);      // (excused: walked home by Mistress Abney, after sitting with Bess)
   if (!P || !P.npc) return;
   // (before six, and not late: only what can't wait)
   if (!o.bed && !late && !walked && cal.minute < H('18:00')) { if (root.Pie) await root.Pie.evening(P, w); return; }
@@ -41,11 +41,13 @@ async function home(P, w, o) {
     if (walked) { await brought(P, w); }
     if (late || walked) corrected = await curfew(P, w, { willie: walked });
     if (!corrected) await reprieves(P, w);
+    if (excused) { await P.wait(0.4); await P.approach(); await P.converse(S.excusedHome(), { shot: ['red', 'mother'] }); }
     if (!corrected && root.Pie) corrected = await root.Pie.evening(P, w, true);
+    if (!corrected && root.AbneyPromise) corrected = await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
     if (!corrected && root.Garden && w.chores && w.chores.on()) corrected = await root.Garden.evening(P, w, true);
-    if (!corrected && P === w.P && !late) await supper(P, w);
+    if (!corrected && P === w.P && !late && !excused) await supper(P, w);
   }
-  if (P === w.P) await w.morning(late ? 'Bed.' : 'Supper, and bed.');
+  if (P === w.P) await w.morning(late || excused ? 'Bed.' : 'Supper, and bed.');
 }
 
 // ── The Watchman at the door: he hands her over, and goes back to his round.

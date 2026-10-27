@@ -20,6 +20,15 @@ const HULDA = { id: 'gran', key: 'gran', name: 'Grandmother', voice: 'gran', tin
 
 // The places: how each is built, who's there, the ways in (entries: where she stands, which way she faces) and the ways out (exits, by the name
 // the place gives them: to where, and in by which way).
+// Bess in her chair by the inn's fire (she's not to be on her feet), to talk to, and to work for.
+function seatBess(P) {
+  const seat = P.world.bessChair; if (!seat) return;
+  const looks = root.Looks && root.Looks.load ? root.Looks.load() : {}, rig = root.Toon.make('abneyDaughter', looks.abneyDaughter || {}), motion = root.Motion.create(rig, {});
+  const fw = new V3(Math.sin(seat.facing), 0, Math.cos(seat.facing)); motion.warp(seat.at.clone().setY(0).addScaledVector(fw, 0.5), seat.facing); motion.sit(seat); motion.sitW = 1;
+  P.addFigure('bess', { rig, motion, cast: { name: 'Bess', voice: 'bess', tint: '#6a4a5a', bg: '#ecdde4' } });
+  P.tick(dt => { motion.update(dt, null); rig.tick(dt); });
+  const i = P.world.seats.indexOf(seat); if (i >= 0) P.world.seats.splice(i, 1);
+}
 const AREAS = {
   cabin: {
     name: 'Grandmother’s', music: 'hearth', set: s => root.Cabin.build(s), npc: () => Object.assign({ at: [-22, 17], yaw: Math.PI / 2 }, HULDA), talk: () => root.Story.granAgain(),      // (npc: by her rocking chair and the hearth, facing into the room)
@@ -44,6 +53,15 @@ const AREAS = {
   holding: {
     name: 'The Fowlers’', music: 'village', set: s => root.Holding.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set', exits: { 'the wood': { area: 'wood', entry: 'fowlers' } },
+  },
+  // The inn, inside (js/inn.js): the Wheatsheaf's taproom. Mistress Abney at her counter, Bess in her chair by the fire. (Where the afternoon's
+  // work is worked (js/work.js), and the evening sat with Bess (js/promise.js: AbneyPromise).)
+  inn: {
+    name: 'The Wheatsheaf', music: 'hearth', set: s => root.Inn.build(s), npc: () => ({ id: 'abney', key: 'abney', name: 'Mistress Abney', at: [18, 2], yaw: 0, voice: 'abney', tint: '#4a4a6a', bg: '#e0e0ea' }),
+    talk: () => root.Story.abneyIdle(),
+    dress(P, w) { seatBess(P); if (root.Work) P.work = root.Work.attach(P, w); if (root.AbneyPromise) P.promise = root.AbneyPromise.inn(P, w); },
+    entries: { door: { at: [4, 26], yaw: Math.PI } },
+    exits: { 'the door': { area: 'village', entry: 'inn' } },
   },
   // The bakery, inside (js/bakery.js): Mistress Pennock's. (Where the morning's help is worked (js/work.js), and the pie's end.)
   bakery: {

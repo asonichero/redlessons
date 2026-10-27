@@ -404,7 +404,7 @@ const ERRANDS = {
       { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }],
     there: [{ text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
       { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }] },
-  inn: { title: 'Work at the inn', by: '14:00', place: 'inn', action: 'Go in to work for Mistress Abney', mins: 180, who: 'abney', trust: 'abney',
+  inn: { title: 'Work at the inn', by: '14:00', place: 'inn', action: 'Go in to work for Mistress Abney', mins: 180, who: 'abney', trust: 'abney', quest: 'abney.work', shift: 'inn',      // (played inside: js/work.js)
     ask: 'Mistress Abney could use you this afternoon: the carrier’s due, and Bess can’t be on her feet all day. Will you go along by two?',
     met: [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'There you are. Pots first, then the tables, then Bess, who’ll tell you she needs nothing. She’s lying.' },
       { text: 'The afternoon goes in pots and plates and the carrier’s men stamping in, and Bess sat by the fire, directing everyone, and Mistress Abney watching it all.' },
@@ -595,6 +595,12 @@ const villager = (key, ctx) => {
   if (key === 'willie') return ctx.curfew ? pickOf(V.any, ctx.day) : V.early;
   if (key === 'tom' && ctx.working) return V.work;
   if (key === 'smith' && ctx.potDone) return V.after;
+  if (key === 'abney' && ctx.brokenPromise) return [      // (the promise to sit with Bess, broken: until she's said sorry)
+    { who: 'abney', face: 'stern', listen: { red: 'shy' }, text: 'Miss Rose.' },
+    { text: 'Only that, and colder than the well. She doesn’t stop what she’s doing.' },
+    { who: 'red', face: 'wince', text: 'Mistress Abney, I’m sorry. About Bess. I should have come. I said I would, and I didn’t.' },
+    { who: 'abney', face: 'calm', listen: { red: 'wince' }, text: 'You should have. She sat there till nine, watching the door.' },
+    { who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Well. You’ve said it to my face, and that’s something. Don’t make me need you again and find you wanting.' }];
   if (ctx.first && V.first) return V.first;
   if (key === 'georgie' && ctx.part === 'dusk' && V.late) return V.late;
   if (ctx.today && V.again) return V.again;
@@ -1089,6 +1095,102 @@ const beechMeeting = (n, ctx) => {
   return owed.concat(talks[n % talks.length]);
 };
 
+// ── The inn (js/inn.js): the afternoon's work, Bess calling it from her chair (js/work.js); Mistress Abney's promise (js/promise.js).
+WORK.inn = {
+  start: [
+    { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'There you are. Pots first, then the tables, then Bess, who’ll tell you she needs nothing. She’s lying.' },
+    { who: 'bess', face: 'cheeky', listen: { red: 'smile' }, text: 'I need nothing. I’ll tell you what to do, though. I’m very good at that, sitting down.' },
+  ],
+  pots: ['Scour them till you can see your face. Then a bit more: Mother can see a smear from the stairs.', 'cheeky'],
+  tables: ['Wipe with the grain, not round and round. Round and round just moves it about.', 'calm'],
+  fire: ['Two logs, crossed. Not three. Three and it roars, and then it sulks all evening.', 'calm'],
+  ale: ['From the second barrel, not the first: the first’s for the gentry. The carrier’s men can’t tell, but Mother can.', 'cheeky'],
+  tea: ['Oh, you angel. Sit a minute. No? Mother’s watching, isn’t she. She’s always watching.', 'smile'],
+  sweep: ['Into the corners. The corners are where the dirt hides, and where Mother looks first.', 'calm'],
+  customers: [
+    { text: 'The carrier’s men come stamping in out of the road, four of them, smelling of horse and weather, and the taproom fills up with their voices.' },
+    { who: 'abney', face: 'stern', text: 'Boots on the mat. All of you. I don’t care how far you’ve come.' },
+    { text: 'Red carries the tankards, and the bread, and the cheese, and is called “miss” and “love” and once “pet” by a man old enough to be her grandfather, who tips her a farthing.' },
+    { who: 'red', face: 'smile', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' },
+  ],
+  end: [
+    { who: 'abney', face: 'calm', listen: { red: 'smile' }, text: 'That’ll do, Miss Rose. You work like your mother: quiet, and properly. I don’t say that to everyone.' },
+    { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'She doesn’t say it to me.' },
+    { who: 'abney', face: 'stern', text: 'You’re not supposed to be doing anything.' },
+  ],
+};
+const abneyIdle = () => [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Miss Rose. Bess is by the fire, if you’ve come to see her. Don’t let her get up.' }];
+// The asking. ctx: { yes() }
+const abneyAsks = ctx => [
+  { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Miss Rose. A favour, and I don’t ask them lightly.' },
+  { who: 'abney', face: 'concerned', listen: { red: 'calm' }, text: 'I’m to the market town tomorrow with the carrier: there’s business there I can’t send anyone to. Bess mustn’t be alone, so near her time. Will you come at six, and sit with her till I’m back? Nine, at the latest.' },
+  { choose: [
+    { text: 'Of course, Mistress Abney. I’ll be here at six.', face: 'smile', then: [{ run: ctx.yes },
+      { who: 'abney', face: 'calm', listen: { red: 'smile' }, text: 'Six. I’ll hold you to that, pet. I hold everyone to what they say.' }] },
+    { text: 'I can’t tomorrow, Mistress Abney. I’m sorry.', face: 'shy', then: [
+      { who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Then you can’t, and you’ve said so honestly. I’ll manage. I may ask you another day.' }] },
+  ] },
+];
+// About five that evening: who comes to find her. ctx: { go() }
+const TEMPT = {
+  tom: [{ who: 'tom', face: 'cheeky', listen: { red: 'surprised' }, text: 'Ridley! The best dare there’s ever been. Tonight, at the bell, Old Halloran’s ram. Don’t ask, it’s better if you see it. Come on!' }],
+  agnes: [{ who: 'agnes', face: 'smile', listen: { red: 'smile' }, text: 'Rose! Georgie’s going to read his poem at the pond. To me. In front of everyone. You have to come, I’ll die if you don’t.' }],
+  peter: [{ who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'Red. Grandad’s gone to bed early, and the linnets are coming in to roost in the meadow. I thought you might like to see. It’s only an hour.' }],
+};
+const tempted = (who, ctx) => (TEMPT[who] || []).concat([{ choose: [
+  { text: 'I can’t. I promised Mistress Abney I’d sit with Bess.', face: 'shy', then: [{ who, face: 'pout', listen: { red: 'shy' }, text: who === 'tom' ? 'A promise. To Mistress Abney. You’ve gone soft, Ridley.' : who === 'agnes' ? 'Oh, you and your promises. I’ll tell you every word.' : 'Then you should keep it. Another time.' }] },
+  { text: 'Just for a little while, then.', face: 'cheeky', then: [{ run: ctx.go }] },
+] }]);
+const temptedAfter = who => [
+  { text: who === 'tom' ? 'It is, in the end, a very good dare, and the ram is very angry, and they run until they can’t for laughing.' : who === 'agnes' ? 'The poem is dreadful, and Agnes cries, and Georgie goes the colour of a beetroot, and it’s the best thing that’s happened all year.' : 'The linnets come in over the meadow in their hundreds, and settle, and Peter doesn’t say anything, and neither does she.' },
+  { who: 'red', face: 'wince', thought: true, text: 'The light’s going. It must be long past half six. Bess. Oh, no. Bess.' },
+];
+// The evening by the fire with Bess.
+const sitWithBess = () => [
+  { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'You came. Mother said you would. She said it the way she says the sun will come up, as if she’d have words with it if it didn’t.' },
+  { who: 'red', face: 'smile', text: 'I promised.' },
+  { who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'Sit, then. Not on the stool: in the good chair. Mother isn’t here to see.' },
+  { text: 'The evening goes by in the firelight. Bess talks about the babe, and what she’ll call it, and doesn’t talk about its father; Red talks about the wood, and her grandmother, and doesn’t talk about other things.' },
+  { who: 'bess', face: 'concerned', listen: { red: 'shy' }, text: 'You’re different lately. Not worse. Like someone who’s put something down that was heavy.' },
+  { who: 'red', face: 'shy', thought: true, text: 'Everyone keeps noticing. I didn’t know it showed.' },
+];
+const abneyBack = () => [
+  { text: 'Nine strikes, and the latch goes, and Mistress Abney comes in out of the night with her basket.' },
+  { who: 'abney', face: 'smile', listen: { red: 'smile' }, text: 'Still here. Both of you, and the fire in, and nothing burnt. Thank you, Miss Rose. That was a promise kept.' },
+  { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Now: it’s past the bell, and I’ll not have William Dunn walking you home like a stray. I’ll walk you myself, and tell your mother why you’re late.' },
+];
+// Home, walked there by Mistress Abney.
+const excusedHome = () => [{ who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Mistress Abney told me. Sat with Bess all evening, and kept your word to the minute. Bed, love. You’ve earned it.' }];
+// A promise broken: the next evening, her mother's heard.
+const promiseFoundOut = () => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Mistress Abney came by.' },
+  { who: 'red', face: 'wince', text: 'Mama…' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'She came home from the market at nine and found Bess on her own by the fire. Near her time. Alone. Because you’d promised, and then you hadn’t come.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Come here, Little Red.' },
+];
+const promiseCorrection = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.55, pace: 1.4 });
+  await S.wait(0.8);
+  await S.say(M, 'A promise is the one thing you have that’s entirely yours to keep, Little Red.', 'stern');
+  await S.step([M, 'You said yes. Nobody made you. You could have said no, and she’d have asked someone else.'], 8);
+  await S.step([R, 'I know, Mama— I meant to—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.8, pace: 1.65 });
+  await S.step([M, 'And Bess sat there alone, near her time, waiting for you, watching the door.'], 12);
+  await S.step([R, 'I’m sorry! I’m sorry!'], 6);
+  await S.gesture('drawers'); await S.wait(0.5);
+  S.set({ strength: 1.95, pace: 1.85 });
+  await S.step([M, 'When you give your word, you keep it. Even when something better comes along. Especially then.'], 12);
+  await S.smacks(8);
+  await S.say(M, 'There. It’s done. Tomorrow you go to the Wheatsheaf, and you say sorry to them both.', 'calm');
+  await S.wait(1.2);
+};
+const promiseAfter = () => [
+  { who: 'mother', face: 'calm', listen: { red: 'teary' }, text: 'Come here. There. A promise kept is worth more than you know. You’ll learn it.' },
+  { who: 'red', face: 'teary', text: 'I’ll go first thing. I will.' },
+];
+
 // Mistress Pennock in her bakery, any other time.
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
@@ -1107,5 +1209,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -628,6 +628,7 @@ function build(scene, opts) {
     meadowGate: { at: GATE.clone().add(V(22, 22)), yaw: Math.PI * 0.25, look: GATE.clone().setY(10) },      // (just in at the meadow gate: where Peter comes and goes)
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
+  world.entries.inn = { at: [world.spots.innDoor.at.x - Math.sin(world.spots.innDoor.yaw) * 10, world.spots.innDoor.at.z - Math.cos(world.spots.innDoor.yaw) * 10], yaw: world.spots.innDoor.yaw + Math.PI };      // (out of the inn's door, onto the street)
   world.entries.bakery = { at: [world.spots.bakeryDoor.at.x - Math.sin(world.spots.bakeryDoor.yaw) * 10, world.spots.bakeryDoor.at.z - Math.cos(world.spots.bakeryDoor.yaw) * 10], yaw: world.spots.bakeryDoor.yaw + Math.PI };      // (out of Mistress Pennock's door, onto the street)
   world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
   // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)
