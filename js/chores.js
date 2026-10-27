@@ -76,6 +76,8 @@ function create(w) {
     if (how === 'wont') rep.add('wilful', 1, 'refusing an errand');
     change(c => { c.errand = { id, state: how === 'yes' ? 'accepted' : how, by }; c.last = id; if (how === 'wont') c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); });
   }
+  // Another "won't", not an errand (refusing to help with supper): wilful, and counted with the errands' toward the week's three.
+  const wont = why => { rep.add('wilful', 1, why); change(c => { c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); }); };
   // (three "won't"s within the week: a maintenance correction is due)
   const due = () => (st().refusals || []).filter(d => d > cal.day - 7).length >= 3;
   // The third "won't" in a week: her mother takes her in hand, there and then; and after it, she's set right.
@@ -151,7 +153,7 @@ function create(w) {
   // What's hers to do now, for the objective: the errand (begun by when), what to take home, the garden.
   function objective() {
     if (!on()) return null;
-    { const t = root.Pie && root.Pie.objective(w); if (t) return t; }      // (sent home by Mistress Pennock)
+    { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)); if (t) return t; }      // (walked home by the Watchman; sent home by Mistress Pennock)
     const e = errand(), c = st();
     if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';
     if (e && e.state === 'carrying') return 'Take ' + NAME[e.carry] + ' home to Mama.';
@@ -167,7 +169,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { on, breakfast, answer, due, settled, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { on, breakfast, answer, wont, due, settled, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

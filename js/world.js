@@ -94,7 +94,7 @@ function create(view, ui) {
   }
 
   // ── Going somewhere: out of the place she's in (under a fade), the new one built, her put at the way in, and its scene, if one's on offer, played.
-  async function go(name, entry) {
+  async function go(name, entry, how) {      // (how.walked: she walked in, of her own accord, by a way out of the last place)
     if (going) return going;
     going = (async () => {
       const A = AREAS[name]; if (!A) throw new Error('World: no place ' + name);
@@ -117,7 +117,7 @@ function create(view, ui) {
       save.change(s => { s.area = name; }, { area: name });
       refresh();
       if (sc && sc.run) sc.run(P, w, step);
-      else if (name === 'home' && entry === 'door') homeAgain();
+      else if (name === 'home' && entry === 'door' && how && how.walked) homeAgain();
       // (under the fade, the scene's own first shot settles before it opens: its conversation under way, the camera on them)
       if (sc && sc.establish) { const t0 = performance.now(); while (performance.now() - t0 < 4000 && !(P.talk && P.talk.playing)) await new Promise(r => setTimeout(r, 50)); await new Promise(r => setTimeout(r, 150)); }
       await fade(false);
@@ -177,7 +177,7 @@ function create(view, ui) {
     if (!e && A.entries === 'set') o.place = P_ => { const es = P_.world.entries || {}, x = es[entry] || es[Object.keys(es)[0]]; if (x) { P_.motion.warp(new V3(x.at[0], 0, x.at[1]), x.yaw); P_.rig.root.position.set(x.at[0], 0, x.at[1]); placeCam(P_, x); } };
     if (e) o.start = { at: e.at, yaw: e.yaw };
     if (e && e.camTurn != null) o.camTurn = e.camTurn;
-    o.onExit = ex => { const to = A.exits[ex.name]; if (!to) return; if (o.leaving) o.leaving(ex, to); go(to.area, to.entry); };
+    o.onExit = ex => { const to = A.exits[ex.name]; if (!to) return; if (o.leaving) o.leaving(ex, to); go(to.area, to.entry, { walked: true }); };
     // Talking: whatever's on offer with whoever's here, or their word for the time of day.
     if (name === 'home') {
       let pending = null;
@@ -196,22 +196,16 @@ function create(view, ui) {
     const st = P_.stage, t = P_.motion.pos.clone().setY(20 * P_.rig.scaleW), y = x.yaw + (x.camTurn || 0), back = new V3(-Math.sin(y), 0, -Math.cos(y)).multiplyScalar(34);      // (camTurn: round from behind her, as the entry asks)
     st.controls.target.copy(t); st.camera.position.copy(t).add(back).setY(t.y + 8); st.controls.update();
   }
-  // Home after the curfew bell, once it's been agreed: her mother's word about it, once a night, and it's remembered.
-  // (and, at dusk, her mother may have been round the garden: js/garden.js)
+  // Home of her own accord: her mother's word with her (js/evening.js): after six, whatever's owed, then supper and bed; before, only what can't wait.
   function homeAgain() {
-    const key = 'late-' + (cal.minute < 12 * 60 ? cal.day - 1 : cal.day), late = save.has('curfew-agreed') && cal.curfew() && !save.has(key);
-    if (late) { save.flag(key); rep.add('wilful', 1, 'home after the curfew bell'); }
-    const P_ = P; P_.act(async () => {
-      if (late) { await P_.wait(0.8); await P_.approach(); await P_.converse(root.Story.lateHome(), { shot: ['red', 'mother'] }); }
-      if (root.Pie) await root.Pie.evening(P_, w);      // (the pie: told, kept back, or heard of)
-      if (chores && chores.on() && root.Garden) await root.Garden.evening(P_, w);
-    });
+    const P_ = P; if (!root.Evening || !(chores && chores.on())) return;
+    P_.act(() => root.Evening.home(P_, w));
   }
   // To bed, at home, from the evening on: the night passes, and it's the morning.
   function sleepAction() {
     const P_ = P; if (!P_ || !['evening', 'dusk', 'night'].includes(cal.part)) return [];
     const bed = P_.world.seats.find(s => s.kind === 'bed'); if (!bed) return [];
-    return [{ label: 'Sleep until morning', at: bed.at, run: async () => { if (root.Pie) await root.Pie.evening(P_, w, true); if (P_ === P && chores && chores.on() && root.Garden) await root.Garden.evening(P_, w, true); if (P_ === P) await morning(); } }];      // (her mother's look round the garden, if it's tonight, before bed)
+    return [{ label: 'Sleep until morning', at: bed.at, run: async () => { if (root.Evening && chores && chores.on()) await root.Evening.home(P_, w, { bed: true }); else await morning(); } }];      // (her mother's word with her first: js/evening.js; then the night)
   }
 
   // Each frame: time passing as she goes about, the light with it, her place kept every few seconds.
@@ -228,7 +222,7 @@ function create(view, ui) {
 
   // The next morning: the night passes (under a fade), and she's up, at home.
   // (and over breakfast her mother asks what's been asked of them: js/chores.js)
-  async function morning() { await fade(true, ''); cal.sleep(); await go('home', 'bed'); const P_ = P; if (chores && chores.on() && P_) P_.act(() => chores.breakfast(P_)); }
+  async function morning(text) { await fade(true, text || ''); cal.sleep(); await go('home', 'bed'); const P_ = P; if (chores && chores.on() && P_) P_.act(() => chores.breakfast(P_)); }
 
   // ── Starting.
   async function newGame() { save.reset(); await go('cabin', 'chapter'); }

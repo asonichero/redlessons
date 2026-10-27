@@ -149,6 +149,11 @@ function attach(P, w) {
   // Each moment: along their way, a point at a time; at the end of it, settled there (facing their work, sat down, or in, and gone).
   function step(f, dt) {
     const m = f.motion; if ((f.held && !f.scene) || f.standing) return;
+    // (walking her home: a few steps behind her, wherever she goes)
+    if (f.follow) { const red = P.motion.pos, d = Math.hypot(red.x - m.pos.x, red.z - m.pos.z);
+      if (d > 20 && (f.re = (f.re || 0) - dt) <= 0) { f.re = 0.8; const back = flat(m.pos).sub(flat(red)).setLength(14); walk(f, flat(red).add(back), null); f.speed = 0.95; }
+      else if (d <= 16 && f.path) { f.path = null; m.auto = null; m.face(yawTo(m.pos, red)); }
+      if (!f.path) return; }
     if (f.path) {
       if (!m.auto) {
         if (f.i >= f.path.length) { const end = f.path; f.path = null; arrive(f, end); return; }
@@ -203,6 +208,7 @@ function attach(P, w) {
     if (!f.sat) f.motion.face(yawTo(f.motion.pos, m.pos));
   }
   async function talkTo(key) {
+    if (key === 'willie' && cal.curfew() && root.Evening && !root.Evening.watchman(w)) return catchHer(figs.willie);      // (after the bell, he's not there to chat)
     const f = figs[key]; if (!f) return; hold(f);
     try {
       await meet(f);
@@ -286,6 +292,21 @@ function attach(P, w) {
   // (her, by the ways about, to a place)
   async function lead(to, yaw, o) { const pts = net.route(P.motion.pos, to); for (let i = 0; i < pts.length; i++) await P.motion.goTo(pts[i], i === pts.length - 1 ? yaw : null, o); }
 
+  // ── The Watchman, on his round after the bell: if he sees her out, he stops her, and walks her home (a few steps behind her; the way to
+  // the wood shut to her while he does). At her door, js/evening.js has him hand her over.
+  function willieWatch() {
+    const f = figs.willie; if (!f || f.follow || f.held || !cal.curfew() || !root.Evening || root.Evening.watchman(w) || P.busy) return;
+    const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < 110) P.act(() => catchHer(f));
+  }
+  async function catchHer(f) {
+    if (!f) return; hold(f);
+    const n = root.Evening.caught(w);
+    try { await meet(f, 14); await P.converse(S.willieCatch(n), { shot: ['red', 'willie'] }); }
+    finally { f.held = false; f.follow = true; f.path = null; }
+  }
+  { const ex = (W.exits || []).find(e => e.name === 'the wood'); if (ex) { const was = ex.when; ex.when = () => !(root.Evening && root.Evening.watchman(w)) && (!was || was()); } }
+  if (root.Evening && root.Evening.watchman(w) && cal.curfew()) { const f0 = () => figs.willie; setTimeout(() => { const f = f0(); if (f) f.follow = true; }, 0); }      // (still walking her home, as she comes back out)
+
   // Each frame (while the place is played): who's where, their walking, and the figures themselves.
   const off = P.tick(dt => {
     clock += dt; if ((think -= dt) <= 0) { think = 0.5; update(false); }
@@ -294,7 +315,7 @@ function attach(P, w) {
       // (too far off to make out: not drawn; their walking goes on)
       const far = Math.hypot(f.motion.pos.x - cam.x, f.motion.pos.z - cam.z) > FAR; f.rig.root.visible = !far; if (f.lantern) f.lantern.obj.visible = !far;
       if (!far) f.rig.tick(dt); }
-    tomWatch(dt);
+    tomWatch(dt); willieWatch();
   });
   update(true);
   return { actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };

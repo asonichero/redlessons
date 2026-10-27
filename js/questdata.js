@@ -140,7 +140,7 @@ const lines = [
     s('stands', '3.3', 'The first to stand with Rose', 'green', 'halloran', { gate: 'halloran' }),
   ] },
   { id: 'willie', name: 'Willie Winkie', steps: [
-    s('first', '1.3', 'Caught after curfew', 'village', 'willie', { optional: true, when: { curfew: true } }),
+    s('first', '1.2', 'Caught after curfew', 'village', 'willie', { optional: true }),      // (whenever he finds her out after the bell: js/evening.js)
     s('offer', '2.1', 'His offer', 'village', 'willie', { optional: true, gate: 'willie' }),
     s('saw', '3.3', 'A figure in the wood at night', 'village', 'willie'),
   ] },

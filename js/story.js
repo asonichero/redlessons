@@ -882,6 +882,91 @@ const pieMarenAfter = how => [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Tomorrow you’ll go and say so to Mistress Pennock. Now wash your face.' },
 ];
 
+// ── Evenings at home (js/evening.js). The Watchman's catch; home after the bell; what someone else has dealt with; supper.
+// He finds her out after the bell (n: which time).
+const willieCatch = n => n > 1 ? [
+  { who: 'willie', face: 'stern', listen: { red: 'wince' }, text: 'Miss Rose. Again.' },
+  { who: 'red', face: 'wince', text: 'I was just going home, Sir. Truly.' },
+  { who: 'willie', face: 'calm', listen: { red: 'shy' }, text: 'Then we’re going the same way. After you.' },
+] : [
+  { who: 'willie', face: 'stern', listen: { red: 'surprised' }, text: 'Miss Rose. The bell’s rung, and here you are, out on the green.' },
+  { who: 'red', face: 'shy', text: 'Sir— I lost track of the time. I’m going home now.' },
+  { who: 'willie', face: 'calm', listen: { red: 'shy' }, text: 'You are. And I’ll walk with you, to your mother’s door. After you, Miss Rose.' },
+];
+// At her door: he hands her over.
+const willieBrings = n => [
+  { who: 'willie', face: 'calm', listen: { mother: 'stern' }, text: n > 1 ? 'Evening, Mistress Ridley. Miss Rose again, I’m afraid. On the green, past the bell.' : 'Evening, Mistress Ridley. I found Miss Rose out on the green, past the bell. I’ve walked her home.' },
+  { who: 'mother', face: 'stern', listen: { willie: 'calm' }, text: 'Thank you, William. I’ll see to her.' },
+  { who: 'willie', face: 'calm', listen: { mother: 'calm' }, text: 'I don’t doubt it. Goodnight, Mistress. Miss Rose.' },
+  { text: 'He touches his hat, and goes back out into the dark, and the latch drops behind him.' },
+];
+// Home after the bell. (how.willie: brought home)
+const curfewTalk = how => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: how.willie ? 'Brought home by the Watchman. Like a stray off the green.' : 'Do you know what time it is, Little Red? Because the bell does.' },
+  { who: 'red', face: 'shy', text: 'I’m sorry, Mama. I didn’t mean to be so late.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Nine o’clock, and not a minute past it. You agreed it, at this table. Come here.' },
+];
+const curfewCorrection = async (S, how) => {
+  const M = 'corrector', R = 'subject', more = how.willie ? 0.2 : 0;
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.4 + more, pace: 1.35 });
+  await S.wait(0.8);
+  await S.say(M, 'Hands down. You know what this is for.', 'calm');
+  await S.step([M, 'Nine o’clock. Not ten past. Not when you’ve finished whatever you’re about.', 'stern'], 8);
+  await S.step([R, 'I know, Mama—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.65 + more, pace: 1.6 });
+  await S.step([M, 'I sat here with the lamp, and listened for the latch, and it didn’t come.'], 10);
+  await S.step([R, 'I’m sorry— ow— I’m sorry—'], 4);
+  if (how.willie) {
+    await S.step([M, 'And William Dunn walking you to my door, with half the street’s shutters open to watch.'], 10);
+    await S.step([R, 'Mama, please—'], 4);
+    await S.smacks(8);
+  }
+  await S.step([M, 'Home by the bell. Every night. That’s the shape of it.'], 8);
+  await S.smacks(8);
+  await S.say(M, 'There. It’s done. Up you get.', 'calm');
+  await S.wait(1.2);
+};
+const curfewAfter = how => [
+  { who: 'mother', face: 'calm', listen: { red: 'teary' }, text: 'There’s bread and cheese on the board, and then bed. Straight to bed.' },
+  { who: 'red', face: 'shy', text: 'Yes, Mama.' },
+].concat(how.willie ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And you’ll thank Master William when you see him. He could have left you to the dark.' }] : []);
+// What someone else has already dealt with (c: { what, by }): a reprieve. how: 'heard' (they told her), 'reported' (Red just did), 'late' (she
+// heard of it in the village, Red having kept it back).
+const DEALT = { pie: 'the pie' };
+const reprieve = (c, how) => {
+  const who = FULL[c.by] || 'someone', what = DEALT[c.what] || c.what;
+  if (c.what === 'pie' && how === 'heard') return pieMotherKnows();
+  if (how === 'reported') return [
+    { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me. ' + who + ' dealt with it, then, and that’s the end of it here. I’ll not take you in hand twice for one thing.' },
+    { who: 'red', face: 'shy', text: 'Thank you, Mama.' }];
+  if (how === 'late') return [
+    { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'I heard about ' + what + ' today. And that ' + who + ' saw to you for it.' },
+    { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Once is enough for one thing, so that’s the end of it. But I’d sooner have heard it from you.' }];
+  return [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: who + ' came by about ' + what + '. You’ve had your correction for it, and that’s an end of it. Once is enough for one thing.' }];
+};
+// Something someone else dealt with, that her mother doesn't know of yet: Red can tell her. ctx: { tell() }
+const reportIt = (c, ctx) => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'You’re quiet tonight.' },
+  { choose: [
+    { text: 'Mama… ' + (FULL[c.by] || 'Someone') + ' took me in hand today. For ' + (DEALT[c.what] || c.what) + '.', face: 'shy', then: [{ run: ctx.tell }] },
+    { text: 'It’s nothing, Mama.', face: 'shy', then: [{ who: 'mother', face: 'calm', text: 'Hm. If you say so.' }] },
+  ] },
+];
+// Nothing owed tonight: will she help with supper? ctx: { yes(), little(), wont() }
+const supper = ctx => [
+  { who: 'mother', face: 'smile', listen: { red: 'calm' }, text: 'There you are. Will you help me with the supper, love? The potatoes want peeling, and the pot wants watching.' },
+  { choose: [
+    { text: 'Of course, Mama.', face: 'smile', then: [{ run: ctx.yes },
+      { text: 'They peel the potatoes side by side at the table, and her mother tells her the village’s news, and the pot comes to the boil.' },
+      { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'There. Many hands. Sit, and I’ll dish up.' }] },
+    { text: 'Could I just sit, Mama? I’m worn through.', face: 'shy', then: [{ run: ctx.little },
+      { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Sit, then. You’ve had a long day of it. I’ll call you when it’s on the table.' }] },
+    { text: 'Must I? I’ve done enough today.', face: 'pout', then: [{ run: ctx.wont },
+      { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'That’s not tired, Red. That’s “won’t”. I’ll do it myself, and I’ll remember it.' }] },
+  ] },
+];
+
 // Mistress Pennock in her bakery, any other time.
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
@@ -900,5 +985,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

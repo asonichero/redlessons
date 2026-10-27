@@ -102,12 +102,24 @@ The village's people keep to their days. Where each is, is worked out from the d
 
 Each can be talked to (*Talk to Agnes*, and so on): a word by the time of day, something else if they've talked already today, and a little trust the first time each day. Peter Fowler's days off in the village come after the first visit to the Fowlers'. They walk the lanes and paths as a net of points (the shortest way, cutting corners where it's clear); those too far from the camera to make out aren't drawn.
 
+## Evenings at home (`js/evening.js`)
+
+Whenever Red comes home after six of her own accord (walking in at her door, not sent there by a scene), her mother has a word with her, and in it whatever she's learned that might call for a correction, in this order:
+
+- **Brought home by the Watchman.** After the curfew bell (nine), Master William on his round stops her if he sees her out, and walks her home a few steps behind her (the objective says so; the way to the wood is shut to her while he does). At her door he hands her over to her mother, and goes back to his round. His first catch completes *Caught after curfew*; the first and second are remembered for what he offers later.
+- **In after the bell**, brought home or not: corrected for it.
+- **What someone else has already dealt with** (Mistress Pennock, for the pie): a reprieve, always. Her mother has heard of it from them, or Red tells her herself; or, if neither, her mother hears of it in a day or two, and it's a reprieve still, with a word about not being told.
+- **The pie**: sent home by Mistress Pennock (told or kept back), or found out the next evening.
+- **The garden**: her mother's look round, every few days.
+
+Only one correction an evening; whatever else is owed waits for the next. If nothing's owed, her mother asks if she'll help with supper: *Of course* (forty minutes at the table together), an honest *I'm worn through*, or *Must I?* (a "won't": wilful, and counted with the errands' toward the week's three). Then she's in for the night: supper and bed, and it's morning. ("Sleep until morning" has the same word with her first.) Before six, coming in only brings up what can't wait: being sent home by Mistress Pennock.
+
 ## The pie (`js/pie.js`, the bakery inside: `js/bakery.js`)
 
 Phase 1.2's pie, once Mistress Pennock and Tom both trust Red enough (trust 2 with each; Tom's dares behind them; her first morning helping at the bakery counts toward Mistress Pennock's). One afternoon (between one and a quarter to five: the pies out to cool, the smith at his anvil) Tom comes looking for her with an idea: *I dare you*. She can refuse (the idea keeps), or take one off the bakery's board; Mistress Pennock is out of her door before she's turned round, catches Tom too (*I can see your boots*), takes her pie back, and marches the pair of them to the forge. Master Ferrier, busy at his anvil, leaves Tom to her. Then Mistress Pennock sends Red home: she'll be speaking to her mother herself. Red can:
 
 - **Obey**: home (the objective says so). There her mother sees her face: she can **tell her**, and she's corrected for the pie, and that's the end of it; or **keep it back**, and the next evening her mother's had a visit from Mistress Pennock, and she's corrected for the pie and for keeping it from her. Tom's kept in the rest of the day. Some days on (four or more), Tom has the same idea again (*it went fine, last time*), and the choice comes round again.
-- **Tell Mistress Pennock**, aside, out of the smith's hearing: it was her hand on the pie; whatever Tom gets, she's earned it too; her mother takes her in hand, and would want Mistress Pennock to, for this. Mistress Pennock takes them both into the bakery: Tom across her knee first (Red watching), then to the corner; then Red, as she asked; the baker's paddle to finish each. She tells Red's mother herself, that evening, and her mother has a word, but no more. (Mistress Pennock now knows what being Little Red means.)
+- **Tell Mistress Pennock**, aside, out of the smith's hearing: it was her hand on the pie; whatever Tom gets, she's earned it too; her mother takes her in hand, and would want Mistress Pennock to, for this. Mistress Pennock takes them both into the bakery: Tom across her knee first (Red watching), then to the corner; then Red, as she asked; the baker's paddle to finish each. She tells Red's mother herself, that evening, and her mother has a word, but no more: a reprieve (see *Evenings at home*). (Mistress Pennock now knows what being Little Red means.)
 
 The bakery inside: the oven glowing in the back wall, the kneading table, racks of loaves, sacks of flour, the counter under the half-door, a bench, and corners. For now it's only where the pie takes her.
 
@@ -224,6 +236,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/chores.js` | The days: Mama's garden, the errands asked over breakfast (yes, an honest no, or a won't), promises kept or broken, the maintenance correction |
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
+| `js/evening.js` | Evenings at home: the Watchman bringing her home, the curfew, reprieves for what others have dealt with, supper, and bed |
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
 | `js/bakery.js` | The bakery inside: the oven, the kneading table, the loaves, the counter |
 | `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |

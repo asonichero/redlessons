@@ -10,6 +10,7 @@
 //   Garden.build(parent, world)        (js/village.js: the plot, its rows and paths, the flowers; → world.marenGarden)
 //   const g = Garden.attach(P, w)      (the village, played: g.actions() · its weeds, its trampling) · Garden.boots(P, w) (the petals, anywhere)
 //   Garden.progress(w) → what's left today · Garden.evening(P, w, force) (at home: her mother's look round, if it's the day for it)
+//   (evening → whether a correction was given)
 //   Garden.plan(day) → the day's weeds, dry rows and jobs (the same for a day, however it's asked) · Garden.offToday(w) → 'maren' | 'after' | null
 // The garden's state is kept in the save (state.garden): { day, pulled: [i], watered: { row }, jobs: { row }, can, water, trampled: { id: day },
 // petals: [{ c, until }], petalDay, seen: { day: who }, checked, evening, pending: { day, who, rows }, rest (a day her mother has it to herself) }.
@@ -262,9 +263,9 @@ function lookDue(w) {
 }
 async function evening(P, w, force) {
   const g = stateOf(w), cal = w.cal, S = root.Story;
-  if (!P || !P.npc || g.evening === cal.day || (!force && cal.minute < H('19:00'))) return;
+  if (!P || !P.npc || g.evening === cal.day || (!force && cal.minute < H('19:00'))) return false;
   const report = g.pending && g.pending.day <= cal.day ? g.pending : null;
-  if (!report && !lookDue(w)) return;
+  if (!report && !lookDue(w)) return false;
   change(w, s => { s.evening = cal.day; });
   await P.wait(0.6); await P.approach();
   // (heard from someone in the village: she lied about it, and now her mother knows)
@@ -272,23 +273,24 @@ async function evening(P, w, force) {
     change(w, s => { s.pending = null; });
     await P.converse(S.gardenReport(report), { shot: ['red', 'mother'] });
     await correct(P, w, { lied: true, caught: 'witness', who: report.who, rows: report.rows });
-    return;
+    return true;
   }
   const ids = Object.keys(g.trampled).filter(id => g.trampled[id] > (g.checked || 0)), today = ids.some(id => g.trampled[id] === cal.day);
   const rows = FLOWERS.filter(r => ids.some(id => id.startsWith(r.id + ':'))).map(r => r.name);
   const restore = () => change(w, s => { for (const id of ids) delete s.trampled[id]; s.checked = cal.day; });
-  if (!ids.length) { restore(); await P.converse(S.gardenFine(progress(w).done), { shot: ['red', 'mother'] }); return; }
+  if (!ids.length) { restore(); await P.converse(S.gardenFine(progress(w).done), { shot: ['red', 'mother'] }); return false; }
   let answer = null;
   await P.converse(S.gardenAsk(rows, ids.length, { own: () => { answer = 'own'; }, lie: () => { answer = 'lie'; } }), { shot: ['red', 'mother'] });
   const petals = g.petals.some(q => q.until > cal.minute);
-  if (answer === 'own') { restore(); w.rep.add('naughty', 0.5, 'trampling her mother’s flowers'); await correct(P, w, { lied: false, rows }); return; }
-  if (today && petals) { restore(); w.rep.add('naughty', 1.5, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await correct(P, w, { lied: true, caught: 'boots', rows }); return; }
+  if (answer === 'own') { restore(); w.rep.add('naughty', 0.5, 'trampling her mother’s flowers'); await correct(P, w, { lied: false, rows }); return true; }
+  if (today && petals) { restore(); w.rep.add('naughty', 1.5, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await correct(P, w, { lied: true, caught: 'boots', rows }); return true; }
   // (believed: but someone may have seen, and her mother will hear of it)
   const days = [...new Set(ids.map(id => g.trampled[id]))], seen = days.map(d => g.seen[d]).find(Boolean);
   const who = seen || (hash(cal.day, 91) < 0.35 ? passerby(cal.day) : null);
   restore(); w.rep.add('naughty', 1, 'lying to her mother about the garden');
   change(w, s => { if (who) s.pending = { day: cal.day + 1, who, rows }; s.seen = {}; });
   await P.converse(S.gardenBelieved(), { shot: ['red', 'mother'] });
+  return false;
 }
 // (no one near enough to see, as far as she knew: but someone in the lane, over the hedge)
 function passerby(day) { const keys = ['agnes', 'tom', 'georgie', 'pennock', 'abney']; return keys[Math.floor(hash(day, 93) * keys.length)]; }

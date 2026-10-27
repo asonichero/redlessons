@@ -8,18 +8,18 @@
 //     day, and that evening she's corrected for the pie and for keeping it from her. Told, she's corrected for the pie, and that's the end of it.
 //   • Then, some days on, Tom has the same idea again ("it went fine, last time"), and she's caught again, and the choice comes round again.
 //   • She tells Mistress Pennock: the two of them in the bakery, Tom across her knee first, then Red, with the other watching (Tom in the
-//     corner after his). Mistress Pennock tells her mother herself, after; her mother has a word, but no more.
+//     corner after his). Mistress Pennock tells her mother herself, after; her mother has a word, but no more (js/evening.js's reprieve).
 //
 //   Pie.ready(w) → 'first' | 'again' | null · Pie.dare(P, w, tomFigure) (the scene, from js/villagers.js's Tom) · Pie.evening(P, w, force) (at
-//   home) · Pie.objective(w)
-// Kept in the save (state.pie): { tries, last (the day of the last one), pending: { day, told: null | false } (sent home), disclosed (a day) }.
+//   home; → whether a correction was given) · Pie.objective(w)
+// Kept in the save (state.pie): { tries, last (the day of the last one), pending: { day, told: null | false } (sent home) }.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
 const AGAIN_AFTER = 4;      // (days, before Tom has the same idea again)
 
-const stateOf = w => w.save.state.pie || (w.save.state.pie = { tries: 0, last: 0, pending: null, disclosed: 0 });
+const stateOf = w => w.save.state.pie || (w.save.state.pie = { tries: 0, last: 0, pending: null });
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.pie); }, { pie: true });
 // Whether Tom's minded to it now: the first time (the step on offer: trust enough, and the dares behind them), or again (some days on, until
 // she's asked to share his correction); in the afternoon, the pies out, the smith at his anvil; and not while her mother's still to hear of the last.
@@ -101,7 +101,7 @@ async function inTheBakery(w) {
   await P.converse(S.pieAfter(r), { shot: ['red', 'pennock'] });
   w.rep.settle('mischievous', 0.6);
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
-  change(w, s => { s.disclosed = w.cal.day; });
+  if (root.Evening) root.Evening.record(w, { what: 'pie', by: 'pennock', informs: true });      // (she tells Red's mother herself: a reprieve at home)
   if (w.q.stateOf('pennock.pie') === 'offered') w.complete('pennock.pie');
   w.refresh();
 }
@@ -110,20 +110,16 @@ async function inTheBakery(w) {
 // Pennock (kept back), or after the bakery, when Mistress Pennock's told her mother herself.
 async function evening(P, w, force) {
   const st = stateOf(w), cal = w.cal, S = root.Story, p = st.pending;
-  if (!P || !P.npc) return;
-  if (st.disclosed && st.disclosed <= cal.day && (cal.minute >= H('17:00') || force)) {
-    change(w, s => { s.disclosed = 0; });
-    await P.wait(0.6); await P.approach(); await P.converse(S.pieMotherKnows(), { shot: ['red', 'mother'] }); return;
-  }
-  if (!p) return;
+  if (!P || !P.npc) return false;
+  if (!p) return false;
   // (the day she was sent home: as soon as she's in)
   if (p.day === cal.day && p.told === null) {
     let told = null;
     await P.wait(0.6); await P.approach();
     await P.converse(S.pieHome({ tell: () => { told = true; }, keep: () => { told = false; } }), { shot: ['red', 'mother'] });
-    if (told) { change(w, s => { s.pending = null; }); await correct(P, w, { withheld: false }); }
-    else change(w, s => { s.pending.told = false; });
-    return;
+    if (told) { change(w, s => { s.pending = null; }); await correct(P, w, { withheld: false }); return true; }
+    change(w, s => { s.pending.told = false; });
+    return false;
   }
   // (a day on, or more: her mother's had a visit from Mistress Pennock)
   if (p.day < cal.day && (cal.minute >= H('17:00') || force)) {
@@ -132,7 +128,9 @@ async function evening(P, w, force) {
     await P.wait(0.6); await P.approach();
     await P.converse(S.pieFoundOut(), { shot: ['red', 'mother'] });
     await correct(P, w, { withheld: true });
+    return true;
   }
+  return false;
 }
 async function correct(P, w, how) {
   const S = root.Story;
