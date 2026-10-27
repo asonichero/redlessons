@@ -225,6 +225,19 @@ function build(scene, opts) {
     const fp = FORK.at.clone().add(new V3(-8, 0, -6)), arm = box(root_, 9, 2, 0.6, fp.x + 4, 12.5, fp.z + 1, toonMap(barkT), { ink: 0.04 }); arm.rotation.y = -0.1;
     pole(root_, fp, fp.clone().setY(14), 0.45, toonMap(barkT)); world_obstacles.push({ x: fp.x, z: fp.z, r: 1.5 }); }
 
+  // ── Hulda's herbs, where she sends Red for them (js/herbs.js): yarrow out in the meadow, wood sorrel on the stream's bank, comfrey by the
+  // fallen tree, where the ground stays wet.
+  const herbs = { yarrow: new V3(-110, 0, MZ0 + 175), sorrel: spots.stream.at.clone().addScaledVector(spots.stream.dir, 9), comfrey: spots.log.at.clone().addScaledVector(spots.log.side3, -7).addScaledVector(spots.log.dir, 12) };
+  { const r4 = rnd(141), leaf = T.mat('#5a8a3a'), dark = T.mat('#3e6a30'), lace = T.mat('#f2eee2'), white = T.mat('#f6f2f0'), bell = T.mat('#8a5ab0');
+    for (let k = 0; k < 9; k++) { const a = k * 2.4, d = 1 + r4() * 4, x = herbs.yarrow.x + Math.cos(a) * d, z = herbs.yarrow.z + Math.sin(a) * d, h = 5 + r4() * 2;      // (yarrow: a stem, a flat white head)
+      pole(root_, new V3(x, 0, z), new V3(x, h, z), 0.15, leaf, { ink: 0.02 }); solid(root_, new THREE.CylinderGeometry(1.4, 1.1, 0.5, 10), lace, x, h, z, { ink: 0.04 }); }
+    for (let k = 0; k < 14; k++) { const a = k * 2.1, d = r4() * 4.5, x = herbs.sorrel.x + Math.cos(a) * d, z = herbs.sorrel.z + Math.sin(a) * d;      // (sorrel: low trefoils, little white flowers)
+      for (let j = 0; j < 3; j++) { const b = j * 2.1 + a; solid(root_, T.ell(0.7, 0.15, 0.7, 6, 4), leaf, x + Math.cos(b) * 0.6, 1.2, z + Math.sin(b) * 0.6, { ink: 0.02, shadow: false }); }
+      if (k % 3 === 0) solid(root_, T.ell(0.4, 0.4, 0.4, 6, 4), white, x, 1.9, z, { ink: 0.02, shadow: false }); }
+    for (let k = 0; k < 6; k++) { const a = k * 1.05, x = herbs.comfrey.x + Math.cos(a) * 2.5, z = herbs.comfrey.z + Math.sin(a) * 2.5;      // (comfrey: big rough leaves, and purple bells hanging)
+      solid(root_, T.ell(1.4, 0.4, 3.4, 8, 6), dark, x + Math.cos(a) * 1.6, 2.2, z + Math.sin(a) * 1.6, { ink: 0.04, rot: [0.5, -a + Math.PI / 2, 0] });
+      for (let j = 0; j < 3; j++) solid(root_, new THREE.ConeGeometry(0.4, 1, 6), bell, x + (j - 1) * 0.5, 4.2 - j * 0.3, z, { ink: 0.02, shadow: false }); } }
+
   // The meadow gate, this side: a field gate between two posts, swinging out to the village (js/world.js offers to go through it).
   const gate = (() => { const g = new THREE.Group(); g.position.copy(GATE); root_.add(g); const oak = toonMap(barkT);
     for (const sx of [-1, 1]) box(g, 2.6, 16, 2.6, sx * 12, 8, 0, oak);
@@ -249,7 +262,7 @@ function build(scene, opts) {
   // (the ways out: the village at the far end; back in at her grandmother's door. And where she comes in: from the cabin's door, or from the
   // village end, a little way in, facing along the path into the wood)
   const inAt = gate.at.clone().add(new V3(0, 0, -8));      // (in at the meadow gate, it behind her, facing across the meadow to the wood)
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: null, chest: null, constrain, bounds: null, gate,
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: null, chest: null, constrain, bounds: null, gate, herbs,
     exits: [{ name: 'the village', get at() { return gate.beyond; }, r: 6, when: () => gate.open > 0.6 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5 }, { name: 'the Fowlers’', at: new V3(FORK.x1 - 6, 0, FORK.z), r: 8 }],
     entries: { cabin: { at: [-12, 52], yaw: 0, camTurn: Math.PI }, village: { at: [inAt.x, inAt.z], yaw: Math.PI }, fowlers: { at: [FORK.x1 - 30, FORK.z], yaw: -Math.PI / 2 } } };      // (fowlers: back along the fork's lane, toward the meadow)
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);

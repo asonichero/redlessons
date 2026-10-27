@@ -1235,5 +1235,49 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+// ── Hulda's herb errands (js/herbs.js): asked for at the cabin (n: how many brought before), gathered in the wood, brought back and taught.
+const herbAsk = (id, n) => ({
+  yarrow: [
+    { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Since you’re here, and have young legs: my yarrow’s run out, and Fowler’s forever cutting himself on those nets.' },
+    { who: 'gran', face: 'calm', listen: { red: 'calm' }, text: 'There’s a stand of it in the meadow, west of the lane. Flat white heads, like a plate of lace, and leaves like little feathers. The heads, a good handful. Leave the roots.' },
+    { who: 'red', face: 'smile', text: 'Flat and white, and feathers. I’ll find it.' },
+  ],
+  sorrel: [
+    { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Another errand, if you’ll have it. Wood sorrel, on the bank of the stream. Three leaves, each folded like a heart, and small white flowers with purple veins in them.' },
+    { who: 'gran', face: 'cheeky', listen: { red: 'shy' }, text: 'And taste one, when you find it. I want to see your face when you come back.' },
+  ],
+  comfrey: [
+    { who: 'gran', face: 'calm', listen: { red: 'calm' }, text: 'One more. Comfrey, by the fallen tree, where the ground stays wet. Big rough leaves, hairy as a goat, and bells of purple hanging under.' },
+    { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'The leaves, half a dozen of the best. They prickle: mind your fingers.' },
+  ],
+})[id].concat(n ? [] : [{ who: 'red', face: 'shy', thought: true, text: 'She hasn’t asked me to fetch for her since I was small. I didn’t know I’d missed it.' }]);
+const herbGathered = id => ({
+  yarrow: [{ who: 'red', face: 'smile', thought: true, text: 'A whole plate of white, in my hands. It smells like Grandmother’s cupboard. I must have walked past it a hundred times.' }],
+  sorrel: [{ who: 'red', face: 'pout', thought: true, text: 'Sour! Sour as a scold. She knew. She’ll laugh at me.' }],
+  comfrey: [{ who: 'red', face: 'pout', thought: true, text: 'Ow. They do prickle. Six of the best, as asked.' }],
+})[id];
+const herbGiven = (id, last) => ({
+  yarrow: [
+    { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Good girl. Yarrow: soldier’s woundwort, they call it. Bruise a leaf and lay it on a cut, and it stops the bleeding. Dried, in a tea, for a chill.' },
+    { who: 'red', face: 'calm', text: 'For Master Fowler’s fingers.' },
+    { who: 'gran', face: 'cheeky', listen: { red: 'smile' }, text: 'For anyone’s. But mostly his.' },
+  ],
+  sorrel: [
+    { who: 'gran', face: 'cheeky', listen: { red: 'pout' }, text: 'There. That face. You tasted it.' },
+    { who: 'red', face: 'pout', text: 'It’s sourer than a lemon.' },
+    { who: 'gran', face: 'smile', listen: { red: 'shy' }, text: 'Cooling, for a fever. A sauce for fish. And, a leaf on the tongue, for knowing you’re awake. Some days that’s the most useful thing in the wood.' },
+  ],
+  comfrey: [
+    { who: 'gran', face: 'calm', listen: { red: 'calm' }, text: 'Knitbone. Mash it, bind it on, for a sprain, or a bruise. You’d be surprised what a girl your age comes home with.' },
+    { who: 'red', face: 'shy', thought: true, text: 'I don’t think I’d be surprised at all.' },
+    { who: 'gran', face: 'smile', listen: { red: 'shy' }, text: 'I keep a pot of it made up. If you ever want some, and would rather not say what for, you only have to ask.' },
+  ],
+})[id].concat(last ? [
+  { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'That’s three, and every one right. You’ve a good eye, Little Red. Your mother had it too, once, before she decided she hadn’t the time.' },
+  { who: 'red', face: 'smile', thought: true, text: 'Woundwort, sorrel, knitbone. I’ll know them, now, wherever they grow.' },
+] : []);
+const herbLater = () => [{ who: 'gran', face: 'calm', listen: { red: 'smile' }, text: 'Come again another day, and I’ll find you something else to look for.' }];
+const herbWaiting = h => [{ who: 'gran', face: 'cheeky', listen: { red: 'shy' }, text: 'Back already, and empty-handed? ' + h.name[0].toUpperCase() + h.name.slice(1) + ', ' + h.where + '. It won’t pick itself.' }];
+
+root.Story = { herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

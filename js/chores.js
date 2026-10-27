@@ -177,7 +177,7 @@ function create(w) {
   function objectives() {
     if (!on()) return [];
     const out = [], e = errand(), c = st();
-    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech)
+    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter, root.Herbs]) { const t = M && M.objective(w); if (t) out.push(t); }      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     const k = root.Work && root.Work.current(w), t = k && e && root.Work.SHIFTS[k.id].tasks[k.step];
     if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
     else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + '.');

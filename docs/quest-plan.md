@@ -61,7 +61,7 @@ From 1.2 the days have a pattern, agreed with Maren in the chores conversation.
 
 | Errand | Where | With | Leads to |
 | --- | --- | --- | --- |
-| Gather the herbs Grandmother asked for | The wood, then the cabin | Hulda | Her quest line; Holt at the cabin (1.3) |
+| Gather the herbs Grandmother asked for | The wood, then the cabin | Hulda | Built: yarrow, wood sorrel, comfrey, one a visit, each taught. Her quest line; Holt at the cabin (1.3) |
 | Help at the bakery | The bakery | Mistress Pennock | Her quest line; the pie |
 | Work at the inn | The inn | Mistress Abney | Her quest line; the promise |
 | Help on the farm (as Rose) | Halloran's | Halloran, Bo Peep | His standing at the end |

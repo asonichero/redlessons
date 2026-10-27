@@ -61,6 +61,10 @@ Where the meadow meets the wood: the fork leaves the meadow lane at a finger-pos
 - **Notes at the beech.** Every few days (never on the day of the visit, nor on his days off), *Look in the knot of the beech*: a folded note, "The beech, at four. If you can. P." The objective holds the hour. He's there from then, and for an hour after; come, and they sit under the carving a while (forty minutes, and a little trust). Two meetings, and *Meetings at the beech* is done. Miss one, and next time he says he waited, till the light went.
 - **His days off.** About one day in four, once she's been: not at the holding, but in the village, from ten till six: about the green, on the lime-tree bench, by the pond. He can be talked to there.
 
+## Grandmother's herbs (`js/herbs.js`)
+
+Visiting her grandmother in the days after the cloak, Red's asked to fetch a herb, one at a time: yarrow from the meadow, west of the lane (flat white heads, leaves like feathers); wood sorrel on the stream's bank (three folded hearts, small white flowers: "taste one"); comfrey by the fallen tree, where the ground stays wet (big rough leaves, purple bells). Each grows where she says (a patch of it, drawn), and is gathered there (*Pick the yarrow*, and so on). Brought back, her grandmother teaches her what it's for: woundwort for cuts, sorrel for a fever and for knowing you're awake, knitbone for sprains and bruises ("if you ever want some, and would rather not say what for, you only have to ask"). One a visit; the next asked another day. Three brought, and the herb errands are done (one of the three things 1.3 waits on). Until the first is asked, the day's list says to visit her when there's time.
+
 ## The village (`js/village.js`)
 
 The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, the curfew bell on its frame, the stocks (only to look at, for now) and the duck pond, and a lane loops round the green's far side, with the lane south to the mill off it.
@@ -260,6 +264,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
 | `js/evening.js` | Evenings at home: the Watchman bringing her home, the curfew, reprieves for what others have dealt with, supper, and bed |
 | `js/inn.js` | The inn inside: the hearth, Bess's chair, the counter and barrels, the tables, the stair |
+| `js/herbs.js` | Grandmother's herb errands: asked at the cabin, gathered in the wood, brought back and taught |
 | `js/promise.js` | Mistress Abney's promise: the asking, the evening's temptation, sitting with Bess, and a promise broken |
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
 | `js/work.js` | A shift of work, played: the bakery's morning and the inn's afternoon, task by task |
