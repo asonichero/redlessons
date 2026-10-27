@@ -10,9 +10,9 @@
 //   Garden.build(parent, world)        (js/village.js: the plot, its rows and paths, the flowers; → world.marenGarden)
 //   const g = Garden.attach(P, w)      (the village, played: g.actions() · its weeds, its trampling) · Garden.boots(P, w) (the petals, anywhere)
 //   Garden.progress(w) → what's left today · Garden.evening(P, w, force) (at home: her mother's look round, if it's the day for it)
-//   Garden.plan(day) → the day's weeds and jobs (the same for a day, however it's asked)
+//   Garden.plan(day) → the day's weeds, dry rows and jobs (the same for a day, however it's asked) · Garden.offToday(w) → 'maren' | 'after' | null
 // The garden's state is kept in the save (state.garden): { day, pulled: [i], watered: { row }, jobs: { row }, can, water, trampled: { id: day },
-// petals: [{ c, until }], petalDay, seen: { day: who }, checked, evening, pending: { day, who, rows } }.
+// petals: [{ c, until }], petalDay, seen: { day: who }, checked, evening, pending: { day, who, rows }, rest (a day her mother has it to herself) }.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
@@ -35,16 +35,23 @@ const PER_ROW = 24, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
 const FLOWERS = ROWS.filter(r => r.kind === 'flowers');
 const inside = p => p.x > X0 && p.x < X1 && p.z > Z0 && p.z < Z1;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
-const VEG_JOBS = 2, WATER_PER_FILL = 2;
+const WATER_PER_FILL = 2;
 
-// The day's work: five weeds, wherever they've come up (in any bed: between the flowers, in the rows of greens), and two of the vegetables' jobs.
+// The day's work, which varies: a few weeds (one to four), wherever they've come up (in any bed: between the flowers, in the rows of greens);
+// the flower rows that are dry (all three on a dry day, some, or none after rain in the night); one or two of the vegetables' jobs. And some
+// days none of it: her mother has the time and sees to it herself (about one day in five), or it's the day after a correction for the garden,
+// when she sets her flowers straight again herself (see offToday).
 function plan(day) {
-  const weeds = [];
-  for (let k = 0; k < 5; k++) { const row = ROWS[Math.floor(hash(day, 100 + k) * ROWS.length)], i = Math.floor(hash(day, 200 + k) * (PER_ROW - 1));
+  const weeds = [], n = 1 + Math.floor(hash(day, 99) * 4);
+  for (let k = 0; k < n; k++) { const row = ROWS[Math.floor(hash(day, 100 + k) * ROWS.length)], i = Math.floor(hash(day, 200 + k) * (PER_ROW - 1));
     weeds.push({ row: row.id, x: fx(i) + STEP / 2, z: row.z + (hash(day, 300 + k) - 0.5) * 2.4 }); }
-  const veg = ROWS.filter(r => r.kind === 'veg'), skip = Math.floor(hash(day, 400) * veg.length);
-  return { weeds, jobs: veg.filter((_, i) => i !== skip).slice(0, VEG_JOBS).map(r => r.id) };
+  const wet = hash(day, 410), dry = wet < 0.25 ? [] : FLOWERS.filter((r, i) => wet > 0.7 || hash(day, 420 + i) < 0.6).map(r => r.id);
+  const veg = ROWS.filter(r => r.kind === 'veg'), skip = Math.floor(hash(day, 400) * veg.length), jobs = veg.filter((_, i) => i !== skip).map(r => r.id);
+  return { weeds, dry: dry.length || wet < 0.25 ? dry : [FLOWERS[Math.floor(hash(day, 430) * FLOWERS.length)].id], jobs: hash(day, 440) < 0.4 ? jobs : jobs.slice(0, 1), rained: wet < 0.25 };
 }
+const MAREN_TENDS = 0.2;
+// (her mother's day in the garden: no work for Red)
+function offToday(w) { const g = stateOf(w), d = w.cal.day; return g.rest === d ? 'after' : hash(d, 500) < MAREN_TENDS ? 'maren' : null; }
 
 // ── Building it (js/village.js gives it the village's root; the fence is the village's own).
 function build(parent, world) {
@@ -128,7 +135,7 @@ const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.garden); }, { ga
 // What's left today: weeds, rows to water, jobs, and the can to put back.
 function progress(w) {
   const g = stateOf(w), p = plan(w.cal.day);
-  const weeds = p.weeds.length - g.pulled.length, dry = FLOWERS.filter(r => !g.watered[r.id]).map(r => r.name), jobs = p.jobs.filter(id => !g.jobs[id]).map(id => ROWS.find(r => r.id === id).job);
+  const weeds = p.weeds.length - g.pulled.length, dry = FLOWERS.filter(r => p.dry.includes(r.id) && !g.watered[r.id]).map(r => r.name), jobs = p.jobs.filter(id => !g.jobs[id]).map(id => ROWS.find(r => r.id === id).job);
   const can = g.can !== 'butt';
   return { weeds, dry, jobs, can, begun: g.pulled.length + Object.keys(g.watered).length + Object.keys(g.jobs).length > 0, done: !weeds && !dry.length && !jobs.length && !can };
 }
@@ -157,7 +164,7 @@ function attach(P, w) {
   function show() {
     const g = stateOf(w);
     for (const wd of weeds) wd.g.visible = !g.pulled.includes(wd.i);
-    for (const r of FLOWERS) G.water(r.id, !!g.watered[r.id]);
+    const today = plan(cal.day); for (const r of FLOWERS) G.water(r.id, !!g.watered[r.id] || !today.dry.includes(r.id));      // (watered, or wet from the night's rain, or not wanting it today)
     for (const f of G.flowers) G.tread(f.id, !!g.trampled[f.id]);
     G.can.obj.visible = g.can === 'butt';
     if (g.can !== 'butt' && !m.carry) { const c = canProp(); P.stage.scene.add(c.obj); m.hold(c, 'hang'); }      // (still in her hands, if she went off with it)
@@ -175,10 +182,10 @@ function attach(P, w) {
   function actions() {
     if (!inside(m.pos) || !w.chores || !w.chores.on() || w.chores.gardenTended()) return [];
     const g = stateOf(w), out = [], holding = m.carry && m.carry.name === 'the watering can';
-    if (g.can === 'butt' && !m.carry && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: takeCan });
+    if (g.can === 'butt' && !m.carry && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: takeCan });
     if (holding && g.water < WATER_PER_FILL && progress(w).dry.length && near(BUTT, 12)) out.push({ label: 'Fill the can at the butt', at: BUTT.clone().setY(6), run: fill });
     if (holding && !progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Put the can back by the butt', at: CAN.clone().setY(3), run: putCan });
-    if (holding && g.water > 0) for (const r of FLOWERS) if (!g.watered[r.id]) { const p = pathBeside(r.id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 - 10 && m.pos.x < RX1 + 10) out.push({ label: 'Water ' + r.name, at: p.clone().setY(12), run: () => water(r) }); }
+    if (holding && g.water > 0) for (const r of FLOWERS) if (plan(cal.day).dry.includes(r.id) && !g.watered[r.id]) { const p = pathBeside(r.id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 - 10 && m.pos.x < RX1 + 10) out.push({ label: 'Water ' + r.name, at: p.clone().setY(12), run: () => water(r) }); }
     if (!m.carry) {
       for (const wd of weeds) if (!g.pulled.includes(wd.i)) { const p = pathBeside(wd.row, wd.x); if (near(p, 12)) out.push({ label: 'Pull up the weed', at: new V3(wd.x, 3, wd.z), run: () => pull(wd, p) }); }
       for (const id of plan(cal.day).jobs) if (!g.jobs[id]) { const r = ROWS.find(q => q.id === id), p = pathBeside(id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 && m.pos.x < RX1) out.push({ label: r.job, at: new V3(m.pos.x, 4, r.z), run: () => job(r, p) }); }
@@ -221,8 +228,13 @@ function attach(P, w) {
       if (!mused && P.talk) { mused = true; P.talk.muse(S.trodden(ROWS.find(r => r.id === f.row).name), { face: 'wince' }); }
     }
     // (petals drop from her boots as the day goes on)
-    if (g.petals.some(q => q.until <= cal.minute)) { change(w, s => { s.petals = s.petals.filter(q => q.until > cal.minute); }); boots(P, w); }
+    // (and if anyone's near enough to see them fall, they'll have seen where they came from)
+    const fallen = g.petals.filter(q => q.until <= cal.minute);
+    if (fallen.length) { const who = witness(P); change(w, s => { s.petals = s.petals.filter(q => q.until > cal.minute); if (who && !s.seen[cal.day]) s.seen[cal.day] = who; }); boots(P, w);
+      for (const q of fallen) drop(q.c); }
   });
+  // (a petal fallen from her boots, on the ground where she was, a while)
+  function drop(c) { const p = new THREE.Mesh(new THREE.CircleGeometry(0.4, 5).rotateX(-Math.PI / 2), new THREE.MeshToonMaterial({ color: c, side: THREE.DoubleSide })); p.position.set(m.pos.x + (Math.random() - 0.5) * 2, 0.15, m.pos.z + (Math.random() - 0.5) * 2); P.stage.scene.add(p); setTimeout(() => P.stage.scene.remove(p), 60000); }
   return { actions, show, stop: off, weeds };
 }
 // (whoever's near enough to see her at it: someone about in the village, near the garden)
@@ -285,13 +297,14 @@ async function correct(P, w, how) {
   const S = root.Story;
   await P.converse(S.gardenTakeInHand(how), { shot: ['red', 'mother'] });
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.gardenCorrection(Sc, how) }], fade: on => w.fade(on) });
+  change(w, s => { s.rest = w.cal.day + 1; });      // (tomorrow she sees to the garden herself, and sets her flowers straight)
   if (P !== w.P) return;
   await P.converse(S.afterGarden(how), { shot: ['red', 'mother'] });
   w.rep.settle('naughty', 0.6);
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
 }
 
-const api = { build, attach, boots, progress, progressText, evening, plan, lookDue, ROWS, PATHS, inside, stateOf, hash };
+const api = { build, attach, boots, progress, progressText, evening, plan, offToday, lookDue, ROWS, PATHS, inside, stateOf, hash };
 root.Garden = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

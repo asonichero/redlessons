@@ -40,7 +40,7 @@ function create(w) {
   const S = root.Story, save = w.save, cal = w.cal, rep = w.rep;
   const E = S.ERRANDS;
   // (the day's state, begun afresh each day)
-  const st = () => { const c = save.state.chores || (save.state.chores = { day: 0, garden: false, errand: null, refusals: [], missed: 0 }); if (c.day !== cal.day) { c.day = cal.day; c.garden = false; c.errand = null; } return c; };
+  const st = () => { const c = save.state.chores || (save.state.chores = { day: 0, garden: false, errand: null, refusals: [], missed: 0 }); if (c.day !== cal.day) { c.day = cal.day; c.garden = !!(root.Garden && root.Garden.offToday(w)); c.errand = null; } return c; };      // (some days her mother has the garden: js/garden.js)
   const change = fn => save.change(s => { st(); fn(s.chores); }, { chores: true });
   const on = () => w.q.done('maren.chores');      // (once they're agreed)
   const errand = () => { const e = st().errand; return e && E[e.id] ? Object.assign({ key: e.id }, E[e.id], e) : null; };
@@ -62,7 +62,7 @@ function create(w) {
   async function breakfast(P) {
     if (!on() || !P || !P.npc) return;
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
-    const ctx = { temper: temper(), byText: e ? clock(by) : '',
+    const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); }, little: async () => { answer(id, 'little'); }, wont: async () => { answer(id, 'wont'); } };
     await P.wait(0.8); await P.approach();
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });

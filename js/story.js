@@ -420,18 +420,22 @@ const ERRANDS = {
 // ctx: { temper ('wilful' | 'mischievous' | 'naughty' | null: what she's most known for lately), yes(), little(), wont() (run on each answer) }.
 const breakfast = (errand, ctx) => {
   const hello = { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, love. Porridge is on.' };
-  if (!errand) return [hello, { who: 'mother', face: 'calm', text: 'Nobody’s asked anything of us today. The garden, and then the day’s your own.' }];
+  // (the garden: hers today, or her mother's: ctx.garden 'maren' (she has the time) or 'after' (the day after a correction for it))
+  const garden = ctx.garden === 'after' ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Leave the garden to me today. I’ll set my flowers straight myself.' }]
+    : ctx.garden === 'maren' ? [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'I’ve a free morning, so the garden’s mine today. You needn’t go near it.' }]
+    : ctx.rained ? [{ who: 'mother', face: 'calm', text: 'It rained in the night, so the flowers won’t want watering. Just the weeds and the beds.' }] : [];
+  if (!errand) return [hello].concat(garden, [{ who: 'mother', face: 'calm', text: ctx.garden ? 'And nobody’s asked anything of us. The day’s your own.' : 'Nobody’s asked anything of us today. The garden, and then the day’s your own.' }]);
   const t = ctx.temper, by = ctx.byText;
   const YES = { wilful: 'Fine. Yes. I’ll do it.', mischievous: 'Yes, Mama. I’ll be quick. Mostly.', naughty: 'Yes, Mama.' }[t] || 'Yes, Mama.';
   const WONT = { wilful: 'No. I’ve had enough of being asked for things.', mischievous: 'Can’t it wait? I’d other plans. No.', naughty: 'Why me? Let them fetch it themselves.' }[t] || 'No. I don’t want to.';
-  return [hello, { who: 'mother', face: 'calm', listen: { red: 'calm' }, text: errand.ask },
+  return [hello].concat(garden, [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: errand.ask },
     { choose: [
       { text: YES, face: 'smile', then: [{ run: ctx.yes }, { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'That’s my girl. By ' + by + ', mind.' }] },
       { text: 'Not today, Mama. I can’t be anybody’s today.', face: 'shy', then: [{ run: ctx.little },
-        { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Then not today, love. I’ll let them know. Just the garden, and let the day be easy.' }] },
+        { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: ctx.garden ? 'Then not today, love. I’ll let them know. Let the day be easy.' : 'Then not today, love. I’ll let them know. Just the garden, and let the day be easy.' }] },
       { text: WONT, face: 'pout', then: [{ run: ctx.wont },
         { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'That’s not “can’t”, Red. That’s “won’t”. I’ll remember it.' }] },
-    ] }];
+    ] }]);
 };
 // The third "won't" in a week: what her mother says, before she takes her in hand for it.
 const enough = () => [
@@ -714,11 +718,11 @@ const gardenCorrection = async (S, how) => {
 const afterGarden = how => how.lied ? [
   { who: 'mother', face: 'calm', listen: { red: 'teary' }, text: 'Come here. There. It’s finished, and I’m not cross any more.' },
   { who: 'red', face: 'teary', text: 'I should have said. The first time.' },
-  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'You should. Next time you will.' },
+  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'You should. Next time you will. And leave the garden to me tomorrow; I’ll set my flowers straight.' },
 ] : [
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Better?' },
   { who: 'red', face: 'shy', text: 'Better. I’ll mind the paths.' },
-  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you will. I’ll show you how I set them straight again, tomorrow.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'I know you will. Leave the garden to me tomorrow: I’ll set my flowers straight myself.' },
 ];
 
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)

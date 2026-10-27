@@ -79,12 +79,13 @@ When the one an errand is for is there (Master Pennock at the bakery's door, the
 
 Mary's garden, of the rhyme: Maren's, and Red's to tend. Three rows of flowers, the **silver bells** (pale hanging bells), the **cockle shells** (scalloped coral fans) and the **pretty maids** (white daisies, all in a row), each between beds that feed the house: onions, cabbages, and beans up their poles. Paths run between the rows, with a headland down either side; the gate is on the west, by the cottage, and the water butt is in the far corner with the can at its foot.
 
-Each day's work (the objective shows what's left):
-- **Weeds**: five, come up anywhere, between the flowers or among the greens. *Pull up the weed*, from the path beside it.
-- **Watering**: the flowers, and only the flowers. *Take the watering can*, *Fill the can at the butt* (enough for two rows), and *Water the silver bells* from the path beside them, walking its length with the can held out; the bed darkens as it's watered. Then *Put the can back by the butt*.
-- **The vegetables**: two jobs a day of *Hoe between the onions*, *Pick the caterpillars off the cabbages*, *Tie the beans up their poles*.
+Each day's work varies (the objective shows what's left):
+- **Weeds**: one to four, come up anywhere, between the flowers or among the greens. *Pull up the weed*, from the path beside it.
+- **Watering**: the flowers, and only the flowers, the rows that are dry: all three on a dry day, one or two on others, none after rain in the night (her mother says so at breakfast). *Take the watering can*, *Fill the can at the butt* (enough for two rows), and *Water the silver bells* from the path beside them, walking its length with the can held out; the bed darkens as it's watered. Then *Put the can back by the butt*.
+- **The vegetables**: one or two of *Hoe between the onions*, *Pick the caterpillars off the cabbages*, *Tie the beans up their poles*.
+- **Days off**: about one day in five her mother has the time and sees to the garden herself, and the day after a correction for it she sets her flowers straight herself; she says so over breakfast.
 
-Each piece of work is offered only from close by, and spends a few minutes; the whole is the better part of an hour. **Walk carefully**: steer her off a path into a row of flowers and they go down, tipped out of their row, and their petals cling to her boots for a few hours (on her ankles, wherever she goes). Anyone in the village near enough to see is remembered.
+Each piece of work is offered only from close by, and spends a few minutes (two a weed, six a row and two a fill, eight a job): the work itself is about half an hour on an average day, besides the walking. **Walk carefully**: steer her off a path into a row of flowers and they go down, tipped out of their row, and their petals cling to her boots for a few hours (on her ankles, wherever she goes), dropping off one by one. Anyone in the village near enough to see her tread them, or to see the petals fall from her boots, is remembered.
 
 **Every few days** (never the next day, sometimes the second, always by the third) her mother goes round the garden at dusk; the first time Red's home that evening (coming in, or before bed), she says what she found. Nothing amiss, a word of praise. Trodden flowers, and she asks: owning up brings a correction for the carelessness (her hand). A lie is believed, unless it was that same day and the petals are still on her boots: then the correction is for both, longer, with the hairbrush to finish. A lie believed may not hold: if anyone saw (or, one time in three, someone in the lane), her mother hears it the next day, and that evening it's the correction for both. Either way she sets her flowers straight again.
 
