@@ -28,7 +28,7 @@ const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.evening); }, { e
 // Someone else has corrected her (by: their key; informs: they'll tell her mother themselves).
 function record(w, o) { change(w, s => { s.corrected.push({ id: o.what + '-' + w.cal.day, what: o.what, by: o.by, day: w.cal.day, informs: !!o.informs, known: false, raised: false }); }); }
 const watchman = w => stateOf(w).walking === night(w.cal) ? 'walking' : null;
-const objective = w => watchman(w) ? 'Home, with Master William at your heels.' : null;
+const objective = w => watchman(w) ? 'Home, with Master William at your heels.' : tableDue(w) ? 'Set the table for supper.' : null;
 
 async function home(P, w, o) {
   o = o || {};
@@ -47,9 +47,21 @@ async function home(P, w, o) {
     if (!corrected && root.AbneyPromise) corrected = await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
     if (!corrected && root.Garden && w.chores && w.chores.on()) corrected = await root.Garden.evening(P, w, true);
     if (!corrected && P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
-    if (!corrected && P === w.P && !late && !excused) await supper(P, w);
+    if (!corrected && P === w.P && !late && !excused) { await supper(P, w); if (P === w.P) { change(w, s => { s.table = night(cal); }); w.refresh(); return; } }      // (and then the table's hers to set: and after supper, bed)
   }
   if (P === w.P) await w.morning(late || excused ? 'Bed.' : 'Supper, and bed.');
+}
+// ── The table, set for supper (once her mother's asked): then supper, and bed.
+const tableDue = w => stateOf(w).table === night(w.cal);
+function actions(P, w) {
+  if (!tableDue(w) || !P || P.busy) return [];
+  const tb = P.world.surfaces.find(s => s.name === 'the table'); if (!tb) return [];
+  const at = new root.THREE.Vector3((tb.x0 + tb.x1) / 2, tb.y + 1, (tb.z0 + tb.z1) / 2);
+  return [{ label: 'Set the table', at, run: async () => {
+    const m = P.motion, V = root.THREE.Vector3, stand = P.collide(new V(tb.x0 - 6, 0, at.z), 3.2);
+    if (P.sitting) await P.getUp(); await m.goTo(stand, Math.atan2(at.x - stand.x, at.z - stand.z));
+    for (let k = 0; k < 4; k++) { const p = at.clone().add(new V(0, 0, (k - 1.5) * 4)); await m.reach(k % 2 ? 'L' : 'R', p); await P.wait(0.35); await m.release(k % 2 ? 'L' : 'R'); }
+    change(w, s => { s.table = 0; }); await w.morning('Supper, and bed.'); } }];
 }
 
 // ── The Watchman at the door: he hands her over, and goes back to his round.
@@ -103,7 +115,18 @@ async function supper(P, w) {
   await P.wait(0.4); await P.approach();
   await P.converse(S.supper({ yes: () => { how = 'yes'; }, little: () => { how = 'little'; }, wont: () => { how = 'wont'; } }), { shot: ['red', 'mother'] });
   if (how === 'wont' && w.chores) w.chores.wont('refusing to help with supper');
-  if (how === 'yes') w.cal.advance(40);
+  // (and her day, caught up on: over the potatoes at the table; sat on the stool while her mother sees to the hearth; or stood, and questioned)
+  const m = P.motion, mm = P.npcMotion, W = P.world, V = root.THREE.Vector3, tb = W.surfaces.find(s => s.name === 'the table'), B = W.bounds;
+  if (how === 'yes' && tb) { const z = (tb.z0 + tb.z1) / 2, a = P.collide(new V(tb.x0 - 6, 0, z - 4), 3.2), b = P.collide(new V(tb.x0 - 6, 0, z + 6), 3.2), face = Math.PI / 2;
+    await Promise.all([m.goTo(a, face), mm.goTo(b, face)]); }
+  else if (how === 'little') { const stool = W.seats.filter(s => s.name === 'the stool').sort((p, q) => (B ? Math.abs(q.at.z - B.z1) - Math.abs(p.at.z - B.z1) : 0))[0];
+    const hearth = B ? P.collide(new V(-2, 0, B.z1 - 20), 3.2) : null;
+    await Promise.all([stool ? P.sitOn(stool) : null, hearth ? mm.goTo(hearth, 0) : null]); }
+  const c = w.save.state.chores || {}, e = c.errand && root.Story.ERRANDS[c.errand.id], fl = w.save.state.flags || {}, d = w.cal.day;
+  const day = { errand: e && c.day === d ? { title: e.title, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d ? !!c.garden : null,
+    dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
+  await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
+  w.cal.advance(how === 'yes' ? 40 : 20);
 }
 
 // ── Out after the bell, and the Watchman finds her: he walks her home (js/villagers.js has him follow her; this keeps count, and the quest).
@@ -114,7 +137,7 @@ function caught(w) {
   w.refresh(); return n;
 }
 
-const api = { home, record, watchman, objective, caught, stateOf, night };
+const api = { actions, tableDue, home, record, watchman, objective, caught, stateOf, night };
 root.Evening = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

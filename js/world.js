@@ -226,7 +226,7 @@ function create(view, ui) {
       let pending = null;
       o.talk = () => { pending = q.offered({ where: 'home', who: 'maren' }).find(s => s.ref === 'maren.chores') ? 'maren.chores' : null; return pending === 'maren.chores' ? root.Story.chores() : root.Story.marenIdle(cal.part); };
       o.after = async kind => { if (kind === 'talk' && pending === 'maren.chores') { save.flag('curfew-agreed'); w.complete('maren.chores'); } pending = null; };
-      o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : []);
+      o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : [], root.Evening ? root.Evening.actions(P, w) : []);
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });

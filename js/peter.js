@@ -58,24 +58,15 @@ async function atGate(P, w) {
     await P.converse(S.letIn(pe.where), { shot: ['red', 'fowler'] });
     w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met.fowler = true; s.fowlers.talked.fowler = w.cal.day; }, { fowlers: true });
     // (and back to his own work: the garden, walked to)
-    const g = sp.garden; fw.motion.goTo(g.at, g.yaw, { speed: 0.5 }).then(() => { if (!fw.held || fw.going) return; fw.held = false; fw.where = 'garden'; fw.motion.lookAt(g.look); });
+    const g = sp.garden; fw.motion.goTo(g.at, g.yaw, { speed: 0.5 }).then(() => { if (!fw.held) return; fw.held = false; fw.where = 'garden'; fw.motion.lookAt(g.look); });
   } catch (e) { fw.held = false; throw e; }
   w.refresh();
 }
-// The first talk with Peter (js/holding.js's talk): shy, and then easier; and his grandfather crossing the yard to them as it ends, timed to
-// reach them with its last line, to send Peter to walk her home. → the conversation, his grandfather's walk in it.
+// The first talk with Peter (js/holding.js's talk): shy, and then easier; and his grandfather calling over from where he's settled, as it
+// ends, to send Peter to walk her home. → the conversation.
 function firstTalk(P, w, fw, pe) {
-  const S = root.Story, m = P.motion, lines = S.peterFirst();
-  fw.held = true; fw.going = true; if (fw.motion.seat) fw.motion.stand(); fw.motion.lookAt(null);
-  const mid = m.pos.clone().add(pe.motion.pos).multiplyScalar(0.5).setY(0), from = fw.motion.pos.clone().setY(0), dir = from.clone().sub(mid).setY(0); if (dir.lengthSq() < 1) dir.set(1, 0, 0); dir.normalize();
-  const hold = P.collide(mid.clone().addScaledVector(dir, 40), 3.2), near = P.collide(mid.clone().addScaledVector(dir, 15), 3.2);
-  // (paced to the talk: about three seconds a line, at least a slow walk, at most his own)
-  const secs = lines.length * 3, d = from.distanceTo(hold), speed = Math.max(0.3, Math.min(1, d / (28 * secs)));
-  const walking = fw.motion.goTo(hold, null, { speed });
-  return lines.concat([
-    { run: async () => { await walking; await fw.motion.goTo(near, Math.atan2(mid.x - near.x, mid.z - near.z), { speed: 0.6 });
-      m.face(Math.atan2(fw.motion.pos.x - m.pos.x, fw.motion.pos.z - m.pos.z)); pe.motion.face(Math.atan2(fw.motion.pos.x - pe.motion.pos.x, fw.motion.pos.z - pe.motion.pos.z)); } },
-  ], S.fowlerSends());
+  const S = root.Story;
+  return S.peterFirst().concat([{ run: async () => { if (fw) { fw.motion.lookAt(null); if (!fw.motion.seat) fw.motion.face(Math.atan2(P.motion.pos.x - fw.motion.pos.x, P.motion.pos.z - fw.motion.pos.z)); } } }], S.fowlerSends());      // (his grandfather, from where he's settled, calling over)
 }
 // Sent home: the fade, and the two of them at the meadow gate, on the wood's side (js/wood.js); the beech; and Peter off back across the
 // meadow, and her day her own again. (figs: the Fowlers' figures, held)
@@ -139,7 +130,7 @@ function wood(P, w) {
     await P.converse(S.beechMeeting(n, { owed: st.owed }), { shot: ['red', 'peter'] });
     await notices(P, w);
     w.cal.advance(40); w.rep.trusts('peter', 0.5);
-    change(w, s => { s.meet = null; s.met++; s.owed = false; });
+    change(w, s => { s.meet = null; s.met++; s.owed = false; }); w.save.flag('met-peter', w.cal.day);
     if (stateOf(w).met >= 2 && w.q.stateOf && w.q.stateOf('peter.friends') === 'offered') w.complete('peter.friends');
     held = false; w.refresh();
   }

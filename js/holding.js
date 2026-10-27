@@ -122,8 +122,12 @@ function build(scene) {
     const h = new THREE.InstancedMesh(T.hullGeo(k.geo, k.ink), T.INKM[0], k.list.length); k.list.forEach((mm, i) => h.setMatrixAt(i, mm)); root_.add(h); }
 
   // ── Where she can go: the lane, between its hedges; through the gate, once it's open, the holding.
-  world.constrain = (q, rad, who) => { const p = q.clone(), open = gate.open > 0.5 || !!who, inYard = p.x > YARD.x0 + 1 || (open && p.x > YARD.x0 - 8 && Math.abs(p.z - GATE.z) < 9);      // (who: Peter, his grandfather: theirs, gate or no)
-    if (inYard && open) { p.x = clamp(p.x, YARD.x0 - 8, YARD.x1 - 4 - rad); p.z = clamp(p.z, YARD.z0 + 4 + rad, YARD.z1 - 4 - rad); if (p.x < YARD.x0 + 2) p.z = clamp(p.z, GATE.z - 8, GATE.z + 8); return p; }
+  // (who: Peter, his grandfather: the holding's theirs, gate or no. Her: the lane; inside, once she's been let in (world.letIn); and from the one
+  // to the other only through the gate, while it's open)
+  world.constrain = (q, rad, who) => { const p = q.clone(), open = gate.open > 0.5, inside = p.x > YARD.x0 + 1 || (!!who && p.x > YARD.x0 - 8);
+    const yard = () => { p.x = clamp(p.x, YARD.x0 + (open || who ? -8 : 3 + rad), YARD.x1 - 4 - rad); p.z = clamp(p.z, YARD.z0 + 4 + rad, YARD.z1 - 4 - rad); if (p.x < YARD.x0 + 2) p.z = clamp(p.z, GATE.z - 8, GATE.z + 8); return p; };
+    if (who || (inside && world.letIn && world.letIn())) { if (inside) return yard(); }
+    if (open && p.x > YARD.x0 - 8 && Math.abs(p.z - GATE.z) < 9) return yard();      // (in through the open gate)
     p.x = clamp(p.x, LANE.x0 - 40, YARD.x0 - 3 - rad); p.z = clamp(p.z, LANE.z - 9 + rad * 0.5, LANE.z + 9 - rad * 0.5); return p; };
   world.exits.push({ name: 'the wood', at: V(LANE.x0 - 34, LANE.z), r: 10 });
   world.entries.lane = { at: [LANE.x0, LANE.z], yaw: Math.PI / 2 };
@@ -192,8 +196,10 @@ function people(P, w) {
     return t; };
   const update = () => { for (const k in PEOPLE) if (!figs[k] || !figs[k].held) place(k, at(k));
     if (root.Peter) root.Peter.atHolding(P, w); };      // (the first visit, the first time she's here with them both about)
-  if (root.Peter && root.Peter.letIn(w)) W.holdingGate.target = W.holdingGate.open = 1;      // (she's been let in: the gate stands open to her)
   update();
+  // (once she's been let in: the gate opened as she comes to it, and shut behind her once she's through)
+  P.tick(dt => { const g = W.holdingGate, gp = W.spots.gate.at, d = Math.hypot(P.motion.pos.x - (gp.x - 12), P.motion.pos.z - gp.z); if (root.Peter && root.Peter.letIn(w)) g.target = d < 30 ? 1 : 0; });
+  W.letIn = () => !!(root.Peter && root.Peter.letIn(w));
   P.tick(dt => { if ((think -= dt) <= 0) { think = 1; update(); } for (const k in figs) { figs[k].motion.update(dt, null); figs[k].rig.tick(dt); } });
   // Talking to them.
   function actions() {

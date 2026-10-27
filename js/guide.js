@@ -13,6 +13,7 @@ function goal(w) {
   const q = w.q, cal = w.cal, off = r => q.stateOf && q.stateOf(r) === 'offered';
   if (off('maren.walk') || off('maren.homecoming')) return { area: 'home', who: 'mother' };      // (chapter one: home, along the path)
   { const V = w.P && w.P.villagers, d = V && V.dareObjective && V.dareObjective(); if (d) return { area: 'village', spot: /bell/.test(d) ? 'bell' : 'dunnsDoor' }; }      // (Tom's dare, taken)
+  if (root.Evening && root.Evening.tableDue && root.Evening.tableDue(w)) return { area: 'home', spot: 'table' };
   if (root.Evening && root.Evening.objective(w)) return { area: 'home', who: 'mother' };
   if (root.Pie && root.Pie.objective(w)) return { area: 'home', who: 'mother' };
   if (root.AbneyPromise && root.AbneyPromise.objective(w)) return { area: 'inn', who: 'bess' };
@@ -45,6 +46,7 @@ function pointOf(w, P, g) {
   if (g.who === 'mother' || g.who === 'gran' || (g.who && P.npc && P.npc.key === g.who)) return P.npcMotion ? P.npcMotion.pos.clone() : null;
   if (g.who) { const f = P.figure(g.who); return f ? f.motion.pos.clone() : null; }
   if (g.herb) return W.herbs && W.herbs[g.herb] ? W.herbs[g.herb].clone() : null;
+  if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }
   if (g.spot === 'pegs') { const it = W.items.find(x => x.kind === 'basket' && x.peg); return it ? it.obj.position.clone() : null; }
   if (g.spot) { const s = (W.spots && W.spots[g.spot]) || (P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots[g.spot]); return s ? s.at.clone() : null; }
   return null;
