@@ -72,7 +72,7 @@ THEMES.dark = Object.assign({}, THEMES.pastoral, { cut: 700 });
 //     (the world darkens its filter as the light goes)
 //   home (the homecoming, before): F major, tender and hesitant: a soft piano's broken chords, a few sighing notes.
 //   after (on her lap, after the correction): D major, slow and consoling, sustained chords swelling in, a melody that falls and comes to rest.
-//   bed (her thoughts at night): the music-box lullaby (nursery), slower.
+//   bed (her thoughts at night): the music-box lullaby (nursery), slower.   village (out in it): a light country air in G.
 THEMES.hearth = { dt: 0.42, cut: 2400, play(step, t, tone) {
   const CH = [[43, 59, 62], [48, 60, 64], [50, 57, 62], [43, 59, 62], [40, 59, 64], [48, 60, 64], [50, 57, 66], [43, 59, 67]];
   const MEL = [[67, 71, 74], [76, 0, 74], [72, 0, 71], [69, 0, 0], [71, 74, 79], [76, 0, 72], [74, 72, 69], [67, 0, 0]];
@@ -98,6 +98,15 @@ THEMES.after = { dt: 1.0, cut: 1600, play(step, t, tone) {
   if (beat === 0) { tone(hz(c[0]), t, 4.4, 'sine', 0.09, 1.2); for (const m of c.slice(1)) tone(hz(m), t, 4.4, 'sine', 0.04, 1.6); }
   const m = MEL[bar][beat]; if (m) tone(hz(m), t, 2.6, 'triangle', 0.04, 0.4); } };
 THEMES.bed = Object.assign({}, THEMES.nursery, { dt: 0.62, cut: 2600 });
+// village (out in it, by day): a light country air in G, a bouncing bass and a tune with a skip in it, a drone of fifths under the green.
+THEMES.village = { dt: 0.36, cut: 2600, play(step, t, tone) {
+  const CH = [[43, 59, 62], [48, 60, 64], [43, 59, 62], [50, 57, 62], [43, 59, 62], [48, 60, 64], [50, 54, 57], [43, 55, 59]];
+  const MEL = [[74, 0, 76, 74, 71, 0], [72, 0, 74, 72, 69, 0], [71, 0, 74, 79, 78, 76], [74, 0, 0, 72, 71, 69], [74, 0, 76, 74, 71, 0], [72, 0, 76, 79, 76, 72], [74, 72, 71, 69, 66, 69], [67, 0, 0, 0, 0, 0]];
+  const bar = Math.floor(step / 6) % 8, beat = step % 6, c = CH[bar];
+  if (beat === 0) { tone(hz(c[0]), t, 0.9, 'triangle', 0.08, 0.02); tone(hz(43 - 12), t, 2.2, 'sine', 0.05, 0.3); }
+  if (beat === 3) tone(hz(c[0] + 7), t, 0.6, 'triangle', 0.05, 0.02);
+  if (beat === 2 || beat === 5) { tone(hz(c[1]), t, 0.4, 'triangle', 0.025, 0.01); tone(hz(c[2]), t, 0.4, 'triangle', 0.025, 0.01); }
+  const m = MEL[bar][beat]; if (m) { tone(hz(m), t, 0.55, 'triangle', 0.045, 0.02); tone(hz(m) * 2, t, 0.25, 'sine', 0.008, 0.02); } } };
 A.startMusic = function (opts) {
   if (!A.ctx) return; const want = (opts && opts.theme) || (opts && opts.dark ? 'dark' : 'pastoral'); if (A.musicOn && A.musicTheme === want) return;
   if (A.musicOn) A.stopMusic(2.2);

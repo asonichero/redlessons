@@ -41,14 +41,28 @@ So far chapter one (phase 1.1) is played through the world, and phase 1.2 opens 
 
 ## Chapter one: The Red Cloak (`story.html`, `js/chapter1.js`)
 
-Three scenes, played by the world as their steps come up:
+The scenes, played by the world as their steps come up:
 
 1. **Her grandmother's cabin** (`js/cabin.js`): a log cabin built hard against a great oak, the trunk the back corner of the room, roots and all, with shelves of jars cut into it and two of its limbs running in under the roof as beams hung with herbs. A stone hearth, a rocking chair, a round table laid for tea, a dresser, a box bed under a patchwork quilt, a braided rug, a round window. It opens with tea and cake and being fussed; her grandmother fetches a parcel from the dresser and gives it to her: a red cloak like the one she wore as a girl. She puts it on, turns round to show it, and her grandmother calls her Little Red. Then she's free about the cabin until she goes out of the door.
 2. **The wood** (`js/wood.js`): the long path home. Her thoughts come as she goes, without stopping her (the realisation, in her own words). Three places stop her: the bluebells (she picks a posy), the stream (she sits on the flat stone) and the old beech (the R and P). At each she can choose to stay longer: an armful of bluebells, a while thinking by the water about being responsible, a while with the carving and her memories of Peter. The time goes with the path (whatever her pace), each stop and each time she stays, so she's home in the dusk at the least, and well into it if she lingers; she can also sit on the fallen tree. At the edge of the wood the trees give way to a meadow, and over it the village, its windows lit.
    Home, she carries the bluebells in (a posy, or an armful): her mother's first clue that she didn't come straight home. Asked if she did, she can come clean or insist she did. Each place she stayed, and a lie, makes the correction heavier: the main part runs longer, her mother scolding her for each, before the hairbrush comes out (always twelve).
-3. **Home**, late in the dusk: it opens on her mother by the hearth, waiting, concerned, turned to the open door, as Rose comes in and down the steps in her cloak; then her mother sees her face at once, and the homecoming conversation. Then the correction, played there in the room (`js/correction.js`): a fade, the chair at the middle of the room and the lap scene in it, a Light correction scripted by `js/discipline.js`, her mother's lines in the conversation box over the smacks. The round camera button steps round the angles; the octagon, **ROSE** (or R), is her name, and stops it at once. Then the two of them by the fire, the end of the chapter, and on to the next morning.
+3. **The village** (`js/village.js`), on the way: out of the wood at the meadow gate and down the street to her own door. (See *The village*, below.)
+4. **Home**, late in the dusk: it opens on her mother by the hearth, waiting, concerned, turned to the open door, as Rose comes in and down the steps in her cloak; then her mother sees her face at once, and the homecoming conversation. Then the correction, played there in the room (`js/correction.js`): a fade, the chair at the middle of the room and the lap scene in it, a Light correction scripted by `js/discipline.js`, her mother's lines in the conversation box over the smacks. The round camera button steps round the angles; the octagon, **ROSE** (or R), is her name, and stops it at once. Then the two of them by the fire, the end of the chapter, and on to the next morning.
 
 The title screen can begin again, continue, or start chapter one at the wood or at home. Her grandmother, **Hulda**, is a third character: shorter and softer through the middle, grey all through her hair, a knitted shawl over her shoulders, laugh lines.
+
+## The village (`js/village.js`)
+
+The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, and the curfew bell on its frame, and a lane loops round the green's far side, with the lane south to the mill off it.
+
+- **Maren's cottage**, nearest the wood: its walls are the room's own, so her door (on the west end), her windows and the hearth's chimney are where they are inside. Her door opens and she goes in; out of it, she's on the path to the street. Her vegetable garden is behind.
+- **The inn** (Mistress Abney's): across the street from the green, two floors, its sign (a wheatsheaf) over the street, benches and a table, barrels, a lantern by the door.
+- **The bakery** (Mistress Pennock's): at the green's east end, the bread oven a stone dome against its gable, a loaf on its sign, the window's board let down as a counter with loaves on it.
+- **The forge** (Master Ferrier's): stone, its front open onto the lane, the hearth glowing inside, the anvil on its stump, the slack tub, a cart wheel.
+- **The cottages**: next door to Maren's, the Thatchers' (Agnes's), the Dunns' (the Watchman's, a lantern by the door for his rounds), and four more; gardens of vegetables and flowers in hurdle fences.
+- **Round it**: low stone walls along the street and lanes, an orchard, ploughed strips and a hayfield with its stacks, hedges, and trees thickening toward the wood. The east and south lanes end at gates, shut for now.
+
+Only the outsides for now: her door is the one that opens. At dusk the windows and lanterns light. Outdoors the camera is kept out of the buildings, pulled in toward her when one is in the way. The still parts are merged by material once built, so the whole village draws in a couple of hundred calls.
 
 ## Conversations (`js/talk.js`, `js/story.js`)
 
@@ -161,6 +175,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `docs/quest-plan.md`, `docs/build-plan.md` | The story's quest lines by phase; what they need from the code, and the milestones |
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
+| `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
 | `js/correction.js` | A correction in the story's own scene: any corrector, subjects in turn, watchers, the corner, the safe word by context |
 | `js/correctors.js`, `js/implements.js` | Correctors and subjects (lines, implements, safe words, names, contexts); each corrector's own implement, its model and its marks |

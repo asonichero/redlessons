@@ -31,14 +31,20 @@ const AREAS = {
   wood: {
     name: 'The wood', music: 'wood', noRun: true, set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
-    exits: { 'the village': { area: 'home', entry: 'door' }, 'the cabin': { area: 'cabin', entry: 'door' } },
+    exits: { 'the village': { area: 'village', entry: 'wood' }, 'the cabin': { area: 'cabin', entry: 'door' } },
+  },
+  // The village (js/village.js): the green, the inn, the bakery, the forge, the cottages; her own door, and the lane back to the wood.
+  village: {
+    name: 'The village', music: 'village', set: s => root.Village.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
+    exits: { 'the wood': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },
   },
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
     dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); },
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
-    exits: { 'the door': { area: 'wood', entry: 'village' } },      // (until the village is built, the cottage door gives straight onto the wood's edge)
+    exits: { 'the door': { area: 'village', entry: 'home' } },      // (out of her door into the village)
   },
 };
 
@@ -169,7 +175,7 @@ function create(view, ui) {
   }
   // (from the wood's own entries, the camera behind her as she comes in)
   function placeCam(P_, x) {
-    const st = P_.stage, t = P_.motion.pos.clone().setY(20 * P_.rig.scaleW), back = new V3(-Math.sin(x.yaw), 0, -Math.cos(x.yaw)).multiplyScalar(34);
+    const st = P_.stage, t = P_.motion.pos.clone().setY(20 * P_.rig.scaleW), y = x.yaw + (x.camTurn || 0), back = new V3(-Math.sin(y), 0, -Math.cos(y)).multiplyScalar(34);      // (camTurn: round from behind her, as the entry asks)
     st.controls.target.copy(t); st.camera.position.copy(t).add(back).setY(t.y + 8); st.controls.update();
   }
   // Home after the curfew bell, once it's been agreed: her mother's word about it, once a night, and it's remembered.

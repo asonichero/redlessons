@@ -82,7 +82,7 @@ function create(view, opts) {
   const inRoom = () => { if (!RB) return; const T = st.controls.target, off = st.camera.position.clone().sub(T); if (inside(st.camera.position) || !inside(T)) return;
     let lo = 0, hi = 1; for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (inside(T.clone().addScaledVector(off, mid))) lo = mid; else hi = mid; }
     st.camera.position.copy(T).addScaledVector(off, lo); };
-  st.afterControls = () => { if (!opts.camFree && !camHeld && !busy() && !st.moving && st.controls.enabled) inRoom(); };      // (after the controls' own easing, last thing before it's drawn)
+  st.afterControls = () => { if (!opts.camFree && !camHeld && !busy() && !st.moving && st.controls.enabled) { inRoom(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
   // (its three distances from the anchor, across the floor and up: near, medium (the usual), far. Outdoors, from her, scaled to her; indoors,
   // from the middle of the room, medium holding the whole room)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
