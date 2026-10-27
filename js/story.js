@@ -610,7 +610,7 @@ const villager = (key, ctx) => {
 
 // ── Tom finds her, with something she ought to be doing: he keeps her, while the clock runs (ctx.mins(n): n minutes gone, each beat). She can
 // get away early, or stay: then a chat (kind 'chat'), or a dare (the curfew bell, 'bell'; or a knock at the Dunns' door, 'knock').
-// ctx: { kind, busy (she has something she ought to be doing), errand, first, mins(n), ringBell(), knock(), dared(), chatted() }
+// ctx: { kind, busy (she has something she ought to be doing), errand, first, mins(n), accept() (the dare taken: hers to do), chatted() }
 const tomStops = ctx => {
   const T = (face, text, red) => ({ who: 'tom', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, text }), M = n => ({ run: () => ctx.mins(n) });
   const hello = ctx.first ? T('cheeky', 'Ridley! There she is. Where are you off to with that face on?', 'cheeky') : T('cheeky', 'Ridley! Hold up. Where’s the fire?', 'cheeky');
@@ -629,12 +629,11 @@ const tomStops = ctx => {
   else {
     const what = ctx.kind === 'bell' ? 'ring the curfew bell. Now, in broad day. Three strokes, and back here before anyone sees who.'
       : 'knock on the Dunns’ door. Master William’s asleep up there after his round. Three knocks, and back here before the shutter opens.';
-    const did = ctx.kind === 'bell' ? [{ run: ctx.ringBell }, T('cheeky', 'Ha! Look at them all. Old Abney’s come out with her ladle. You’re a marvel, Ridley.', 'cheeky'), R('cheeky', 'They didn’t see. Did they see?'), M(4), T('smile', 'Course they didn’t. Probably.', 'wince')]
-      : [{ run: ctx.knock }, { text: 'Above them, a shutter bangs open, and Master William’s voice comes down like weather.' }, T('cheeky', 'Run, run! Ha! Did you hear him? I’ve never heard a man growl like it.', 'cheeky'), R('wince', 'He’ll know it was me. He always knows.'), M(4), T('smile', 'Then he’ll know you’re brave.', 'wince')];
+    const did = [{ run: ctx.accept }, T('cheeky', ctx.kind === 'bell' ? 'Go on, then. I’ll be watching from here. Three, mind. Not two.' : 'Go on, then. I’ll be watching from the corner. Three knocks, and then run.', 'cheeky')];
     middle = [
       T('cheeky', 'I’ve been waiting all day for somebody worth daring. I dare you to ' + what, 'surprised'), M(3),
       { choose: [
-        { text: 'Done.', face: 'cheeky', then: did.concat([{ run: ctx.dared }, M(6)]) },
+        { text: 'Done.', face: 'cheeky', then: did },
         { text: 'Not today, Tom.', face: 'shy', then: [M(2), T('pout', 'Not today. Coward. I’ll save it for you, then.', 'shy'), R('cheeky', 'Save it as long as you like.')] },
         away('cheeky', 'Coward. Off you go, then. I’ll think of something worse for next time.'),
       ] },
@@ -645,6 +644,16 @@ const tomStops = ctx => {
     { text: 'Why? What’s it to you?', face: 'cheeky', then: [M(2)].concat(middle) },
   ] }];
 };
+// After the dare, Tom running up to her (kind: 'bell' | 'knock').
+const tomDared = kind => kind === 'bell' ? [
+  { who: 'tom', face: 'cheeky', listen: { red: 'cheeky' }, text: 'Ha! Look at them all, turning round like geese. You’re a marvel, Ridley.' },
+  { who: 'red', face: 'cheeky', text: 'They didn’t see. Did they see?' },
+  { who: 'tom', face: 'smile', listen: { red: 'wince' }, text: 'Course they didn’t. Probably.' },
+] : [
+  { who: 'tom', face: 'cheeky', listen: { red: 'wince' }, text: 'That’s his shutter! Run! Did you hear him? I’ve never heard a man growl like it.' },
+  { who: 'red', face: 'wince', text: 'He’ll know it was me. He always knows.' },
+  { who: 'tom', face: 'smile', listen: { red: 'wince' }, text: 'Then he’ll know you’re brave.' },
+];
 // Her thought after, when he's kept her long: the clock, and her errand.
 const tomCost = mins => mins >= 30 ? 'Half the hour gone, and Mama’s errand still waiting. Tom Ferrier, honestly.' : 'That was longer than I meant. I’d better get on.';
 
@@ -1498,5 +1507,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -329,8 +329,8 @@ function build(scene, opts) {
     for (const sx of [-1, 1]) { box(g, 2, 30, 2, sx * 6, 15, 0, oak); box(g, 1.4, 8, 1.4, sx * 6, 4, sx * 2.4, oak, { rot: [sx * 0.5, 0, 0] }); }
     box(g, 15, 1.8, 2.4, 0, 30, 0, oak);
     for (const sz of [-1, 1]) { const rf = tbox(g, 17, 0.9, 6, 0, 34, sz * 2.4, thatch, 16); rf.rotation.x = sz * 0.6; }
-    solid(g, new THREE.LatheGeometry([[0.2, 0], [3.0, 0.2], [2.6, 1.2], [1.8, 3.6], [1.6, 4.6], [0.4, 5.0], [0.01, 5.0]].map(([x, y]) => new THREE.Vector2(x, y)), 16), T.mat('#9a7a3a'), 0, 23.6, 0, { ink: 0.06, rot: [Math.PI, 0, 0] });
-    pole(g, new V3(0, 23.5, 0.4), new V3(0.6, 6, 1.2), 0.2, T.mat('#c9b48a'), { ink: 0 });
+    solid(g, new THREE.LatheGeometry([[0.2, 0], [3.0, 0.2], [2.6, 1.2], [1.8, 3.6], [1.6, 4.6], [0.4, 5.0], [0.01, 5.0]].map(([x, y]) => new THREE.Vector2(x, y)), 16), T.mat('#9a7a3a'), 0, 23.8, 0, { ink: 0.06 });      // (mouth down, hung from the beam)
+    pole(g, new V3(0, 24, 0.4), new V3(0.6, 6, 1.2), 0.2, T.mat('#c9b48a'), { ink: 0 });
     world.obstacles.push({ x0: BELL.x - 8, x1: BELL.x + 8, z0: BELL.z - 4, z1: BELL.z + 4 }); }
 
   // ── The lanes: the street, from the meadow gate (to the wood) past Maren's to the green and on to the east gate (the farms); the loop round
@@ -368,7 +368,7 @@ function build(scene, opts) {
     if (kind === 'flowers') for (let k = 0; k < 90; k++) solid(root_, T.ell(1.2, 1.2, 1.2, 6, 4), flowers[k % flowers.length], lerp(x0 + 3, x1 - 3, rr()), 1.8 + rr(), lerp(z0 + 3, z1 - 3, rr()), { ink: 0 });
     else if (kind === 'veg') for (let row = z0 + 6; row < z1 - 4; row += 7) for (let x = x0 + 5; x < x1 - 4; x += 5) solid(root_, T.ell(2 + rr(), 1.6 + rr(), 2 + rr(), 7, 5), veg[Math.floor(rr() * 3)], x, 1.4, row, { ink: 0.04, shadow: false });
   }
-  garden(-344, -482, -214, -384, { side: 3, at: 6 }, null);      // (Maren's, behind her cottage: its rows, flowers and beds are js/garden.js's)
+  garden(-344, -500, -214, -384, { side: 3, at: 6 }, null);      // (Maren's, behind her cottage: its rows, flowers and beds are js/garden.js's)
   if (root.Garden) root.Garden.build(root_, world);
   garden(-184, -300, -116, -262, { side: 2, at: 20 }, 'flowers');      // (next door's: roses and hollyhocks)
   garden(-360, -90, -322, 0, { side: 1, at: 40 }, 'flowers');      // (the west cottage's)
@@ -614,7 +614,7 @@ function build(scene, opts) {
     return { at: p, yaw: Math.atan2(q.x - p.x, q.z - p.z), look: q.clone().setY(20) }; };
   const wellAt = new V3(GREEN.x + 46, 0, GREEN.z + 30);
   world.spots = {
-    garden: { at: V(-338, -390), yaw: Math.PI / 2, look: new V3(-300, 1, -399) },      // (just in at the gate of Maren's garden, the rows before her)
+    garden: { at: V(-338, -390), yaw: Math.PI / 2, look: new V3(-300, 1, -400) },      // (just in at the gate of Maren's garden, the rows before her)
     well: { at: wellAt.clone().add(V(0, 12)), yaw: Math.PI, look: wellAt.clone().setY(8) },
     bakery: before(bakery, 'front', 14, 13), inn: before(inn, 'front', -6, 13), dunns: before(dunns, 'front', -16), forge: before(forge, 'front', 0, 20),
     pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },

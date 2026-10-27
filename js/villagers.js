@@ -194,8 +194,8 @@ function attach(P, w) {
 
   // ── Talking to them: whoever's near, once she's close (each their word for the time of day, or what's between them; trust a little, once a day).
   function actions() {
-    const out = [];
-    for (const key in figs) { const f = figs[key]; if (!f.want || f.held) continue;
+    const out = dareActions();
+    for (const key in figs) { const f = figs[key]; if (!f.want || f.held || f.watching) continue;
       out.push({ label: 'Talk to ' + PEOPLE[key].name, at: f.motion.pos.clone().setY(18), run: () => talkTo(key) }); }
     return out;
   }
@@ -253,8 +253,7 @@ function attach(P, w) {
     const ctx = {
       kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares,
       mins: n => { spent += n; cal.advance(n); w.refresh(); },
-      ringBell: () => ringBell(f), knock: () => knock(f),
-      dared: () => { ctx.done = true; change(s => { s.dares = (s.dares || 0) + 1; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares'); },
+      accept: () => { change(s => { s.dare = { kind, day: cal.day, until: cal.minute + 90 }; }); },      // (hers to do now: js/villagers.js's dare actions)
       chatted: () => rep.trusts('tom', 0.5),
     };
     try {
@@ -263,23 +262,40 @@ function attach(P, w) {
       change(s => { s.met.tom = true; s.talked.tom = cal.day; });
       if (w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
       if (ctx.busy && spent >= 20 && P.talk) P.talk.muse(S.tomCost(spent), { face: 'wince' });
-    } finally { release(f); }
-    if (ctx.done && root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
+    } finally { if (dareOn()) { f.watching = true; f.motion.face(yawTo(f.motion.pos, kind === 'bell' ? sp.bell.at : sp.dunnsDoor.at)); w.refresh(); } else release(f); }      // (taken: he stays where he is, watching)
+  }
+  // ── The dare taken: hers to do (the bell rung, three strokes; three knocks at the Dunns' door), Tom watching; then he's up to her, crowing.
+  // Not done within the hour and a half, or not today, it lapses, and he goes off.
+  const dareOn = () => { const d = vs().dare; return d && d.day === cal.day && cal.minute <= d.until ? d : null; };
+  function dareObjective() { const d = dareOn(); return d ? (d.kind === 'bell' ? 'Tom’s dare: ring the curfew bell. Three strokes.' : 'Tom’s dare: three knocks at the Dunns’ door, and run.') : null; }
+  function dareActions() {
+    const d = dareOn(); if (!d) { if (vs().dare) { change(s => { s.dare = null; }); if (figs.tom && figs.tom.watching) { figs.tom.watching = false; release(figs.tom); } } return []; }
+    return d.kind === 'bell' ? [{ label: 'Ring the curfew bell', at: sp.bell.look.clone(), run: () => doDare('bell') }] : [{ label: 'Knock at the Dunns’ door', at: sp.dunnsDoor.look.clone().setY(16), run: () => doDare('knock') }];
+  }
+  async function doDare(kind) {
+    const f = figs.tom; change(s => { s.dare = null; });
+    if (kind === 'bell') await ringBell(); else await knock();
+    change(s => { s.dares = (s.dares || 0) + 1; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares');
+    if (f) { f.watching = false; const m = P.motion, near = P.collide(flat(m.pos).add(new V3(Math.sin(m.yaw) * 13, 0, Math.cos(m.yaw) * 13)), 3.2);
+      await Promise.race([walkTo('tom', near, null, 1.4), P.wait(8)]); f.path = null; f.motion.auto = null; f.motion.face(yawTo(f.motion.pos, m.pos)); await m.face(yawTo(m.pos, f.motion.pos));
+      try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); } finally { letGo('tom'); } }
+    w.refresh();
+    if (root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
   }
   // The dares. The curfew bell, rung at midday: across to it, three strokes, and back to Tom, quick, the green all turning round.
-  async function ringBell(f) {
-    const b = sp.bell, m = P.motion; await m.goTo(b.at, b.yaw, { run: true }); m.lookAt(b.look);
+  async function ringBell() {
+    const b = sp.bell, m = P.motion; await m.goTo(b.at, b.yaw); m.lookAt(b.look);
     for (let k = 0; k < 3; k++) { await m.reach('R', b.look.clone().add(new V3(0, -4, 0))); const A = root.GameAudio; if (A && A.curfewBell) A.curfewBell(1, 1); await P.wait(0.5); await m.release('R'); await P.wait(0.3); }
     m.lookAt(null); for (const k in figs) if (k !== 'tom' && figs[k].want) { const g = figs[k]; if (!g.sat) g.motion.face(yawTo(g.motion.pos, b.at)); }
     rep.add('mischievous', 1, 'ringing the curfew bell at midday, on a dare'); save.flag('rang-bell', cal.day);
-    await m.goTo(P.collide(flat(f.motion.pos).add(new V3(10, 0, 8)), 3.2), yawTo(m.pos, f.motion.pos), { run: true });
   }
   // A knock at the Dunns' door, with Master William asleep upstairs after his night's round; and away before the shutter opens.
-  async function knock(f) {
-    const d = sp.dunnsDoor, m = P.motion; await m.goTo(d.at, d.yaw, { run: true });
+  async function knock() {
+    const d = sp.dunnsDoor, m = P.motion; await m.goTo(d.at, d.yaw);
     for (let k = 0; k < 3; k++) { await m.reach('R', d.look.clone().setY(16)); const A = root.GameAudio; if (A && A.thud) A.thud(0.35); await m.release('R'); }
     rep.add('mischievous', 1, 'knocking on the Dunns’ door, on a dare'); save.flag('woke-willie', cal.day);
-    await m.goTo(P.collide(flat(f.motion.pos).add(new V3(10, 0, 8)), 3.2), yawTo(m.pos, f.motion.pos), { run: true });
+    { const A = root.GameAudio; if (A && A.thud) setTimeout(() => A.thud(0.6), 700); }      // (his shutter, banged open overhead)
+    const away = P.collide(flat(m.pos).add(new V3(-Math.sin(d.yaw) * 24, 0, -Math.cos(d.yaw) * 24)), 3.2); await m.goTo(away, null, { run: true });      // (and away, before he's at the window)
   }
 
   // ── For a scene: someone fetched out (at a spot, if they're not about), walked where it wants them (by the ways about), and let go again;
@@ -342,7 +358,7 @@ function attach(P, w) {
     tomWatch(dt); willieWatch(); promiseWatch();
   });
   update(true);
-  return { actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };
+  return { dareObjective, actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };
 }
 
 const api = { attach, station, PEOPLE, tomFree, tomComes, hash };

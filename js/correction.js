@@ -75,6 +75,7 @@ async function run(P, o) {
   o = o || {};
   const st = P.stage, talk = P.talk, fade = o.fade || (async () => {}), wait = s => P.wait(s), A = root.GameAudio, Cs = root.Correctors;
   const el = ui(), hint = document.getElementById('corrHint'), looks = root.Looks ? root.Looks.load() : {};
+  if (!o.asRose && looks.red && looks.red.outfit === 'No cloak') looks.red = Object.assign({}, looks.red, { outfit: 'Hood down' });      // (Little Red, in her cloak, across the lap: unless the story's taken it off her (asRose))
   const c = Cs.corrector(o.corrector || 'maren'), player = o.player || 'red';
   const turns = o.turns || [{ subject: 'red', tier: o.tier || 'light', implement: o.implement, implementFrom: o.implementFrom }];
   if (A && A.stopMusic) A.stopMusic(3);      // (no music under it)

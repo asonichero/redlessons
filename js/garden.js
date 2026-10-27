@@ -21,16 +21,17 @@ function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.
 
 // ── The plot: fenced, its gate on the west side by the cottage. Rows run east and west, flowers and vegetables in turn, with a path between each
 // two and a headland down either side; the water butt in the south-east corner, the can at its foot.
-const X0 = -344, X1 = -214, Z0 = -482, Z1 = -384, RX0 = -331, RX1 = -227;
+const X0 = -344, X1 = -214, Z0 = -500, Z1 = -384, RX0 = -331, RX1 = -227;
 const ROWS = [
-  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -399 },
-  { id: 'onions', kind: 'veg', name: 'the onions', z: -413, job: 'Hoe between the onions' },
-  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -427 },
-  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -441, job: 'Pick the caterpillars off the cabbages' },
-  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -455 },
-  { id: 'beans', kind: 'veg', name: 'the beans', z: -469, job: 'Tie the beans up their poles' },
+  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -400 },
+  { id: 'onions', kind: 'veg', name: 'the onions', z: -417, job: 'Hoe between the onions' },
+  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -434 },
+  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -451, job: 'Pick the caterpillars off the cabbages' },
+  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -468 },
+  { id: 'beans', kind: 'veg', name: 'the beans', z: -485, job: 'Tie the beans up their poles' },
 ];
-const PATHS = [-390, -406, -420, -434, -448, -462, -477], HEAD = [-338.5, -219.5];
+const PATHS = [-390, -408.5, -425.5, -442.5, -459.5, -476.5, -494],      // (paths between the rows wide enough to walk without brushing the beds)
+      HEAD = [-338.5, -219.5];
 const BUTT = V3 ? new V3(-217, 0, -387.5) : null, CAN = V3 ? new V3(-223, 0, -388.5) : null;      // (no THREE under node's tests: the plan and the state only)
 const PER_ROW = 24, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
 const FLOWERS = ROWS.filter(r => r.kind === 'flowers');
@@ -60,7 +61,7 @@ function build(parent, world) {
   const mat = c => T.mat(c), M = { soil: mat('#5a4030'), wet: mat('#3a281c'), path: mat('#9a8462'), stem: mat('#4e7a36'), leaf: mat('#6a9a3e'), dark: mat('#3e6a2a'), pole: mat('#7a5a38'), onion: mat('#efe6cf'), wood: mat('#6a4a2c'), hoop: mat('#3a3634') };
   const mesh = (geo, m, x, y, z, o) => { o = o || {}; const g = new THREE.Mesh(geo, m); g.position.set(x, y, z); if (o.rot) g.rotation.set(...o.rot); if (o.ink) g.add(new THREE.Mesh(T.hullGeo(geo, o.ink), T.INKM[0])); g.castShadow = o.shadow !== false; g.receiveShadow = true; G.add(g); return g; };
   // (the paths: trodden earth, along each row and down the headlands)
-  for (const z of PATHS) mesh(new THREE.BoxGeometry(X1 - X0 - 2, 0.12, z === PATHS[0] ? 11 : 7.4), M.path, (X0 + X1) / 2, 0.07, z, { shadow: false });
+  for (const z of PATHS) mesh(new THREE.BoxGeometry(X1 - X0 - 2, 0.12, z === PATHS[0] ? 11 : 10.6), M.path, (X0 + X1) / 2, 0.07, z, { shadow: false });
   for (const x of HEAD) mesh(new THREE.BoxGeometry(10, 0.12, Z1 - Z0 - 2), M.path, x, 0.07, (Z0 + Z1) / 2, { shadow: false });
   // (the beds: dug earth, a flower bed darker once it's watered)
   const beds = {};
@@ -221,7 +222,7 @@ function attach(P, w) {
     if (m.auto || !inside(m.pos)) return;
     const g = stateOf(w);
     for (const f of G.flowers) {
-      if (g.trampled[f.id] || Math.abs(m.pos.x - f.x) > 2.4 || Math.abs(m.pos.z - f.z) > 3.4) continue;
+      if (g.trampled[f.id] || Math.abs(m.pos.x - f.x) > 2.4 || Math.abs(m.pos.z - f.z) > 2.8) continue;
       G.tread(f.id, true);
       const who = witness(P);
       change(w, s => { s.trampled[f.id] = cal.day; s.petals.push({ c: f.colour, until: Math.min(1439, cal.minute + 120 + Math.floor(Math.random() * 180)) }); if (who && !s.seen[cal.day]) s.seen[cal.day] = who; });

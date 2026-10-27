@@ -44,12 +44,12 @@ function costs(list, ctx) {
   }
   return ways;
 }
-test('Tom keeps her while the clock runs: away early for a few minutes; longer if she stays', () => {
+test('Tom keeps her while the clock runs: away early for a few minutes; longer if she stays (a dare taken, she does it herself)', () => {
   for (const kind of ['chat', 'bell', 'knock']) {
-    const ctx = { spent: 0, kind, first: false }; ctx.mins = n => { ctx.spent += n; }; ctx.ringBell = ctx.knock = ctx.dared = ctx.chatted = () => {};
+    const ctx = { spent: 0, kind, first: false }; ctx.mins = n => { ctx.spent += n; }; ctx.accept = ctx.chatted = () => {};
     const ways = costs(S.tomStops(ctx), ctx), early = ways.find(w => /can’t stop/.test(w.pick[0]));
     assert.ok(early.mins > 0 && early.mins <= 6, kind + ': away early in ' + early.mins);
-    const longest = Math.max(...ways.map(w => w.mins)); assert.ok(longest >= 15, kind + ': staying costs ' + longest);
+    const longest = Math.max(...ways.map(w => w.mins)); assert.ok(longest >= (kind === 'chat' ? 15 : 5), kind + ': staying costs ' + longest);      // (a dare's own time is hers to spend doing it)
   }
 });
 

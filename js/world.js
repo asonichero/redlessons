@@ -219,6 +219,7 @@ function create(view, ui) {
     if (e && e.camTurn != null) o.camTurn = e.camTurn;
     o.onExit = ex => { const to = A.exits[ex.name]; if (!to) return;
       if (name === 'home' && chores && chores.forgot(P)) { P.act(() => chores.remind(P)); return false; }      // (out for the eggs without a basket: her mother calls her back)
+      if (name === 'home' && P.outfit === 'No cloak' && P.world.cloakHooks && P.world.cloakHooks.redHung) { P.world.cloakHooks.setRed(false); P.setOutfit('Hood down', true); }      // (her cloak off its hook and on, whenever she goes out: she's Little Red out there, for now)
       if (o.leaving) o.leaving(ex, to); go(to.area, to.entry, { walked: true }); };
     // Talking: whatever's on offer with whoever's here, or their word for the time of day.
     if (name === 'home') {

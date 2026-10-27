@@ -12,6 +12,7 @@ const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m |
 function goal(w) {
   const q = w.q, cal = w.cal, off = r => q.stateOf && q.stateOf(r) === 'offered';
   if (off('maren.walk') || off('maren.homecoming')) return { area: 'home', who: 'mother' };      // (chapter one: home, along the path)
+  { const V = w.P && w.P.villagers, d = V && V.dareObjective && V.dareObjective(); if (d) return { area: 'village', spot: /bell/.test(d) ? 'bell' : 'dunnsDoor' }; }      // (Tom's dare, taken)
   if (root.Evening && root.Evening.objective(w)) return { area: 'home', who: 'mother' };
   if (root.Pie && root.Pie.objective(w)) return { area: 'home', who: 'mother' };
   if (root.AbneyPromise && root.AbneyPromise.objective(w)) return { area: 'inn', who: 'bess' };

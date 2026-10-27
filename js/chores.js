@@ -204,7 +204,8 @@ function create(w) {
   function objectives() {
     if (!on()) return [];
     const out = [], e = errand(), c = st();
-    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter, root.Herbs]) { const t = M && M.objective(w); if (t) out.push(t); }      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
+    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter, root.Herbs]) { const t = M && M.objective(w); if (t) out.push(t); }
+    { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     const k = root.Work && root.Work.current(w), t = k && e && root.Work.SHIFTS[k.id].tasks[k.step];
     if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
     else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + (e.needs === 'basket' && w.P && !basketIn(w.P) && w.area === 'home' ? ' (take a basket from the pegs)' : '') + '.');
