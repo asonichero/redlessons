@@ -91,6 +91,7 @@ World.scene('ch1.walk', {
     w.time(false);
     const start = Math.max(w.cal.minute, 16 * 60 + 45);
     o.place0 = o.place; o.place = P_ => { P = P_; if (o.place0) o.place0(P_); };
+    o.noRun = true;      // (walking only, on this first walk home: she's thinking)
     const gate = o.actions; o.actions = () => gate ? gate() : [];      // (only the meadow gate: the stops come up on their own; the fallen tree is a seat, there to sit on or not)
     // A stop: there, the thing done, her thoughts; and the choice, to stay a while or go on.
     const linger = k => async () => { walk[k] = 1; extra += LINGER_MINS; w.save.flag('walk', Object.assign({}, walk)); w.rep.add('mischievous', 0.5, 'lingering in the wood: ' + k);

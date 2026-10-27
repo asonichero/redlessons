@@ -62,7 +62,8 @@ function create(view, opts) {
   const castOf = () => { const c = { red: { rig, name: 'Red', side: 'left', voice: 'red', tint: '#9a1a26', bg: '#f1d9cf' } }; if (NPC) c[NPC.key] = { rig: mom, name: NPC.name, side: 'right', voice: NPC.voice, tint: NPC.tint, bg: NPC.bg }; return c; };
   // (and anyone else in the place, by their key: js/villagers.js's figures, each with its rig and motion)
   const figs = {}, moverOf = who => who === 'red' ? m : figs[who] ? figs[who].motion : mm;
-  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => moverOf(who).face(yaw), look: (who, at) => moverOf(who).lookAt(at) }) : null;
+  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => moverOf(who).face(yaw), look: (who, at) => moverOf(who).lookAt(at),
+    clamp: (pos, look) => { if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera({ position: pos }, look); } }) : null;      // (a conversation's shot, outdoors: never through a cottage wall)
   // Others in the place (the village's people): added with their rig and motion, in the cast for conversations, in her way and she in theirs.
   function addFigure(key, f) {
     figs[key] = f; st.scene.add(f.rig.root); st.cast(f.rig); if (talk) talk.cast[key] = Object.assign({ rig: f.rig, side: 'right' }, f.cast);
@@ -202,7 +203,11 @@ function create(view, opts) {
     // (her hand stays on the latch as the door moves, until the latch is past where she can follow, or it's there)
     for (let k = 0; k < 40; k++) { await wait(0.04); if (Math.abs(d.open - d.target) < 0.05 || wp(d.latch).distanceTo(m.shoulder(side)) > reach() * 0.98) break; }
     await m.release(side); m.lookAt(null);
+    // (opened, and it leads somewhere: she's through it, into the place it opens on, without walking the doorway)
+    if (opening) { const ex = W.exits.find(e => e.at && flat(e.at).distanceTo(flat(latch)) < 26); if (ex) exitBy(ex.name); }
   }
+  // Out by one of the place's exits, by name (a door opened, a gate gone through): as if she'd walked into it.
+  function exitBy(name) { const ex = W.exits.find(e => e.name === name); if (!ex || exited || !opts.onExit) return false; exited = ex; opts.onExit(ex); return true; }
   async function useChest() {
     const c = W.chest, s = standFor(c.front, new V3(0, 0, 1), 5.5);
     await m.goTo(s.at, s.yaw);
@@ -341,7 +346,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

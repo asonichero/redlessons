@@ -129,7 +129,7 @@ function create(stage, opts) {
       look.add(shift); pos.add(shift);
       n = dir;
     }
-    if (opts.clamp) opts.clamp(pos);
+    if (opts.clamp) opts.clamp(pos, look);      // (kept out of whatever's solid: outdoors, the houses' walls)
     stage.go(pos, look, ms == null ? 900 : ms);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
     if (opts.turn && heads.length > 1) names.forEach((nm, k) => { const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, ri >= 0 ? 0.12 : 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });      // (with Red, facing each other; otherwise opened toward us, as on a stage)

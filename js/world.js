@@ -38,7 +38,7 @@ const AREAS = {
     dress(P, w) { const g = P.world.gift; if (g && w.q.done('hulda.cloak')) { g.obj.visible = false; const i = P.world.items.indexOf(g); if (i >= 0) P.world.items.splice(i, 1); } },
   },
   wood: {
-    name: 'The wood', music: 'wood', noRun: true, set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    name: 'The wood', music: 'wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     dress(P, w) { const ex = P.world.exits.find(e => e.name === 'the Fowlers’'); if (ex) ex.when = () => w.q.done('maren.walk'); },      // (not on chapter one's walk home: straight home, that night)
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
     exits: { 'the village': { area: 'village', entry: 'wood' }, 'the cabin': { area: 'cabin', entry: 'door' }, 'the Fowlers’': { area: 'holding', entry: 'lane' } },
@@ -219,13 +219,13 @@ function create(view, ui) {
   }
   const chain = (a, b) => a ? P_ => { a(P_); b(P_); } : b;
   // The meadow gate (a set's world.gate: the village's, and the meadow's at the wood's far end): offered from close by, it's opened, and she
-  // walks through it, out of the one place and into the other (by the exit just past it). Not while it's barred to her.
+  // goes through it, out of the one place and into the other (by the exit just past it). Not while it's barred to her.
   function gateAction() {
     const P_ = P, g = P_ && P_.world.gate; if (!g) return [];
     if (g.barred && g.barred()) return [];      // (barred: the Watchman walking her home)
     return [{ label: 'Go through the gate', at: g.at.clone().setY(14), run: async () => { const m = P_.motion, yaw = Math.atan2(g.beyond.x - g.at.x, g.beyond.z - g.at.z);
       const hand = m.carry ? 'L' : 'R';      /* (a free hand for the latch: the bluebells, or a basket, in the other) */
-      await m.goTo(g.at, yaw); m.reach(hand, g.at.clone().lerp(g.beyond, 0.4).setY(11)); await P_.wait(0.3); g.target = 1; await m.release(hand); await P_.wait(0.6); await m.goTo(g.beyond, yaw); } }];
+      await m.goTo(g.at, yaw); m.reach(hand, g.at.clone().lerp(g.beyond, 0.4).setY(11)); await P_.wait(0.3); g.target = 1; await m.release(hand); await P_.wait(0.7); P_.exitBy(g.to); } }];      // (opened: through it, into the other place)
   }
   // (from the wood's own entries, the camera behind her as she comes in)
   function placeCam(P_, x) {
