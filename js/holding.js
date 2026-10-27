@@ -211,6 +211,7 @@ function people(P, w) {
       const sending = key === 'peter' && root.Peter && root.Peter.awaiting(w) && figs.fowler;      // (the first visit: his grandfather comes over as they finish, to send him home with her)
       const script = sending ? root.Peter.firstTalk(P, w, figs.fowler, f) : root.Story.fowlers(key, { first, today, day: w.cal.day, part: w.cal.part });
       await P.converse(script, { shot: ['red', key] });
+      if (key === 'peter' && !sending && root.Peter) await root.Peter.notices(P, w);      // (he's noticed she's changed: js/peter.js)
       if (sending) { await root.Peter.sendHome(P, w); return; }
       if (!today) w.rep.trusts(key, 0.25);
       w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met[key] = true; s.fowlers.talked[key] = w.cal.day; }, { fowlers: true });

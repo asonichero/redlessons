@@ -35,7 +35,8 @@ const AREAS = {
     entries: { door: { at: [-10, 26], yaw: Math.PI }, chapter: { at: [-2, 7], yaw: Math.PI } },
     exits: { 'the wood': { area: 'wood', entry: 'cabin' } },
     // (once she has the cloak, its parcel is gone from the dresser)
-    dress(P, w) { const g = P.world.gift; if (g && w.q.done('hulda.cloak')) { g.obj.visible = false; const i = P.world.items.indexOf(g); if (i >= 0) P.world.items.splice(i, 1); } },
+    dress(P, w) { const g = P.world.gift; if (g && w.q.done('hulda.cloak')) { g.obj.visible = false; const i = P.world.items.indexOf(g); if (i >= 0) P.world.items.splice(i, 1); }
+      if (root.IntoWood) root.IntoWood.cabin(P, w); },      // (Holt at the table, the first visit after the herbs: js/intowood.js)
   },
   wood: {
     name: 'The wood', music: 'wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
@@ -70,6 +71,14 @@ const AREAS = {
     dress(P, w) { if (root.Work) P.work = root.Work.attach(P, w); },      // (the morning's work, if she's come to help)
     entries: { door: { at: [-22, 26], yaw: Math.PI } },
     exits: { 'the door': { area: 'village', entry: 'bakery' } },
+  },
+  // The Ferriers' cottage, in the mill lane (a cottage much like her own: js/cottage.js): where Master Ferrier takes Tom in hand, and Red with
+  // him, once she's asked for the same standard (js/inhand.js).
+  ferriers: {
+    name: 'The Ferriers’', music: 'home', npc: () => ({ id: 'smith', key: 'smith', name: 'Master Ferrier', at: [-12, 20], yaw: Math.PI, voice: 'smith', tint: '#4a3a32', bg: '#e4dcd4' }),
+    talk: () => [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Off home with you, lass. Your mother’ll be wanting you.' }],
+    entries: { door: { at: [-44, 31], yaw: Math.PI / 2 } },
+    exits: { 'the door': { area: 'village', entry: 'ferriers' } },
   },
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
@@ -214,7 +223,7 @@ function create(view, ui) {
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], gateAction()); }
-    if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
+    if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
     if (name === 'cabin' && root.Herbs) o.talk = () => root.Herbs.talk(w);      // (her grandmother: the herb errands)      // (the beech: Peter's notes, and meeting him there)
     if (name === 'holding') { o.place = chain(o.place, P_ => { P_.fowlers = root.Holding ? root.Holding.people(P_, w) : null; }); o.actions = () => (P && P.fowlers ? P.fowlers.actions() : []).concat(chores ? chores.actions(P, 'holding') : []); }      // (and the eggs, when she's come for them)
     return o;

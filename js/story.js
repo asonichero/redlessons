@@ -953,10 +953,14 @@ const curfewAfter = how => [
 ].concat(how.willie ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And you’ll thank Master William when you see him. He could have left you to the dark.' }] : []);
 // What someone else has already dealt with (c: { what, by }): a reprieve. how: 'heard' (they told her), 'reported' (Red just did), 'late' (she
 // heard of it in the village, Red having kept it back).
-const DEALT = { pie: 'the pie' };
+const DEALT = { pie: 'the pie', dare: 'the dare with Tom', abney: 'what you asked of her' };
 const reprieve = (c, how) => {
   const who = FULL[c.by] || 'someone', what = DEALT[c.what] || c.what;
   if (c.what === 'pie' && how === 'heard') return pieMotherKnows();
+  if (c.what === 'abney') return [
+    { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Mistress Abney stopped by. She told me what you asked of her, and what she did about it.' },
+    { who: 'red', face: 'shy', text: 'Are you cross?' },
+    { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'No, love. I’m glad you’ve someone else to go to. It’s what I’d have wanted for you.' }];
   if (how === 'reported') return [
     { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me. ' + who + ' dealt with it, then, and that’s the end of it here. I’ll not take you in hand twice for one thing.' },
     { who: 'red', face: 'shy', text: 'Thank you, Mama.' }];
@@ -1279,5 +1283,202 @@ const herbGiven = (id, last) => ({
 const herbLater = () => [{ who: 'gran', face: 'calm', listen: { red: 'smile' }, text: 'Come again another day, and I’ll find you something else to look for.' }];
 const herbWaiting = h => [{ who: 'gran', face: 'cheeky', listen: { red: 'shy' }, text: 'Back already, and empty-handed? ' + h.name[0].toUpperCase() + h.name.slice(1) + ', ' + h.where + '. It won’t pick itself.' }];
 
-root.Story = { herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+// ── 1.3, Into the Wood (js/wood13.js, js/inhand.js): Holt at Hulda's; the stranger at the stream; Willie Winkie's blessing; Peter noticing; and
+// the village's three taken up: Tom told, the smith's same standard, Mistress Pennock's trust, Mistress Abney taking her in hand.
+// Holt at the cabin, the first time (ctx: { careful(), myself() }).
+const holtMeet = ctx => [
+  { who: 'gran', face: 'smile', listen: { red: 'surprised' }, text: 'Little Red! Come in, come in. You’ve caught me entertaining.' },
+  { who: 'gran', face: 'cheeky', listen: { red: 'shy' }, text: 'This is Holt. He cuts my wood, and mends my roof, and pretends every time he’s only passing.' },
+  { who: 'holt', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose.' },
+  { who: 'red', face: 'shy', text: 'Good morning, Master Holt.' },
+  { who: 'red', face: 'shy', thought: true, text: 'He’s very big, and very quiet. Like a tree that’s decided to sit down for a while.' },
+  { who: 'holt', face: 'smile', listen: { red: 'shy' }, text: 'Your grandmother talks of you. More than of the roof, and the roof needs it.' },
+  { who: 'gran', face: 'calm', listen: { red: 'calm' }, text: 'Holt walks this wood more than anyone living, love. If you’re ever in trouble out there, he’s the one to find.' },
+  { who: 'holt', face: 'stern', listen: { red: 'calm' }, text: 'Keep to the path, and I’ll not need finding. There’s been a man about, these last weeks. Not a woodsman: good boots, and no business I can see.' },
+  { who: 'holt', face: 'calm', listen: { red: 'shy' }, text: 'If you meet him, you’ve somewhere to be.' },
+  { choose: [
+    { text: 'I’ll be careful, Master Holt.', face: 'shy', then: [{ run: ctx.careful },
+      { who: 'holt', face: 'smile', listen: { red: 'shy' }, text: 'Good lass.' }] },
+    { text: 'I can look after myself.', face: 'pout', then: [{ run: ctx.myself },
+      { who: 'holt', face: 'calm', listen: { red: 'pout' }, text: 'Most can. Till they can’t.' },
+      { who: 'gran', face: 'cheeky', listen: { red: 'pout' }, text: 'She’s her mother’s daughter, Holt. You’ll not win that one.' }] },
+  ] },
+  { who: 'holt', face: 'calm', listen: { red: 'calm' }, text: 'I’ll be off. There’s an ash down by the stream that won’t split itself. Hulda.' },
+  { who: 'gran', face: 'smile', listen: { red: 'calm' }, text: 'Off with you, then. Mind your back.' },
+];
+const holtGone = () => [
+  { who: 'gran', face: 'cheeky', listen: { red: 'shy' }, text: 'Don’t mind his face. It’s the only one he has, and he means well with it.' },
+  { who: 'red', face: 'shy', thought: true, text: 'A man in good boots, with no business. I’ll remember.' },
+];
+// The stranger at the stream (ctx: { cabin(), alone(), rose(), red() }: what she tells him).
+const wolfeMeet = ctx => [
+  { text: 'A man is sitting on the flat stone by the stream, filling a flask. He looks up as if he’d been waiting for exactly her.' },
+  { who: 'wolfe', face: 'smile', listen: { red: 'surprised' }, text: 'Ah. And I’d thought this wood had nothing better in it than squirrels.' },
+  { who: 'wolfe', face: 'calm', listen: { red: 'shy' }, text: 'Forgive me. I’ve startled you. I’ve been walking so long on my own I’ve forgotten how to be civil.' },
+  { who: 'red', face: 'shy', text: 'You’re not from the village.' },
+  { who: 'wolfe', face: 'smile', listen: { red: 'shy' }, text: 'No. I’m not from anywhere much, lately. But you: you walk this path as if it were yours.' },
+  { choose: [
+    { text: 'My grandmother lives at the end of it.', face: 'smile', then: [{ run: ctx.cabin },
+      { who: 'wolfe', face: 'surprised', listen: { red: 'smile' }, text: 'Does she! Out here, on her own? A brave woman.' },
+      { choose: [
+        { text: 'She likes it on her own.', face: 'smile', then: [{ run: ctx.alone }, { who: 'wolfe', face: 'smile', listen: { red: 'smile' }, text: 'I can understand that. Quiet is a precious thing.' }] },
+        { text: 'She has friends enough.', face: 'calm', then: [{ who: 'wolfe', face: 'calm', listen: { red: 'calm' }, text: 'Of course she does. I meant nothing by it.' }] },
+      ] }] },
+    { text: 'I’m only walking.', face: 'calm', then: [{ who: 'wolfe', face: 'smile', listen: { red: 'calm' }, text: 'Only walking. Then we’ve something in common, you and I.' }] },
+  ] },
+  { who: 'wolfe', face: 'smile', listen: { red: 'shy' }, text: 'And what do they call you? The girl who walks the path.' },
+  { choose: [
+    { text: 'Rose.', face: 'calm', then: [{ run: ctx.rose }, { who: 'wolfe', face: 'smile', listen: { red: 'calm' }, text: 'Rose. Of course it is.' }] },
+    { text: 'Red. Little Red, my grandmother says.', face: 'shy', then: [{ run: ctx.red }, { who: 'wolfe', face: 'smile', listen: { red: 'shy' }, text: 'Little Red. Yes. That suits you. I shan’t forget it.' }] },
+  ] },
+  { who: 'wolfe', face: 'calm', listen: { red: 'shy' }, text: 'I won’t keep you. The light goes early under these trees. But I’ll be about, a while. It’s a fine wood. I hope we meet again.' },
+];
+const wolfeGone = () => [{ who: 'red', face: 'shy', thought: true, text: 'He never said his name. And I never thought to ask it.' }];
+// Willie Winkie's blessing: her mother, of an evening after his first catch (ctx: { yes(), no() }).
+const willieBlessing = ctx => [
+  { who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Master William stopped me at the well this morning.' },
+  { who: 'red', face: 'wince', text: 'Oh no.' },
+  { who: 'mother', face: 'smile', listen: { red: 'wince' }, text: 'Not that. Or, not only that. He says, the next time he finds you out after the bell, and he says he will, he’d as soon see to it himself, here, at our hearth, as hand you over to me like a parcel. If you were willing. And if I was.' },
+  { who: 'red', face: 'surprised', text: 'Master William?' },
+  { who: 'mother', face: 'calm', listen: { red: 'surprised' }, text: 'He’s a fair man, love. Gruff. But fair. And he asked, which is more than most would. What do you think?' },
+  { choose: [
+    { text: 'If you trust him, Mama… I think I’d let him.', face: 'shy', then: [{ run: ctx.yes },
+      { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Then I’ll tell him yes. But it’s yours to say, every time. Your name stops him the same as it stops me.' }] },
+    { text: 'I’d rather it was only ever you, Mama.', face: 'shy', then: [{ run: ctx.no },
+      { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Then it’s only me, and I’ll tell him so. He’ll understand. He asked so you could say no.' }] },
+  ] },
+];
+// Peter notices she's changed (ctx: { all(), some(), none() }).
+const peterNotices = ctx => [
+  { who: 'peter', face: 'calm', listen: { red: 'calm' }, text: 'You’re different, lately. Not worse. You hold yourself different. As if something’s been settled.' },
+  { who: 'red', face: 'shy', thought: true, text: 'He notices everything. That’s the trouble with Peter.' },
+  { choose: [
+    { text: 'Mama takes me in hand, when I’m wilful. Like when I was small. I asked her to.', face: 'shy', then: [{ run: ctx.all },
+      { text: 'He’s quiet a long while. A linnet calls somewhere, and stops.' },
+      { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'Grandad used to, with me. Before I was grown. I missed it, after. I never said, to anyone.' },
+      { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: 'Thank you for telling me, Red. I’ll not tell a soul.' }] },
+    { text: 'Mama and I have come to an understanding. That’s all.', face: 'calm', then: [{ run: ctx.some },
+      { who: 'peter', face: 'calm', listen: { red: 'calm' }, text: 'That’s all? All right. I’ll not pry. It suits you, whatever it is.' }] },
+    { text: 'I’m just the same, Peter.', face: 'pout', then: [{ run: ctx.none },
+      { who: 'peter', face: 'sad', listen: { red: 'pout' }, text: 'If you say so.' },
+      { who: 'red', face: 'shy', thought: true, text: 'He didn’t believe me. He was kind enough not to say.' }] },
+  ] },
+];
+// Telling Tom (ctx: { tell(), not() }).
+const tomTold = ctx => [
+  { who: 'tom', face: 'cheeky', listen: { red: 'calm' }, text: 'You’ve been odd since the pie, Ridley. Odder.' },
+  { choose: [
+    { text: 'You know how your father deals with you? Mama does that with me. I asked her to.', face: 'shy', then: [{ run: ctx.tell },
+      { who: 'tom', face: 'surprised', listen: { red: 'shy' }, text: 'You asked her.' },
+      { who: 'tom', face: 'smile', listen: { red: 'shy' }, text: 'Huh. And here’s me thinking I was the only one daft enough. Does it help?' },
+      { who: 'red', face: 'shy', text: 'It does.' },
+      { who: 'tom', face: 'bashful', listen: { red: 'smile' }, text: 'Yeah. It does, doesn’t it. Tell anyone I said that and I’ll put you in the duck pond.' }] },
+    { text: 'Odder? Thank you, Tom.', face: 'cheeky', then: [{ run: ctx.not }, { who: 'tom', face: 'cheeky', listen: { red: 'cheeky' }, text: 'Any time.' }] },
+  ] },
+];
+// Asking the smith for the same standard as Tom (ctx: { ask(), not() }).
+const smithAsk = ctx => [
+  { who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. If it’s the lad you want, he’s round the back, hiding from the bellows.' },
+  { choose: [
+    { text: 'It’s you, Master Ferrier. When Tom and I get into mischief… I’d sooner answer for it the same as he does. To you.', face: 'shy', then: [{ run: ctx.ask },
+      { who: 'smith', face: 'surprised', listen: { red: 'shy' }, text: 'Would you, now.' },
+      { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'You know what you’re asking, lass? Same as my lad: no more, no less. Not for every scrape. For what you do together, when it wants answering.' },
+      { who: 'red', face: 'shy', text: 'I know. Tom told me. Mama knows, too, how it is with us.' },
+      { who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Then aye. The same standard. And your mother hears it from me, after, every time. Your name stops me dead, and I’ll not ask why.' }] },
+    { text: 'Only passing, Master Ferrier.', face: 'calm', then: [{ run: ctx.not }, { who: 'smith', face: 'calm', listen: { red: 'calm' }, text: 'Then pass. Mind the sparks.' }] },
+  ] },
+];
+// After a dare, once he's agreed: he's seen it. Then in his cottage, the two of them.
+const smithCaught = kind => [
+  { who: 'smith', face: 'stern', listen: { red: 'wince' }, text: kind === 'bell' ? 'The curfew bell, at noon. I heard it from the anvil, and I knew whose hand it was before it stopped.' : 'Master William’s shutter, and Master William’s voice, and the two of you running. I’ve ears, lad.' },
+  { who: 'tom', face: 'wince', listen: { red: 'wince' }, text: 'It was only a bit of fun, Dad.' },
+  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Aye, and this’ll be a bit of fun an’ all. Home, the both of you. Same standard, Miss Rose, as you asked.' },
+];
+const smithIndoors = () => [
+  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Tom first. Rose, you’ll stand there. Then you.' },
+  { who: 'red', face: 'shy', text: 'Yes, Master Ferrier.' },
+];
+const smithTom = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.7, pace: 1.3 });
+  await S.wait(0.6);
+  await S.say(R, 'Dad, it was one bell—');
+  await S.say(M, 'One bell, and a green full of folk thinking it was a fire. Over.', 'stern');
+  await S.step([M, 'You’re to be a smith. A smith minds what he strikes and when.'], 10);
+  await S.step([R, 'Ow— yes, Dad—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ implement: 'strap', strength: 1.8, pace: 1 });
+  await S.say(M, 'Six with the strap.', 'stern');
+  await S.smacks(6);
+  await S.say(M, 'Corner. Hands on your head.', 'calm');
+};
+const smithRed = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.3 });
+  await S.wait(0.6);
+  await S.say(M, 'Now you, lass. You asked for the same, and the same it is.', 'calm');
+  await S.step([M, 'You’ve a good head on you. It’s no use to anyone if you leave it at home when Tom comes calling.', 'stern'], 10);
+  await S.step([R, 'Ow— I know—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.7, pace: 1.5 });
+  await S.step([M, 'Next time he dares you, you look at him, and you think of this, and you think of me.'], 10);
+  await S.step([R, 'I will, Master Ferrier—'], 4);
+  S.set({ implement: 'strap', strength: 1.6, pace: 1 });
+  await S.say(M, 'Six, the same as him.', 'stern');
+  await S.smacks(6);
+  await S.say(M, 'There. Done. Up you get.', 'calm');
+  await S.wait(1.0);
+};
+const smithAfter = r => r && r.rose ? [
+  { who: 'smith', face: 'concerned', listen: { red: 'shy' }, text: 'That’s it, then. Done. Sit, lass, till you’re steady. No one minds.' },
+] : [
+  { who: 'smith', face: 'calm', listen: { red: 'teary' }, text: 'That’s that. Squared, the both of you. Tom, out of the corner and fetch the lass a cup of water.' },
+  { who: 'tom', face: 'bashful', listen: { red: 'shy' }, text: 'Told you he was fair.' },
+  { who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'I’ll walk up and see your mother tonight. She’ll hear it straight from me.' },
+];
+// Mistress Pennock, after a morning's work, once she trusts her: the key under the pot.
+const pennockTrust = () => [
+  { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'Rose. Sit down a minute. No, the loaves’ll keep.' },
+  { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'You’ve been good to me, these mornings. Up before it’s light and never a sulk. And honest with me, when it would have been easier not to be.' },
+  { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'There’s a key to my back door, under the third pot along. If ever you need somewhere, any hour, and don’t want to say why, you let yourself in. There’s always bread.' },
+  { who: 'red', face: 'shy', text: 'Mistress Pennock… thank you.' },
+  { who: 'pennock', face: 'stern', listen: { red: 'smile' }, text: 'And if you ever need setting straight, you know where I am for that, too. Off you go.' },
+];
+// Mistress Abney, after an afternoon's work, once she trusts her (ctx: { tell(), not(), broken }).
+const abneyOpen = ctx => [
+  { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'You’re a good worker, Miss Rose. Better than good. But you’ve something on your mind these days, and it isn’t pots.' },
+  { choose: [
+    { text: 'Mistress Abney… at home, Mama takes me in hand, when I need it. I asked her to. I’d… I’d like to know where I stand with you, the same way.', face: 'shy', then: [{ run: ctx.tell },
+      { who: 'abney', face: 'surprised', listen: { red: 'shy' }, text: 'Would you, pet.' },
+      { who: 'abney', face: 'calm', listen: { red: 'shy' }, text: ctx.broken ? 'You know what I mind most. You found that out the night you left my Bess on her own.' : 'You know what I mind most: a word given and not kept. Mischief I can laugh at.' },
+      { who: 'abney', face: 'stern', listen: { red: 'shy' }, text: 'Then we’ll start as we mean to go on, you and I. Now, before you think better of it. And then you’ll know.' }] },
+    { text: 'Only tired, Mistress Abney.', face: 'calm', then: [{ run: ctx.not }, { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Hm. Go on home, then, and rest.' }] },
+  ] },
+];
+const abneyInHand = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3, pace: 1.3 });
+  await S.wait(0.6);
+  await S.say(M, 'Over my knee, then. Bess, you’ll keep your remarks to yourself.', 'calm');
+  await S.step([M, 'In this house a promise is a promise. Six o’clock means six o’clock.', 'stern'], 8);
+  await S.step([R, 'Yes, Mistress Abney—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.5, pace: 1.45 });
+  await S.step([M, 'Tom and his dares I’ll laugh at. Pots left half-scoured I’ll sigh at. A word broken, I’ll not have.'], 10);
+  await S.step([R, 'Ow— I understand—'], 4);
+  S.set({ implement: 'spoon', strength: 1.5, pace: 1 });
+  await S.say(M, 'Six with my spoon, so you remember it.', 'stern');
+  await S.smacks(6);
+  await S.say(M, 'There. Now you know where you stand.', 'calm');
+  await S.wait(1.0);
+};
+const abneyAfter = r => r && r.rose ? [
+  { who: 'abney', face: 'concerned', listen: { red: 'shy' }, text: 'Hush, pet. It’s stopped. Sit by Bess, and I’ll fetch you something warm.' },
+] : [
+  { who: 'abney', face: 'smile', listen: { red: 'teary' }, text: 'That’s that. Now you know, and I know you know. Sit by the fire a minute.' },
+  { who: 'bess', face: 'cheeky', listen: { red: 'shy' }, text: 'She’s been wanting to do that to someone for years, you know. You’ve made her day.' },
+  { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
+];
+
+root.Story = { holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

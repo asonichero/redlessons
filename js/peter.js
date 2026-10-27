@@ -137,6 +137,7 @@ function wood(P, w) {
     await m.goTo(at, Math.atan2(f.motion.pos.x - at.x, f.motion.pos.z - at.z)); f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z));
     const st = stateOf(w), n = st.met;
     await P.converse(S.beechMeeting(n, { owed: st.owed }), { shot: ['red', 'peter'] });
+    await notices(P, w);
     w.cal.advance(40); w.rep.trusts('peter', 0.5);
     change(w, s => { s.meet = null; s.met++; s.owed = false; });
     if (stateOf(w).met >= 2 && w.q.stateOf && w.q.stateOf('peter.friends') === 'offered') w.complete('peter.friends');
@@ -144,12 +145,20 @@ function wood(P, w) {
   }
   return { read, meeting };
 }
+// He notices she's changed (peter.notices, 1.3): at the beech, or talking at the Fowlers'. How much she tells him is hers.
+async function notices(P, w) {
+  if (!(w.q && w.q.stateOf && w.q.stateOf('peter.notices') === 'offered')) return false;
+  let how = null; const pick = k => () => { how = k; };
+  await P.converse(root.Story.peterNotices({ all: pick('all'), some: pick('some'), none: pick('none') }), { shot: ['red', 'peter'] });
+  if (how === 'all') { w.rep.tell('peter', 1); w.rep.trusts('peter', 1); } else if (how === 'some') w.rep.trusts('peter', 0.5);
+  w.complete('peter.notices'); return true;
+}
 // (the objective, while a meeting's on: where, and when)
 // (a meeting gone by without her: missed, and he'll say so next time)
 function lapse(w) { const st = stateOf(w); if (st.meet && (st.meet.day < w.cal.day || w.cal.minute >= st.meet.at + WAITS)) change(w, s => { s.meet = null; s.missed++; s.owed = true; }); }
 function objective(w) { lapse(w); const mt = stateOf(w).meet; return mt && mt.day === w.cal.day && w.cal.minute < mt.at + WAITS ? 'Peter, at the old beech, at ' + root.Calendar.clockOf(mt.at).replace(/ in the (morning|afternoon|evening)| at night/, '') + '.' : null; }
 
-const api = { lapse, visited, letIn, fowlerAtGate, awaiting, atHolding, firstTalk, sendHome, wood, offToday, noteToday, meetAt, objective, stateOf, hash, WAITS };
+const api = { notices, lapse, visited, letIn, fowlerAtGate, awaiting, atHolding, firstTalk, sendHome, wood, offToday, noteToday, meetAt, objective, stateOf, hash, WAITS };
 root.Peter = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

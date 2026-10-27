@@ -65,6 +65,19 @@ Where the meadow meets the wood: the fork leaves the meadow lane at a finger-pos
 
 Visiting her grandmother in the days after the cloak, Red's asked to fetch a herb, one at a time: yarrow from the meadow, west of the lane (flat white heads, leaves like feathers); wood sorrel on the stream's bank (three folded hearts, small white flowers: "taste one"); comfrey by the fallen tree, where the ground stays wet (big rough leaves, purple bells). Each grows where she says (a patch of it, drawn), and is gathered there (*Pick the yarrow*, and so on). Brought back, her grandmother teaches her what it's for: woundwort for cuts, sorrel for a fever and for knowing you're awake, knitbone for sprains and bruises ("if you ever want some, and would rather not say what for, you only have to ask"). One a visit; the next asked another day. Three brought, and the herb errands are done (one of the three things 1.3 waits on). Until the first is asked, the day's list says to visit her when there's time.
 
+## Into the Wood: phase 1.3 (`js/intowood.js`, `js/inhand.js`)
+
+The village's middle figures taken up, and the two men who come into the wood. Phase 1.3 opens once the pie, Mistress Abney's promise and Grandmother's herbs are done; Act 2 waits on five of what follows (the smith's standard, Mistress Pennock's trust, Mistress Abney taking her in hand, Holt met, the stranger met).
+
+- **Holt, at Grandmother's.** The first visit in 1.3, he's sat at her table: the woodsman, big and quiet, who cuts her wood and mends her roof. A warning (a man about these last weeks, good boots and no business), and Red's answer (careful, or "I can look after myself"); then off out of the door to an ash by the stream.
+- **The stranger at the stream.** Of an afternoon or evening, when she's on her own on the path, a man on the flat stone, filling a flask. Charming; asking far more than he tells. Whatever she tells him (her grandmother at the path's end; that she likes it on her own; that she's Little Red) is kept, and never shown. He doesn't give his name.
+- **Telling Tom** (once he trusts her): he says she's been odd since the pie, and she can tell him what she and her mother have ("Does it help?" "It does."), or not yet.
+- **The same standard as Tom.** Once Tom knows, she can ask Master Ferrier to answer to him as Tom does, for what they get up to together. Agreed, the next dare she takes with Tom, he's heard it from the anvil: home the pair of them, to the Ferriers' cottage, Tom first (to the corner after), then her; and he walks up to tell her mother himself (a reprieve at home).
+- **Mistress Pennock's trust.** At the end of a morning's work, once she trusts Red enough: the key to her back door under the third pot, for any hour; and setting straight, if ever she needs it.
+- **Mistress Abney.** At the end of an afternoon's work, once she trusts Red enough: "you've something on your mind, and it isn't pots." Red can tell her and ask to know where she stands with her: then and there, by the fire, Bess watching ("she's been wanting to do that to someone for years"). Her mother hears it from her, and is glad.
+- **Peter notices** she's changed, at the beech or at the Fowlers'; how much she tells him is hers (all of it, an "understanding", or nothing, which he doesn't believe).
+- **Willie Winkie's blessing.** After his first catch, an evening at home: Master William's asked her mother whether, next time, he might see to it himself, at their hearth. Red says, and her mother answers him by it.
+
 ## The village (`js/village.js`)
 
 The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, the curfew bell on its frame, the stocks (only to look at, for now) and the duck pond, and a lane loops round the green's far side, with the lane south to the mill off it.
@@ -264,6 +277,8 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
 | `js/evening.js` | Evenings at home: the Watchman bringing her home, the curfew, reprieves for what others have dealt with, supper, and bed |
 | `js/inn.js` | The inn inside: the hearth, Bess's chair, the counter and barrels, the tables, the stair |
+| `js/intowood.js` | 1.3: Holt at Grandmother's, the stranger at the stream |
+| `js/inhand.js` | 1.3: Tom told, the smith's same standard, Mistress Pennock's trust, Mistress Abney taking her in hand |
 | `js/herbs.js` | Grandmother's herb errands: asked at the cabin, gathered in the wood, brought back and taught |
 | `js/promise.js` | Mistress Abney's promise: the asking, the evening's temptation, sitting with Bess, and a promise broken |
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |

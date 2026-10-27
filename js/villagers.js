@@ -215,6 +215,8 @@ function attach(P, w) {
     try {
       await meet(f);
       if (key === 'abney' && root.AbneyPromise && root.AbneyPromise.wants(w)) { await root.AbneyPromise.ask(P, w); return; }      // (she's a favour to ask)
+      if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
+      if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
       const ctx = { part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone,
@@ -252,7 +254,7 @@ function attach(P, w) {
       kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares,
       mins: n => { spent += n; cal.advance(n); w.refresh(); },
       ringBell: () => ringBell(f), knock: () => knock(f),
-      dared: () => { change(s => { s.dares = (s.dares || 0) + 1; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares'); },
+      dared: () => { ctx.done = true; change(s => { s.dares = (s.dares || 0) + 1; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares'); },
       chatted: () => rep.trusts('tom', 0.5),
     };
     try {
@@ -262,6 +264,7 @@ function attach(P, w) {
       if (w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
       if (ctx.busy && spent >= 20 && P.talk) P.talk.muse(S.tomCost(spent), { face: 'wince' });
     } finally { release(f); }
+    if (ctx.done && root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
   }
   // The dares. The curfew bell, rung at midday: across to it, three strokes, and back to Tom, quick, the green all turning round.
   async function ringBell(f) {

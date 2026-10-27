@@ -8,6 +8,7 @@
 //   • Anything she's already been corrected for by someone else (Mistress Pennock, for the pie) gets a reprieve: her mother has heard of it
 //     from them, or Red tells her herself; and if neither, her mother hears in a day or two, and it's a reprieve still, with a word about
 //     not being told.
+//   • After Master William's first catch: he's asked her mother whether, next time, he might see to it himself; Red says (maren.willie).
 // Only one correction an evening; whatever else is owed waits for the next. If nothing's owed, her mother asks if she'll help with supper:
 // yes, an honest "I'm worn through", or a "won't" (wilful, counted with the errands' toward the week's three). Then she's in for the night:
 // supper and bed, and it's morning.
@@ -45,6 +46,7 @@ async function home(P, w, o) {
     if (!corrected && root.Pie) corrected = await root.Pie.evening(P, w, true);
     if (!corrected && root.AbneyPromise) corrected = await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
     if (!corrected && root.Garden && w.chores && w.chores.on()) corrected = await root.Garden.evening(P, w, true);
+    if (!corrected && P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
     if (!corrected && P === w.P && !late && !excused) await supper(P, w);
   }
   if (P === w.P) await w.morning(late || excused ? 'Bed.' : 'Supper, and bed.');
@@ -86,6 +88,14 @@ async function reprieves(P, w) {
     if (told) await P.converse(S.reprieve(c, 'reported'), { shot: ['red', 'mother'] });
     change(w, s => { const x = s.corrected.find(y => y.id === c.id); if (told) x.raised = true; else x.withheld = true; });
   }
+}
+// ── Master William's asked her mother: next time, might he see to it himself? Red's to say; her mother decides by it (maren.willie).
+async function blessing(P, w) {
+  let yes = false;
+  await P.wait(0.4); await P.approach();
+  await P.converse(root.Story.willieBlessing({ yes: () => { yes = true; }, no: () => {} }), { shot: ['red', 'mother'] });
+  if (yes) { w.save.flag('maren-blesses-willie', w.cal.day); w.rep.tell('willie', 1); }
+  w.complete('maren.willie');
 }
 // ── Nothing owed: will she help with supper?
 async function supper(P, w) {

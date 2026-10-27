@@ -91,7 +91,8 @@ function attach(P, w) {
     change(w, s => { s.id = null; });
     if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand);
     await P.converse(lines.end || [], { shot: ['red', sh.boss] });
-    if (st0.id === 'inn' && root.AbneyPromise && P.npc) await root.AbneyPromise.ask(P, w);      // (and, at the end of an afternoon at the inn, Mistress Abney's favour to ask)
+    const more = root.InHand && P.npc ? await root.InHand.afterShift(P, w, st0.id) : false;      // (Mistress Pennock's trust; Mistress Abney taking her in hand: js/inhand.js)
+    if (!more && st0.id === 'inn' && root.AbneyPromise && P.npc) await root.AbneyPromise.ask(P, w);      // (and, at the end of an afternoon at the inn, Mistress Abney's favour to ask)
     w.refresh();
   }
   return { task, action };

@@ -222,7 +222,7 @@ A.voice = function (power, band, muffle, vol, base) {
 
 // ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: 'red' | 'gerda' | 'narrator' ──
 const PITCH = { red: 215, gerda: 190, gran: 172, narrator: 150,
-  agnes: 232, bess: 205, pennock: 185, abney: 176, tom: 138, georgie: 150, smith: 104, baker: 122, willie: 116, peter: 134, fowler: 108 };      // (the village's: the young higher, the men lower, Master Ferrier lowest)
+  agnes: 232, bess: 205, pennock: 185, abney: 176, tom: 138, georgie: 150, smith: 104, baker: 122, willie: 116, peter: 134, fowler: 108, holt: 96, wolfe: 118 };      // (the village's: the young higher, the men lower, Master Ferrier lowest)
 A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through a wall (louder in the filter, to carry); opts.vol scales it; opts.pitch: in place of the speaker's own (Hz)
   if (!A.init()) return { stop() {} }; const ctx = A.ctx, N = A.nodes, base = (opts && opts.pitch) || PITCH[who] || 160, muffle = opts && opts.muffle;
   const words = text.split(/\s+/).filter(Boolean); let t = ctx.currentTime + 0.05; const step = seconds / Math.max(1, words.length), stopAt = t + seconds + 0.3, nodes = [];
