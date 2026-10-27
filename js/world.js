@@ -91,7 +91,7 @@ function create(view, ui) {
     get P() { return P; }, get area() { return areaName; }, get scene() { return sceneNow; },
     fade, ui,
     complete(ref) { const r = q.complete(ref); refresh(); return r; },
-    objective(t) { if (ui.objective) ui.objective(t); },
+    objective(t) { if (ui.quests) ui.quests(t ? [t] : []); else if (ui.objective) ui.objective(t); },      // (a scene's own, on its own)
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
@@ -106,11 +106,12 @@ function create(view, ui) {
   function refresh() {
     if (ui.clock) ui.clock('Day ' + cal.day + ' · ' + cal.clock, q.phaseOf(q.phase()));
     if (sceneNow && sceneNow.ownObjective) return;
-    { const t = chores && chores.objective(); if (t) { w.objective(t); return; } }
-    // (only what can be played yet: a step with a scene, or one the place itself handles; the journal shows the rest)
+    // (everything that's hers now: the day's (the errand, the garden, the evening's matters), and the steps on offer that can be played yet (a
+    // step with a scene, or one the place itself handles), those here first; the diary has the rest)
     const ready = s => s.hint && ((s.scene && SCENES[s.scene]) || s.talk);
-    const here = q.offered({ where: areaName }).find(ready), any = q.offered().find(ready);
-    w.objective(here ? here.hint : any ? any.hint : '');
+    const steps = q.offered({ where: areaName }).filter(ready).concat(q.offered().filter(ready)).map(s => s.hint);
+    const list = [...new Set((chores ? chores.objectives() : []).concat(steps))].slice(0, 4);
+    if (ui.quests) ui.quests(list); else if (ui.objective) ui.objective(list[0] || '');
   }
   function journal() {
     const ph = q.phaseOf(q.phase());

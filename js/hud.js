@@ -30,6 +30,7 @@ const ICONS = {
   camera: '<path d="M3 8h4l1.6-2.4h6.8L17 8h4v11H3z"/><circle cx="12" cy="13.2" r="3.6"/>',
   keys: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  diary: '<path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"/><path d="M5 18a2 2 0 0 1 2-2h11"/><path d="M9 8h6M9 11h4"/>',
 };
 const svg = k => '<svg viewBox="0 0 24 24">' + (ICONS[k] || ICONS.act) + '</svg>';
 // (the icon and the short label for an action, from its words)
@@ -79,6 +80,15 @@ const CSS = `
 #hClock { position: absolute; top: 12px; left: 12px; font: 13px/1.3 Georgia, serif; color: #f3ead8; background: rgba(16,10,12,0.62); border: 1px solid #4a3a3c; border-radius: 8px; padding: 5px 11px; display: none; }
 #hClock.on { display: block; } body.talking #hClock, body.correcting #hClock { opacity: 0; } #hClock i { display: block; font-size: 11px; color: #c9a88c; letter-spacing: .06em; }
 @media (max-width: 640px) { #hClock { font-size: 11.5px; padding: 4px 8px; } #hObj { top: 52px; max-width: calc(100vw - 80px); } }
+/* (what's hers to do, top left under the clock; the diary button by the clock opens the whole of it) */
+#hTop { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: min(360px, calc(100vw - 150px)); }
+#hTop #hClock { position: static; } #hTopRow { display: flex; gap: 6px; align-items: stretch; }
+#hDiary { width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+#hDiary svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hDiary:hover { background: rgba(60,40,44,0.8); }
+#hQuests { display: none; font: italic 14px/1.35 Georgia, serif; color: #f6efe2; background: rgba(16,10,12,0.55); border: 1px solid #4a3a3c; border-radius: 8px; padding: 6px 11px; }
+#hQuests.on { display: block; } #hQuests div { margin: 2px 0; padding-left: 12px; text-indent: -12px; } #hQuests div::before { content: '❧ '; color: #c9a84c; font-style: normal; }
+body.talking #hTop, body.correcting #hTop { opacity: 0; pointer-events: none; }
+@media (max-width: 640px) { #hQuests { font-size: 12.5px; padding: 4px 8px; } #hDiary { width: 34px; } }
 /* (the journal, in the pause menu) */
 .hCard .journal .ph { font-size: 13px; color: #c9a88c; margin: 2px 0 6px; } .hCard .journal .q { margin: 7px 0; font-size: 14px; line-height: 1.4; }
 .hCard .journal .q b { color: #f3e4b0; font-weight: normal; } .hCard .journal .q.main b { color: #e8504a; } .hCard .journal .q small { display: block; color: #c9b8a8; font-style: italic; }
@@ -117,7 +127,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hClock"></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -148,13 +158,23 @@ function create(opts) {
   const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
     ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'],
     ['<kbd>Q</kbd>', 'The other thing (lie down, on a bed)'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
-    ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
+    ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>J</kbd>, or the book by the clock', 'Her diary'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
     '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
+  // The diary: the whole journal in a pop-up of its own (the game held while it's open). J, or the button by the clock.
+  const diaryEl = screen('hDiaryCard', '<h2>Her diary</h2><div class="journal"></div><div class="x">Click anywhere or press Esc to close</div>');
+  let diaryHeld = null;
+  function diary(on) {
+    const p = P(), st = p && p.stage; if (on === diaryEl.classList.contains('on')) return;
+    if (on) { drawJournal(diaryEl.querySelector('.journal')); diaryHeld = st ? st.held : null; if (st) st.held = true; } else if (st && diaryHeld != null) st.held = diaryHeld;
+    diaryEl.classList.toggle('on', on);
+  }
+  diaryEl.addEventListener('click', () => diary(false));
+  addEventListener('keydown', e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyJ' && !document.body.classList.contains('talking')) diary(!diaryEl.classList.contains('on')); else if (e.code === 'Escape' && diaryEl.classList.contains('on')) { e.stopPropagation(); diary(false); } }, true);
   let paused = false, wasHeld = false, audioWas = null;
   // The journal (opts.journal() → { phase, clock, lines: [{ name, main, state, step: { title, hint }, done, total }] }): where each line has got to.
   const STATE = { offered: '', waiting: 'waiting', gated: 'not yet', later: 'later', paused: 'paused', done: 'done' };
-  function drawJournal() {
-    const d = pc.querySelector('.journal'); if (!opts.journal) return; const j = opts.journal(); if (!j) { d.innerHTML = ''; return; }
+  function drawJournal(into) {
+    const d = into || pc.querySelector('.journal'); if (!opts.journal) return; const j = opts.journal(); if (!j) { d.innerHTML = ''; return; }
     const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     d.innerHTML = '<h3>Her days</h3><div class="ph">' + esc(j.clock) + (j.phase ? ' · Act ' + j.phase.act + ', ' + esc(j.phase.name) : '') + '</div>' +
       j.lines.map(l => '<div class="q ' + (l.main ? 'main ' : '') + l.state + '"><span class="st">' + (STATE[l.state] || '') + '</span><b>' + esc(l.name) + '</b>' +
@@ -191,6 +211,7 @@ function create(opts) {
   });
   sheet.addEventListener('pointerdown', () => sheet.classList.remove('on'));
   $('hMenu').addEventListener('click', e => { e.stopPropagation(); pause(!paused); });
+  $('hDiary').addEventListener('click', e => { e.stopPropagation(); diary(true); });
   $('hHelp').addEventListener('click', e => { e.stopPropagation(); sheet.classList.add('on'); });
 
   // ── The camera: in close, at the usual distance, or well back (the wheel still zooms between). ──
@@ -272,6 +293,10 @@ function create(opts) {
     el, settings, pause, openSettings, settingsCard, stepCam,
     get paused() { return paused; },
     objective(t) { if (t) objEl.textContent = t; objEl.classList.toggle('on', !!t); },
+    // (what's hers to do now, a line each, top left)
+    quests(list) { const q = $('hQuests'), esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); list = list || []; const html = list.map(t => '<div>' + esc(t) + '</div>').join('');
+      if (q.innerHTML !== html) q.innerHTML = html; q.classList.toggle('on', list.length > 0); objEl.classList.remove('on'); },
+    diary,
     clock(t, phase) { const c = $('hClock'); c.innerHTML = t ? t + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },
     show(on) { el.classList.toggle('hide', !on); if (!on) pause(false); },
   };

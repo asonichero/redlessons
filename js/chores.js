@@ -168,17 +168,21 @@ function create(w) {
     }
   }
   // What's hers to do now, for the objective: the errand (begun by when), what to take home, the garden.
-  function objective() {
-    if (!on()) return null;
-    { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)) || (root.AbneyPromise && root.AbneyPromise.objective(w)) || (root.Peter && root.Peter.objective(w)); if (t) return t; }      // (and Peter's note: the beech, at the hour)      // (walked home by the Watchman; sent home by Mistress Pennock)
-    const e = errand(), c = st();
-    { const k = root.Work && root.Work.current(w); if (k && e) { const t = root.Work.SHIFTS[k.id].tasks[k.step]; if (t) return e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.'; } }      // (at work: the task in hand)
-    if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';
-    if (e && e.state === 'carrying') return 'Take ' + NAME[e.carry] + ' home to Mama.';
-    if (e && e.state === 'broken') return e.title + ': late, but not too late to do it.';
-    if (!c.garden && cal.minute < H('19:00')) return root.Garden && root.Garden.progress(w).begun ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.';
-    return null;
+  // What's hers to do now: everything at once (objectives: the evening's matters, the errand, the garden), and the first of them (objective).
+  function objectives() {
+    if (!on()) return [];
+    const out = [], e = errand(), c = st();
+    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech)
+    const k = root.Work && root.Work.current(w), t = k && e && root.Work.SHIFTS[k.id].tasks[k.step];
+    if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
+    else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + '.');
+    else if (e && e.state === 'carrying') out.push('Take ' + NAME[e.carry] + ' home to Mama.');
+    else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');
+    if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && root.Garden.progress(w).begun ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');
+    return out;
   }
+  const objective = () => objectives()[0] || null;
+
   function journalLine() {
     if (!on()) return null;
     const e = errand(), c = st(), parts = [];
@@ -187,7 +191,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { on, breakfast, answer, wont, due, settled, shiftDone, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { on, breakfast, answer, wont, due, settled, shiftDone, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };
