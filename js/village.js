@@ -625,6 +625,7 @@ function build(scene, opts) {
     pondSide: { at: POND.clone().add(V(0, 26)), yaw: Math.PI, look: POND.clone().setY(2) },
     wellNear: { at: wellAt.clone().add(V(-16, 14)), yaw: Math.atan2(16, -14), look: wellAt.clone().setY(8) },      // (near enough to the well to be seen there, and to see who's at it)
     bell: { at: BELL.clone().add(V(0, 9)), yaw: Math.PI, look: BELL.clone().setY(14) },
+    meadowGate: { at: GATE.clone().add(V(22, 22)), yaw: Math.PI * 0.25, look: GATE.clone().setY(10) },      // (just in at the meadow gate: where Peter comes and goes)
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
   world.entries.bakery = { at: [world.spots.bakeryDoor.at.x - Math.sin(world.spots.bakeryDoor.yaw) * 10, world.spots.bakeryDoor.at.z - Math.cos(world.spots.bakeryDoor.yaw) * 10], yaw: world.spots.bakeryDoor.yaw + Math.PI };      // (out of Mistress Pennock's door, onto the street)

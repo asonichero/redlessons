@@ -55,6 +55,12 @@ The title screen can begin again, continue, or start chapter one at the wood or 
 
 Where the meadow meets the wood: off the meadow's east side (the beech's side of the path; the Barrows' way will fork off the other side, one day), past a finger-post, a lane along the wood's edge to Peter and his grandfather's cottage, built as the village's are. The coop on its legs and the hens scratching in their run, the duck on her pond, the nets drying on their poles, the garden, the cat on the step, the bench by the door, and a field gate in the fence onto the meadow. Peter's at the nets in the morning, the coop at midday, the gate of an afternoon; Master Fowler on the bench, or in his garden. Each can be talked to (a little trust the first time each day): Peter calls her Red; Master Fowler asks after Hulda, and grumbles about the wood. (Not on chapter one's walk home: the fork opens once that's done.)
 
+## Peter (`js/peter.js`)
+
+- **The first visit.** The first errand asked once the chores are agreed is *Eggs from the Fowlers'* (and, until she's been, it comes up more often). At their door Master Fowler gives her the eggs (fourteen: the hens won't hear of fewer), asks after Hulda and the noises at the wood's edge, and sends Peter to walk her back to the fork. Down the lane, side by side: he tells her of a knot in the old beech, at the height of her hand, where he might leave her something. If she goes to the Fowlers' of her own accord first, the visit plays then, without the eggs. After it, the eggs are an errand like any other.
+- **Notes at the beech.** Every few days (never on the day of the visit, nor on his days off), *Look in the knot of the beech*: a folded note, "The beech, at four. If you can. P." The objective holds the hour. He's there from then, and for an hour after; come, and they sit under the carving a while (forty minutes, and a little trust). Two meetings, and *Meetings at the beech* is done. Miss one, and next time he says he waited, till the light went.
+- **His days off.** About one day in four, once she's been: not at the holding, but in the village, from ten till six: about the green, on the lime-tree bench, by the pond. He can be talked to there.
+
 ## The village (`js/village.js`)
 
 The village from outside, built as the cottage and the cabin are (limewashed daub in an oak frame on a stone footing, thick thatch with its ridge capped, the same textures and ink) and at the same scale. One street runs through it, from the meadow gate in the north-west (and the wood beyond) to the east gate and the farms; the green lies south of it, with the well, the old lime tree with a bench round it, the curfew bell on its frame, the stocks (only to look at, for now) and the duck pond, and a lane loops round the green's far side, with the lane south to the mill off it.
@@ -75,7 +81,7 @@ Once the chores are agreed with her mother (the morning after the homecoming), t
 
 - **Mama's garden**, behind the cottage, every day before dusk (see *Mama's garden*, below). Left till dusk, it's a little broken promise.
 - **An errand on most days**, asked over breakfast: her mother says what's been asked of them and asks if she'll do it. *Yes* is a promise, to be begun by its time (shown as the objective and in the journal); *not today, I can't be anybody's today* is an honest no, and costs nothing; a *won't* is wilful, and three in a week bring a **maintenance correction** there and then (her hand; the shape of her days put back: the garden, what's asked, the bell), which settles her wilfulness. Let the time go by without beginning it, and it's a broken promise: naughty, and she knows it.
-- **The errands**: water from the well, bread from the bakery, a pot to the forge, a jug from the inn, a basket for the Dunns, a morning helping at the bakery, an afternoon working at the inn, helping Bo Peep pen the flock at dusk. Each is done at its place in the village, some carried home to her mother after. Their scenes don't spend the day: the clock stops while they play, and moves on by the work's own time when she's done.
+- **The errands**: eggs from the Fowlers' (the first asked, and often until she's been),  water from the well, bread from the bakery, a pot to the forge, a jug from the inn, a basket for the Dunns, a morning helping at the bakery, an afternoon working at the inn, helping Bo Peep pen the flock at dusk. Each is done at its place in the village, some carried home to her mother after. Their scenes don't spend the day: the clock stops while they play, and moves on by the work's own time when she's done.
 
 When the one an errand is for is there (Master Pennock at the bakery's door, the smith at his anvil, Mistress Abney at the inn), they say their own word for it; when they're indoors or about elsewhere, what happens is told, around Red's own thoughts.
 
@@ -246,6 +252,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
 | `js/work.js` | A shift of work, played: the bakery's morning, task by task (the inn's to come) |
 | `js/bakery.js` | The bakery inside: the oven, the kneading table, the loaves, the counter |
+| `js/peter.js` | Peter: the first visit to the Fowlers', his notes in the beech and meeting him there, his days off |
 | `js/holding.js` | The Fowlers' smallholding: the cottage, coop and hens, the duck, the nets, the garden; Peter and Master Fowler about their day |
 | `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |

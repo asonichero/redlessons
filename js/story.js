@@ -411,6 +411,12 @@ const ERRANDS = {
       { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }],
     there: [{ text: 'The afternoon goes in pots and plates and the carrier’s men stamping in, and Bess sat by the fire, directing everyone, and Mistress Abney watching it all.' },
       { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }] },
+  eggs: { title: 'Eggs from the Fowlers’', by: '12:00', place: 'door', area: 'holding', action: 'Ask Master Fowler for the eggs', carry: 'basket', home: true, mins: 20, who: 'fowler', trust: 'fowler',
+    ask: 'Master Fowler’s hens are laying like they’re paid for it, and he’s promised me a dozen. Will you walk over to the Fowlers’ for them this morning? Take the basket.',
+    met: [{ who: 'fowler', face: 'calm', listen: { red: 'calm' }, text: 'A dozen, and two over for your mother’s trouble. Mind them on the stile, girl.' },
+      { who: 'red', face: 'smile', thought: true, text: 'Still warm, some of them. The hens look very pleased with themselves.' }],
+    there: [{ text: 'The eggs are waiting in a bowl by the door, a dozen and two over, with a cloth on them.' }],
+    back: { who: 'mother', face: 'smile', text: 'Fourteen! He does spoil us. How was Master Fowler? And Peter?' } },
   flock: { title: 'Help Bo Peep pen the flock', by: '19:30', place: 'pinfold', action: 'Help pen the flock', mins: 30, who: 'halloran',
     ask: 'Halloran’s granddaughter could use another pair of hands bringing the flock in tonight. Will you meet her at the pinfold by half past seven?',
     there: [{ text: 'Bo Peep counts them through the gate, twice, and once more because one of them is always the same one, and they lean the gate shut together.' },
@@ -566,6 +572,14 @@ const VILLAGE = {
       [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Morning, Miss Rose. Oven’s hot and the dough’s up: all’s well with the world.' }],
       [{ who: 'baker', face: 'calm', listen: { red: 'calm' }, text: 'Tell the missus I’ve gone for flour, if she asks. And if she doesn’t ask, I’ve still gone for flour.' }],
     ],
+  },
+  peter: {
+    any: [
+      [{ who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Red! Grandad gave me the day. I said I’d buy thread, and I have, so the rest of it’s mine.' }, { who: 'red', face: 'smile', text: 'What will you do with it?' }, { who: 'peter', face: 'bashful', text: 'I hadn’t thought. This, maybe.' }],
+      [{ who: 'peter', face: 'calm', listen: { red: 'calm' }, text: 'Georgie’s been mooning at the well again. Agnes pretends not to notice. It’s like watching two hens that both want the same worm.' }, { who: 'red', face: 'cheeky', text: 'Which of them’s the worm?' }, { who: 'peter', face: 'smile', text: 'That’s the question.' }],
+      [{ who: 'peter', face: 'pout', listen: { red: 'cheeky' }, text: 'If you see Tom, I’m not here. He’s been at the Peter Piper again.' }],
+    ],
+    again: [{ who: 'peter', face: 'smile', text: 'Still here. Still not buying more thread.' }],
   },
   willie: {
     any: [
@@ -1035,6 +1049,46 @@ const FOWLERS = {
 };
 const fowlers = (key, ctx) => { const F = FOWLERS[key]; if (!F) return []; if (ctx.first) return F.first; if (ctx.today) return F.again; return pickOf(F.any, ctx.day); };
 
+// ── Peter (js/peter.js). The first visit: Master Fowler at his door (ctx.eggs: she's come for her mother's eggs), then Peter walking her
+// back to the fork.
+const firstVisit = ctx => [
+  { who: 'fowler', face: 'calm', listen: { red: 'shy' }, text: ctx.eggs ? 'Miss Rose, with Maren’s basket. You’ll be after the eggs. Fourteen, and don’t tell me they’re too many: the hens won’t hear of it.' : 'Miss Rose. Well. You’ve not come up this lane since you were knee-high and chasing my duck.' },
+  { who: 'red', face: 'shy', text: ctx.eggs ? 'Thank you, Master Fowler. Mama sends her thanks.' : 'I’m sorry, Master Fowler. About the duck.' },
+  { who: 'fowler', face: 'smile', listen: { red: 'smile' }, text: ctx.eggs ? 'She’d better.' : 'The duck forgave you. Eventually.' },
+  { who: 'fowler', face: 'calm', listen: { red: 'calm' }, text: 'And your grandmother? Out there on her own, with the wood the way it’s been. I hear things at night, girl. At the edge of the trees. Too heavy for a fox.' },
+  { who: 'red', face: 'calm', text: 'She’s well. She gave me her cloak.' },
+  { who: 'fowler', face: 'concerned', listen: { red: 'shy' }, text: 'Did she now. Then she’s thinking of you, and not of herself, as usual. Tell her Fowler said she’s a stubborn old woman, and that he said it kindly.' },
+  { who: 'fowler', face: 'calm', listen: { red: 'calm' }, text: 'Peter! Walk Miss Rose back to the fork. And mind you come straight back: those nets won’t mend themselves.' },
+];
+const walkWithPeter = () => [
+  { text: 'They go down the lane side by side, not quite touching, the way they used to walk home from the green when they were small.' },
+  { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'He likes you, you know. Grandad. He doesn’t tell people to tell people things unless he likes them.' },
+  { who: 'red', face: 'smile', text: 'He called my grandmother stubborn.' },
+  { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'That’s how you know.' },
+  { who: 'peter', face: 'calm', listen: { red: 'shy' }, text: 'Red. The old beech, on the path. Where we carved it.' },
+  { who: 'red', face: 'shy', text: 'I know where.' },
+  { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'There’s a knot in it, at the height of your hand. If you looked in it, now and then. I might leave you something.' },
+  { who: 'red', face: 'shy', thought: true, text: 'He went red to his ears. I think I did too.' },
+];
+// A note in the knot of the beech: the hour.
+const peterNote = at => [
+  { text: 'A folded scrap of paper, tucked into the knot, a little damp at the edges.' },
+  { who: 'red', face: 'shy', thought: true, text: '“The beech, at ' + at + '. If you can. P.”' },
+];
+// Meeting him there (n: how many times before; ctx.owed: she missed the last).
+const beechMeeting = (n, ctx) => {
+  const owed = ctx.owed ? [{ who: 'peter', face: 'calm', listen: { red: 'shy' }, text: 'You came. I waited, last time. Till the light went.' }, { who: 'red', face: 'shy', text: 'I’m sorry, Peter. I couldn’t.' }, { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: 'You’re here now.' }] : [];
+  const talks = [
+    [{ who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'You found it, then.' }, { who: 'red', face: 'smile', text: 'You said the knot. I looked in the knot.' },
+      { text: 'They sit with their backs against the beech, under the carving, and talk about nothing, and the afternoon goes by over their heads.' }],
+    [{ who: 'peter', face: 'calm', listen: { red: 'calm' }, text: 'Do you remember when we carved it? You held the knife wrong and I had to bind your thumb with my handkerchief.' },
+      { who: 'red', face: 'cheeky', text: 'I remember you cried more than I did.' }, { who: 'peter', face: 'bashful', text: 'It was a very good handkerchief.' }],
+    [{ who: 'peter', face: 'concerned', listen: { red: 'calm' }, text: 'You’re quieter than you were. Not sad. Just… somewhere else, some of the time.' },
+      { who: 'red', face: 'shy', thought: true, text: 'He notices everything. That’s the trouble with Peter.' }, { who: 'red', face: 'shy', text: 'I’m right here.' }],
+  ];
+  return owed.concat(talks[n % talks.length]);
+};
+
 // Mistress Pennock in her bakery, any other time.
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
@@ -1053,5 +1107,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -37,7 +37,7 @@ function build(scene) {
     world.seats.push({ name: 'the bench by the door', at: new V3(bx, 9.2, bz), facing: 0, kind: 'stool' }); world.obstacles.push({ x0: bx - 8, x1: bx + 8, z0: bz - 2.3, z1: bz + 2.3 }); }
 
   // ── The coop: a little plank house on legs with a ramp, and a run fenced round with hurdles; the hens in it.
-  const COOP = V(-120, -40), RUN = { x0: -160, x1: -80, z0: -30, z1: 30 };
+  const COOP = V(-130, -120), RUN = { x0: -170, x1: -90, z0: -105, z1: -40 };      // (north of the lane, by the wood: the lane runs clear of it)
   { const g = new THREE.Group(); g.position.copy(COOP); root_.add(g); const plank = toonMap(tx.door);
     for (const [x, z] of [[-9, -6], [9, -6], [-9, 6], [9, 6]]) box(g, 1.2, 6, 1.2, x, 3, z, oakDk);
     box(g, 22, 12, 16, 0, 12, 0, plank); const roof = new THREE.CylinderGeometry(1, 1, 26, 3); roof.rotateZ(Math.PI / 2); roof.scale(1, 6, 10); solid(g, roof, T.mat('#6a5a44'), 0, 21, 0, { ink: 0.1 });
@@ -47,7 +47,7 @@ function build(scene) {
   const hurdle = T.mat('#8e6c44');
   const fence = (a, b, gapAt) => { const d = b.clone().sub(a), L = d.length(), n = Math.ceil(L / 8); for (let k = 0; k < n; k++) { const p = a.clone().lerp(b, (k + 0.5) / n); if (gapAt && p.distanceTo(gapAt) < 6) continue;
     const m = box(root_, L / n - 0.4, 5, 0.8, p.x, 2.9, p.z, hurdle, { ink: 0.05 }); m.rotation.y = -Math.atan2(d.z, d.x); world.obstacles.push({ x: p.x, z: p.z, r: 2.4 }); } };
-  const runGate = V(RUN.x1, 0);
+  const runGate = V(RUN.x1, (RUN.z0 + RUN.z1) / 2);
   fence(V(RUN.x0, RUN.z0), V(RUN.x1, RUN.z0)); fence(V(RUN.x0, RUN.z1), V(RUN.x1, RUN.z1)); fence(V(RUN.x0, RUN.z0), V(RUN.x0, RUN.z1)); fence(V(RUN.x1, RUN.z0), V(RUN.x1, RUN.z1), runGate);
   // The hens: plump, brown and white, pecking about the run.
   const hens = [], henCols = ['#a8643a', '#efe6d4', '#8a4a2a', '#efe6d4', '#c88a4a', '#5a4a3a'];
@@ -111,7 +111,7 @@ function build(scene) {
   // (where they're found: Peter at the nets (on the yard side, facing them), the coop, the gate; his grandfather on the bench, in the garden)
   world.spots = Object.assign(world.spots, {
     nets: { at: V(NETS.x + 6, NETS.z - 8), yaw: 0, look: NETS.clone().setY(10) },
-    coop: { at: V(RUN.x1 + 10, 4), yaw: -Math.PI / 2, look: V(RUN.x1 - 20, 0).setY(2) },
+    coop: { at: V(RUN.x1 + 10, (RUN.z0 + RUN.z1) / 2), yaw: -Math.PI / 2, look: V(RUN.x1 - 20, (RUN.z0 + RUN.z1) / 2).setY(2) },
     garden: { at: V(GARDEN.x0 + 20, GARDEN.z1 + 8), yaw: Math.PI, look: V(GARDEN.x0 + 20, GARDEN.z1 - 10).setY(2) }, door: { at: doorAt.clone(), yaw: 0, look: doorAt.clone().setY(18) },
     yard: { at: V(-20, 30), yaw: 0, look: V(-20, 60).setY(10) },
   });
@@ -148,8 +148,8 @@ function build(scene) {
 // ── Peter and his grandfather, about their day: Peter at the nets in the morning, the coop at midday, the meadow gate of an afternoon (in
 // at dusk); his grandfather on the bench by the door, or in the garden (in by evening). Each to talk to.
 const PEOPLE = {
-  peter: { rig: 'peter', name: 'Peter', voice: 'peter', tint: '#4a5a3a', bg: '#e2e8d8', at: min => min < H('7:00') || min >= H('20:00') ? null : min < H('11:30') ? 'nets' : min < H('14:00') ? 'coop' : 'gate' },
-  fowler: { rig: 'fowler', name: 'Master Fowler', voice: 'fowler', tint: '#5a4a3a', bg: '#e6e0d6', at: min => min < H('8:00') || min >= H('19:00') ? null : (Math.floor(min / 90) % 2 ? 'garden' : 'bench') },
+  peter: { rig: 'peter', name: 'Peter', voice: 'peter', tint: '#4a5a3a', bg: '#e2e8d8', at: min => min < H('6:30') || min >= H('20:00') ? null : min < H('11:30') ? 'nets' : min < H('14:00') ? 'coop' : 'gate' },
+  fowler: { rig: 'fowler', name: 'Master Fowler', voice: 'fowler', tint: '#5a4a3a', bg: '#e6e0d6', at: min => min < H('6:30') || min >= H('19:00') ? null : (Math.floor(min / 90) % 2 ? 'garden' : 'bench') },      // (up with the birds, as fowlers are)
 };
 function people(P, w) {
   const W = P.world, looks = root.Looks && Looks.load ? Looks.load() : {}, figs = {};
@@ -164,7 +164,8 @@ function people(P, w) {
     else { if (f.motion.seat) { f.motion.stand(); } const s = spotOf(where); f.motion.warp(s.at, s.yaw); f.motion.lookAt(s.look); }
   }
   let think = 0;
-  const update = () => { for (const k in PEOPLE) if (!figs[k] || !figs[k].held) place(k, PEOPLE[k].at(w.cal.minute)); };
+  const update = () => { for (const k in PEOPLE) if (!figs[k] || !figs[k].held) place(k, k === 'peter' && root.Peter && root.Peter.offToday(w) ? null : PEOPLE[k].at(w.cal.minute));      // (Peter's day off: in the village)
+    if (root.Peter) root.Peter.atHolding(P, w); };      // (the first visit, the first time she's here with them both about)
   update();
   P.tick(dt => { if ((think -= dt) <= 0) { think = 1; update(); } for (const k in figs) { figs[k].motion.update(dt, null); figs[k].rig.tick(dt); } });
   // Talking to them.

@@ -48,7 +48,11 @@ function create(w) {
   // Which errand today: one of them, not yesterday's, about one day in four none (the same for a day, however it's asked).
   function pick(day) {
     const rnd = (n => () => { n = (n * 16807) % 2147483647; return (n - 1) / 2147483646; })(((day * 2654435761) % 2147483646) + 1); rnd(); rnd();      // (mixed, and the first draws let go: a small seed's first draw is small)
+    // (until she's been to the Fowlers': the first errand asked is the eggs, and they come round more often after; js/peter.js)
+    const unvisited = root.Peter && !root.Peter.visited(w), first = save.state.chores && save.state.chores.firstEggs;
+    if (unvisited && E.eggs && (first == null || first === day)) return 'eggs';
     if (rnd() < 1 / NONE_ONE_IN) return null;
+    if (unvisited && E.eggs && rnd() < 0.4) return 'eggs';
     const ids = Object.keys(E), last = save.state.chores && save.state.chores.last;
     let id = ids[Math.floor(rnd() * ids.length)]; if (id === last) id = ids[(ids.indexOf(id) + 1) % ids.length];
     return id;
@@ -65,6 +69,7 @@ function create(w) {
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); }, little: async () => { answer(id, 'little'); }, wont: async () => { answer(id, 'wont'); } };
     await P.wait(0.8); await P.approach();
+    if (id === 'eggs' && st().firstEggs == null) change(c => { c.firstEggs = cal.day; });
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
     if (due()) await maintenance(P);
     w.refresh();
@@ -97,8 +102,8 @@ function create(w) {
   function actions(P, area) {
     if (!on() || !P) return [];
     const out = [], e = errand(), c = st(), W = P.world, sp = W.spots || {}, m = P.motion;
-    if (area === 'village') {
-      if (!c.garden && P.garden) out.push(...P.garden.actions());      // (the garden's own work, from the paths between its rows: js/garden.js)
+    if (area === 'village' && !c.garden && P.garden) out.push(...P.garden.actions());      // (the garden's own work, from the paths between its rows: js/garden.js)
+    if (e && (e.area || 'village') === area && area !== 'home') {      // (the errand's own place: the village's, or the Fowlers')
       if (e && (e.state === 'accepted' || e.state === 'broken' || e.state === 'working') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
     if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + NAME[e.carry], at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
@@ -117,7 +122,9 @@ function create(w) {
     // (the one it's for, if they're there: facing her, and their own word for it)
     const f = e.who && P.figure ? P.figure(e.who) : null;
     if (f && e.met) { if (!f.sat) f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); m.face(Math.atan2(f.motion.pos.x - m.pos.x, f.motion.pos.z - m.pos.z)); }
-    await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
+    // (the eggs, the first time: the first visit to the Fowlers', in full: js/peter.js)
+    if (e.key === 'eggs' && root.Peter && !root.Peter.visited(w) && P.fowlers && P.fowlers.figs.peter && P.fowlers.figs.fowler) await root.Peter.firstVisit(P, w, true);
+    else await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
     if (e.trust) rep.trusts(e.trust, 1);
     if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest);      // (a step of a line, done by the work: the first morning at the bakery)
     const late = e.state === 'broken';
@@ -162,7 +169,7 @@ function create(w) {
   // What's hers to do now, for the objective: the errand (begun by when), what to take home, the garden.
   function objective() {
     if (!on()) return null;
-    { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)); if (t) return t; }      // (walked home by the Watchman; sent home by Mistress Pennock)
+    { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)) || (root.Peter && root.Peter.objective(w)); if (t) return t; }      // (and Peter's note: the beech, at the hour)      // (walked home by the Watchman; sent home by Mistress Pennock)
     const e = errand(), c = st();
     { const k = root.Work && root.Work.current(w); if (k && e) { const t = root.Work.SHIFTS[k.id].tasks[k.step]; if (t) return e.title + ': ' + t.label.toLowerCase() + '.'; } }      // (at work: the task in hand)
     if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';

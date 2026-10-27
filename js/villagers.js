@@ -7,7 +7,7 @@
 //     gives him off. Out, he comes and finds her (on some days, not all): a word, or a dare, while the clock runs; keeping her from her chores if she has any.
 //   • Master Ferrier at his anvil, seven till five. Bess Abney on the bench outside the inn; her mother at the inn's door at the busy times.
 //   • Mistress Pennock at the bakery's counter in the morning, Master Pennock at its door early on. Master William on his rounds at night.
-//   (Peter Fowler's days off in the village come after the first visit to the Fowlers'.)
+//   • Peter Fowler, on his days off (about one in four, once she's been to the Fowlers': js/peter.js): about the green, by the lime tree, the pond.
 //
 //   const v = Villagers.attach(P, w)      (P: the village's js/play.js; w: js/world.js's world)
 //   v.actions() → talking to whoever's near · v.station(key, day, minute) → where they'd be (or null: not out) · v.here(key) → their figure
@@ -31,6 +31,7 @@ const PEOPLE = {
   pennock: { rig: 'pennock', name: 'Mistress Pennock', voice: 'pennock', tint: '#8a5a3a', bg: '#f0e2d2', door: 'pennocksDoor' },
   baker: { rig: 'baker', name: 'Master Pennock', voice: 'baker', tint: '#8a7a5a', bg: '#f2ecdc', door: 'pennocksDoor' },
   willie: { rig: 'willie', name: 'Master William', voice: 'willie', tint: '#2a3a4a', bg: '#d8dde4', door: 'dunnsDoor' },
+  peter: { rig: 'peter', name: 'Peter', voice: 'peter', tint: '#4a5a3a', bg: '#e2e8d8', door: 'meadowGate' },      // (on his days off: js/peter.js)
 };
 const FAR = 380;
 const OUT = { pennock: true, baker: true, abney: true };      // (those at a door or a counter face out, to the street; the rest face their work)      // (beyond this from the camera, a figure isn't drawn)
@@ -52,6 +53,7 @@ function station(key, day, min) {
     case 'abney': return (min >= H('11:00') && min < H('13:30')) || (min >= H('17:00') && min < H('20:00')) ? { stand: 'innDoor' } : null;
     case 'pennock': return min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;
     case 'baker': return min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;
+    case 'peter': { if (min < H('10:00') || min >= H('18:00')) return null; const k = r(7); return k < 0.4 ? { wander: true } : k < 0.7 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (only on his days off: see update)
     case 'willie': return min >= H('20:45') || min < H('5:30') ? { round: true } : null;      // (out a little before the bell, and round till first light)
   }
   return null;
@@ -182,7 +184,7 @@ function attach(P, w) {
   function update(first) {
     const day = cal.day, min = cal.minute;
     for (const key in PEOPLE) {
-      const want = vs().away && vs().away[key] === day ? null : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
+      const want = (vs().away && vs().away[key] === day) || (key === 'peter' && !(root.Peter && root.Peter.offToday(w))) ? null : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
       if (f && f.scene) continue;      // (a scene has them)
       if (want && !f) spawn(key, want, !first);
       else if (f && !want && f.want) { if (!f.held) send(f, null); }
