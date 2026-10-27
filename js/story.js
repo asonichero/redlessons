@@ -81,13 +81,15 @@ const homecoming = ctx => { ctx = Object.assign({ walk: { bluebells: 0, stream: 
   { who: 'mother', face: 'smile', text: 'That’s the one.' },
   { who: 'mother', face: 'stern', listen: { red: 'concerned' }, text: 'Now, come here, young lady.' },
 ]; };
-// (what she owns to, coming clean: each place she stayed, or, if she only stopped, that they added up)
+// (what she owns to, coming clean: each place she stopped, in turn, and more where she stayed: the bluebells, if she only stopped there, are
+// just how the stream's begins; and if she stayed nowhere, that the moments added up)
 const confession = walk => {
   const said = [];
-  if (walk.bluebells) said.push('I picked bluebells, and kept on picking. There was always one bluer, just past the last.');
-  if (walk.stream) said.push((said.length ? 'And I' : 'I') + ' sat on the flat stone by the stream, thinking, far longer than I meant to.');
-  if (walk.beech) said.push((said.length ? 'And I' : 'I') + ' stopped at the old beech, where Peter carved our letters. I couldn’t make myself leave it.');
-  return said.length ? said : ['Only for moments. The bluebells, the stream, the old beech. Only a moment at each. They added up.'];
+  if (walk.bluebells) said.push('The bluebells were so pretty, once I started I just kept on picking. There was always one bluer, just past the last.');
+  said.push((walk.bluebells ? 'I' : 'After the bluebells, I') + ' sat on the flat stone by the stream' + (walk.stream ? ', thinking, far longer than I meant to.' : '.'));
+  said.push('And at the old beech, where Peter carved our letters.' + (walk.beech ? ' I couldn’t make myself leave it.' : ''));
+  if (!walk.bluebells && !walk.stream && !walk.beech) said.push('Only a moment at each. They added up.');
+  return said;
 };
 
 // Chapter one opens at her grandmother's: the last of the afternoon, tea and cake at the round table, the old woman fussing, Rose letting her. Then
