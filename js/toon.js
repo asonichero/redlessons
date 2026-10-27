@@ -608,7 +608,7 @@ function make(id, look, opts) {
   const SW = y => (y > 0.6 ? trunkW(y) : K.hipWidth) * (y < 0 ? lerp(1, K.skirtFull, ss(0, -4, y)) : 1);       // (it widens with the hips, and flares with its fullness)
   const skirtProfile = wide([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]], SW);
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
-  let skirt = null, hemBand = null, apron = null;
+  let skirt = null, hemBand = null, apron = null, skirtFront = null;
   const waist = SKIRTED ? clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 })) : new THREE.Group();
   // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
   // (the part under her seat isn't tilted with the lap: tilted, its front rises through the bodice, or the apron)
@@ -626,6 +626,10 @@ function make(id, look, opts) {
     // where it's in front of the apron, wherever the apron is)
     skirt = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 28)), P.skirt, P.apron ? { cover: p => [cc('apron'), ss(1.05, 0.88, Math.abs(Math.atan2(p.x, p.z))) * ss(1.2, 0.8, p.y), 'apron'] } : {}));
     hemBand = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 }));
+    // (lifted, only the back of it goes up: the front still hangs as it did, down over her legs, its hem band along the bottom)
+    skirtFront = new THREE.Group(); rig.hips.add(skirtFront);
+    { const F0 = -1.2, FL = 2.4, a = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 16, F0, FL)), P.skirt, { side: THREE.DoubleSide })), b = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 16, F0, FL)), P.hem, { ink: 0.04 }));
+      skirtFront.userData.parts = [a, b]; }
     if (P.apron && !TROUSERS) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
       apron = clipSrc('apron', skinned(lathe(ap.map(([r, y]) => [Math.max(r, skirtR(y) + 0.12), y]), 0.92, 12, -0.95, 1.9), P.apron, { ink: 0.05 }));
@@ -763,7 +767,9 @@ function make(id, look, opts) {
   // The skirt lifted: gathered in a roll across the small of her back.
   const roll = new THREE.Group(); rig.hips.add(roll); roll.visible = false;
   // (an oval ring hugging the back and sides of her waist, the hem's band showing along its lower edge, and the cloth bunched at each hip)
-  clipSrc('skirt', piece(new THREE.TorusGeometry(2.75, 0.68, 10, 24, Math.PI * 1.1).rotateX(Math.PI / 2).rotateY(Math.PI * 0.95).scale(trunkW(2.1), 1, 0.66 * TD * trunkW(2.1)), P.skirt, roll, 0, 2.1, 0));
+  clipSrc('skirt', piece(new THREE.TorusGeometry(2.85, 1.0, 10, 24, Math.PI * 0.95).rotateX(Math.PI / 2).rotateY(Math.PI * 1.025).scale(trunkW(2.1), 1, 0.7 * TD * trunkW(2.1)), P.skirt, roll, 0, 2.1, 0));
+  // (more of it at the back, where the whole back of the skirt is gathered: folds heaped over the small of her back)
+  { const zb = -2.85 * 0.7 * TD * trunkW(2.1); for (const [x, y, dz, r] of [[0, 2.5, -0.5, 1.25], [-1.35, 2.2, -0.3, 1.05], [1.35, 2.2, -0.3, 1.05], [0, 1.55, -0.45, 0.95]]) clipSrc('skirt', piece(ell(r, r * 0.72, r * 0.8), P.skirt, roll, x * trunkW(2), y, zb + dz, { ink: 0.04 })); }
   clipSrc('skirt', piece(new THREE.TorusGeometry(2.75, 0.24, 6, 24, Math.PI * 1.05).rotateX(Math.PI / 2).rotateY(Math.PI * 0.975).scale(trunkW(1.45), 1, 0.7 * TD * trunkW(1.45)), P.hem, roll, 0, 1.45, -0.15, { ink: 0.03 }));
   for (const sx of [-1, 1]) clipSrc('skirt', piece(ell(0.95, 0.75, 0.8), P.skirt, roll, sx * 2.55 * trunkW(1.9), 1.9, -0.6));
 
@@ -1130,7 +1136,9 @@ function make(id, look, opts) {
     // skirt: 'down', 'up' (lifted, gathered at the waist) or 'off' (gone, waistband and all: the editor's view for reading proportions).
     {
       const sk = d.skirt || 'down', down = sk === 'down', bare = !down && d.drawers === 'down';
-      for (const m of [skirt, hemBand, apron]) if (m) show(m, down && !seatedNow);
+      for (const m of [skirt, hemBand]) if (m) show(m, down && !seatedNow);
+      if (apron) show(apron, (down || sk === 'up') && !seatedNow);      // (an apron's at the front: it stays down with the front of the skirt)
+      if (skirtFront) skirtFront.userData.parts.forEach(m => show(m, sk === 'up' && !seatedNow && !opts.lying));      // (across a lap, the front's under her, against the lap: not drawn, so it never comes through it)
       drapeG.visible = seatG.visible = (SKIRTED || (TAP && down)) && (!!opts.seated || (down && seatedNow));
       tails.forEach(m => show(m, (down || S.vest === 'coat') && !seatedNow)); shirtTail.forEach(m => show(m, !down));
       roll.visible = SKIRTED && sk === 'up'; waist.visible = sk !== 'off';
