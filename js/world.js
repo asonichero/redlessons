@@ -178,9 +178,12 @@ function create(view, ui) {
       o.after = async kind => { if (kind === 'talk' && pending === 'maren.chores') { save.flag('curfew-agreed'); w.complete('maren.chores'); } pending = null; };
       o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : []);
     } else if (A.talk) o.talk = A.talk;
-    if (name === 'village' && chores) o.actions = () => chores.actions(P, 'village');
+    // (the village: the day's chores, and its people, about their days: js/villagers.js)
+    if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; });
+      o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : []); }
     return o;
   }
+  const chain = (a, b) => a ? P_ => { a(P_); b(P_); } : b;
   // (from the wood's own entries, the camera behind her as she comes in)
   function placeCam(P_, x) {
     const st = P_.stage, t = P_.motion.pos.clone().setY(20 * P_.rig.scaleW), y = x.yaw + (x.camTurn || 0), back = new V3(-Math.sin(y), 0, -Math.cos(y)).multiplyScalar(34);      // (camTurn: round from behind her, as the entry asks)

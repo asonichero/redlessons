@@ -44,6 +44,7 @@ From 1.2 the days have a pattern, agreed with Maren in the chores conversation.
 - **Mama's garden** each morning: the one chore that's hers every day. (Mary, quite contrary: it's Maren's garden, and Red tends it.)
 - **An errand on most days.** Over breakfast Maren mentions something that's been asked for, and asks Red whether she'll do it. Some days there's none, and the day is Red's own.
 - **The rest of the day** is hers: the work at the bakery and the inn, Hulda's herbs, Halloran's farm, Tom's dares, and home by the curfew bell.
+- **Tom gets in the way.** On some of his free days (after smithing hours, or a day off), when she has an errand or the garden still to do, Tom finds her: a story or a dare, while the clock runs. She can get away early, or stay; the dares (the curfew bell rung at midday, a knock at the Dunns' door with the Watchman asleep) are mischievous, and count toward his Dares step.
 
 **An errand is a request, not an order.** Red can say yes or no, and how she says no is coloured by her temperament (her stats and what's happened lately):
 

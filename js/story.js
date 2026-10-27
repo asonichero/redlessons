@@ -362,7 +362,7 @@ const chores = () => [
 ];
 // ── Days and errands (js/chores.js plays them). Each errand: who it's for, what's asked over breakfast, the time it must be begun by, what
 // happens where it's done, and what's said when it's brought home. Speakers 'mother' and 'red'; narration where someone isn't there to be
-// seen yet (the villagers aren't in the village yet: when they are, the narration gives way to them).
+// seen: met, what's said when the one it's for is there to say it (js/villagers.js); there, the narration when they aren't.
 const ERRANDS = {
   well: { title: 'Water from the well', by: '10:00', place: 'well', action: 'Draw a bucket of water', carry: 'bucket', home: true, mins: 15,
     ask: 'The butt’s low, and I’ll want water for the washing. Will you fetch a bucket from the well this morning, love?',
@@ -371,15 +371,22 @@ const ERRANDS = {
     back: { who: 'mother', face: 'smile', text: 'That’s the washing seen to. Thank you, love.' } },
   bread: { title: 'Bread from the bakery', by: '11:00', place: 'bakery', action: 'Ask for Mama’s loaves', carry: 'loaves', home: true, mins: 15, who: 'baker',
     ask: 'Master Pennock’s keeping two loaves back for us. Will you fetch them before he sells them out from under us?',
+    met: [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Two of the best, Miss Rose, and warm through. You tell your mother they’re the best of the batch.' },
+      { who: 'red', face: 'smile', thought: true, text: 'He says that every time. They smell like every morning I can remember.' }],
     there: [{ text: 'Master Pennock passes two loaves over the half-door, warm through the cloth, and says she’s to tell her mother they’re the best of the batch, which he says every time.' },
       { who: 'red', face: 'smile', thought: true, text: 'They smell like every morning I can remember.' }],
     back: { who: 'mother', face: 'smile', text: 'Still warm. He does look after us.' } },
   pot: { title: 'A pot to the forge for mending', by: '12:00', place: 'forge', action: 'Leave the pot with the smith', give: 'pot', mins: 15, who: 'smith',
     ask: 'The big pot’s sprung its handle again. Will you take it down to the forge before noon? Master Ferrier said he’d see to it.',
+    met: [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Handle again? Leave it by the anvil. Tell your mother tomorrow.' },
+      { who: 'red', face: 'cheeky', thought: true, text: 'Eleven words. That’s a speech, for Master Ferrier.' }],
     there: [{ text: 'The forge is all heat and ringing. She sets the pot down by the anvil where the smith can see it, and he nods without stopping, which means yes.' },
       { who: 'red', face: 'cheeky', thought: true, text: 'Tom’s nowhere about. Which means Tom’s somewhere he shouldn’t be.' }] },
   jug: { title: 'A jug from the inn', by: '17:00', place: 'inn', action: 'Ask for Mama’s jug', carry: 'jug', home: true, mins: 15, who: 'abney',
     ask: 'Mistress Abney’s promised me a jug of her small beer for supper. Will you go along for it this afternoon?',
+    met: [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Your mother’s jug. There. And how is she? And how are you, Miss Rose?' },
+      { who: 'red', face: 'calm', text: 'Well, thank you, Mistress Abney.' },
+      { who: 'red', face: 'shy', thought: true, text: 'She always looks as if she knows something I haven’t said yet.' }],
     there: [{ text: 'Mistress Abney fills the jug herself, and asks after her mother, and after her, and looks at her a little longer than the question needs.' },
       { who: 'red', face: 'shy', thought: true, text: 'She always looks as if she knows something I haven’t said yet.' }],
     back: { who: 'mother', face: 'calm', text: 'On the table, love. Was she well?' } },
@@ -389,10 +396,16 @@ const ERRANDS = {
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
   bakery: { title: 'Help at the bakery', by: '09:00', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock',
     ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’ll want you by nine.',
+    met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on, and mind the oven: it bites.' },
+      { text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
+      { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }],
     there: [{ text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
       { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }] },
   inn: { title: 'Work at the inn', by: '14:00', place: 'inn', action: 'Go in to work for Mistress Abney', mins: 180, who: 'abney', trust: 'abney',
     ask: 'Mistress Abney could use you this afternoon: the carrier’s due, and Bess can’t be on her feet all day. Will you go along by two?',
+    met: [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'There you are. Pots first, then the tables, then Bess, who’ll tell you she needs nothing. She’s lying.' },
+      { text: 'The afternoon goes in pots and plates and the carrier’s men stamping in, and Bess sat by the fire, directing everyone, and Mistress Abney watching it all.' },
+      { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }],
     there: [{ text: 'The afternoon goes in pots and plates and the carrier’s men stamping in, and Bess sat by the fire, directing everyone, and Mistress Abney watching it all.' },
       { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }] },
   flock: { title: 'Help Bo Peep pen the flock', by: '19:30', place: 'pinfold', action: 'Help pen the flock', mins: 30, who: 'halloran',
@@ -457,6 +470,156 @@ const GARDEN = [
 // Back from a promise let slide: her own thought, when the time's gone by.
 const broken = title => [['wince', 'Oh no. ' + title + '. I said I would, and I didn’t.']];
 
+// ── The village's people (js/villagers.js): a word with each, by the time of day, and something else when they've already talked today.
+// ctx: { part, day, first (never met in the game yet), today (already talked today), errand (her objective, if she's one), curfew, working (Tom,
+// at the tub), potDone (her mother's pot left at the forge today) }.
+// Most of the village calls her Miss Rose; Agnes and Georgie, who grew up with her, Rose; Tom, Ridley, when he isn't calling her worse.
+const pickOf = (list, day) => list[((day || 0) % list.length + list.length) % list.length];
+const VILLAGE = {
+  agnes: {
+    first: [{ who: 'agnes', face: 'smile', listen: { red: 'smile' }, text: 'Rose Ridley, as I live and breathe! I was beginning to think your mother had you chained to the garden.' },
+      { who: 'red', face: 'cheeky', text: 'Only on weekdays.' }],
+    any: [
+      [{ who: 'agnes', face: 'cheeky', listen: { red: 'calm' }, text: 'Georgie Dunn walked past the well four times this morning. Four. He hasn’t that much water to carry.' },
+        { who: 'red', face: 'smile', text: 'Perhaps he’s very thirsty.' }, { who: 'agnes', face: 'bashful', text: 'Perhaps he is.' }],
+      [{ who: 'agnes', face: 'calm', listen: { red: 'calm' }, text: 'Mother’s got Father up on the Hallorans’ roof again. I’m to keep out from under his feet, which suits me.' },
+        { who: 'red', face: 'smile', text: 'So you’re keeping out from under them here.' }, { who: 'agnes', face: 'smile', text: 'Somebody has to mind the well.' }],
+      [{ who: 'agnes', face: 'concerned', listen: { red: 'shy' }, text: 'You’ve got that look. The one where you’re thinking a thing and not saying it.' },
+        { who: 'red', face: 'shy', text: 'I haven’t got a look.' }, { who: 'agnes', face: 'calm', text: 'You have. When you want to say it, I’m at the well. I’m always at the well.' }],
+      [{ who: 'agnes', face: 'smile', listen: { red: 'calm' }, text: 'Mistress Pennock’s been at her lardy cakes again. You can smell them from here. I may die.' },
+        { who: 'red', face: 'cheeky', text: 'Die nearer the bakery, then. She might take pity.' }],
+    ],
+    again: [{ who: 'agnes', face: 'cheeky', text: 'Back again? People will think you like me.' }],
+    errand: [{ who: 'agnes', face: 'calm', listen: { red: 'shy' }, text: 'Don’t let me keep you. You’ve your errand face on.' }],
+  },
+  georgie: {
+    first: [{ who: 'georgie', face: 'smile', listen: { red: 'smile' }, text: 'Rose! I’d have waved, only I’ve flour to the elbows and I’d have given you a cloud.' }],
+    any: [
+      [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Miller let me off early. Said I was grinding my teeth louder than the stones.' },
+        { who: 'red', face: 'cheeky', text: 'And you came straight here. To the green. Where the well is.' }, { who: 'georgie', face: 'bashful', text: 'It’s… a nice green.' }],
+      [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Father’s still abed. Up all night walking the lanes, then sleeps through the day like a cat. Mother says she married a lantern.' },
+        { who: 'red', face: 'smile', text: 'He used to growl at us out of the window.' }, { who: 'georgie', face: 'smile', text: 'He still does. Only now he means it.' }],
+      [{ who: 'georgie', face: 'bashful', listen: { red: 'calm' }, text: 'Rose. Does Agnes ever… say anything? About anybody?' },
+        { who: 'red', face: 'cheeky', text: 'Agnes says a great deal about everybody, Georgie.' }, { who: 'georgie', face: 'pout', text: 'That’s no help at all.' }],
+    ],
+    again: [{ who: 'georgie', face: 'smile', text: 'Still here. The green’s not going anywhere, and nor am I.' }],
+    late: [{ who: 'georgie', face: 'concerned', listen: { red: 'shy' }, text: 'Nearly the bell. I’d not be out when Father comes round, Rose. Not even you.' }],
+  },
+  tom: {
+    first: [{ who: 'tom', face: 'cheeky', listen: { red: 'cheeky' }, text: 'Ridley! There she is. I’d begun to think you’d gone respectable on me.' },
+      { who: 'red', face: 'cheeky', text: 'Never, Tom Ferrier. I’ve only been busy.' }, { who: 'tom', face: 'smile', text: 'Busy. That’s what the respectable ones say.' }],
+    work: [{ who: 'tom', face: 'pout', listen: { red: 'calm' }, text: 'Can’t stop. Father’s eye is on me like a hawk on a hen.' },
+      { who: 'smith', face: 'stern', text: 'That tub won’t fill itself, Tom.' }, { who: 'tom', face: 'cheeky', text: 'See? Hawk.' }],
+    any: [
+      [{ who: 'tom', face: 'cheeky', listen: { red: 'calm' }, text: 'Piper’s off at his nets again. All day with the birds, that one. I said he’ll grow feathers.' },
+        { who: 'red', face: 'smile', text: 'Peter would look well in feathers.' }, { who: 'tom', face: 'smile', text: 'He’d look well in anything. It’s maddening.' }],
+      [{ who: 'tom', face: 'smile', listen: { red: 'calm' }, text: 'Father let me shoe the Hallorans’ mare all by myself today. She only tried to kill me twice.' },
+        { who: 'red', face: 'cheeky', text: 'Only twice? You’re getting good.' }],
+      [{ who: 'tom', face: 'cheeky', listen: { red: 'cheeky' }, text: 'I’ve a plan, Ridley. A grand one. Not today. But it’s coming, and you’ll be in it.' },
+        { who: 'red', face: 'smile', text: 'I always am.' }],
+    ],
+    again: [{ who: 'tom', face: 'cheeky', text: 'Can’t keep away, can you?' }],
+  },
+  smith: {
+    any: [
+      [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose.' }, { text: 'He nods, and goes back to his hammer. Master Ferrier was never one for more words than the work needs.' }],
+      [{ who: 'smith', face: 'calm', listen: { red: 'calm' }, text: 'If you’re after Tom, he’s at the tub, and he’s staying at the tub.' }],
+    ],
+    after: [{ who: 'smith', face: 'calm', text: 'Your mother’s pot’s as good as new. Better. Tell her not to drop it on the hearthstone again.' }],
+  },
+  bess: {
+    any: [
+      [{ who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'Miss Rose. Come and sit a minute; I’m not allowed to do anything but sit, and it’s dull without somebody to watch.' }],
+      [{ who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'Mother has me out here so she can see me from every window. As if the babe’s going to come running out on its own.' },
+        { who: 'red', face: 'smile', text: 'Would it dare?' }, { who: 'bess', face: 'cheeky', text: 'Not with my mother watching.' }],
+      [{ who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'Everybody in the village comes by this bench sooner or later. You learn a great deal, sitting.' },
+        { who: 'red', face: 'shy', text: 'About whom?' }, { who: 'bess', face: 'smile', text: 'Oh, everyone.' }],
+    ],
+    again: [{ who: 'bess', face: 'smile', text: 'Still here. Still sitting. Still growing.' }],
+  },
+  abney: {
+    any: [
+      [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. Your mother keeping well?' }, { who: 'red', face: 'calm', text: 'Yes, Mistress Abney.' },
+        { who: 'abney', face: 'calm', text: 'And you?' }, { text: 'She waits for the answer, as if it might be a different one.' }],
+      [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Carrier’s late again. If you see a cart on the road from the east gate, tell it I’m not getting any younger.' }],
+      [{ who: 'abney', face: 'stern', listen: { red: 'shy' }, text: 'Bess. Bess! In the shade, girl, not in the sun.' }, { who: 'bess', face: 'pout', text: 'Yes, Mother.' }],
+    ],
+  },
+  pennock: {
+    any: [
+      [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love! Look at you. Growing like a weed, and twice as pretty.' }, { who: 'red', face: 'bashful', text: 'Mistress Pennock…' },
+        { who: 'pennock', face: 'smile', text: 'Don’t you “Mistress Pennock” me. I fed you crusts over this counter when you were knee-high.' }],
+      [{ who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'Somebody’s been at my windowsill pies again. I counted six and there were five. I’ll find out, mark me.' },
+        { who: 'red', face: 'shy', thought: true, text: 'I don’t know anything about it. Yet.' }],
+      [{ who: 'pennock', face: 'smile', listen: { red: 'calm' }, text: 'Tell your mother I’ve a bit of dripping put by for her. And you’re to eat something besides those berries in the wood.' }],
+    ],
+  },
+  baker: {
+    any: [
+      [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Morning, Miss Rose. Oven’s hot and the dough’s up: all’s well with the world.' }],
+      [{ who: 'baker', face: 'calm', listen: { red: 'calm' }, text: 'Tell the missus I’ve gone for flour, if she asks. And if she doesn’t ask, I’ve still gone for flour.' }],
+    ],
+  },
+  willie: {
+    any: [
+      [{ who: 'willie', face: 'stern', listen: { red: 'shy' }, text: 'Miss Rose. The bell’s rung, or near enough. Home with you, now.' }, { who: 'red', face: 'shy', text: 'Yes, Sir.' }],
+      [{ who: 'willie', face: 'calm', listen: { red: 'shy' }, text: 'Out late, Miss Rose. I’ll walk to the corner with you. No further, mind: I’ve a round to keep.' }, { who: 'red', face: 'shy', text: 'Thank you, Sir.' }],
+    ],
+    early: [{ who: 'willie', face: 'calm', listen: { red: 'calm' }, text: 'Evening, Miss Rose. I’m on my way round. Mind you’re in by the bell.' }, { who: 'red', face: 'calm', text: 'Yes, Sir.' }],
+  },
+};
+// A word with one of them. (The smith says something else once he's had her mother's pot; Willie's word depends on the bell.)
+const villager = (key, ctx) => {
+  const V = VILLAGE[key]; if (!V) return [];
+  if (key === 'willie') return ctx.curfew ? pickOf(V.any, ctx.day) : V.early;
+  if (key === 'tom' && ctx.working) return V.work;
+  if (key === 'smith' && ctx.potDone) return V.after;
+  if (ctx.first && V.first) return V.first;
+  if (key === 'georgie' && ctx.part === 'dusk' && V.late) return V.late;
+  if (ctx.today && V.again) return V.again;
+  const said = pickOf(V.any, ctx.day + (ctx.today ? 1 : 0));
+  return ctx.errand && V.errand ? said.concat(V.errand) : said;
+};
+
+// ── Tom finds her, with something she ought to be doing: he keeps her, while the clock runs (ctx.mins(n): n minutes gone, each beat). She can
+// get away early, or stay: then a chat (kind 'chat'), or a dare (the curfew bell, 'bell'; or a knock at the Dunns' door, 'knock').
+// ctx: { kind, errand, first, mins(n), ringBell(), knock(), dared(), chatted() }
+const tomStops = ctx => {
+  const T = (face, text, red) => ({ who: 'tom', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, text }), M = n => ({ run: () => ctx.mins(n) });
+  const hello = ctx.first ? T('cheeky', 'Ridley! There she is. Where are you off to with that face on?', 'cheeky') : T('cheeky', 'Ridley! Hold up. Where’s the fire?', 'cheeky');
+  const out = [R('calm', 'Mama’s asked a thing of me, Tom, and I said I’d do it. I can’t stop.'), M(2), T('pout', 'Can’t stop. Listen to her. All right, all right. Off you go, good girl.', 'pout'), R('pout', 'Don’t you “good girl” me, Tom Ferrier.'), T('cheeky', 'Then come back when you’re bad again.', 'pout')];
+  const away = (face, text) => ({ text: 'I really must go, Tom.', face: 'shy', then: [M(2), T(face, text, 'shy')] });
+  let middle;
+  if (ctx.kind === 'chat') middle = [
+    T('calm', 'Father’s in a mood. Some fellow from over the hill brought a plough to mend and wouldn’t pay till it was done, and then wouldn’t pay when it was.'), M(5),
+    R('calm', 'What did your father do?'), T('cheeky', 'Held onto the plough. Fellow’s been stood outside the forge since dinner, looking at it.', 'smile'), M(5),
+    { choose: [away('pout', 'Go on, then. Spoil my story.'),
+      { text: 'And then what?', face: 'smile', then: [M(8), T('smile', 'And then Mistress Pennock came by and told him what she thought of him, and he paid double to make her stop.', 'smile'),
+        R('smile', 'She’d frighten anybody.'), M(6), T('calm', 'Not you, though. Nothing frightens you, Ridley.', 'shy'), R('shy', '…Plenty does, Tom.'), M(4),
+        T('calm', 'Well. Not me, then. That’s something.', 'shy'), { run: ctx.chatted }] }] },
+  ];
+  else {
+    const what = ctx.kind === 'bell' ? 'ring the curfew bell. Now, in broad day. Three strokes, and back here before anyone sees who.'
+      : 'knock on the Dunns’ door. Master William’s asleep up there after his round. Three knocks, and back here before the shutter opens.';
+    const did = ctx.kind === 'bell' ? [{ run: ctx.ringBell }, T('cheeky', 'Ha! Look at them all. Old Abney’s come out with her ladle. You’re a marvel, Ridley.', 'cheeky'), R('cheeky', 'They didn’t see. Did they see?'), M(4), T('smile', 'Course they didn’t. Probably.', 'wince')]
+      : [{ run: ctx.knock }, { text: 'Above them, a shutter bangs open, and Master William’s voice comes down like weather.' }, T('cheeky', 'Run, run! Ha! Did you hear him? I’ve never heard a man growl like it.', 'cheeky'), R('wince', 'He’ll know it was me. He always knows.'), M(4), T('smile', 'Then he’ll know you’re brave.', 'wince')];
+    middle = [
+      T('cheeky', 'I’ve been waiting all day for somebody worth daring. I dare you to ' + what, 'surprised'), M(3),
+      { choose: [
+        { text: 'Done.', face: 'cheeky', then: did.concat([{ run: ctx.dared }, M(6)]) },
+        { text: 'Not today, Tom.', face: 'shy', then: [M(2), T('pout', 'Not today. Coward. I’ll save it for you, then.', 'shy'), R('cheeky', 'Save it as long as you like.')] },
+        away('cheeky', 'Coward. Off you go, then. I’ll think of something worse for next time.'),
+      ] },
+    ];
+  }
+  return [hello, M(3), { choose: [
+    { text: 'I can’t stop, Tom. Truly.', face: 'shy', then: out },
+    { text: 'Why? What’s it to you?', face: 'cheeky', then: [M(2)].concat(middle) },
+  ] }];
+};
+// Her thought after, when he's kept her long: the clock, and her errand.
+const tomCost = mins => mins >= 30 ? 'Half the hour gone, and Mama’s errand still waiting. Tom Ferrier, honestly.' : 'That was longer than I meant. I’d better get on.';
+
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
 const marenIdle = part => ({
   morning: [{ who: 'mother', face: 'smile', text: 'The garden won’t weed itself, love.' }],
@@ -473,5 +636,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

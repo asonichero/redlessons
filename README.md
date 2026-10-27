@@ -73,7 +73,20 @@ Once the chores are agreed with her mother (the morning after the homecoming), t
 - **An errand on most days**, asked over breakfast: her mother says what's been asked of them and asks if she'll do it. *Yes* is a promise, to be begun by its time (shown as the objective and in the journal); *not today, I can't be anybody's today* is an honest no, and costs nothing; a *won't* is wilful, and three in a week bring a **maintenance correction** there and then (her hand; the shape of her days put back: the garden, what's asked, the bell), which settles her wilfulness. Let the time go by without beginning it, and it's a broken promise: naughty, and she knows it.
 - **The errands**: water from the well, bread from the bakery, a pot to the forge, a jug from the inn, a basket for the Dunns, a morning helping at the bakery, an afternoon working at the inn, helping Bo Peep pen the flock at dusk. Each is done at its place in the village, some carried home to her mother after. Their scenes don't spend the day: the clock stops while they play, and moves on by the work's own time when she's done.
 
-(The villagers aren't in the village yet: until they are, what happens at each place is told, around Red's own thoughts.)
+When the one an errand is for is there (Master Pennock at the bakery's door, the smith at his anvil, Mistress Abney at the inn), they say their own word for it; when they're indoors or about elsewhere, what happens is told, around Red's own thoughts.
+
+## The village's people (`js/villagers.js`)
+
+The village's people keep to their days. Where each is, is worked out from the day and the time (the same every time it's asked), and they come out of their doors, walk the lanes to their places, and go in again when their day's done:
+
+- **Agnes Thatcher** has no trade to keep her: out from eight till dusk, here and there (the lime-tree bench, the pond, a walk round the green), but most often by the well.
+- **Georgie Dunn** is at the mill all day. On most afternoons he's back by three or so, till the bell: on the inn's bench, about the green, or near the well, where he can see Agnes.
+- **Tom Ferrier** is at the forge's slack tub in smithing hours (seven till four), out and about after; about one day in five his father gives him the day off. On some of his free days, if Red has something she ought to be doing (an errand, the garden), he comes and finds her. She can get away early (a few minutes gone), or ask what it is: then it's a story (half an hour, and a little of his trust), or a dare: **ring the curfew bell** in broad day, or **knock at the Dunns' door** with Master William asleep upstairs (mischievous, either). The clock runs while he keeps her.
+- **Master Ferrier** at his anvil, seven till five. **Bess Abney** on the bench outside the inn through the day; **Mistress Abney** at the inn's door at the busy times (midday, and from five).
+- **Mistress Pennock** at the bakery's counter in the morning, **Master Pennock** at its door early on.
+- **Master William**, the Watchman, on his round at night, lantern in hand, from a little before the bell till first light.
+
+Each can be talked to (*Talk to Agnes*, and so on): a word by the time of day, something else if they've talked already today, and a little trust the first time each day. Peter Fowler's days off in the village come after the first visit to the Fowlers'. They walk the lanes and paths as a net of points (the shortest way, cutting corners where it's clear); those too far from the camera to make out aren't drawn.
 
 ## Conversations (`js/talk.js`, `js/story.js`)
 
@@ -187,6 +200,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
 | `js/chores.js` | The days: Mama's garden, the errands asked over breakfast (yes, an honest no, or a won't), promises kept or broken, the maintenance correction |
+| `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
 | `js/correction.js` | A correction in the story's own scene: any corrector, subjects in turn, watchers, the corner, the safe word by context |

@@ -29,7 +29,7 @@ function create(view, opts) {
     const q = p.clone();
     for (let k = 0; k < 2; k++) {
       for (const o of W.obstacles) {
-        if ((o.npc && who === 'npc') || (o.rose && who !== 'npc')) continue;
+        if ((o.npc && who === 'npc') || (o.fig && o.fig === who) || (o.rose && !who)) continue;      // (each kept out of the others, not out of their own place; who: 'npc', a figure's key, or none (her))
         if (o.r != null) { const d = new V3(q.x - o.x, 0, q.z - o.z), l = d.length(), m = o.r + r; if (l < m) { if (l < 1e-4) d.set(1, 0, 0); else d.divideScalar(l); q.x = o.x + d.x * m; q.z = o.z + d.z * m; } continue; }
         const cx = clamp(q.x, o.x0, o.x1), cz = clamp(q.z, o.z0, o.z1), dx = q.x - cx, dz = q.z - cz, l = Math.hypot(dx, dz);
         if (l >= r) continue;
@@ -60,7 +60,16 @@ function create(view, opts) {
   }
   // ── Conversations (js/talk.js, js/story.js): Rose on the left, whoever she's with on the right.
   const castOf = () => { const c = { red: { rig, name: 'Red', side: 'left', voice: 'red', tint: '#9a1a26', bg: '#f1d9cf' } }; if (NPC) c[NPC.key] = { rig: mom, name: NPC.name, side: 'right', voice: NPC.voice, tint: NPC.tint, bg: NPC.bg }; return c; };
-  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => (who === 'red' ? m : mm).face(yaw), look: (who, at) => (who === 'red' ? m : mm).lookAt(at) }) : null;
+  // (and anyone else in the place, by their key: js/villagers.js's figures, each with its rig and motion)
+  const figs = {}, moverOf = who => who === 'red' ? m : figs[who] ? figs[who].motion : mm;
+  const talk = root.Talk ? Talk.create(st, { cast: castOf(), turn: (who, yaw) => moverOf(who).face(yaw), look: (who, at) => moverOf(who).lookAt(at) }) : null;
+  // Others in the place (the village's people): added with their rig and motion, in the cast for conversations, in her way and she in theirs.
+  function addFigure(key, f) {
+    figs[key] = f; st.scene.add(f.rig.root); st.cast(f.rig); if (talk) talk.cast[key] = Object.assign({ rig: f.rig, side: 'right' }, f.cast);
+    if (!W.obstacles.some(o => o.rose)) W.obstacles.push({ get x() { return m.pos.x; }, get z() { return m.pos.z; }, r: 3.4, rose: true });
+    f.ob = { get x() { return f.motion.pos.x; }, get z() { return f.motion.pos.z; }, r: 3.6, fig: key }; W.obstacles.push(f.ob);
+  }
+  function removeFigure(key) { const f = figs[key]; if (!f) return; st.scene.remove(f.rig.root); if (talk) delete talk.cast[key]; const i = W.obstacles.indexOf(f.ob); if (i >= 0) W.obstacles.splice(i, 1); delete figs[key]; }
 
   // ── The camera, between scenes. Indoors it's anchored at the middle of the room, not on her: the whole room in view, turned round it by hand.
   // Outdoors it's anchored on her, she in the middle of the view, and goes with her. Either way, a drag moves it any way about the anchor, round
@@ -332,7 +341,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest };
+  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

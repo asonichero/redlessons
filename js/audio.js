@@ -221,7 +221,8 @@ A.voice = function (power, band, muffle, vol, base) {
 };
 
 // ── Speech babble: a vowel burst per word, so a line of dialogue is "spoken" over the length of its typing. who: 'red' | 'gerda' | 'narrator' ──
-const PITCH = { red: 215, gerda: 190, gran: 172, narrator: 150 };
+const PITCH = { red: 215, gerda: 190, gran: 172, narrator: 150,
+  agnes: 232, bess: 205, pennock: 185, abney: 176, tom: 138, georgie: 150, smith: 104, baker: 122, willie: 116 };      // (the village's: the young higher, the men lower, Master Ferrier lowest)
 A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through a wall (louder in the filter, to carry); opts.vol scales it; opts.pitch: in place of the speaker's own (Hz)
   if (!A.init()) return { stop() {} }; const ctx = A.ctx, N = A.nodes, base = (opts && opts.pitch) || PITCH[who] || 160, muffle = opts && opts.muffle;
   const words = text.split(/\s+/).filter(Boolean); let t = ctx.currentTime + 0.05; const step = seconds / Math.max(1, words.length), stopAt = t + seconds + 0.3, nodes = [];
@@ -236,6 +237,14 @@ A.speak = function (who, text, seconds, opts) {   // opts.muffle: heard through 
     g.connect(dest); o.start(s); o.stop(s + len + 0.05); nodes.push(o);
   });
   return { stop() { for (const o of nodes) { try { o.stop(); } catch (e) { /* already stopped */ } } } };
+};
+// A bell rung: a bright strike and a long hum, a few partials not quite in tune with each other, as a small cast bell has. (n: strokes)
+A.curfewBell = function (n, vol) {
+  if (!A.init()) return; const ctx = A.ctx, N = A.nodes, k = vol == null ? 1 : vol;
+  for (let i = 0; i < (n || 1); i++) { const t = ctx.currentTime + 0.05 + i * 1.1;
+    for (const [f, g, d] of [[660, 0.22, 3.2], [1584, 0.1, 1.6], [1980, 0.06, 1.1], [330, 0.08, 3.6], [2640, 0.03, 0.6]]) {
+      const o = ctx.createOscillator(), gg = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * (1 + (Math.random() - 0.5) * 0.004);
+      gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(g * k, t + 0.004); gg.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(gg); gg.connect(N.sfx); o.start(t); o.stop(t + d + 0.05); } }
 };
 // Milky-White's low: a sawtooth that slides down through two throat formants, with a little shake in it.
 A.moo = function (vol, seconds) {

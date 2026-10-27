@@ -114,7 +114,10 @@ function create(w) {
     const sp = P.world.spots[e.place], m = P.motion;
     await m.goTo(sp.at, sp.yaw);
     if (e.give && m.carry) { const it = m.drop(); if (it) it.obj.visible = false; }
-    await P.converse(e.there, { shot: false, keepCamera: true });
+    // (the one it's for, if they're there: facing her, and their own word for it)
+    const f = e.who && P.figure ? P.figure(e.who) : null;
+    if (f && e.met) { if (!f.sat) f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); m.face(Math.atan2(f.motion.pos.x - m.pos.x, f.motion.pos.z - m.pos.z)); }
+    await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
     if (e.trust) rep.trusts(e.trust, 1);
     const late = e.state === 'broken';
     if (e.carry) { hand(P, e.carry); change(c => { c.errand.state = 'carrying'; c.errand.late = late; }); }

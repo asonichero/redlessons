@@ -448,7 +448,8 @@ function build(scene, opts) {
 
   // ── The pond, on the green's south side: still water in a grassy hollow, reeds at its edge, stones, and the ducks.
   const ducks = [];
-  { const P0 = new V3(GREEN.x - 22, 0, GREEN.z + 50), RX = 30, RZ = 19, g = new THREE.Group(); g.position.copy(P0); root_.add(g);
+  const POND = new V3(GREEN.x - 22, 0, GREEN.z + 50);
+  { const P0 = POND, RX = 30, RZ = 19, g = new THREE.Group(); g.position.copy(P0); root_.add(g);
     const bank = new THREE.Mesh(new THREE.CircleGeometry(1, 40).scale(RX + 5, RZ + 4, 1), T.mat('#6a7a3e')); bank.rotation.x = -Math.PI / 2; bank.position.y = 0.06; bank.receiveShadow = true; g.add(bank);
     const pondT = canvasTex(128, 128, (x, w, h) => { const gr = x.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w / 2); gr.addColorStop(0, '#3e5e6a'); gr.addColorStop(1, '#5a7e7a'); x.fillStyle = gr; x.fillRect(0, 0, w, h);
       const r2 = rnd(221); for (let i = 0; i < 26; i++) { x.strokeStyle = 'rgba(220,240,240,.3)'; x.lineWidth = 1.5; x.beginPath(); const y = r2() * h; x.moveTo(r2() * w, y); x.lineTo(r2() * w + 18, y + 1); x.stroke(); } });
@@ -584,9 +585,23 @@ function build(scene, opts) {
   world.spots = {
     garden: { at: V(-322, -398), yaw: Math.PI / 2, look: new V3(-300, 1, -406) },      // (just in at the gate of Maren's garden, the beds before her)
     well: { at: wellAt.clone().add(V(0, 12)), yaw: Math.PI, look: wellAt.clone().setY(8) },
-    bakery: before(bakery, 'front', 14), inn: before(inn, 'front', -6), dunns: before(dunns, 'front', -16), forge: before(forge, 'front', 0, 20),
+    bakery: before(bakery, 'front', 14, 13), inn: before(inn, 'front', -6, 13), dunns: before(dunns, 'front', -16), forge: before(forge, 'front', 0, 20),
     pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },
+    // (where the village's people are found: js/villagers.js)
+    anvil: before(forge, 'front', 8, 17), tub: before(forge, 'front', -30, 16), bakeryDoor: before(bakery, 'front', 14, 4), counter: before(bakery, 'front', -24, 10),
+    innDoor: before(inn, 'front', -6, 4), thatchers: before(thatchers, 'front', 20, 8), dunnsDoor: before(dunns, 'front', -16, 6),
+    wellSide: { at: wellAt.clone().add(V(10, -8)), yaw: Math.atan2(-10, 8), look: wellAt.clone().setY(8) },
+    pondSide: { at: POND.clone().add(V(0, 26)), yaw: Math.PI, look: POND.clone().setY(2) },
+    wellNear: { at: wellAt.clone().add(V(-16, 14)), yaw: Math.atan2(16, -14), look: wellAt.clone().setY(8) },      // (near enough to the well to be seen there, and to see who's at it)
+    bell: { at: BELL.clone().add(V(0, 9)), yaw: Math.PI, look: BELL.clone().setY(14) },
+    millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
+  world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
+  // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)
+  world.wander = [STREET, LOOP].flatMap(S => S.filter((_, i) => i % 9 === 4).map(p => p.clone())).filter(p => p.x > -380 && p.x < 400)
+    .concat([V(GREEN.x - 20, GREEN.z - 40), V(GREEN.x + 60, GREEN.z - 10), V(GREEN.x + 10, GREEN.z + 20), V(GREEN.x - 100, GREEN.z + 10)]);
+  // (the Watchman's round: down the street from Maren's, round the green by the loop, and back, a lantern in his hand)
+  world.round = STREET.filter((_, i) => i % 6 === 0 && STREET[i].x > -400 && STREET[i].x < 420).concat(LOOP.filter((_, i) => i % 6 === 0).reverse());
 
   mergeStatic(root_);
   return { group: root_, update() {}, tick, light, follow, keepCamera, world, home: HOME, solids };
