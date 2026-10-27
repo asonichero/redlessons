@@ -85,13 +85,28 @@ const AREAS = {
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
-    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); },
+    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); if (w.breakfasted) { w.breakfasted = false; atTable(P); } },
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
     exits: { 'the door': { area: 'village', entry: 'home' } },      // (out of her door into the village)
   },
 };
 
 const RATE = 2;      // (game minutes a second, while she's about: a day from seven to the bell in seven minutes)
+// The morning, as it opens (js/world.js's morning): Red still on her stool at the table, her mother at the dresser with the bowls.
+function atTable(P) {
+  const W = P.world, m = P.motion, mm = P.npcMotion, V = THREE.Vector3, seat = W.seats.filter(s => s.name === 'the stool').sort((a, b) => a.at.z - b.at.z)[0];
+  if (seat) { const s = Object.assign({}, seat, { facing: seat.facing + Math.PI }), f = new V(Math.sin(s.facing), 0, Math.cos(s.facing));      // (turned to the table, where she ate)
+    m.warp(s.at.clone().setY(0).addScaledVector(f, 0.5), s.facing); m.sit(s); m.sitW = 1; P.sitting = s; P.rig.root.position.copy(m.pos); }
+  if (mm && W.pail) { const at = P.collide(W.pail.clone().setY(0).add(new V(8, 0, 2)), 3.4); mm.warp(at, Math.atan2(W.pail.x - at.x, W.pail.z - at.z)); }
+}
+async function upFromTable(P) {
+  const m = P.motion, mm = P.npcMotion, W = P.world, V = THREE.Vector3;
+  if (mm && W.pail) { const p = W.pail.clone(); for (let k = 0; k < 2; k++) { await mm.reach('R', p.clone().add(new V(0, 1.5 - k, 0))); await P.wait(0.4); await mm.release('R'); }      // (the last of the water tipped out of the bowls)
+    const to = P.collide(m.pos.clone().setY(0).add(new V(-14, 0, 6)), 3.4); const going = mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z));
+    await P.wait(1.2); if (P.sitting) await P.getUp(); await going; }
+  else if (P.sitting) await P.getUp();
+  if (mm) { await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); }
+}
 function create(view, ui) {
   ui = ui || {};
   const save = root.Save.create(), cal = root.Calendar.create(save), rep = root.Reputation.create(save);
@@ -278,9 +293,12 @@ function create(view, ui) {
 
   // The next morning: the night passes (under a fade), and she's up, at home.
   // (and over breakfast her mother asks what's been asked of them: js/chores.js)
-  async function morning(text) { await fade(true, text || ''); cal.sleep(); await go('home', 'bed'); const P_ = P; if (!P_) return;
-    if (chores && chores.on()) P_.act(() => chores.breakfast(P_));
-    else if (q.stateOf('maren.chores') === 'offered') P_.act(() => P_.talkToMother());      // (the first morning: straight to her mother, to agree what's hers to do)
+  // (breakfast eaten, under the fade: the day opens on her getting down from the table as her mother comes back from the dresser, the bowls
+  // tipped and rinsed in the pail; then the day's asking, or, the first morning, what's to be hers to do)
+  // (breakfast over at half past seven)
+  async function morning(text) { await fade(true, text || ''); cal.sleep(); cal.advance(30); w.breakfasted = true; await go('home', 'bed'); const P_ = P; if (!P_) return;
+    const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered';
+    if ((chores && chores.on()) || first) P_.act(async () => { await upFromTable(P_); if (first) await P_.talkToMother({ stay: true }); else await chores.breakfast(P_); });
   }
 
   // ── Starting.

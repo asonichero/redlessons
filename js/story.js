@@ -427,7 +427,7 @@ const ERRANDS = {
 // Over breakfast: her mother's word for the day, and the asking. errand: one of ERRANDS, or null (nothing asked: the day's her own).
 // ctx: { temper ('wilful' | 'mischievous' | 'naughty' | null: what she's most known for lately), yes(), little(), wont() (run on each answer) }.
 const breakfast = (errand, ctx) => {
-  const hello = { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, love. Porridge is on.' };
+  const hello = { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'There. Bowls done, and you fed. Now then.' };
   // (the garden: hers today, or her mother's: ctx.garden 'maren' (she has the time) or 'after' (the day after a correction for it))
   const garden = ctx.garden === 'after' ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Leave the garden to me today. I’ll set my flowers straight myself.' }]
     : ctx.garden === 'maren' ? [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'I’ve a free morning, so the garden’s mine today. You needn’t go near it.' }]

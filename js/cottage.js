@@ -278,7 +278,12 @@ function build(scene) {
     solid(g, new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.2, 1.2], [3.4, 1.5]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#e8e2d4', 3, DH + 0.8, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
     solid(g, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.8], [1.0, 3.6], [0.8, 4.2], [1.1, 4.6]].map(([r, h]) => new THREE.Vector2(r, h)), 14), '#e8e2d4', 3, DH + 1.2, 0, { ink: 0.06 });
     world.surfaces.push(Object.assign(pc.area(-DW / 2 + 2, DW / 2 - 2, -1, 1), { name: 'the dresser', y: DH + 0.8, panel: g, front: pc.turn(new V3(0, 0, 1)) }));
-    world.obstacles.push(pc.area(-DW / 2 - 0.5, DW / 2 + 0.5, -DD / 2 - 0.5, DD / 2 + 0.5)); }
+    world.obstacles.push(pc.area(-DW / 2 - 0.5, DW / 2 + 0.5, -DD / 2 - 0.5, DD / 2 + 0.5));
+    // (beside it, on the side away from the door, the slop pail: where the breakfast bowls are tipped and rinsed)
+    { const px = DW / 2 + 3.4, pz = 0.6; solid(g, new THREE.CylinderGeometry(2.3, 1.9, 4.6, 14, 1, true), oak, px, 2.3, pz, { ink: 0.06 }).material.side = THREE.DoubleSide;
+      solid(g, new THREE.CylinderGeometry(2.0, 2.0, 0.1, 14), '#6a7a7a', px, 3.6, pz, { ink: 0 });
+      for (const y of [0.9, 3.9]) solid(g, new THREE.TorusGeometry(2.25 - (y < 2 ? 0.25 : 0), 0.14, 4, 16).rotateX(Math.PI / 2), '#3a3430', px, y, pz, { ink: 0.02 });
+      world.pail = pc.P(px, 4.4, pz); world.obstacles.push(pc.area(px - 2.6, px + 2.6, pz - 2.6, pz + 2.6)); } }
 
   // ── The roof: two slopes of thatch from the ridge to the eaves (over the walls), on rafters, with a ridge beam, purlins and two tie beams.
   const slope = sideZ => {
