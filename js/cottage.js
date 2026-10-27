@@ -13,7 +13,7 @@
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3, srgb = h => new THREE.Color(h).convertSRGBToLinear();
 const lerp = (a, b, t) => a + (b - a) * t;
-const X0 = -63, X1 = 54, Z0 = -36, Z1 = 44, EAVE = 40, RIDGE = 80, RZ = (Z0 + Z1) / 2, FOOT = 7;
+const X0 = -63, X1 = 54, Z0 = -36, Z1 = 44, EAVE = 50, RIDGE = 90, RZ = (Z0 + Z1) / 2, FOOT = 7, DOOR_H = 38;      // (DOOR_H: the doorway's height, clear for the tallest of them)
 
 function canvasTex(w, h, paint, rep) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d'), w, h);
@@ -212,12 +212,16 @@ function build(scene) {
     // The frame.
     box(f, len, 1.8, 1.4, 0, FOOT + 0.9, 0.7, oak, { shadow: false });                                           // the sill beam
     box(f, len, 2.0, 1.6, 0, EAVE - 1.0, 0.8, oak, { shadow: false });                                           // the wall plate
-    box(f, len, 1.2, 1.0, 0, 24, 0.5, oak, { shadow: false });                                                   // a rail at mid height
-    const posts = [-len / 2 + 0.9, len / 2 - 0.9]; for (let p = -len / 2 + 18; p < len / 2 - 10; p += 18) posts.push(p);
+    // (the doorway, on the left wall: no post, rail or brace across it)
+    const hole = k === 'left' ? [-27 - 8, -27 + 8] : null, inHole = x => hole && x > hole[0] && x < hole[1];
+    if (hole) { box(f, hole[0] + len / 2, 1.2, 1.0, (hole[0] - len / 2) / 2, 24, 0.5, oak, { shadow: false }); box(f, len / 2 - hole[1], 1.2, 1.0, (hole[1] + len / 2) / 2, 24, 0.5, oak, { shadow: false }); }
+    else box(f, len, 1.2, 1.0, 0, 24, 0.5, oak, { shadow: false });                                              // a rail at mid height
+    const posts = [-len / 2 + 0.9, len / 2 - 0.9]; for (let p = -len / 2 + 18; p < len / 2 - 10; p += 18) if (!inHole(p)) posts.push(p);
     for (const p of posts) box(f, 1.8, EAVE - FOOT, 1.4, p, (EAVE + FOOT) / 2, 0.7, oak, { shadow: false });
     // Braces from the corner posts up to the plate.
     for (const sx of [-1, 1]) {
       const x0 = sx * (len / 2 - 1.8), x1 = sx * (len / 2 - 12), y0 = EAVE - 16, y1 = EAVE - 2;
+      if (inHole(x1) || inHole((x0 + x1) / 2)) continue;
       const br = box(f, Math.hypot(x1 - x0, y1 - y0), 1.4, 1.1, (x0 + x1) / 2, (y0 + y1) / 2, 0.6, oak, { shadow: false }); br.rotation.z = Math.atan2(y1 - y0, x1 - x0);
     }
     if (w.gable) {
@@ -240,15 +244,15 @@ function build(scene) {
   // ── The door (left wall, near the front): planked, with a ledge and brace, strap hinges and a latch.
   { const f = walls.left.f, d = new THREE.Group(); d.position.set(-27, FOOT, 0.2); f.add(d);      // (in the wall's frame x runs from back to front, so this is near the front)
     const hinge = new THREE.Group(); hinge.position.set(-6.5, 0, 0); d.add(hinge);      // (it swings into the room on its hinges, at the back edge)
-    const leaf = box(hinge, 13, 28, 1.2, 6.5, 14, 0.6, toonMap(tx.door), { shadow: false });
-    for (const y of [-9, 9]) { box(leaf, 12, 1.6, 0.8, 0, y, 0.9, oak); box(leaf, 9, 0.6, 0.4, -1.5, y + 1.6, 1.0, '#3a3634'); }
-    box(leaf, 1.2, 17, 0.8, 0, 0, 0.9, oak, { rot: [0, 0, 0.62] });
+    const leaf = box(hinge, 13, DOOR_H, 1.2, 6.5, DOOR_H / 2, 0.6, toonMap(tx.door), { shadow: false });
+    for (const y of [-DOOR_H / 2 + 5, DOOR_H / 2 - 5]) { box(leaf, 12, 1.6, 0.8, 0, y, 0.9, oak); box(leaf, 9, 0.6, 0.4, -1.5, y + 1.6, 1.0, '#3a3634'); }
+    box(leaf, 1.2, DOOR_H * 0.68, 0.8, 0, 0, 0.9, oak, { rot: [0, 0, 0.42] });
     solid(leaf, new THREE.TorusGeometry(0.9, 0.18, 6, 12), '#3a3634', 4.6, 0, 1.2, { ink: 0.05 });
     const latch = new THREE.Object3D(); latch.position.set(4.6, 0, 1.6); leaf.add(latch);
     world.door = { pivot: hinge, latch, open: 0, target: 0, swing: -1.75, name: 'the door' };
     // (out through it, once it's open: the doorway, a step inside it)
     world.exits = world.exits || []; world.exits.push({ name: 'the door', get at() { return d.getWorldPosition(new V3()).setY(0).add(new V3(3, 0, 0)); }, r: 4, when: () => world.door.open > 0.6 });
-    box(d, 15.6, 1.6, 1.6, 0, 28.8, 0.8, oak, { shadow: false }); for (const sx of [-1, 1]) box(d, 1.4, 29, 1.6, sx * 7.4, 14, 0.8, oak, { shadow: false });
+    box(d, 15.6, 1.6, 1.6, 0, DOOR_H + 0.8, 0.8, oak, { shadow: false }); for (const sx of [-1, 1]) box(d, 1.4, DOOR_H + 1, 1.6, sx * 7.4, DOOR_H / 2, 0.8, oak, { shadow: false });
     box(d, 16, 1.2, 3, 0, 0.6, 1.5, stone, { shadow: false });      // (the stone threshold)
     // Steps down from it into the room: the doorway's on the foundation, FOOT up; three stone treads, each a quarter of that lower, the width of the
     // door frame. (world.ground: the floor's height on them, for whoever walks there.)

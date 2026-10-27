@@ -15,7 +15,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 40, RIDGE = 70, RZ = (Z0 + Z1) / 2, LR = 1.5, STEP = 2.9;
 const OAK = { x: X1 - 7, z: Z0 + 5, r: 12 };
 // (the doorway: tall enough for Red, her mother and her grandmother to walk through with room to spare; Holt, the tallest of them, ducks)
-const DOOR = -10, WIN = 22, DOOR_H = 34;      // (where the door and the window are along the front wall, as x)
+const DOOR = -10, WIN = 22, DOOR_H = 34;      // (where the door and the window are along the front wall, as x; DOOR_H: Hulda built it herself, to clear no one taller than Maren)
 
 // The furniture's places: [x, z] on the floor and its turn (ry), each about its own middle (as arranged in the room editor, rooms.html, whose
 // changes, kept in the browser, the game builds the room from: see js/cottage.js's roomLayout).

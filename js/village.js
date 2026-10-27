@@ -129,7 +129,7 @@ function build(scene, opts) {
     const faces = {};
     const face = side => { if (faces[side]) return faces[side]; const [x, z, ry, len] = SIDES[side], f = new THREE.Group(); f.position.set(x, 0, z); f.rotation.y = ry; g.add(f); f.userData.len = len; return (faces[side] = f); };
     const holes = { front: [], back: [], left: [], right: [] };
-    for (const op of (o.doors || []).concat(o.windows || [])) holes[op.side].push(op);
+    for (const op of (o.doors || []).map(d => Object.assign({ h: 38 }, d)).concat(o.windows || [])) holes[op.side].push(op);
     // The walls: the long sides to the eaves, the ends up into their gables.
     if (!o.noFront) tbox(g, W, E - F, th, 0, F + (E - F) / 2, D / 2 - th / 2, wallM, 26);
     tbox(g, W, E - F, th, 0, F + (E - F) / 2, -D / 2 + th / 2, wallM, 26);
@@ -156,7 +156,7 @@ function build(scene, opts) {
       if (side === 'left' || side === 'right') { box(f, 1.4, R - E - 3, 1.0, 0, (R + E) / 2 - 1.5, z, oak, { shadow: false }); box(f, D * 0.5, 1.2, 1.0, 0, E + (R - E) * 0.48, z, oak, { shadow: false }); }
     }
     // Doors and windows, set into their sides.
-    for (const side in holes) for (const op of holes[side]) (op.h > 20 && !op.y ? door : win)(face(side), op);
+    for (const side in holes) for (const op of holes[side]) (op.y == null ? door : win)(face(side), op);
     // The thatch: two thick slopes from the ridge out past the eaves and the gables, a rounded lip along each eave, and the ridge capped.
     const a = Math.atan2(R - E, D / 2), OV = 6, GO = 5, TH = 8, len = D / 2 / Math.cos(a) + OV;      // (thick, as thatch is: a hand's length of straw and more)
     for (const sz of [-1, 1]) {
@@ -182,7 +182,7 @@ function build(scene, opts) {
   // A door, in a side's frame (op: { at, w, h, colour, open (one that opens: hers) }): planked, ledged, with strap hinges and a ring latch, an oak
   // frame and lintel, a stone step before it, and a dark doorway behind (seen when it's open).
   function door(f, op) {
-    const w = op.w || 12, h = op.h || 26, d = new THREE.Group(); d.position.set(op.at, 3, 0); f.add(d);
+    const w = op.w || 12, h = op.h || 38, d = new THREE.Group(); d.position.set(op.at, 3, 0); f.add(d);      // (38: clear for the tallest of them)
     const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: srgb('#24180f') })); back.position.set(0, h / 2, -1.6); d.add(back);
     const hinge = new THREE.Group(); hinge.position.set(-w / 2, 0, 0.1); d.add(hinge);
     const leafM = op.colour ? T.mat(op.colour) : plank, leaf = box(hinge, w, h, 1.2, w / 2, h / 2, -0.2, leafM, { shadow: false });
@@ -228,53 +228,54 @@ function build(scene, opts) {
   // its west end near the front, a window beside it and one on the east end, the hearth's chimney on the front wall. (Inside, a point (x, z) of
   // the room is here at (HOME.x + x + 4.5, HOME.z + z - 4).)
   const HOME = { x: -286, z: -330 };
-  const home = house({ x: HOME.x, z: HOME.z, w: 117 + 4, d: 80 + 4, eave: 33, ridge: 73, walls: 'frame',
-    doors: [{ side: 'left', at: 31 - 4, w: 13, h: 28, open: true }],      // (left side, looking at it from the west: along +z; inside its door is at z 31)
-    windows: [{ side: 'left', at: 6 - 4, y: 13, w: 14, h: 12, box: true }, { side: 'right', at: -(8 - 4), y: 13, w: 14, h: 12, box: true }, { side: 'front', at: 30, y: 13, w: 10, h: 9 }, { side: 'back', at: 20, y: 14, w: 10, h: 9 }],
+  const home = house({ x: HOME.x, z: HOME.z, w: 117 + 4, d: 80 + 4, eave: 43, ridge: 83, walls: 'frame',
+    doors: [{ side: 'left', at: 31 - 4, w: 13, open: true }],      // (left side, looking at it from the west: along +z; inside its door is at z 31)
+    windows: [{ side: 'left', at: 6 - 4, y: 14, w: 14, h: 12, box: true }, { side: 'right', at: -(8 - 4), y: 14, w: 14, h: 12, box: true },      // (where they are inside: centred 27 up from her floor, which is 7 below the ground)
+      { side: 'front', at: 30, y: 16, w: 10, h: 9 }, { side: 'back', at: 20, y: 17, w: 10, h: 9 }],
     chimney: { x: -2 + 4.5, z: (80 + 4) / 2 - 3, w: 10, d: 7 } });
   // Her neighbours' along the street toward the green: a small cottage, roses round its door.
-  const nextDoor = house({ x: -150, z: -226, w: 86, d: 62, eave: 30, ridge: 63, walls: 'frame',
-    doors: [{ side: 'front', at: -14, w: 12, h: 26, colour: '#7a3a3a' }], windows: [{ side: 'front', at: 16, y: 13, w: 12, h: 10, box: true }, { side: 'left', at: 0, y: 13, w: 9, h: 8 }],
+  const nextDoor = house({ x: -150, z: -226, w: 86, d: 62, eave: 44, ridge: 78, walls: 'frame',
+    doors: [{ side: 'front', at: -14, w: 12, colour: '#7a3a3a' }], windows: [{ side: 'front', at: 16, y: 16, w: 12, h: 10, box: true }, { side: 'left', at: 0, y: 16, w: 9, h: 8 }],
     chimney: { x: 30, z: 0, w: 8, d: 8 } });
   // The inn, Mistress Abney's: across the street from the green, the biggest building in the village, two floors under its thatch, its sign on a
   // bracket over the street.
-  const inn = house({ x: 22, z: -222, w: 150, d: 84, eave: 60, ridge: 100, walls: 'frame', storey: 31,
-    doors: [{ side: 'front', at: -6, w: 14, h: 26, colour: '#3e5a3a' }],
-    windows: [-58, -32, 22, 50].map(at => ({ side: 'front', at, y: 11, w: 12, h: 10 })).concat([-50, -20, 10, 40].map(at => ({ side: 'front', at, y: 38, w: 10, h: 9, shutters: false })))
-      .concat([{ side: 'left', at: -10, y: 14, w: 10, h: 9 }, { side: 'right', at: 10, y: 14, w: 10, h: 9 }, { side: 'left', at: 12, y: 40, w: 9, h: 8, shutters: false }]),
+  const inn = house({ x: 22, z: -222, w: 150, d: 84, eave: 82, ridge: 122, walls: 'frame', storey: 45,
+    doors: [{ side: 'front', at: -6, w: 14, colour: '#3e5a3a' }],
+    windows: [-58, -32, 22, 50].map(at => ({ side: 'front', at, y: 15, w: 12, h: 11 })).concat([-50, -20, 10, 40].map(at => ({ side: 'front', at, y: 56, w: 11, h: 10, shutters: false })))
+      .concat([{ side: 'left', at: -10, y: 17, w: 10, h: 9 }, { side: 'right', at: 10, y: 17, w: 10, h: 9 }, { side: 'left', at: 12, y: 58, w: 9, h: 8, shutters: false }]),
     chimney: { x: -75 + 6, z: 0, w: 9, d: 9 } });
   // Past the inn, on the same side: a cottage.
-  const ne = house({ x: 196, z: -202, w: 90, d: 64, eave: 30, ridge: 64, walls: 'frame',
-    doors: [{ side: 'front', at: -10, w: 12, h: 26 }], windows: [{ side: 'front', at: 18, y: 13, w: 12, h: 10 }, { side: 'right', at: 0, y: 13, w: 9, h: 8 }], chimney: { x: 34, z: 0, w: 8, d: 8 } });
+  const ne = house({ x: 196, z: -202, w: 90, d: 64, eave: 44, ridge: 78, walls: 'frame',
+    doors: [{ side: 'front', at: -10, w: 12 }], windows: [{ side: 'front', at: 18, y: 16, w: 12, h: 10 }, { side: 'right', at: 0, y: 16, w: 9, h: 8 }], chimney: { x: 34, z: 0, w: 8, d: 8 } });
   // The bakery, Mistress Pennock's: on the street at the green's east end, facing it; the bread oven a stone dome against its east end, a sign
   // of a loaf, and the window's board let down as a counter.
-  const bakery = house({ x: 300, z: 22, ry: Math.PI, w: 104, d: 74, eave: 34, ridge: 72, walls: 'frame',
-    doors: [{ side: 'front', at: 14, w: 13, h: 26, colour: '#7a4a2a' }],
-    windows: [{ side: 'front', at: -24, y: 9, w: 18, h: 12, shutters: true }, { side: 'back', at: 0, y: 14, w: 10, h: 9 }, { side: 'right', at: 0, y: 14, w: 10, h: 9 }],
+  const bakery = house({ x: 300, z: 22, ry: Math.PI, w: 104, d: 74, eave: 46, ridge: 84, walls: 'frame',
+    doors: [{ side: 'front', at: 14, w: 13, colour: '#7a4a2a' }],
+    windows: [{ side: 'front', at: -24, y: 12, w: 18, h: 12, shutters: true }, { side: 'back', at: 0, y: 17, w: 10, h: 9 }, { side: 'right', at: 0, y: 17, w: 10, h: 9 }],
     chimney: { x: 30, z: -12, w: 8, d: 8 } });
   // The forge, Master Ferrier's: stone, its front open on the loop lane east of the green: the hearth glowing inside, the anvil, the trough.
-  const forge = house({ x: 292, z: 190, ry: -Math.PI / 2, w: 96, d: 74, eave: 30, ridge: 64, walls: 'stone', noFront: true,
-    windows: [{ side: 'left', at: 0, y: 14, w: 9, h: 8, shutters: false }], chimney: { x: -30, z: -24, w: 12, d: 12 } });
+  const forge = house({ x: 292, z: 190, ry: -Math.PI / 2, w: 96, d: 74, eave: 44, ridge: 78, walls: 'stone', noFront: true,
+    windows: [{ side: 'left', at: 0, y: 17, w: 9, h: 8, shutters: false }], chimney: { x: -30, z: -24, w: 12, d: 12 } });
   // The Thatchers' (Agnes's): south of the green, across the loop lane.
-  const thatchers = house({ x: -16, z: 238, ry: Math.PI, w: 100, d: 70, eave: 32, ridge: 70, walls: 'frame',
-    doors: [{ side: 'front', at: 20, w: 12, h: 26, colour: '#5a6a8a' }],
-    windows: [{ side: 'front', at: -20, y: 13, w: 12, h: 10, box: true }, { side: 'right', at: 0, y: 13, w: 10, h: 9 }],
+  const thatchers = house({ x: -16, z: 238, ry: Math.PI, w: 100, d: 70, eave: 45, ridge: 82, walls: 'frame',
+    doors: [{ side: 'front', at: 20, w: 12, colour: '#5a6a8a' }],
+    windows: [{ side: 'front', at: -20, y: 16, w: 12, h: 10, box: true }, { side: 'right', at: 0, y: 16, w: 10, h: 9 }],
     chimney: { x: -44, z: 0, w: 8, d: 8 } });
   // A cottage by the lane south to the mill.
-  const millLane = house({ x: 196, z: 330, ry: -Math.PI / 2, w: 84, d: 60, eave: 30, ridge: 62, walls: 'frame',
-    doors: [{ side: 'front', at: 10, w: 12, h: 26, colour: '#4a5a3a' }], windows: [{ side: 'front', at: -16, y: 13, w: 11, h: 9 }], chimney: { x: -30, z: 0, w: 8, d: 8 } });
+  const millLane = house({ x: 196, z: 330, ry: -Math.PI / 2, w: 84, d: 60, eave: 43, ridge: 76, walls: 'frame',
+    doors: [{ side: 'front', at: 10, w: 12, colour: '#4a5a3a' }], windows: [{ side: 'front', at: -16, y: 16, w: 11, h: 9 }], chimney: { x: -30, z: 0, w: 8, d: 8 } });
   // The Dunns' (the Watchman's, and Georgie's): west of the green, a lantern on a hook by the door for his rounds.
-  const dunns = house({ x: -268, z: 116, ry: Math.PI / 2, w: 96, d: 68, eave: 32, ridge: 68, walls: 'frame',
-    doors: [{ side: 'front', at: -16, w: 12, h: 26, colour: '#6a3a2a' }],
-    windows: [{ side: 'front', at: 18, y: 13, w: 12, h: 10 }, { side: 'left', at: 0, y: 13, w: 10, h: 9 }],
+  const dunns = house({ x: -268, z: 116, ry: Math.PI / 2, w: 96, d: 68, eave: 45, ridge: 80, walls: 'frame',
+    doors: [{ side: 'front', at: -16, w: 12, colour: '#6a3a2a' }],
+    windows: [{ side: 'front', at: 18, y: 16, w: 12, h: 10 }, { side: 'left', at: 0, y: 16, w: 10, h: 9 }],
     chimney: { x: 40, z: 0, w: 8, d: 8 } });
   // A cottage on the green's west side, its garden full of flowers; and one south-west, by the Thatchers'.
-  const west = house({ x: -282, z: -44, ry: Math.PI / 2, w: 92, d: 66, eave: 31, ridge: 66, walls: 'frame',
-    doors: [{ side: 'front', at: 8, w: 12, h: 26, colour: '#8a6a3a' }],
-    windows: [{ side: 'front', at: -22, y: 13, w: 12, h: 10, box: true }, { side: 'back', at: 0, y: 13, w: 10, h: 9 }],
+  const west = house({ x: -282, z: -44, ry: Math.PI / 2, w: 92, d: 66, eave: 44, ridge: 78, walls: 'frame',
+    doors: [{ side: 'front', at: 8, w: 12, colour: '#8a6a3a' }],
+    windows: [{ side: 'front', at: -22, y: 16, w: 12, h: 10, box: true }, { side: 'back', at: 0, y: 16, w: 10, h: 9 }],
     chimney: { x: -36, z: 0, w: 8, d: 8 } });
-  const sw = house({ x: -150, z: 250, ry: Math.PI, w: 84, d: 60, eave: 29, ridge: 60, walls: 'stone',
-    doors: [{ side: 'front', at: -12, w: 12, h: 25, colour: '#5a4a3a' }], windows: [{ side: 'front', at: 16, y: 12, w: 11, h: 9 }], chimney: { x: 30, z: 0, w: 8, d: 8 } });
+  const sw = house({ x: -150, z: 250, ry: Math.PI, w: 84, d: 60, eave: 43, ridge: 74, walls: 'stone',
+    doors: [{ side: 'front', at: -12, w: 12, colour: '#5a4a3a' }], windows: [{ side: 'front', at: 16, y: 15, w: 11, h: 9 }], chimney: { x: 30, z: 0, w: 8, d: 8 } });
 
   // ── Her door opens (as the room's does, inward), and once it's open, in she goes. ──
   { const f = home.face('left'), d = f.children.find(c => c.isGroup && c.children.some(k => k.isGroup)), hinge = d.children.find(k => k.isGroup);
@@ -373,14 +374,14 @@ function build(scene, opts) {
 
   // ── The inn's front: the sign on its bracket, benches and a trestle table, barrels by the door, a lantern. ──
   { const f = inn.face('front');
-    const br = new THREE.Group(); br.position.set(38, 44, 0); f.add(br); box(br, 1.2, 1.2, 14, 0, 0, 7, iron, { ink: 0.04 }); pole(br, new V3(0, -6, 0.6), new V3(0, 0, 9), 0.4, iron, { ink: 0 });
+    const br = new THREE.Group(); br.position.set(38, 56, 0); f.add(br); box(br, 1.2, 1.2, 14, 0, 0, 7, iron, { ink: 0.04 }); pole(br, new V3(0, -6, 0.6), new V3(0, 0, 9), 0.4, iron, { ink: 0 });
     const sg = new THREE.Group(); sg.position.set(0, -6.5, 10); br.add(sg); for (const zz of [-0.35, 0.35]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: vt.sign })); p.scale.set(12, 9, 1); p.position.z = zz; p.rotation.y = Math.PI / 2 + (zz < 0 ? Math.PI : 0); sg.add(p); }
     box(sg, 0.5, 9.6, 12.6, 0, 0, 0, oakDk, { ink: 0.05 }); sg.children.forEach(c => { if (c.isMesh && c.geometry.type === 'PlaneGeometry') c.position.x = (c.position.z < 0 ? -0.3 : 0.3), c.position.z = 0; });
     for (const at of [-58, -32, 24]) { const b = new THREE.Group(); b.position.set(at, 0, 9); f.add(b); box(b, 18, 1, 4, 0, 5.6, 0, plank); for (const sx of [-1, 1]) box(b, 1.2, 5.2, 3, sx * 7, 2.6, 0, oakDk); }
     { const t = new THREE.Group(); t.position.set(-45, 0, 19); f.add(t); box(t, 22, 1.2, 9, 0, 11, 0, plank); for (const sx of [-1, 1]) box(t, 1.4, 11, 7, sx * 8, 5.5, 0, oakDk);
       solid(t, new THREE.CylinderGeometry(1.1, 0.9, 2.6, 10), T.mat('#8a6a4a'), -4, 12.9, 0, { ink: 0.04 }); solid(t, new THREE.CylinderGeometry(1.1, 0.9, 2.6, 10), T.mat('#8a6a4a'), 3, 12.9, 1, { ink: 0.04 }); }
     for (const [x, z] of [[10, 5], [14, 9], [11.5, 13]]) { const bl = solid(f, new THREE.CylinderGeometry(3, 3, 7, 12), toonMap(rep(textures().oak, 1, 0.6)), x, 3.5, z, { ink: 0.08 }); for (const y of [-2.4, 2.4]) solid(bl, new THREE.TorusGeometry(3.05, 0.25, 4, 16).rotateX(Math.PI / 2), iron, 0, y, 0, { ink: 0 }); }
-    const ln = new THREE.Group(); ln.position.set(-15, 27, 3); f.add(ln); box(ln, 0.6, 0.6, 3, 0, 2, -1.4, iron, { ink: 0 }); box(ln, 2.6, 3.4, 2.6, 0, 0, 0, iron, { ink: 0.04 });
+    const ln = new THREE.Group(); ln.position.set(-15, 36, 3); f.add(ln); box(ln, 0.6, 0.6, 3, 0, 2, -1.4, iron, { ink: 0 }); box(ln, 2.6, 3.4, 2.6, 0, 0, 0, iron, { ink: 0.04 });
     const lg = new THREE.Mesh(new THREE.BoxGeometry(2, 2.6, 2.7), new THREE.MeshBasicMaterial({ color: srgb('#3a3028') })); ln.add(lg); lamps.push(lg.material);
     root_.updateMatrixWorld(true); const fp = new V3(-45, 0, 19).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: fp.x - 12, x1: fp.x + 12, z0: fp.z - 6, z1: fp.z + 6 });
     for (const at of [-58, -32, 24]) { const p = new V3(at, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: p.x - 9, x1: p.x + 9, z0: p.z - 2.5, z1: p.z + 2.5 }); world.seats.push({ name: 'the bench outside the inn', at: p.clone().setY(5.6), facing: 0, kind: 'stool' }); }
@@ -393,36 +394,36 @@ function build(scene, opts) {
     tbox(g, 4, 18, 4, 6, 18, 6, ashlar, 8); solid(g, new THREE.CylinderGeometry(0.8, 0.8, 6, 8), iron, -8, 6, 16, { ink: 0.04, rot: [0, 0, 0.3] });
     root_.updateMatrixWorld(true); const c = new V3(0, 0, 4).applyMatrix4(f.matrixWorld); world.obstacles.push({ x: c.x, z: c.z, r: 15 });
     for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(T.ell(1.6, 1.6, 1.6, 8, 6), new THREE.MeshBasicMaterial({ color: srgb('#d8d2ca'), transparent: true, opacity: 0.4, depthWrite: false })); p.userData.keep = true; g.add(p); smoke.push({ m: p, base: new V3(6, 28, 6), ph: k / 4 }); }
-    const fr = bakery.face('front'), sg = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: vt.loafSign })); sg.position.set(14, 33, 1.4); fr.add(sg); box(fr, 13.2, 13.2, 0.6, 14, 33, 0.9, oakDk, { ink: 0.04 });
+    const fr = bakery.face('front'), sg = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: vt.loafSign })); sg.position.set(-24, 34, 1.4); fr.add(sg); box(fr, 13.2, 13.2, 0.6, -24, 34, 0.9, oakDk, { ink: 0.04 });
     // (the window's board, let down as a counter, loaves on it)
-    box(fr, 22, 1, 6, -24, 8.6, 3.2, plank); for (const sx of [-1, 1]) pole(fr, new V3(-24 + sx * 9, 0.6, 5.6), new V3(-24 + sx * 9, 8.2, 5.6), 0.4, oakDk, { ink: 0.03 });
-    for (let k = 0; k < 6; k++) solid(fr, T.ell(1.8, 1.1, 1.2, 10, 6), T.mat(k % 2 ? '#b8743a' : '#c98a4a'), -31 + k * 2.8, 10, 3.2, { ink: 0.05 });
+    box(fr, 22, 1, 6, -24, 11.6, 3.2, plank); for (const sx of [-1, 1]) pole(fr, new V3(-24 + sx * 9, 0.6, 5.6), new V3(-24 + sx * 9, 11.2, 5.6), 0.4, oakDk, { ink: 0.03 });
+    for (let k = 0; k < 6; k++) solid(fr, T.ell(1.8, 1.1, 1.2, 10, 6), T.mat(k % 2 ? '#b8743a' : '#c98a4a'), -31 + k * 2.8, 13, 3.2, { ink: 0.05 });
     root_.updateMatrixWorld(true); const cp = new V3(-24, 0, 4).applyMatrix4(fr.matrixWorld); world.obstacles.push({ x0: cp.x - 4, x1: cp.x + 4, z0: cp.z - 12, z1: cp.z + 12 }); }
 
   // ── The forge: the open bay, the hearth inside it glowing, the anvil on its stump out at the front, a trough, a cart wheel against the wall. ──
   { const f = forge.face('front');
-    for (const at of [-46, -16, 16, 46]) box(f, 2.6, 27, 2.6, at, 16.5, -1, oak);
-    box(f, 96, 2.4, 3, 0, 30, -1, oak);
+    for (const at of [-46, -16, 16, 46]) box(f, 2.6, 41, 2.6, at, 23.5, -1, oak);
+    box(f, 96, 2.4, 3, 0, 44, -1, oak);
     const inside = new THREE.Group(); inside.position.set(0, 0, -20); f.add(inside);
     tbox(inside, 22, 10, 14, -26, 5, -8, toonMap(rep(vt.rubble, 1, 0.6)), 10);
     const coals = new THREE.Mesh(new THREE.BoxGeometry(14, 1, 8), new THREE.MeshBasicMaterial({ color: srgb('#ff7a2a') })); coals.position.set(-26, 10.6, -8); inside.add(coals); glows.push(coals.material);
     tbox(inside, 18, 22, 10, -26, 21, -12, ashlar, 10);      // (the hood over it)
     { const bl = new THREE.Group(); bl.position.set(-6, 9, -14); inside.add(bl); solid(bl, T.ell(6, 1.6, 4, 12, 6), T.mat('#5a3e26'), 0, 0, 0, { ink: 0.06 }); box(bl, 1, 1, 9, 0, 1, 6, oakDk, { ink: 0.03 }); }
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(60, 26), new THREE.MeshBasicMaterial({ color: srgb('#ffb060'), transparent: true, opacity: 0.12, depthWrite: false })); glow.position.set(-10, 13, -2); inside.add(glow); glows.push({ glow: glow.material });
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(94, 30), new THREE.MeshBasicMaterial({ color: srgb('#2a1e16') })); back.position.set(0, 15, -14); inside.add(back);
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(94, 44), new THREE.MeshBasicMaterial({ color: srgb('#2a1e16') })); back.position.set(0, 22, -14); inside.add(back);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(92, 40), T.mat('#5a4a3a')); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0.1, 0); inside.add(floor);
     // (the anvil, on its stump, at the front of the bay; the slack tub; the wheel)
     { const a = new THREE.Group(); a.position.set(8, 0, 10); f.add(a); solid(a, new THREE.CylinderGeometry(3.4, 3.8, 9, 12), toonMap(rep(textures().oak, 1, 1)), 0, 4.5, 0, { ink: 0.08 });
       box(a, 9, 2.2, 3.4, 0, 10.4, 0, iron, { ink: 0.05 }); box(a, 4, 2.2, 2.6, 0, 8.4, 0, iron, { ink: 0.04 }); solid(a, new THREE.ConeGeometry(1.4, 5, 8).rotateZ(-Math.PI / 2), iron, 6.6, 10.6, 0, { ink: 0.04 }); }
     { const t = new THREE.Group(); t.position.set(-30, 0, 9); f.add(t); tbox(t, 16, 6, 7, 0, 3, 0, toonMap(rep(textures().oak, 1, 1)), 10); const w = new THREE.Mesh(new THREE.PlaneGeometry(14.6, 5.6), new THREE.MeshBasicMaterial({ color: srgb('#3a4a52') })); w.rotation.x = -Math.PI / 2; w.position.y = 5.7; t.add(w); }
     { const wh = new THREE.Group(); wh.position.set(50, 9.6, 6); wh.rotation.set(0.2, 0.4, 0); f.add(wh); solid(wh, new THREE.TorusGeometry(9, 0.8, 6, 24), oakDk, 0, 0, 0, { ink: 0.05 }); for (let k = 0; k < 6; k++) { const an = k / 6 * Math.PI; box(wh, 18, 0.8, 0.8, 0, 0, 0, oak, { rot: [0, 0, an], ink: 0.03 }); } solid(wh, new THREE.CylinderGeometry(1.8, 1.8, 2.4, 10).rotateX(Math.PI / 2), oakDk, 0, 0, 0, { ink: 0.04 }); }
-    const sg = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: vt.shoeSign })); sg.position.set(-31, 34.6, 0.4); f.add(sg);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: vt.shoeSign })); sg.position.set(-31, 36, 1.8); f.add(sg);
     // (in the open bay she can't go further than its front)
     root_.updateMatrixWorld(true);
     for (const [x, z, rr] of [[8, 10, 4.6], [50, 6, 4]]) { const p = new V3(x, 0, z).applyMatrix4(f.matrixWorld); world.obstacles.push({ x: p.x, z: p.z, r: rr }); }
     { const p = new V3(-30, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: p.x - 9, x1: p.x + 9, z0: p.z - 4.5, z1: p.z + 4.5 }); } }
   // The Watchman's lantern, on a hook by the Dunns' door.
-  { const f = dunns.face('front'), ln = new THREE.Group(); ln.position.set(-26, 22, 2); f.add(ln); box(ln, 2.4, 3.2, 2.4, 0, 0, 0, iron, { ink: 0.04 }); box(ln, 0.5, 2.6, 0.5, 0, 2.8, -1, iron, { ink: 0 });
+  { const f = dunns.face('front'), ln = new THREE.Group(); ln.position.set(-26, 32, 2); f.add(ln); box(ln, 2.4, 3.2, 2.4, 0, 0, 0, iron, { ink: 0.04 }); box(ln, 0.5, 2.6, 0.5, 0, 2.8, -1, iron, { ink: 0 });
     const lg = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 2.5), new THREE.MeshBasicMaterial({ color: srgb('#3a3028') })); ln.add(lg); lamps.push(lg.material); }
   // Woodpiles and a water butt by Maren's door; a handcart outside the west cottage.
   { const f = home.face('left'); for (let k = 0; k < 9; k++) { const row = Math.floor(k / 3), col = k % 3; solid(f, new THREE.CylinderGeometry(1.5, 1.5, 9, 9).rotateX(Math.PI / 2), toonMap(rep(textures().oak, 1, 1)), -30 + col * 3.1, 1.6 + row * 2.7, 6, { ink: 0.05 }); }      // (the logs, stacked against the wall toward the back, clear of the door)
