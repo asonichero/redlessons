@@ -397,7 +397,7 @@ const ERRANDS = {
     ask: 'I’ve a pie for the Dunns: Master William’s been on his rounds all week. Will you take it over this afternoon? Quietly, mind. He’ll be sleeping.',
     there: [{ text: 'The shutters are closed upstairs. She leaves the basket on the step, under the cloth, and doesn’t knock.' },
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
-  bakery: { title: 'Help at the bakery', by: '07:45', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock', quest: 'pennock.helps',
+  bakery: { title: 'Help at the bakery', by: '07:45', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock', quest: 'pennock.helps', shift: 'bakery',      // (played inside: js/work.js)
     ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’s been baking since before it was light: she’ll want you straight after breakfast, by a quarter to eight.',
     met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on, and mind the oven: it bites.' },
       { text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
@@ -967,6 +967,36 @@ const supper = ctx => [
   ] },
 ];
 
+// ── Work, played (js/work.js): the boss's word at the start, while each task is done ([text, face]: said as she works, nothing waits on it),
+// the customers at the counter, and at the end.
+const WORK = {
+  bakery: {
+    start: [
+      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love. Apron’s on the hook. The dough’s been proving since four, so we’ll start there.' },
+      { who: 'red', face: 'calm', text: 'Where do you want me?' },
+      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'Trough first. Knead it till it fights back. Then shape, then the oven, and I’ll tell you the rest as we go.' },
+    ],
+    knead: ['Heels of your hands, not your fingers. Push it away, fold it back. My mother used to say you could tell a girl’s temper by her bread.', 'calm'],
+    shape: ['Tuck it under, round and round, till it sits up on its own. That’s it. Your grandmother taught me that, would you believe.', 'smile'],
+    load: ['Quick, now: in and out, and don’t let the heat out. Mind your knuckles on the mouth.', 'stern'],
+    sweep: ['While they bake. Flour gets everywhere: in the cracks, in my hair, in Master Pennock’s moustache. He says it keeps him handsome.', 'smile'],
+    draw: ['Knock on the bottom: if it sounds hollow, it’s done. Hear that? That’s a good loaf.', 'calm'],
+    racks: ['Crust out, so they breathe. And the rye on the top shelf, or the Hallorans will be on at me again.', 'calm'],
+    customers: [
+      { text: 'The hatch goes up, and the morning comes to it: a loaf for the Thatchers, two for the inn, a twist of buns for the Hallorans’ boy, who counts out his farthings one at a time.' },
+      { who: 'pennock', face: 'smile', text: 'Agnes Thatcher, as I live. Two of the brown, and tell your mother she still owes me for Tuesday.' },
+      { text: 'Agnes leans in at the hatch, sees Red behind the counter, and grins as if she’s caught her at something.' },
+      { who: 'red', face: 'shy', thought: true, text: 'She’ll be at the well telling everyone I’ve gone into trade.' },
+      { who: 'pennock', face: 'calm', text: 'Don’t mind her. Count the change back into their hands, love, not onto the board. People trust you more for it.' },
+    ],
+    end: [
+      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'That’s the morning, and a good one. You’ve good hands for bread. Off you go, and take your mother a bun from me.' },
+      { who: 'red', face: 'smile', text: 'Thank you, Mistress Pennock.' },
+      { who: 'red', face: 'smile', thought: true, text: 'She talked the whole while, about everything and everyone. It was nicer than I thought it would be.' },
+    ],
+  },
+};
+
 // Mistress Pennock in her bakery, any other time.
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
@@ -985,5 +1015,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -121,7 +121,9 @@ Phase 1.2's pie, once Mistress Pennock and Tom both trust Red enough (trust 2 wi
 - **Obey**: home (the objective says so). There her mother sees her face: she can **tell her**, and she's corrected for the pie, and that's the end of it; or **keep it back**, and the next evening her mother's had a visit from Mistress Pennock, and she's corrected for the pie and for keeping it from her. Tom's kept in the rest of the day. Some days on (four or more), Tom has the same idea again (*it went fine, last time*), and the choice comes round again.
 - **Tell Mistress Pennock**, aside, out of the smith's hearing: it was her hand on the pie; whatever Tom gets, she's earned it too; her mother takes her in hand, and would want Mistress Pennock to, for this. Mistress Pennock takes them both into the bakery: Tom across her knee first (Red watching), then to the corner; then Red, as she asked; the baker's paddle to finish each. She tells Red's mother herself, that evening, and her mother has a word, but no more: a reprieve (see *Evenings at home*). (Mistress Pennock now knows what being Little Red means.)
 
-The bakery inside: the oven glowing in the back wall, the kneading table, racks of loaves, sacks of flour, the counter under the half-door, a bench, and corners. For now it's only where the pie takes her.
+The bakery inside: the oven glowing in the back wall, the kneading table, racks of loaves, sacks of flour, the counter under the half-door, a bench, and corners.
+
+**A morning's help, played** (`js/work.js`): *Help at the bakery* (asked at breakfast, by a quarter to eight) takes her in at the door, and the morning is its tasks one after another, each offered where it's done: *Knead the dough* at the trough, *Shape the loaves* at the table, *Load the oven* (the peel from its place by the oven, and back), *Sweep the floor while they bake*, *Draw the loaves out* (and carry the board of them), *Set the loaves on the racks*, *Serve at the counter* (the village at the hatch, Agnes grinning to find Red behind it). Each task has its share of the four hours, so the clock comes out near midday; Mistress Pennock talks the whole while. The door stays shut until the last task's done; then the errand is done, with her trust and *At the bakery*. (The inn's afternoon will work the same way.)
 
 ## Conversations (`js/talk.js`, `js/story.js`)
 
@@ -238,6 +240,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
 | `js/evening.js` | Evenings at home: the Watchman bringing her home, the curfew, reprieves for what others have dealt with, supper, and bed |
 | `js/pie.js` | The pie: Tom's dare, Mistress Pennock catching them, the forge, sent home or telling her, and what follows at home or in the bakery |
+| `js/work.js` | A shift of work, played: the bakery's morning, task by task (the inn's to come) |
 | `js/bakery.js` | The bakery inside: the oven, the kneading table, the loaves, the counter |
 | `js/villagers.js` | The village's people about their days: where each is by the day and the time, walking the lanes, talking to them; Tom finding her when she's busy, with a word or a dare |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |

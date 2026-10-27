@@ -99,7 +99,7 @@ function create(w) {
     const out = [], e = errand(), c = st(), W = P.world, sp = W.spots || {}, m = P.motion;
     if (area === 'village') {
       if (!c.garden && P.garden) out.push(...P.garden.actions());      // (the garden's own work, from the paths between its rows: js/garden.js)
-      if (e && (e.state === 'accepted' || e.state === 'broken') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
+      if (e && (e.state === 'accepted' || e.state === 'broken' || e.state === 'working') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
     if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + NAME[e.carry], at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     return out;
@@ -111,6 +111,8 @@ function create(w) {
   async function doErrand(P, e) {
     const sp = P.world.spots[e.place], m = P.motion;
     await m.goTo(sp.at, sp.yaw);
+    // (a shift of work, played inside: js/work.js; the errand's done when the work is)
+    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
     if (e.give && m.carry) { const it = m.drop(); if (it) it.obj.visible = false; }
     // (the one it's for, if they're there: facing her, and their own word for it)
     const f = e.who && P.figure ? P.figure(e.who) : null;
@@ -122,6 +124,13 @@ function create(w) {
     if (e.carry) { hand(P, e.carry); change(c => { c.errand.state = 'carrying'; c.errand.late = late; }); }
     else change(c => { c.errand.state = 'done'; c.errand.late = late; });
     cal.advance(e.mins); w.refresh();
+  }
+  // A shift's work done (js/work.js): the errand with it, and what it was for.
+  function shiftDone(id) {
+    const e = errand(); if (!e || e.key !== id) return;
+    if (e.trust) rep.trusts(e.trust, 1);
+    if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest);
+    change(c => { c.errand.state = 'done'; }); w.refresh();
   }
   // Home with it: handed to her mother, and her word for it.
   async function giveHome(P, e) {
@@ -155,6 +164,7 @@ function create(w) {
     if (!on()) return null;
     { const t = (root.Evening && root.Evening.objective(w)) || (root.Pie && root.Pie.objective(w)); if (t) return t; }      // (walked home by the Watchman; sent home by Mistress Pennock)
     const e = errand(), c = st();
+    { const k = root.Work && root.Work.current(w); if (k && e) { const t = root.Work.SHIFTS[k.id].tasks[k.step]; if (t) return e.title + ': ' + t.label.toLowerCase() + '.'; } }      // (at work: the task in hand)
     if (e && e.state === 'accepted') return e.title + ': begin by ' + clock(e.by) + '.';
     if (e && e.state === 'carrying') return 'Take ' + NAME[e.carry] + ' home to Mama.';
     if (e && e.state === 'broken') return e.title + ': late, but not too late to do it.';
@@ -165,11 +175,11 @@ function create(w) {
     if (!on()) return null;
     const e = errand(), c = st(), parts = [];
     parts.push(c.garden ? 'The garden: tended.' : 'The garden: not yet.');
-    if (e) parts.push(e.title + ({ accepted: ': begin by ' + clock(e.by), carrying: ': to take home', done: e.late ? ': done, late' : ': done', broken: ': not begun in time', little: ': not today (honestly)', wont: ': refused' })[e.state]);
+    if (e) parts.push(e.title + ({ accepted: ': begin by ' + clock(e.by), working: ': under way', carrying: ': to take home', done: e.late ? ': done, late' : ': done', broken: ': not begun in time', little: ': not today (honestly)', wont: ': refused' })[e.state]);
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { on, breakfast, answer, wont, due, settled, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { on, breakfast, answer, wont, due, settled, shiftDone, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

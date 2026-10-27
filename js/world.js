@@ -39,10 +39,11 @@ const AREAS = {
     entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
     exits: { 'the wood': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },
   },
-  // The bakery, inside (js/bakery.js): Mistress Pennock's. (For now, only where a scene takes her: the pie.)
+  // The bakery, inside (js/bakery.js): Mistress Pennock's. (Where the morning's help is worked (js/work.js), and the pie's end.)
   bakery: {
     name: 'The bakery', music: 'home', set: s => root.Bakery.build(s), npc: () => ({ id: 'pennock', key: 'pennock', name: 'Mistress Pennock', at: [8, -4], yaw: Math.PI, voice: 'pennock', tint: '#8a5a3a', bg: '#f0e2d2' }),
     talk: () => root.Story.pennockIdle(),
+    dress(P, w) { if (root.Work) P.work = root.Work.attach(P, w); },      // (the morning's work, if she's come to help)
     entries: { door: { at: [-22, 26], yaw: Math.PI } },
     exits: { 'the door': { area: 'village', entry: 'bakery' } },
   },

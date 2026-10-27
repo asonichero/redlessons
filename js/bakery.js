@@ -62,8 +62,8 @@ function build(scene) {
     const dr = box(g, 9, 9, 0.8, cx - 12, 13, z + 9, iron); dr.rotation.y = -1.2;
     const light = new THREE.PointLight(srgb('#ff9a4a'), 1.1, 110, 1.4); light.position.set(cx, 12, z + 16); root_.add(light); glow.light = light;
     // (the peel, leaning by it: Mistress Pennock's paddle)
-    pole(g, new V3(cx + 20, 0.5, z + 8), new V3(cx + 21, 30, z + 6.5), 0.45, toonMap(tx.oak));
-    solid(g, new THREE.BoxGeometry(6, 0.6, 7.5).translate(0, 0, 0), toonMap(tx.oak), cx + 20.1, 3, z + 8.5, { rot: [Math.PI / 2 - 0.05, 0, 0.04], ink: 0.06 });
+    world.peel = [pole(g, new V3(cx + 20, 0.5, z + 8), new V3(cx + 21, 30, z + 6.5), 0.45, toonMap(tx.oak))];
+    world.peel.push(solid(g, new THREE.BoxGeometry(6, 0.6, 7.5).translate(0, 0, 0), toonMap(tx.oak), cx + 20.1, 3, z + 8.5, { rot: [Math.PI / 2 - 0.05, 0, 0.04], ink: 0.06 }));
     world.obstacles.push({ x0: cx - 18, x1: cx + 24, z0: Z0, z1: Z0 + 10 });
   }
   // ── The kneading table, down the back of the room: floured, a trough of dough under a cloth, loaves shaped and set to prove.
@@ -120,6 +120,12 @@ function build(scene) {
     t += dt; const k = 0.85 + 0.1 * Math.sin(t * 2.3) + 0.05 * Math.sin(t * 7.1); glow[0].color.setRGB(0.91 * k, 0.4 * k, 0.12 * k); if (glow.light) glow.light.intensity = 1.1 * k;
   }
   function light() {}
+  // Where the work is done (js/work.js): where she stands for each, which way she faces, and what she reaches for.
+  const spot = (x, z, yaw, lx, ly, lz) => ({ at: new V3(x, 0, z), yaw, look: new V3(lx, ly, lz) });
+  world.work = {
+    trough: spot(-10, -7.5, Math.PI, -10, 17, -18), table: spot(-27, -7.5, Math.PI, -27, 16, -18), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
+    oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: spot(-34, 2, -Math.PI / 2, -42, 16, 2), counter: spot(18, 26, 0, 18, 14, 35),
+  };
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
   return { group: root_, update, tick, light, world, bounds: { X0, X1, Z0, Z1, EAVE } };
 }
