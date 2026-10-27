@@ -24,8 +24,8 @@ function goal(w) {
       return { area: E.area || 'village', spot: E.place }; }      // (a shift: its door, in the village)
     if (e.state === 'carrying') return { area: 'home', who: 'mother' };
   }
-  if (root.Herbs && root.Herbs.objective(w)) { const s = root.Herbs.stateOf(w); return s.asked && !s.have ? { area: 'wood', herb: s.asked } : { area: 'cabin', who: 'gran' }; }
   if (ch && ch.on() && !ch.gardenTended() && cal.minute < H('19:00')) return { area: 'village', spot: 'garden' };
+  if (root.Herbs && root.Herbs.objective(w)) { const s = root.Herbs.stateOf(w); return s.asked && !s.have ? { area: 'wood', herb: s.asked } : { area: 'cabin', who: 'gran' }; }
   if (off('maren.chores')) return { area: 'home', who: 'mother' };
   return null;
 }

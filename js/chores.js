@@ -204,7 +204,7 @@ function create(w) {
   function objectives() {
     if (!on()) return [];
     const out = [], e = errand(), c = st();
-    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter, root.Herbs]) { const t = M && M.objective(w); if (t) out.push(t); }
+    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     const k = root.Work && root.Work.current(w), t = k && e && root.Work.SHIFTS[k.id].tasks[k.step];
     if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
@@ -212,6 +212,7 @@ function create(w) {
     else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');
     if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && root.Garden.progress(w).begun ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');
+    { const t = root.Herbs && root.Herbs.objective(w); if (t) out.push(t); }      // (Grandmother's herbs: after what's asked at home)
     return out;
   }
   const objective = () => objectives()[0] || null;
