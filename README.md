@@ -65,6 +65,16 @@ The village from outside, built as the cottage and the cabin are (limewashed dau
 
 Only the outsides for now: her door is the one that opens. At dusk the windows and lanterns light. Outdoors the camera is kept out of the buildings, pulled in toward her when one is in the way. The still parts are merged by material once built, so the whole village draws in a couple of hundred calls.
 
+## Days and errands (`js/chores.js`)
+
+Once the chores are agreed with her mother (the morning after the homecoming), the days have a shape:
+
+- **Mama's garden**, behind the cottage, every day before dusk: *Tend Mama's garden* at its gate, and a while there with her thoughts. Left till dusk, it's a little broken promise.
+- **An errand on most days**, asked over breakfast: her mother says what's been asked of them and asks if she'll do it. *Yes* is a promise, to be begun by its time (shown as the objective and in the journal); *not today, I can't be anybody's today* is an honest no, and costs nothing; a *won't* is wilful, and three in a week bring a **maintenance correction** there and then (her hand; the shape of her days put back: the garden, what's asked, the bell), which settles her wilfulness. Let the time go by without beginning it, and it's a broken promise: naughty, and she knows it.
+- **The errands**: water from the well, bread from the bakery, a pot to the forge, a jug from the inn, a basket for the Dunns, a morning helping at the bakery, an afternoon working at the inn, helping Bo Peep pen the flock at dusk. Each is done at its place in the village, some carried home to her mother after. Their scenes don't spend the day: the clock stops while they play, and moves on by the work's own time when she's done.
+
+(The villagers aren't in the village yet: until they are, what happens at each place is told, around Red's own thoughts.)
+
 ## Conversations (`js/talk.js`, `js/story.js`)
 
 Played the way *Mika and the Witch's Mountain* plays them: the two of them turn to each other, opened a little toward the camera as on a stage, and the camera settles on a view that holds both. The lines come up in a box at the foot of the screen with a portrait of whoever is speaking (her face, live, close up, with the expression the line calls for) and her name on a tab; Rose's on the left, the other speaker's on the right; narration is italic with no portrait. The words type out and are babbled in that voice. Click, Space, Enter or E finishes a line, then goes on; choices come up as buttons (or 1, 2, 3).
@@ -176,6 +186,7 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `docs/quest-plan.md`, `docs/build-plan.md` | The story's quest lines by phase; what they need from the code, and the milestones |
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the village beyond, the failing light |
+| `js/chores.js` | The days: Mama's garden, the errands asked over breakfast (yes, an honest no, or a won't), promises kept or broken, the maintenance correction |
 | `js/village.js` | The village from outside: the street and the green, the inn, the bakery, the forge and the cottages (Maren's with her own door), lanes, walls, gardens, fields, the light at dusk |
 | `js/talk.js` | Conversations: the two-shot, the box, the live portrait, typing and voices, choices |
 | `js/correction.js` | A correction in the story's own scene: any corrector, subjects in turn, watchers, the corner, the safe word by context |

@@ -576,6 +576,18 @@ function build(scene, opts) {
     // (her door: swinging to where it's been sent)
     const d = world.door; if (d) { d.open += (d.target - d.open) * (1 - Math.exp(-dt * 5)); d.pivot.rotation.y = d.swing * d.open; }
   }
+  // ── Where things are done (js/chores.js's errands, the garden): a place to stand, which way to face, and what to look at.
+  root_.updateMatrixWorld(true);
+  const before = (h, side, at, out) => { const f = h.face(side), p = new V3(at, 0, out || 9).applyMatrix4(f.matrixWorld).setY(0), q = new V3(at, 0, 0).applyMatrix4(f.matrixWorld).setY(0);
+    return { at: p, yaw: Math.atan2(q.x - p.x, q.z - p.z), look: q.clone().setY(20) }; };
+  const wellAt = new V3(GREEN.x + 46, 0, GREEN.z + 30);
+  world.spots = {
+    garden: { at: V(-322, -398), yaw: Math.PI / 2, look: new V3(-300, 1, -406) },      // (just in at the gate of Maren's garden, the beds before her)
+    well: { at: wellAt.clone().add(V(0, 12)), yaw: Math.PI, look: wellAt.clone().setY(8) },
+    bakery: before(bakery, 'front', 14), inn: before(inn, 'front', -6), dunns: before(dunns, 'front', -16), forge: before(forge, 'front', 0, 20),
+    pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },
+  };
+
   mergeStatic(root_);
   return { group: root_, update() {}, tick, light, follow, keepCamera, world, home: HOME, solids };
 }

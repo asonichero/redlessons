@@ -347,7 +347,9 @@ const chores = () => [
   { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, Little Red. Sleep?' },
   { who: 'red', face: 'shy', text: 'Like a stone.' },
   { who: 'mother', face: 'calm', text: 'Good. Now, what we said last night. The Hallorans’ calving and the mending can go back to being mine. But you’ll not sit idle either.' },
-  { who: 'mother', face: 'calm', text: 'Mary’s garden, each morning: weeds, water, and whatever’s ready to pick. Errands when I ask, and done when I ask.' },
+  { who: 'mother', face: 'calm', text: 'The garden, each morning: weeds, water, and whatever’s ready to pick. That one’s yours, every day.' },
+  { who: 'mother', face: 'calm', text: 'And when somebody asks something of us, I’ll ask you over breakfast if you’ll do it. Say yes, and it’s a promise: done, or at least begun, by when they want it.' },
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Or say no. If it’s too much, if you can’t be anybody’s that day, tell me so, honestly, and that’s an end of it. It’s “won’t” I’ll mind, not “can’t”.' },
   { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'And home by the curfew bell. Nine o’clock, and not a minute past it.' },
   { choose: [
     { text: 'Yes, Mama.', then: [{ who: 'mother', face: 'smile', text: 'That’s my girl.' }] },
@@ -358,6 +360,103 @@ const chores = () => [
   ] },
   { who: 'mother', face: 'calm', text: 'And if anyone in the village asks after you, you tell them what you like, and only what you like. Who knows is yours to choose.' },
 ];
+// ── Days and errands (js/chores.js plays them). Each errand: who it's for, what's asked over breakfast, the time it must be begun by, what
+// happens where it's done, and what's said when it's brought home. Speakers 'mother' and 'red'; narration where someone isn't there to be
+// seen yet (the villagers aren't in the village yet: when they are, the narration gives way to them).
+const ERRANDS = {
+  well: { title: 'Water from the well', by: '10:00', place: 'well', action: 'Draw a bucket of water', carry: 'bucket', home: true, mins: 15,
+    ask: 'The butt’s low, and I’ll want water for the washing. Will you fetch a bucket from the well this morning, love?',
+    there: [{ text: 'She winds the bucket down into the dark, and up again, heavy and slopping, and the green full of the morning round her.' },
+      { who: 'red', face: 'calm', thought: true, text: 'Half the village has been at the well before me. I can tell by the wet on the stones.' }],
+    back: { who: 'mother', face: 'smile', text: 'That’s the washing seen to. Thank you, love.' } },
+  bread: { title: 'Bread from the bakery', by: '11:00', place: 'bakery', action: 'Ask for Mama’s loaves', carry: 'loaves', home: true, mins: 15, who: 'baker',
+    ask: 'Master Pennock’s keeping two loaves back for us. Will you fetch them before he sells them out from under us?',
+    there: [{ text: 'Master Pennock passes two loaves over the half-door, warm through the cloth, and says she’s to tell her mother they’re the best of the batch, which he says every time.' },
+      { who: 'red', face: 'smile', thought: true, text: 'They smell like every morning I can remember.' }],
+    back: { who: 'mother', face: 'smile', text: 'Still warm. He does look after us.' } },
+  pot: { title: 'A pot to the forge for mending', by: '12:00', place: 'forge', action: 'Leave the pot with the smith', give: 'pot', mins: 15, who: 'smith',
+    ask: 'The big pot’s sprung its handle again. Will you take it down to the forge before noon? Master Ferrier said he’d see to it.',
+    there: [{ text: 'The forge is all heat and ringing. She sets the pot down by the anvil where the smith can see it, and he nods without stopping, which means yes.' },
+      { who: 'red', face: 'cheeky', thought: true, text: 'Tom’s nowhere about. Which means Tom’s somewhere he shouldn’t be.' }] },
+  jug: { title: 'A jug from the inn', by: '17:00', place: 'inn', action: 'Ask for Mama’s jug', carry: 'jug', home: true, mins: 15, who: 'abney',
+    ask: 'Mistress Abney’s promised me a jug of her small beer for supper. Will you go along for it this afternoon?',
+    there: [{ text: 'Mistress Abney fills the jug herself, and asks after her mother, and after her, and looks at her a little longer than the question needs.' },
+      { who: 'red', face: 'shy', thought: true, text: 'She always looks as if she knows something I haven’t said yet.' }],
+    back: { who: 'mother', face: 'calm', text: 'On the table, love. Was she well?' } },
+  dunns: { title: 'A basket for the Dunns', by: '15:00', place: 'dunns', action: 'Leave the basket at the Dunns’', give: 'basket', mins: 10, who: 'willie',
+    ask: 'I’ve a pie for the Dunns: Master William’s been on his rounds all week. Will you take it over this afternoon? Quietly, mind. He’ll be sleeping.',
+    there: [{ text: 'The shutters are closed upstairs. She leaves the basket on the step, under the cloth, and doesn’t knock.' },
+      { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
+  bakery: { title: 'Help at the bakery', by: '09:00', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 240, who: 'pennock', trust: 'pennock',
+    ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. Will you go and help her this morning? She’ll want you by nine.',
+    there: [{ text: 'All morning: flour to the elbows, the oven roaring, trays in and trays out, and Mistress Pennock talking the whole while, about everything and everyone.' },
+      { who: 'red', face: 'smile', thought: true, text: 'She talks as if I were still twelve. It’s nicer than I thought it would be.' }] },
+  inn: { title: 'Work at the inn', by: '14:00', place: 'inn', action: 'Go in to work for Mistress Abney', mins: 180, who: 'abney', trust: 'abney',
+    ask: 'Mistress Abney could use you this afternoon: the carrier’s due, and Bess can’t be on her feet all day. Will you go along by two?',
+    there: [{ text: 'The afternoon goes in pots and plates and the carrier’s men stamping in, and Bess sat by the fire, directing everyone, and Mistress Abney watching it all.' },
+      { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }] },
+  flock: { title: 'Help Bo Peep pen the flock', by: '19:30', place: 'pinfold', action: 'Help pen the flock', mins: 30, who: 'halloran',
+    ask: 'Halloran’s granddaughter could use another pair of hands bringing the flock in tonight. Will you meet her at the pinfold by half past seven?',
+    there: [{ text: 'Bo Peep counts them through the gate, twice, and once more because one of them is always the same one, and they lean the gate shut together.' },
+      { who: 'red', face: 'cheeky', thought: true, text: 'The bell’s just there on the green. Somebody could ring it early, one night. Not me, of course.' }] },
+};
+// Over breakfast: her mother's word for the day, and the asking. errand: one of ERRANDS, or null (nothing asked: the day's her own).
+// ctx: { temper ('wilful' | 'mischievous' | 'naughty' | null: what she's most known for lately), yes(), little(), wont() (run on each answer) }.
+const breakfast = (errand, ctx) => {
+  const hello = { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Morning, love. Porridge is on.' };
+  if (!errand) return [hello, { who: 'mother', face: 'calm', text: 'Nobody’s asked anything of us today. The garden, and then the day’s your own.' }];
+  const t = ctx.temper, by = ctx.byText;
+  const YES = { wilful: 'Fine. Yes. I’ll do it.', mischievous: 'Yes, Mama. I’ll be quick. Mostly.', naughty: 'Yes, Mama.' }[t] || 'Yes, Mama.';
+  const WONT = { wilful: 'No. I’ve had enough of being asked for things.', mischievous: 'Can’t it wait? I’d other plans. No.', naughty: 'Why me? Let them fetch it themselves.' }[t] || 'No. I don’t want to.';
+  return [hello, { who: 'mother', face: 'calm', listen: { red: 'calm' }, text: errand.ask },
+    { choose: [
+      { text: YES, face: 'smile', then: [{ run: ctx.yes }, { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'That’s my girl. By ' + by + ', mind.' }] },
+      { text: 'Not today, Mama. I can’t be anybody’s today.', face: 'shy', then: [{ run: ctx.little },
+        { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Then not today, love. I’ll let them know. Just the garden, and let the day be easy.' }] },
+      { text: WONT, face: 'pout', then: [{ run: ctx.wont },
+        { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'That’s not “can’t”, Red. That’s “won’t”. I’ll remember it.' }] },
+    ] }];
+};
+// The third "won't" in a week: what her mother says, before she takes her in hand for it.
+const enough = () => [
+  { who: 'mother', face: 'stern', listen: { red: 'pout' }, text: 'That’s three times this week, Little Red. Three times I’ve asked, and three times you’ve told me no, and not because you couldn’t.' },
+  { who: 'red', face: 'shy', text: 'Mama…' },
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'This isn’t for any one thing. It’s to set you right. Come here.' },
+];
+// The maintenance correction: her hand only, not long, the shape of her days put back in place. (js/correction.js runs it: as the homecoming's.)
+const maintenanceCorrection = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3, pace: 1.3 });
+  await S.wait(0.8);
+  await S.say(M, 'Hands down. There. You know why.', 'calm');
+  await S.step([M, 'The garden, each morning. That’s yours.', 'stern'], 8);
+  await S.step([R, 'I know, Mama—'], 4);
+  await S.step([M, 'What’s asked of you: done, or a no that’s honest. Not a sulk.'], 8);
+  await S.smacks(6);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.5, pace: 1.5 });
+  await S.step([M, 'And home by the bell.'], 8);
+  await S.step([R, 'Yes, Mama!'], 4);
+  await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 10);
+  await S.smacks(8);
+  await S.say(M, 'There. That’s done, and you’re set right. Up you get.', 'calm');
+  await S.wait(1.2);
+};
+const afterMaintenance = () => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Better?' },
+  { who: 'red', face: 'shy', listen: { mother: 'smile' }, text: '…Better.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Then off with you. The garden won’t weed itself.' },
+];
+// Her thoughts as she tends the garden (one pair a day, in turn).
+const GARDEN = [
+  [['calm', 'Weeds, water, and whatever’s ready. Mama’s list, every morning.'], ['smile', 'The beans have come on. Nobody needs me to be clever about beans.']],
+  [['calm', 'Silver bells and cockle shells. Grandmother used to sing it at me when I was contrary.'], ['smile', 'I’m still contrary. The garden doesn’t mind.']],
+  [['shy', 'There’s a slug on every leaf. I wonder if they have a Mama telling them to be home by nine.'], ['cheeky', 'Probably not. Lucky slugs.']],
+  [['calm', 'My hands in the earth, and nobody watching. It’s the quietest hour of the day.'], ['calm', 'Then the day starts asking things of me.']],
+];
+// Back from a promise let slide: her own thought, when the time's gone by.
+const broken = title => [['wince', 'Oh no. ' + title + '. I said I would, and I didn’t.']];
+
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
 const marenIdle = part => ({
   morning: [{ who: 'mother', face: 'smile', text: 'The garden won’t weed itself, love.' }],
@@ -374,5 +473,5 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
-root.Story = { homecoming, homecomingCorrection, walkStop, STOPS, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

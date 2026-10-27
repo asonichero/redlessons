@@ -66,10 +66,15 @@ function create(view, ui) {
     go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
   };
 
-  // What to say she's about: the first step on offer here with a hint; or else, the main story's, or the first begun line's, and where.
+  // The days: the garden and the errands (js/chores.js), once the chores are agreed.
+  const chores = root.Chores ? root.Chores.create(w) : null; w.chores = chores;
+
+  // What to say she's about: the day's own (the errand, the garden), or the first step on offer here with a hint; or else, the main story's, or
+  // the first begun line's, and where.
   function refresh() {
     if (ui.clock) ui.clock('Day ' + cal.day + ' · ' + cal.clock, q.phaseOf(q.phase()));
     if (sceneNow && sceneNow.ownObjective) return;
+    { const t = chores && chores.objective(); if (t) { w.objective(t); return; } }
     // (only what can be played yet: a step with a scene, or one the place itself handles; the journal shows the rest)
     const ready = s => s.hint && ((s.scene && SCENES[s.scene]) || s.talk);
     const here = q.offered({ where: areaName }).find(ready), any = q.offered().find(ready);
@@ -77,7 +82,8 @@ function create(view, ui) {
   }
   function journal() {
     const ph = q.phaseOf(q.phase());
-    return { phase: ph, clock: 'Day ' + cal.day + ', ' + cal.clock, lines: q.journal().map(j => Object.assign({}, j, { where: j.step && j.step.where })) };
+    const today = chores && chores.journalLine();
+    return { phase: ph, clock: 'Day ' + cal.day + ', ' + cal.clock, lines: (today ? [today] : []).concat(q.journal().map(j => Object.assign({}, j, { where: j.step && j.step.where }))) };
   }
 
   // ── Going somewhere: out of the place she's in (under a fade), the new one built, her put at the way in, and its scene, if one's on offer, played.
@@ -98,6 +104,7 @@ function create(view, ui) {
       P = root.Play.create(view, opts);
       if (opts.place) opts.place(P);
       if (A.dress) A.dress(P, w);
+      if (chores) chores.dress(P);      // (whatever she's carrying for an errand, still in her hands)
       P.tick(dt => frame(dt));
       { const Au = root.GameAudio; if (Au && Au.startMusic && A.music) Au.startMusic({ theme: (sc && sc.music) || A.music }); }      // (each place its own music; a scene can have its own)
       save.change(s => { s.area = name; }, { area: name });
@@ -169,8 +176,9 @@ function create(view, ui) {
       let pending = null;
       o.talk = () => { pending = q.offered({ where: 'home', who: 'maren' }).find(s => s.ref === 'maren.chores') ? 'maren.chores' : null; return pending === 'maren.chores' ? root.Story.chores() : root.Story.marenIdle(cal.part); };
       o.after = async kind => { if (kind === 'talk' && pending === 'maren.chores') { save.flag('curfew-agreed'); w.complete('maren.chores'); } pending = null; };
-      o.actions = () => sleepAction();
+      o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : []);
     } else if (A.talk) o.talk = A.talk;
+    if (name === 'village' && chores) o.actions = () => chores.actions(P, 'village');
     return o;
   }
   // (from the wood's own entries, the camera behind her as she comes in)
@@ -197,6 +205,7 @@ function create(view, ui) {
     if (!P) return;
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
     if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, 1); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
+    if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
     P.stage.setLight(lightFn ? lightFn() : cal.light());
     { const Au = root.GameAudio; if (Au && Au.musicTheme === 'wood' && Au.nodes.musicFilter) Au.nodes.musicFilter.frequency.value = 2200 - 1400 * cal.light(); }      // (the wood's music darkening with the light)
     if ((sinceSave += dt) > 3 && idle) { sinceSave = 0; const m = P.motion; save.change(s => { s.at = [Math.round(m.pos.x * 10) / 10, Math.round(m.pos.z * 10) / 10, Math.round(m.yaw * 100) / 100]; }, { at: true }); }
@@ -204,7 +213,8 @@ function create(view, ui) {
   let lastClock = ''; function refreshClock() { const c = 'Day ' + cal.day + ' · ' + cal.clock; if (c !== lastClock && ui.clock) { lastClock = c; ui.clock(c, q.phaseOf(q.phase())); } }
 
   // The next morning: the night passes (under a fade), and she's up, at home.
-  async function morning() { await fade(true, ''); cal.sleep(); await go('home', 'bed'); }
+  // (and over breakfast her mother asks what's been asked of them: js/chores.js)
+  async function morning() { await fade(true, ''); cal.sleep(); await go('home', 'bed'); const P_ = P; if (chores && chores.on() && P_) P_.act(() => chores.breakfast(P_)); }
 
   // ── Starting.
   async function newGame() { save.reset(); await go('cabin', 'chapter'); }
