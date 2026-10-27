@@ -104,7 +104,7 @@ const lines = [
   { id: 'abney', name: 'Mistress Abney', steps: [
     s('asks', '1.1', 'Sitting up with her daughter', 'inn', 'abney', { optional: true }),
     s('work', '1.2', 'Work at the inn', 'inn', 'abney'),
-    s('promise', '1.2', 'A promise', 'inn', 'abney'),
+    s('promise', '1.2', 'A promise', 'inn', 'abney', { when: { trust: 'abney', gte: 2 } }),      // (asked once she trusts her: two afternoons' work, about: js/promise.js)
     s('inhand', '1.3', 'Taken in hand', 'inn', 'abney', { gate: 'abney' }),
     s('confinement', '2.2', 'Her daughter’s confinement', 'inn', 'abneyDaughter'),
     s('wine', '2.3', 'The wine', 'inn', 'abney'),

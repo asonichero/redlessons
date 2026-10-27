@@ -13,14 +13,15 @@ function world(done) {
 
 test('asked only once she\'s worked at the inn; not again for two days after a no', () => {
   assert.equal(!!AP.wants(world()), false);
-  const w = world(['abney.work']); assert.equal(!!AP.wants(w), true);
+  const w0 = world(['abney.work']); assert.equal(!!AP.wants(w0), false, 'not till she trusts her');
+  const w = world(['abney.work']); w.rep.trusts('abney', 2); assert.equal(!!AP.wants(w), true);
   AP.stateOf(w).asked = 6; assert.equal(!!AP.wants(w), false);
   w.save.change(s => { s.day = 8; }); assert.equal(!!AP.wants(w), true);
   AP.stateOf(w).day = 9; assert.equal(!!AP.wants(w), false, 'once she\'s promised, no more asking');
 });
 
 test('the evening: the objective from midday; someone to tempt her about five; let half past six go by, and it\'s broken', () => {
-  const w = world(['abney.work']); AP.stateOf(w).day = 6;
+  const w = world(['abney.work']); w.rep.trusts('abney', 2); AP.stateOf(w).day = 6;
   assert.match(AP.objective(w), /Bess/);
   w.save.change(s => { s.minute = 17 * 60 + 10; }); assert.ok(['tom', 'agnes'].includes(AP.tempter(w)), 'Tom or Agnes (Peter, once she\'s been to the Fowlers\')');
   AP.stateOf(w).tempted = 'tom'; assert.equal(AP.tempter(w), null, 'once');

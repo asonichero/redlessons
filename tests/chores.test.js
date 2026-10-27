@@ -21,8 +21,15 @@ test('nothing until the chores are agreed', () => {
   assert.equal(chores.on(), false); assert.equal(chores.objective(), null); assert.equal(chores.journalLine(), null);
 });
 
+test('at first, each errand in turn, the inn\'s afternoon last', () => {
+  const { chores, save } = world(), order = [];
+  for (let d = 3; d < 20; d++) { const id = chores.pick(d); if (!id || order.includes(id)) break; order.push(id); save.change(s => { s.chores = s.chores || {}; s.chores.asked = (s.chores.asked || []).concat(id); }); }
+  assert.equal(order[0], 'eggs'); assert.equal(order[order.length - 1], 'inn'); assert.ok(order.includes('bread') && order.includes('bakery') && order.includes('well'));
+});
+
 test('most days something is asked, never the same two days running', () => {
-  const { chores } = world(); let none = 0, last = null;
+  const { chores, save } = world(); let none = 0, last = null;
+  save.change(s => { s.chores = s.chores || { day: 0, garden: false, errand: null, refusals: [], missed: 0 }; s.chores.asked = Object.keys(chores.ERRANDS); });      // (the first round asked)
   for (let d = 2; d < 202; d++) { const id = chores.pick(d); if (!id) { none++; continue; } assert.ok(chores.ERRANDS[id]); }
   assert.ok(none > 25 && none < 80, 'about one day in four, nothing: ' + none + ' of 200');
   // (yesterday's errand isn't asked again today: each day's pick is fixed by the day, and steps past yesterday's)

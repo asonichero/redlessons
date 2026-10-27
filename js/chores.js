@@ -20,7 +20,8 @@
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
-const NONE_ONE_IN = 4;      // (about one day in four nothing's asked)
+const NONE_ONE_IN = 4;
+const INTRO = ['eggs', 'bread', 'pot', 'bakery', 'well', 'dunns', 'jug', 'inn'];      // (the first errands, in turn: the Fowlers', the Pennocks, the forge, the well, the Dunns', the inn)      // (about one day in four nothing's asked)
 const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'the basket' };
 
 // Things carried: a bucket, two loaves in a cloth, the pot, a jug, a covered basket. → an item for her hands (motion's hold), not to be set down.
@@ -48,11 +49,11 @@ function create(w) {
   // Which errand today: one of them, not yesterday's, about one day in four none (the same for a day, however it's asked).
   function pick(day) {
     const rnd = (n => () => { n = (n * 16807) % 2147483647; return (n - 1) / 2147483646; })(((day * 2654435761) % 2147483646) + 1); rnd(); rnd();      // (mixed, and the first draws let go: a small seed's first draw is small)
-    // (until she's been to the Fowlers': the first errand asked is the eggs, and they come round more often after; js/peter.js)
-    const unvisited = root.Peter && !root.Peter.visited(w), first = save.state.chores && save.state.chores.firstEggs;
-    if (unvisited && E.eggs && (first == null || first === day)) return 'eggs';
+    // (at first, one of each in turn, in an order that has her meet everyone, the inn's afternoon last, so that by the time Mistress Abney asks
+    // her favour she's plans and friends enough to be tempted from it; then any, about one day in four none)
+    const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id));
+    if (next) return next;
     if (rnd() < 1 / NONE_ONE_IN) return null;
-    if (unvisited && E.eggs && rnd() < 0.4) return 'eggs';
     const ids = Object.keys(E), last = save.state.chores && save.state.chores.last;
     let id = ids[Math.floor(rnd() * ids.length)]; if (id === last) id = ids[(ids.indexOf(id) + 1) % ids.length];
     return id;
@@ -69,7 +70,7 @@ function create(w) {
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); }, little: async () => { answer(id, 'little'); }, wont: async () => { answer(id, 'wont'); } };
     await P.wait(0.8); await P.approach();
-    if (id === 'eggs' && st().firstEggs == null) change(c => { c.firstEggs = cal.day; });
+    if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
     if (due()) await maintenance(P);
     w.refresh();

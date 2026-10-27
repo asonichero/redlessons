@@ -29,8 +29,9 @@ function objective(w) { lapse(w); const s = stateOf(w); return tonight(w) && w.c
 function lapse(w) {
   const s = stateOf(w); if (!s.day || s.kept || s.broken || s.sitting) return;
   if (w.cal.day > s.day || (w.cal.day === s.day && w.cal.minute > LATE)) {
-    change(w, p => { p.broken = true; }); w.rep.add('naughty', 2, 'leaving Bess alone, after promising Mistress Abney'); w.rep.trusts('abney', -1);
-    w.save.flag('abney-promise-broken', s.day); if (w.q.stateOf('abney.promise') === 'offered') w.complete('abney.promise');
+    change(w, p => { p.broken = true; }); w.save.flag('abney-promise-broken', s.day);
+    if (w.q.stateOf('abney.promise') === 'offered') w.complete('abney.promise');      // (done, broken: before her trust falls, and the step with it)
+    w.rep.add('naughty', 2, 'leaving Bess alone, after promising Mistress Abney'); w.rep.trusts('abney', -1);
   }
 }
 // (home after nine, walked there by Mistress Abney: no curfew owed tonight)
