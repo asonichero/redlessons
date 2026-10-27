@@ -40,7 +40,9 @@ const AREAS = {
   },
   wood: {
     name: 'The wood', music: 'wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
-    dress(P, w) { const ex = P.world.exits.find(e => e.name === 'the Fowlers’'); if (ex) ex.when = () => w.q.done('maren.walk'); },      // (not on chapter one's walk home: straight home, that night)
+    dress(P, w) { const ex = P.world.exits.find(e => e.name === 'the Fowlers’'); if (ex) ex.when = () => w.q.done('maren.walk');      // (not on chapter one's walk home: straight home, that night)
+      let said = -99; P.world.forkShut = () => !w.q.done('maren.walk');
+      P.world.onForkShut = () => { const t = performance.now() / 1000; if (t - said < 8 || !P.talk) return; said = t; P.talk.muse(root.Story.forkShut(), { face: 'wince' }); }; },
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
     exits: { 'the village': { area: 'village', entry: 'wood' }, 'the cabin': { area: 'cabin', entry: 'door' }, 'the Fowlers’': { area: 'holding', entry: 'lane' } },
   },
@@ -89,6 +91,7 @@ const AREAS = {
   },
 };
 
+const RATE = 2;      // (game minutes a second, while she's about: a day from seven to the bell in seven minutes)
 function create(view, ui) {
   ui = ui || {};
   const save = root.Save.create(), cal = root.Calendar.create(save), rep = root.Reputation.create(save);
@@ -109,6 +112,7 @@ function create(view, ui) {
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.
   const chores = root.Chores ? root.Chores.create(w) : null; w.chores = chores;
+  const guide = root.Guide && typeof document !== 'undefined' ? root.Guide.create(w) : null;
 
   // What to say she's about: the day's own (the errand, the garden), or the first step on offer here with a hint; or else, the main story's, or
   // the first begun line's, and where.
@@ -136,6 +140,7 @@ function create(view, ui) {
       const step = q.offered({ where: name }).find(s => s.scene && SCENES[s.scene]);
       const sc = step ? SCENES[step.scene] : null;
       await fade(true, sc && sc.establish ? '' : A.name);
+      const held = P && chores ? chores.carried(P) : null;      // (what's in her hands, to be in them still)
       if (P) { P.dispose(); P = null; }
       if (backdrop) { backdrop.dispose(); backdrop = null; }      // (the title's tableau)
       // (a scene can open on an establishing shot: another place seen from outside, without her, the camera easing in; then a fade, and the scene)
@@ -146,7 +151,7 @@ function create(view, ui) {
       P = root.Play.create(view, opts);
       if (opts.place) opts.place(P);
       if (A.dress) A.dress(P, w);
-      if (chores) chores.dress(P);      // (whatever she's carrying for an errand, still in her hands)
+      if (chores) chores.dress(P, held);      // (whatever she's carrying, still in her hands)
       P.tick(dt => frame(dt));
       { const Au = root.GameAudio; if (Au && Au.startMusic && A.music) Au.startMusic({ theme: (sc && sc.music) || A.music }); }      // (each place its own music; a scene can have its own)
       save.change(s => { s.area = name; }, { area: name });
@@ -212,7 +217,9 @@ function create(view, ui) {
     if (!e && A.entries === 'set') o.place = P_ => { const es = P_.world.entries || {}, x = es[entry] || es[Object.keys(es)[0]]; if (x) { P_.motion.warp(new V3(x.at[0], 0, x.at[1]), x.yaw); P_.rig.root.position.set(x.at[0], 0, x.at[1]); placeCam(P_, x); } };
     if (e) o.start = { at: e.at, yaw: e.yaw };
     if (e && e.camTurn != null) o.camTurn = e.camTurn;
-    o.onExit = ex => { const to = A.exits[ex.name]; if (!to) return; if (o.leaving) o.leaving(ex, to); go(to.area, to.entry, { walked: true }); };
+    o.onExit = ex => { const to = A.exits[ex.name]; if (!to) return;
+      if (name === 'home' && chores && chores.forgot(P)) { P.act(() => chores.remind(P)); return false; }      // (out for the eggs without a basket: her mother calls her back)
+      if (o.leaving) o.leaving(ex, to); go(to.area, to.entry, { walked: true }); };
     // Talking: whatever's on offer with whoever's here, or their word for the time of day.
     if (name === 'home') {
       let pending = null;
@@ -223,7 +230,7 @@ function create(view, ui) {
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], gateAction()); }
-    if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
+    if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : [], P && P.world.signpost ? [{ label: 'Read the signpost', at: P.world.signpost, run: () => P.converse(root.Story.signpost(), { shot: false, keepCamera: true }) }] : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
     if (name === 'cabin' && root.Herbs) o.talk = () => root.Herbs.talk(w);      // (her grandmother: the herb errands)      // (the beech: Peter's notes, and meeting him there)
     if (name === 'holding') { o.place = chain(o.place, P_ => { P_.fowlers = root.Holding ? root.Holding.people(P_, w) : null; }); o.actions = () => (P && P.fowlers ? P.fowlers.actions() : []).concat(chores ? chores.actions(P, 'holding') : []); }      // (and the eggs, when she's come for them)
     return o;
@@ -259,8 +266,9 @@ function create(view, ui) {
   function frame(dt) {
     if (!P) return;
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
-    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, 1); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
+    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
+    if (guide) guide.update(P, dt);      // (the way to what's hers to do: js/guide.js)
     P.stage.setLight(lightFn ? lightFn() : cal.light());
     { const Au = root.GameAudio; if (Au && Au.musicTheme === 'wood' && Au.nodes.musicFilter) Au.nodes.musicFilter.frequency.value = 2200 - 1400 * cal.light(); }      // (the wood's music darkening with the light)
     if ((sinceSave += dt) > 3 && idle) { sinceSave = 0; const m = P.motion; save.change(s => { s.at = [Math.round(m.pos.x * 10) / 10, Math.round(m.pos.z * 10) / 10, Math.round(m.yaw * 100) / 100]; }, { at: true }); }
@@ -269,7 +277,10 @@ function create(view, ui) {
 
   // The next morning: the night passes (under a fade), and she's up, at home.
   // (and over breakfast her mother asks what's been asked of them: js/chores.js)
-  async function morning(text) { await fade(true, text || ''); cal.sleep(); await go('home', 'bed'); const P_ = P; if (chores && chores.on() && P_) P_.act(() => chores.breakfast(P_)); }
+  async function morning(text) { await fade(true, text || ''); cal.sleep(); await go('home', 'bed'); const P_ = P; if (!P_) return;
+    if (chores && chores.on()) P_.act(() => chores.breakfast(P_));
+    else if (q.stateOf('maren.chores') === 'offered') P_.act(() => P_.talkToMother());      // (the first morning: straight to her mother, to agree what's hers to do)
+  }
 
   // ── Starting.
   async function newGame() { save.reset(); await go('cabin', 'chapter'); }

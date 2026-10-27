@@ -207,7 +207,7 @@ function create(view, opts) {
     if (opening) { const ex = W.exits.find(e => e.at && flat(e.at).distanceTo(flat(latch)) < 26); if (ex) exitBy(ex.name); }
   }
   // Out by one of the place's exits, by name (a door opened, a gate gone through): as if she'd walked into it.
-  function exitBy(name) { const ex = W.exits.find(e => e.name === name); if (!ex || exited || !opts.onExit) return false; exited = ex; opts.onExit(ex); return true; }
+  function exitBy(name) { const ex = W.exits.find(e => e.name === name); if (!ex || exited || !opts.onExit) return false; exited = ex; if (opts.onExit(ex) === false) { exited = null; return false; } return true; }      // (onExit → false: not let out, after all)
   async function useChest() {
     const c = W.chest, s = standFor(c.front, new V3(0, 0, 1), 5.5);
     await m.goTo(s.at, s.yaw);
@@ -307,7 +307,7 @@ function create(view, opts) {
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
     m.update(dt, { move: mv, run: input.run && !opts.noRun }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there)
     // Exits: walking into one tells the page (once).
-    if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; opts.onExit(e); break; }
+    if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; if (opts.onExit(e) === false) exited = null; break; }
     // (the set: anything between the camera and her is cut away; only in play, with her there to be seen, not in a shot of the page's own)
     if (st.cottage.follow) st.cottage.follow(m.pos, dt, st.camera, rig.root.visible && !opts.camFree ? chest() : null);
     if (opts.onFrame) opts.onFrame(dt);

@@ -411,7 +411,7 @@ const ERRANDS = {
       { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }],
     there: [{ text: 'The afternoon goes in pots and plates and the carrier’s men stamping in, and Bess sat by the fire, directing everyone, and Mistress Abney watching it all.' },
       { who: 'red', face: 'calm', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' }] },
-  eggs: { title: 'Eggs from the Fowlers’', by: '12:00', place: 'door', area: 'holding', action: 'Ask Master Fowler for the eggs', carry: 'basket', home: true, mins: 20, who: 'fowler', trust: 'fowler',
+  eggs: { title: 'Eggs from the Fowlers’', by: '12:00', place: 'door', area: 'holding', action: 'Ask Master Fowler for the eggs', carry: 'basket', carryName: 'the eggs', needs: 'basket', home: true, mins: 20, who: 'fowler', trust: 'fowler',
     ask: 'Master Fowler’s hens are laying like they’re paid for it, and he’s promised me a dozen. Will you walk over to the Fowlers’ for them this morning? Take the basket.',
     met: [{ who: 'fowler', face: 'calm', listen: { red: 'calm' }, text: 'A dozen, and two over for your mother’s trouble. Mind them on the stile, girl.' },
       { who: 'red', face: 'smile', thought: true, text: 'Still warm, some of them. The hens look very pleased with themselves.' }],
@@ -1239,6 +1239,18 @@ const lateHome = () => [
   { who: 'mother', face: 'stern', text: 'Home by nine. I’ll remember this, Red, and so will you.' },
 ];
 
+// ── Before the first herb: her grandmother sees she's lighter (ctx: { tell(), keep() }). Little Red either way; told, glad, and on.
+const huldaLighter = ctx => [
+  { who: 'gran', face: 'calm', listen: { red: 'shy' }, text: 'Come here, let me look at you.' },
+  { who: 'gran', face: 'smile', listen: { red: 'shy' }, text: 'You’re lighter, Little Red. Since the cloak. You walk in like someone’s taken a sack of meal off your back.' },
+  { choose: [
+    { text: 'Mama and I… when I’m wilful, she takes me in hand. Like when I was little. I asked her to, the night I came home in the cloak.', face: 'shy', then: [{ run: ctx.tell },
+      { who: 'gran', face: 'tender', listen: { red: 'shy' }, text: 'Did you, now. Oh, love. I hoped the cloak might do something. I didn’t dare hope for that.' },
+      { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Good. Good for the both of you. Everyone should have somewhere to set it all down.' }] },
+    { text: 'It’s a good cloak, Grandmother.', face: 'smile', then: [{ run: ctx.keep },
+      { who: 'gran', face: 'cheeky', listen: { red: 'smile' }, text: 'It is. And you’re a closed little book, as you always were. Never mind. I’ll read you when you’re ready.' }] },
+  ] },
+];
 // ── Hulda's herb errands (js/herbs.js): asked for at the cabin (n: how many brought before), gathered in the wood, brought back and taught.
 const herbAsk = (id, n) => ({
   yarrow: [
@@ -1280,6 +1292,12 @@ const herbGiven = (id, last) => ({
   { who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'That’s three, and every one right. You’ve a good eye, Little Red. Your mother had it too, once, before she decided she hadn’t the time.' },
   { who: 'red', face: 'smile', thought: true, text: 'Woundwort, sorrel, knitbone. I’ll know them, now, wherever they grow.' },
 ] : []);
+// The finger-post at the fork.
+const signpost = () => [{ who: 'red', face: 'smile', thought: true, text: '“To the Fowlers’.” Peter’s, then: where he lives with his grandad, and the hens, and that duck.' }];
+// The walk home, at the gap in the hedge to the Fowlers': not tonight.
+const forkShut = () => 'Not that way. I’m late enough already, and Mama will be at the door.';
+// Out of the door for the eggs with nothing to put them in.
+const basketReminder = () => [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Rose! The eggs. In what, your apron? Take a basket off the pegs, love.' }];
 const herbLater = () => [{ who: 'gran', face: 'calm', listen: { red: 'smile' }, text: 'Come again another day, and I’ll find you something else to look for.' }];
 const herbWaiting = h => [{ who: 'gran', face: 'cheeky', listen: { red: 'shy' }, text: 'Back already, and empty-handed? ' + h.name[0].toUpperCase() + h.name.slice(1) + ', ' + h.where + '. It won’t pick itself.' }];
 
@@ -1480,5 +1498,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -26,7 +26,7 @@ const stateOf = w => w.save.state.peter || (w.save.state.peter = { visited: 0, n
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.peter); }, { peter: true });
 const visited = w => !!stateOf(w).visited;
 // (his day off in the village: about one in four, once she's been to the Fowlers')
-const offToday = w => visited(w) && hash(w.cal.day, 21) < 0.25;
+const offToday = w => visited(w) && hash(w.cal.day, 21) < 0.25 && !(w.chores && w.chores.pick && w.chores.pick(w.cal.day) === 'eggs');      // (never the day she's sent for the eggs)
 // Whether there's a note in the beech today: every few days (the third day since the last she read, or sometimes the second), from the
 // day after the first visit, and not on his days off.
 function noteToday(w) {

@@ -83,7 +83,7 @@ const CSS = `
 /* (what's hers to do, top left under the clock; the diary button by the clock opens the whole of it) */
 #hTop { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: min(360px, calc(100vw - 150px)); }
 #hTop #hClock { position: static; } #hTopRow { display: flex; gap: 6px; align-items: stretch; }
-#hDiary { width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+#hDiary { pointer-events: auto; width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
 #hDiary svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hDiary:hover { background: rgba(60,40,44,0.8); }
 #hQuests { display: none; font: italic 14px/1.35 Georgia, serif; color: #f6efe2; background: rgba(16,10,12,0.55); border: 1px solid #4a3a3c; border-radius: 8px; padding: 6px 11px; }
 #hQuests.on { display: block; } #hQuests div { margin: 2px 0; padding-left: 12px; text-indent: -12px; } #hQuests div::before { content: '❧ '; color: #c9a84c; font-style: normal; }

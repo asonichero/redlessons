@@ -5,7 +5,8 @@
 //
 //   Herbs.talk(w) (the cabin: her grandmother's word, the herb taken, the next asked) · Herbs.wood(P, w) (the wood: gathering it)
 //   Herbs.objective(w) · Herbs.stateOf(w) · Herbs.HERBS
-// Kept in the save (state.herbs): { n (brought), asked (the herb asked for, or null), have (gathered), day (the last brought) }.
+// Kept in the save (state.herbs): { n (brought), asked (the herb asked for, or null), have (gathered), day (the last brought), lighter ('told' |
+// 'kept': what Red said when her grandmother saw she was lighter; kept, it's still hers to tell) }.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
@@ -33,7 +34,9 @@ function talk(w) {
     if (n === HERBS.length && w.q.stateOf('hulda.errands') === 'offered') w.complete('hulda.errands');
     else out.push(...S.herbLater());
   } else if (s.asked) out.push(...S.herbWaiting(herb(s.asked)));
-  else { const h = next(w); if (h) { out.push(...S.herbAsk(h.id, s.n)); change(w, x => { x.asked = h.id; x.have = false; }); w.cal.advance(15); } }
+  else { const h = next(w); if (h) {
+    if (!s.n && !s.lighter) out.push(...S.huldaLighter({ tell: () => change(w, x => { x.lighter = 'told'; }), keep: () => change(w, x => { x.lighter = 'kept'; }) }));      // (the first time: she's noticed; Red's to tell her or not, and it changes nothing but what she knows)
+    out.push(...S.herbAsk(h.id, s.n)); change(w, x => { x.asked = h.id; x.have = false; }); w.cal.advance(15); } }
   if (w.refresh) w.refresh();
   return out.length ? out : S.granAgain();
 }

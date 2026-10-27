@@ -24,8 +24,9 @@ const NONE_ONE_IN = 4;
 const INTRO = ['eggs', 'bread', 'pot', 'bakery', 'well', 'dunns', 'jug', 'inn'];      // (the first errands, in turn: the Fowlers', the Pennocks, the forge, the well, the Dunns', the inn)      // (about one day in four nothing's asked)
 const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'the basket' };
 
-// Things carried: a bucket, two loaves in a cloth, the pot, a jug, a covered basket. → an item for her hands (motion's hold), not to be set down.
-function prop(kind) {
+// Things carried: a bucket, two loaves in a cloth, the pot, a jug, a covered basket (o.empty: a basket with nothing in it). → an item for her
+// hands (motion's hold), not to be set down away from home.
+function prop(kind, o) {
   const T = root.Toon, g = new THREE.Group(), add = (geo, col, x, y, z, ink) => { const m = new THREE.Mesh(geo, T.mat(col)); m.position.set(x, y, z); m.add(new THREE.Mesh(T.hullGeo(geo, ink || 0.06), T.INKM[0])); m.castShadow = true; g.add(m); return m; };
   let grip = new V3(0, 0.6, 0), style = 'hang', name = 'it';
   if (kind === 'bucket') { add(new THREE.CylinderGeometry(1.6, 1.3, 2.8, 12, 1, true), '#7a5a3a', 0, -2.2, 0).material.side = THREE.DoubleSide; add(new THREE.CircleGeometry(1.5, 12).rotateX(-Math.PI / 2), '#5a8aa0', 0, -1.2, 0, 0.01);
@@ -33,8 +34,18 @@ function prop(kind) {
   if (kind === 'loaves') { add(new THREE.SphereGeometry(1.3, 10, 6).scale(1.3, 0.7, 0.9), '#b8743a', -0.7, -1.2, 0); add(new THREE.SphereGeometry(1.3, 10, 6).scale(1.3, 0.7, 0.9), '#c98a4a', 0.8, -1.0, 0.2); add(new THREE.PlaneGeometry(4, 2.6).rotateX(-Math.PI / 2), '#efe6d0', 0, -1.6, 0, 0.01); grip = new V3(0, -0.4, 0); name = 'the loaves'; }
   if (kind === 'pot') { add(new THREE.SphereGeometry(2, 12, 8, 0, Math.PI * 2, Math.PI * 0.3, Math.PI * 0.7), '#2e2a28', 0, -2.2, 0); add(new THREE.TorusGeometry(2, 0.18, 4, 14).rotateX(Math.PI / 2), '#2e2a28', 0, -1.1, 0, 0.03); grip = new V3(0, -0.6, 0); style = 'front'; name = 'the pot'; }
   if (kind === 'jug') { add(new THREE.LatheGeometry([[0.01, 0], [1.1, 0.1], [1.4, 1.2], [1.0, 2.6], [0.8, 3.0], [0.95, 3.3]].map(([r, y]) => new THREE.Vector2(r, y)), 12), '#c8946a', 0, -3.2, 0); add(new THREE.TorusGeometry(0.6, 0.15, 4, 10, Math.PI), '#c8946a', 1.2, -1.2, 0, 0.03); name = 'the jug'; }
-  if (kind === 'basket') { add(new THREE.CylinderGeometry(1.9, 1.5, 2, 12), '#b08850', 0, -2, 0); add(new THREE.SphereGeometry(1.8, 10, 6).scale(1, 0.35, 1), '#e8dcc0', 0, -1, 0, 0.02); add(new THREE.TorusGeometry(1.6, 0.14, 4, 12, Math.PI), '#8e6a38', 0, -0.4, 0, 0.03); name = 'the basket'; }
-  return { obj: g, name, grip, radius: 1.2, keep: true, style };
+  const empty = kind === 'basket' && o && o.empty;
+  if (kind === 'basket') { add(new THREE.CylinderGeometry(1.9, 1.5, 2, 12), '#b08850', 0, -2, 0); add(new THREE.TorusGeometry(1.6, 0.14, 4, 12, Math.PI), '#8e6a38', 0, -0.4, 0, 0.03); name = 'the basket'; }
+  const it = { obj: g, name, kind, grip, radius: 1.2, keep: true, style, fill: kind === 'basket' ? { y: -1, r: 1.8 } : null };
+  if (kind === 'basket' && !empty) fill(it, true);
+  return it;
+}
+// A basket filled (a cloth over what's in it: the eggs, the Dunns' bread), or emptied.
+function fill(it, on) {
+  if (!it || !it.fill) return; const T = root.Toon;
+  if (on && !it.cloth) { const geo = new THREE.SphereGeometry(it.fill.r, 10, 6).scale(1, 0.35, 1), m = new THREE.Mesh(geo, T.mat('#e8dcc0')); m.position.y = it.fill.y; m.add(new THREE.Mesh(T.hullGeo(geo, 0.02), T.INKM[0])); it.obj.add(m); it.cloth = m; }
+  if (!on && it.cloth) { it.obj.remove(it.cloth); it.cloth = null; }
+  it.full = !!on;
 }
 
 function create(w) {
@@ -59,7 +70,21 @@ function create(w) {
     return id;
   }
   // (something put in her hands)
-  const hand = (P, kind) => { const p = prop(kind); P.stage.scene.add(p.obj); P.motion.hold(p, p.style); };
+  const hand = (P, kind, o) => { const p = prop(kind, o); P.stage.scene.add(p.obj); P.motion.hold(p, p.style); return p; };
+  // What's in her hands as she leaves a place, to be in them still in the next (carried); and put back in them there (regive): at home, a
+  // basket is one of the cottage's own, off its peg; anywhere else, one like it (not to be set down away from home).
+  const basketIn = P => { const it = P && P.motion.carry; return it && it.kind === 'basket' ? it : null; };
+  function carried(P) { const it = P && P.motion.carry; return it && it.kind ? { kind: it.kind, full: !!it.full } : null; }
+  function regive(P, d) {
+    const W = P.world;
+    if (d.kind === 'basket' && W.pegs && W.pegs.length) { const it = W.items.find(x => x.kind === 'basket' && x.peg);
+      if (it) { it.peg.item = null; it.peg = null; it.panel = null; P.motion.hold(it, 'hang'); fill(it, d.full); it.keep = d.full; return; } }
+    hand(P, d.kind, { empty: d.kind === 'basket' && !d.full });
+  }
+  // (an errand that wants a basket of hers (the eggs), and she's none in her hands as she goes out of the door: her mother calls after her)
+  const forgot = P => { const e = errand(); return !!(e && e.needs && (e.state === 'accepted' || e.state === 'broken') && !(e.needs === 'basket' && basketIn(P))); };
+  async function remind(P) { const m = P.motion; await P.converse(S.basketReminder(), { shot: ['red', 'mother'] });
+    const back = P.collide(m.pos.clone().add(new V3(Math.sin(m.yaw) * -12, 0, Math.cos(m.yaw) * -12)), 3); await m.goTo(back, m.yaw + Math.PI); }      // (and back in, to the pegs)
   // What she's most known for lately, to colour how she says yes or no.
   const temper = () => { let best = null, v = 1; for (const k of ['wilful', 'mischievous', 'naughty']) if (rep.stat(k) > v) { v = rep.stat(k); best = k; } return best; };
 
@@ -107,7 +132,7 @@ function create(w) {
     if (e && (e.area || 'village') === area && area !== 'home') {      // (the errand's own place: the village's, or the Fowlers')
       if (e && (e.state === 'accepted' || e.state === 'broken' || e.state === 'working') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
-    if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + NAME[e.carry], at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
+    if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     return out;
   }
   // The garden: its work done (js/garden.js plays it), it's tended for the day.
@@ -131,7 +156,7 @@ function create(w) {
     if (e.trust) rep.trusts(e.trust, 1);
     if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest);      // (a step of a line, done by the work: the first morning at the bakery)
     const late = e.state === 'broken';
-    if (e.carry) { hand(P, e.carry); change(c => { c.errand.state = 'carrying'; c.errand.late = late; }); }
+    if (e.carry) { const b = e.carry === 'basket' && basketIn(P); if (b) { fill(b, true); b.keep = true; } else hand(P, e.carry); change(c => { c.errand.state = 'carrying'; c.errand.late = late; }); }      // (into the basket she brought)
     else change(c => { c.errand.state = 'done'; c.errand.late = late; });
     cal.advance(e.mins); w.refresh();
   }
@@ -147,13 +172,15 @@ function create(w) {
   }
   // Home with it: handed to her mother, and her word for it.
   async function giveHome(P, e) {
-    await P.approach(9); const it = P.motion.drop(); if (it) it.obj.visible = false;
+    await P.approach(9);
+    const b = basketIn(P); if (b) { fill(b, false); b.keep = false; } else { const it = P.motion.drop(); if (it) it.obj.visible = false; }      // (the eggs out of it, and the basket hers to hang up again)
     await P.converse([e.back], { shot: ['red', 'mother'] });
     change(c => { c.errand.state = 'done'; }); cal.advance(5); w.refresh();
   }
   // What she's carrying, as she comes into a place: in her hands still.
-  function dress(P) {
+  function dress(P, held) {
     if (P && root.Garden) root.Garden.boots(P, w);      // (petals still on her boots, from her mother's flowers)
+    if (P && held && !P.motion.carry) regive(P, held);      // (whatever she had in her hands, still in them)
     const e = errand(); if (!e || !P) return;
     const kind = e.state === 'carrying' ? e.carry : e.state === 'accepted' || e.state === 'broken' ? e.give : null;
     if (kind && !P.motion.carry) hand(P, kind);
@@ -180,8 +207,8 @@ function create(w) {
     for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter, root.Herbs]) { const t = M && M.objective(w); if (t) out.push(t); }      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     const k = root.Work && root.Work.current(w), t = k && e && root.Work.SHIFTS[k.id].tasks[k.step];
     if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
-    else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + '.');
-    else if (e && e.state === 'carrying') out.push('Take ' + NAME[e.carry] + ' home to Mama.');
+    else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + (e.needs === 'basket' && w.P && !basketIn(w.P) && w.area === 'home' ? ' (take a basket from the pegs)' : '') + '.');
+    else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');
     if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && root.Garden.progress(w).begun ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');
     return out;
@@ -196,7 +223,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

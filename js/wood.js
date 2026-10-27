@@ -182,6 +182,7 @@ function build(scene, opts) {
   const MZ0 = S[N].z - 40, MZ1 = MZ0 + 300, MX = 230, GATE = new V3(14, 0, MZ1);
   // The fork to the Fowlers': off the meadow lane at a finger-post (on the beech's side), across the meadow and out through the east hedge,
   // and on along the wood's edge to their smallholding (js/holding.js). (The Barrows' way will fork off the other side, one day.)
+  let signpost = null;
   const FORK = { z: MZ0 + 150, x0: MX - 20, x1: MX + 170, at: new V3(-12, 0, MZ0 + 118) };
   const forkPts = new THREE.CatmullRomCurve3([FORK.at.clone(), new V3(70, 0, MZ0 + 126), new V3(160, 0, MZ0 + 146), new V3(MX + 10, 0, FORK.z), new V3(FORK.x1, 0, FORK.z)]).getSpacedPoints(60);
   // (a ribbon of trodden earth along a line of points)
@@ -221,8 +222,8 @@ function build(scene, opts) {
   // (the fork's lane on past the hedge, trees either side)
   { const r3 = rnd(131); for (let x = FORK.x0 + 30; x < FORK.x1 + 60; x += 14) for (const sz of [-1, 1]) { const z = FORK.z + sz * (34 + r3() * 26);      /* (set back from the lane: the camera behind her keeps a clear way along it) */ const h = 56 + r3() * 20, tw = 1.6 + r3();
       solid(root_, new THREE.CylinderGeometry(0.75 * tw, tw, h * 0.7, 9).translate(0, h * 0.35, 0), toonMap(barkT), x, 0, z, { ink: 0.1, shadow: false }); solid(root_, T.ell(11, 8, 11, 12, 8), [T.mat('#4e7a36'), T.mat('#5e8a3e')][(x / 14 | 0) % 2], x, h * 0.78, z, { ink: 0.06 }); }
-    // (a finger-post where it leaves the lane, its arm pointing along it)
-    const fp = FORK.at.clone().add(new V3(-8, 0, -6)), arm = box(root_, 9, 2, 0.6, fp.x + 4, 12.5, fp.z + 1, toonMap(barkT), { ink: 0.04 }); arm.rotation.y = -0.1;
+    // (a finger-post where it leaves the lane, on the inside of the corner nearer the village, its arm pointing along it)
+    const fp = FORK.at.clone().add(new V3(8, 0, 16)); signpost = fp.clone().setY(12); const arm = box(root_, 9, 2, 0.6, fp.x + 4, 12.5, fp.z + 1, toonMap(barkT), { ink: 0.04 }); arm.rotation.y = -0.1;
     pole(root_, fp, fp.clone().setY(14), 0.45, toonMap(barkT)); world_obstacles.push({ x: fp.x, z: fp.z, r: 1.5 }); }
 
   // ── Hulda's herbs, where she sends Red for them (js/herbs.js): yarrow out in the meadow, wood sorrel on the stream's bank, comfrey by the
@@ -247,10 +248,11 @@ function build(scene, opts) {
     return { pivot, open: 0, target: 0, swing: -1.6, at: GATE.clone().add(new V3(0, 0, -10)), beyond: GATE.clone().add(new V3(0, 0, 14)), name: 'the gate', to: 'the village' }; })();
 
   // ── Keeping her on the path (a corridor of the width it has there), and off the cabin and its oak at the start.
-  const constrain = (q, rad) => {
+  const constrain = (q, rad, who) => {
     // (in the meadow: anywhere within its hedges; out through the gate, when it's open)
     if (q.z > MZ0 + 40) { const p = q.clone(), through = gate.open > 0.5 && Math.abs(p.x - GATE.x) < 10, fork = Math.abs(p.z - FORK.z) < 8 && p.x > MX - 20;
-      if (fork) { p.x = clamp(p.x, -MX + rad, FORK.x1); p.z = clamp(p.z, FORK.z - 5, FORK.z + 5); return p; }      // (along the fork's lane)
+      if (fork && world.forkShut && world.forkShut() && !who) { p.x = Math.min(p.x, MX - 20 - rad); if (world.onForkShut) world.onForkShut(); }      // (not that way, on the walk home: js/world.js)
+      else if (fork) { p.x = clamp(p.x, -MX + rad, FORK.x1); p.z = clamp(p.z, FORK.z - 5, FORK.z + 5); return p; }      // (along the fork's lane)
       p.x = clamp(p.x, -MX + rad, MX - rad); p.z = Math.min(p.z, through ? MZ1 + 20 : MZ1 - 4 - rad); return p; }
     const p = q.clone(), n = nearest(p), w = widthAt(n.i) - rad;
     if (n.d > w) { const c = S[n.i]; p.x = c.x + (p.x - c.x) * w / n.d; p.z = c.z + (p.z - c.z) * w / n.d; }
@@ -262,9 +264,9 @@ function build(scene, opts) {
   // (the ways out: the village at the far end; back in at her grandmother's door. And where she comes in: from the cabin's door, or from the
   // village end, a little way in, facing along the path into the wood)
   const inAt = gate.at.clone().add(new V3(0, 0, -8));      // (in at the meadow gate, it behind her, facing across the meadow to the wood)
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: null, chest: null, constrain, bounds: null, gate, herbs,
-    exits: [{ name: 'the village', get at() { return gate.beyond; }, r: 6, when: () => gate.open > 0.6 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5 }, { name: 'the Fowlers’', at: new V3(FORK.x1 - 6, 0, FORK.z), r: 8 }],
-    entries: { cabin: { at: [-12, 52], yaw: 0, camTurn: Math.PI }, village: { at: [inAt.x, inAt.z], yaw: Math.PI }, fowlers: { at: [FORK.x1 - 30, FORK.z], yaw: -Math.PI / 2 } } };      // (fowlers: back along the fork's lane, toward the meadow)
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: cabin && cabin.world ? cabin.world.door : null, chest: null, constrain, bounds: null, gate, herbs, signpost,
+    exits: [{ name: 'the village', get at() { return gate.beyond; }, r: 6, when: () => gate.open > 0.6 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5, when: () => !cabin || cabin.world.door.open > 0.6 }, { name: 'the Fowlers’', at: new V3(FORK.x1 - 6, 0, FORK.z), r: 8 }],
+    entries: { cabin: { at: [-12, 52], yaw: 0 }, village: { at: [inAt.x, inAt.z], yaw: Math.PI }, fowlers: { at: [FORK.x1 - 30, FORK.z], yaw: -Math.PI / 2 } } };      // (fowlers: back along the fork's lane, toward the meadow)
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);
 
   // ── Light: the sky through the leaves, the fog closing in, the village windows lighting up, the sun's shadows following her.

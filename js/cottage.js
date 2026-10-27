@@ -385,7 +385,7 @@ function build(scene) {
         const it = new THREE.Group(), bk = toonMap(tx.wicker), bowl = new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.0, 1.4], [3.2, 3.2], [3.3, 3.4]].map(([r, h]) => new THREE.Vector2(r, h)), 16);
         solid(it, bowl, bk, 0, 0, 0, { ink: 0.1 }).material.side = THREE.DoubleSide;
         solid(it, new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI), bk, 0, 3.4, 0, { ink: 0.06 });
-        const item = { obj: it, name: 'a basket', grip: new V3(0, 6.5, 0), hangs: true, radius: 3.4, panel: g };
+        const item = { obj: it, name: 'a basket', kind: 'basket', fill: { y: 3.2, r: 3.0 }, grip: new V3(0, 6.5, 0), hangs: true, radius: 3.4, panel: g };
         peg.item = item; item.peg = peg; it.position.copy(peg.at).sub(item.grip); it.rotation.y = pc.ry; root_.add(it); world.items.push(item); pc.items.push({ obj: it, at: peg.at.clone().sub(item.grip).applyMatrix4(new THREE.Matrix4().copy(pc.g.matrix).invert()), ry: 0 });
       } else {
         // A bunch hung head down: stems tied at the top, opening out below into leaves (or flower heads).
