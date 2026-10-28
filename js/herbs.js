@@ -1,7 +1,8 @@
 // Little Red’s Lessons — Hulda's herb errands (phase 1.2: hulda.errands). Visiting her grandmother, Red's asked for a herb: yarrow from the
 // meadow, wood sorrel by the stream, comfrey by the fallen tree, one at a time. She finds it where she was told (js/wood.js's herb patches),
 // gathers it, and brings it back; and her grandmother teaches her what it's for, a little of her craft. One a visit, and the next asked another
-// day. Three brought, and the step's done.
+// day. Three brought, and the step's done; after that, one of the three most days, as she needs it (where it grows: told her again the first
+// time; after that, hers to remember, or to go back and ask).
 //
 //   Herbs.talk(w) (the cabin: her grandmother's word, the herb taken, the next asked) · Herbs.wood(P, w) (the wood: gathering it)
 //   Herbs.objective(w) · Herbs.stateOf(w) · Herbs.HERBS
@@ -19,24 +20,30 @@ const HERBS = [
 const stateOf = w => w.save.state.herbs || (w.save.state.herbs = { n: 0, asked: null, have: false, day: 0 });
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.herbs); }, { herbs: true });
 const herb = id => HERBS.find(h => h.id === id);
-const on = w => !!(w.q && w.q.stateOf && w.q.stateOf('hulda.errands') === 'offered');
-// (the next to ask for: not the same day one was brought)
-const next = w => { const s = stateOf(w); return on(w) && !s.asked && s.n < HERBS.length && s.day !== w.cal.day ? HERBS[s.n] : null; };
+const on = w => !!(w.q && w.q.stateOf && ['offered', 'done'].includes(w.q.stateOf('hulda.errands')));
+function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h = Math.imul(h ^ (h >>> 16), 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
+// (the next to ask for, not the same day one was brought: the three in turn, then one of them each day, as she needs it)
+const next = w => { const s = stateOf(w); if (!on(w) || s.asked || s.day === w.cal.day) return null; return s.n < HERBS.length ? HERBS[s.n] : HERBS[Math.floor(hash(w.cal.day, 61) * HERBS.length)]; };
+// (where it grows, for the list: the first three times she's told; the first time it's asked again, she's reminded; after that, she's to
+// remember, or go back and ask)
+const told = w => { const s = stateOf(w); return s.n < HERBS.length || !!s.told; };
 
 // ── At the cabin: what she's brought, taken and taught; the next asked for; or her grandmother's word for the time.
 function talk(w) {
   const S = root.Story, s = stateOf(w), out = [];
   if (s.asked && s.have) {
-    const h = herb(s.asked), n = s.n + 1;
-    out.push(...S.herbGiven(h.id, n === HERBS.length));
-    change(w, x => { x.n = n; x.asked = null; x.have = false; x.day = w.cal.day; });
-    w.rep.trusts('hulda', 1); w.cal.advance(20);
+    const h = herb(s.asked), n = s.n + 1, again = s.n >= HERBS.length;
+    out.push(...(again ? S.herbThanks(h.id) : S.herbGiven(h.id, n === HERBS.length)));
+    change(w, x => { x.n = n; x.asked = null; x.have = false; x.day = w.cal.day; x.told = false; });
+    w.rep.trusts('hulda', again ? 0.5 : 1); w.cal.advance(again ? 10 : 20);
     if (n === HERBS.length && w.q.stateOf('hulda.errands') === 'offered') w.complete('hulda.errands');
     else out.push(...S.herbLater());
-  } else if (s.asked) out.push(...S.herbWaiting(herb(s.asked)));
+  } else if (s.asked) { out.push(...S.herbWaiting(herb(s.asked))); change(w, x => { x.told = true; }); }      // (back to ask where: and she says)
   else { const h = next(w); if (h) {
     if (!s.n && !s.lighter) out.push(...S.huldaLighter({ tell: () => change(w, x => { x.lighter = 'told'; }), keep: () => change(w, x => { x.lighter = 'kept'; }) }));      // (the first time: she's noticed; Red's to tell her or not, and it changes nothing but what she knows)
-    out.push(...S.herbAsk(h.id, s.n)); change(w, x => { x.asked = h.id; x.have = false; }); w.cal.advance(15); } }
+    if (s.n < HERBS.length) out.push(...S.herbAsk(h.id, s.n));
+    else { const seen = (s.seen || {})[h.id] || 0; out.push(...S.herbAskAgain(h, !seen)); change(w, x => { x.seen = Object.assign({}, x.seen, { [h.id]: seen + 1 }); x.told = !seen; }); }      // (asked again: where it grows only the first time)
+    change(w, x => { x.asked = h.id; x.have = false; }); w.cal.advance(s.n < HERBS.length ? 15 : 5); } }
   if (w.refresh) w.refresh();
   return out.length ? out : S.granAgain();
 }
@@ -59,11 +66,11 @@ function wood(P, w) {
 
 function objective(w) {
   if (!on(w)) return null; const s = stateOf(w);
-  if (s.asked) { const h = herb(s.asked); return s.have ? 'Take ' + h.name + ' to Grandmother.' : 'Grandmother’s errand: ' + h.name + ', ' + h.where + '.'; }
-  return s.n === 0 && w.cal.minute < 18 * 60 ? 'Visit Grandmother, when there’s time.' : null;
+  if (s.asked) { const h = herb(s.asked); return s.have ? 'Take ' + h.name + ' to Grandmother.' : 'Grandmother’s errand: ' + h.name + (told(w) ? ', ' + h.where : '') + '.'; }
+  return s.day !== w.cal.day && w.cal.minute < 18 * 60 ? 'Visit Grandmother, when there’s time.' : null;      // (every day, while there's a herb for her to ask)
 }
 
-const api = { talk, wood, objective, stateOf, next, HERBS };
+const api = { talk, wood, objective, stateOf, next, told, HERBS };
 root.Herbs = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
