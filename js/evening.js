@@ -154,9 +154,13 @@ async function peel(P) {
   for (const [mo, s] of [[m, red], [mm, mam]]) {
     const f = new V(Math.sin(s.facing), 0, Math.cos(s.facing)), side = new V(f.z, 0, -f.x), lap = s.at.clone().addScaledVector(f, 3.6).setY(s.at.y + 3.2), p = spud(); p.position.copy(lap); P.stage.scene.add(p);
     const job = { on: true, p };
-    job.run = (async () => { mo.reach('L', lap.clone()); let k = 0;
-      while (job.on) { const a = k++ * 1.4; await mo.reach('R', lap.clone().addScaledVector(side, Math.cos(a) * 1.1).add(new V(0, 0.4 + Math.sin(a) * 0.5, 0)).addScaledVector(f, 0.4)); await P.wait(0.25); }
-      mo.release('L'); await mo.release('R'); })();
+    // (the hands following a moving point, not stepped from one to the next: the potato turning a little in the left, the knife going round it
+    // in the right, a stroke a second or so)
+    job.run = (async () => { let t = Math.random() * 6; const untick = P.tick(dt => { t += dt; p.rotation.y += dt * 0.9; });
+      mo.reach('L', () => lap.clone().add(new V(0, Math.sin(t * 0.9) * 0.15, 0)));
+      mo.reach('R', () => { const a = t * 5.2; return lap.clone().addScaledVector(side, 0.8 + Math.cos(a) * 0.55).add(new V(0, 0.5 + Math.sin(a) * 0.45, 0)).addScaledVector(f, 0.4); });
+      while (job.on) await P.wait(0.2);
+      if (untick) untick(); mo.release('L'); await mo.release('R'); })();
     going.push(job);
   }
   return { async done() {
