@@ -61,7 +61,7 @@ function station(key, day, min) {
 const same = (a, b) => !!a && !!b && a.stand === b.stand && a.sit === b.sit && a.wander === b.wander && a.round === b.round;
 // (Tom's free today, and whether he'll come and find her: about every other day he's out; from when)
 const tomFree = (day, min) => { const s = station('tom', day, min); return !!(s && s.wander); };
-const tomComes = day => hash(day, 9) < 0.55;
+const tomComes = day => hash(day, 9) < 0.85;      // (most of his free days, he comes looking for her)
 
 // ── The ways about the village: the lanes and paths as a net of points, each joined to those it can be walked to straight from (nothing
 // solid between), and the shortest way through it from anywhere to anywhere.
@@ -223,7 +223,7 @@ function attach(P, w) {
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });
-      if (!today && key !== 'willie') rep.trusts(key, 0.25);
+      if (!today && key !== 'willie') rep.trusts(key, 0.5);      // (a little trust, the first talk of the day)
       change(s => { s.talked[key] = cal.day; s.met[key] = true; });
       if (ctx.brokenPromise && key === 'abney') w.save.change(s => { s.promise.sorry = cal.day; }, { promise: true });      // (said sorry, to her face)
       if (key === 'tom' && w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');

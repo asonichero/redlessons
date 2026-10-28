@@ -219,7 +219,7 @@ function people(P, w) {
       await P.converse(script, { shot: ['red', key] });
       if (key === 'peter' && !sending && root.Peter) await root.Peter.notices(P, w);      // (he's noticed she's changed: js/peter.js)
       if (sending) { await root.Peter.sendHome(P, w); return; }
-      if (!today) w.rep.trusts(key, 0.25);
+      if (!today) w.rep.trusts(key, 0.5);
       w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met[key] = true; s.fowlers.talked[key] = w.cal.day; }, { fowlers: true });
     } finally { if (w.P === P) { f.held = false; f.where = null; update(); } }      // (unless she's gone: walked home)
   }

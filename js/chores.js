@@ -70,9 +70,12 @@ function create(w) {
     const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id));
     if (next) return next;
     if (rnd() < 1 / NONE_ONE_IN) return null;
-    const ids = Object.keys(E), last = save.state.chores && save.state.chores.last;
-    let id = ids[Math.floor(rnd() * ids.length)]; if (id === last) id = ids[(ids.indexOf(id) + 1) % ids.length];
-    return id;
+    // (the shifts come round three times as often while what they lead to (Mistress Pennock's trust; Mistress Abney taking her in hand) is still
+    // to come)
+    const ids = Object.keys(E), last = save.state.chores && save.state.chores.last, open = r => w.q && w.q.stateOf && !['done'].includes(w.q.stateOf(r));
+    const weight = id => (id === 'bakery' && open('pennock.trust')) || (id === 'inn' && open('abney.inhand')) ? 3 : 1;
+    const bag = []; for (const id of ids) if (id !== last) for (let k = 0; k < weight(id); k++) bag.push(id);
+    return bag[Math.floor(rnd() * bag.length)];
   }
   // (something put in her hands)
   const hand = (P, kind, o) => { const p = prop(kind, o); P.stage.scene.add(p.obj); P.motion.hold(p, p.style); return p; };
