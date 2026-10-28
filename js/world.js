@@ -50,7 +50,7 @@ const AREAS = {
   village: {
     name: 'The village', music: 'village', set: s => root.Village.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
-    exits: { 'the meadow': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' } },      // (the meadow: through the meadow gate, js/wood.js's far end)
+    exits: { 'the meadow': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' }, 'the forge door': { area: 'forge', entry: 'door' } },      // (the meadow: through the meadow gate, js/wood.js's far end)
   },
   // The Fowlers' smallholding (js/holding.js): where the meadow meets the wood, off the fork from the meadow. Peter and his grandfather.
   holding: {
@@ -79,7 +79,7 @@ const AREAS = {
   forge: {
     name: 'The forge', music: 'village', set: s => root.Forge.build(s), npc: () => ({ id: 'smith', key: 'smith', name: 'Master Ferrier', at: [-14, -14], yaw: 0, voice: 'smith', tint: '#4a3a32', bg: '#e4dcd4' }),
     talk: () => [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Off home with you, lass. Your mother’ll be wanting you.' }],
-    entries: { door: { at: [0, -8], yaw: Math.PI } },
+    entries: { door: { at: [26, -8], yaw: Math.PI } },
     exits: { 'the door': { area: 'village', entry: 'forge' } },
   },
   home: {

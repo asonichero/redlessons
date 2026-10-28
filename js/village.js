@@ -113,6 +113,7 @@ function builders(root_, world, solids, smoke, winM) {
   // footing's height), walls ('frame': limewashed daub in an oak frame; 'stone'), storey (where an upper floor's rail runs), doors and windows
   // ([{ side: 'front' | 'back' | 'left' | 'right', at (along the side, looking at it from outside, left to right), y, w, h }]), chimney ({ x, z,
   // w, d }), noFront (an open front: the forge's) }. Its front is its +z, the ridge along x, the gables at the ends. → { g, face(side) }
+  const bays = world.bays = world.bays || [];      // (open bays she can walk up into: their floors, the footing's top)
   function house(o) {
     const g = new THREE.Group(); g.position.set(o.x, 0, o.z); g.rotation.y = o.ry || 0; root_.add(g);
     const W = o.w, D = o.d, E = o.eave, R = o.ridge, F = o.foot || 3, th = 2, wallM = o.walls === 'stone' ? rubble : lime, frame = o.walls !== 'stone';
@@ -169,7 +170,14 @@ function builders(root_, world, solids, smoke, winM) {
       for (let k = 0; k < 5; k++) { const p = new THREE.Mesh(T.ell(2.4, 2.4, 2.4, 8, 6), new THREE.MeshBasicMaterial({ color: srgb('#cfcac4'), transparent: true, opacity: 0.45, depthWrite: false })); p.userData.keep = true; g.add(p); smoke.push({ m: p, base: new V3(c.x, top + 2, c.z), ph: k / 5 + r() * 0.1 }); } }
     // (where she can't go: the footing's box, in the village's frame; and where the camera can't: up to the ridge)
     const cs = Math.abs(Math.cos(o.ry || 0)) > 0.5, hw = (cs ? W : D) / 2 + 0.7, hd = (cs ? D : W) / 2 + 0.7;
-    const ob = { x0: o.x - hw, x1: o.x + hw, z0: o.z - hd, z1: o.z + hd }; world.obstacles.push(ob);
+    const ob = { x0: o.x - hw, x1: o.x + hw, z0: o.z - hd, z1: o.z + hd };
+    // (an open bay (o.bay: how deep, from the front): she can walk up into it, onto the footing; only what's behind it, and its side walls, in her way)
+    const box_ = (x0, x1, z0, z1) => { const c = Math.cos(o.ry || 0), s_ = Math.sin(o.ry || 0), P_ = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].map(([x, z]) => [o.x + x * c + z * s_, o.z - x * s_ + z * c]);
+      return { x0: Math.min(...P_.map(p => p[0])), x1: Math.max(...P_.map(p => p[0])), z0: Math.min(...P_.map(p => p[1])), z1: Math.max(...P_.map(p => p[1])) }; };
+    if (o.noFront && o.bay) { const b = D / 2 - o.bay, hw_ = W / 2 + 0.7;
+      world.obstacles.push(box_(-hw_, hw_, -D / 2 - 0.7, b), box_(-hw_, -W / 2 + th, b, D / 2), box_(W / 2 - th, hw_, b, D / 2));
+      const fp = box_(-W / 2 + th, W / 2 - th, b, D / 2 + 0.7); bays.push(Object.assign(fp, { h: F })); }
+    else world.obstacles.push(ob);
     solids.push({ x0: ob.x0 - 1.5, x1: ob.x1 + 1.5, z0: ob.z0 - 1.5, z1: ob.z1 + 1.5, top: R + 6, eave: E, cx: o.x, cz: o.z, ry: o.ry || 0, W: W + 8, D: D + 2 * OV, E, R: R + 6 });
     return { g, face, W, D, E, R };
   }
@@ -266,7 +274,7 @@ function build(scene, opts) {
     windows: [{ side: 'front', at: -24, y: 12, w: 18, h: 12, shutters: true }, { side: 'back', at: 0, y: 17, w: 10, h: 9 }, { side: 'right', at: 0, y: 17, w: 10, h: 9 }],
     chimney: { x: 30, z: -12, w: 8, d: 8 } });
   // The forge, Master Ferrier's: stone, its front open on the loop lane east of the green: the hearth glowing inside, the anvil, the trough.
-  const forge = house({ x: 292, z: 190, ry: -Math.PI / 2, w: 96, d: 74, eave: 44, ridge: 78, walls: 'stone', noFront: true,
+  const forge = house({ x: 292, z: 190, ry: -Math.PI / 2, w: 96, d: 74, eave: 44, ridge: 78, walls: 'stone', noFront: true, bay: 35.5,
     windows: [{ side: 'left', at: 0, y: 17, w: 9, h: 8, shutters: false }], chimney: { x: -26, z: 3, w: 12, d: 12 } });      // (up from the wall between the bay and the back room: the two hearths, back to back, share it)
   // The Thatchers' (Agnes's): south of the green, across the loop lane.
   const thatchers = house({ x: -16, z: 238, ry: Math.PI, w: 100, d: 70, eave: 45, ridge: 82, walls: 'frame',
@@ -418,6 +426,7 @@ function build(scene, opts) {
       world.pies.push(pg); }
     root_.updateMatrixWorld(true); const cp = new V3(-24, 0, 4).applyMatrix4(fr.matrixWorld); world.obstacles.push({ x0: cp.x - 4, x1: cp.x + 4, z0: cp.z - 12, z1: cp.z + 12 }); }
 
+  let forgeDoor = null;
   // ── The forge: the open bay, the hearth inside it glowing, the anvil on its stump out at the front, a trough, a cart wheel against the wall. ──
   { const f = forge.face('front');
     for (const at of [-46, -16, 16, 46]) box(f, 2.6, 41, 2.6, at, 23.5, -1, oak);
@@ -428,11 +437,13 @@ function build(scene, opts) {
     tbox(inside, 18, 22, 10, -26, 21, -12, ashlar, 10);      // (the hood over it)
     { const bl = new THREE.Group(); bl.position.set(-6, 9, -14); inside.add(bl); solid(bl, T.ell(6, 1.6, 4, 12, 6), T.mat('#5a3e26'), 0, 0, 0, { ink: 0.06 }); box(bl, 1, 1, 9, 0, 1, 6, oakDk, { ink: 0.03 }); }
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(60, 26), new THREE.MeshBasicMaterial({ color: srgb('#ffb060'), transparent: true, opacity: 0.12, depthWrite: false })); glow.position.set(-10, 13, -2); inside.add(glow); glows.push({ glow: glow.material });
-    // (the back of the bay: a stone wall, the back room behind it (js/forge.js), through a wide door of heavy planks in two leaves)
-    { const rub = toonMap(rep(vt.rubble, 1, 0.6)), DW = 26, DH = 30;
-      tbox(inside, 47 - DW / 2, 44, 3, -(47 + DW / 2) / 2, 22, -15.5, rub, 10); tbox(inside, 47 - DW / 2, 44, 3, (47 + DW / 2) / 2, 22, -15.5, rub, 10); tbox(inside, DW, 44 - DH, 3, 0, (44 + DH) / 2, -15.5, rub, 10);
-      for (const sx of [-1, 1]) { box(inside, DW / 2 - 0.2, DH, 1.2, sx * DW / 4, DH / 2, -14.2, toonMap(rep(textures().door || textures().oak, 1, 1)), { ink: 0.05 }); for (const y of [7, 15, 23]) box(inside, DW / 2 - 1, 1.2, 0.6, sx * DW / 4, y, -13.4, oakDk, { ink: 0.03 }); }
-      box(inside, DW + 3, 2, 2, 0, DH + 1, -13.8, oakDk, { ink: 0.04 }); }
+    // (the back of the bay: a stone wall up into the thatch, the back room behind it (js/forge.js), through a wide door of heavy planks in two
+    // leaves at its right as you face it, across from the workbench inside)
+    { const rub = toonMap(rep(vt.rubble, 1, 0.6)), DX = 26, DW = 26, DH = 30, TOP = 76, a = DX - DW / 2, b = DX + DW / 2;
+      tbox(inside, a + 47, TOP, 3, (a - 47) / 2, TOP / 2, -15.5, rub, 10); tbox(inside, 47 - b, TOP, 3, (b + 47) / 2, TOP / 2, -15.5, rub, 10); tbox(inside, DW, TOP - DH, 3, DX, (TOP + DH) / 2, -15.5, rub, 10);
+      for (const sx of [-1, 1]) { box(inside, DW / 2 - 0.2, DH, 1.2, DX + sx * DW / 4, DH / 2, -14.2, toonMap(rep(textures().door || textures().oak, 1, 1)), { ink: 0.05 }); for (const y of [7, 15, 23]) box(inside, DW / 2 - 1, 1.2, 0.6, DX + sx * DW / 4, y, -13.4, oakDk, { ink: 0.03 }); }
+      box(inside, DW + 3, 2, 2, DX, DH + 1, -13.8, oakDk, { ink: 0.04 });
+      forgeDoor = { inside, at: new V3(DX, 0, -9) }; }
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(92, 40), T.mat('#5a4a3a')); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0.1, 0); inside.add(floor);
     // (the anvil, on its stump, at the front of the bay; the slack tub; the wheel)
     { const a = new THREE.Group(); a.position.set(8, 0, 10); f.add(a); solid(a, new THREE.CylinderGeometry(3.4, 3.8, 9, 12), toonMap(rep(textures().oak, 1, 1)), 0, 4.5, 0, { ink: 0.08 });
@@ -443,7 +454,10 @@ function build(scene, opts) {
     // (in the open bay she can't go further than its front)
     root_.updateMatrixWorld(true);
     for (const [x, z, rr] of [[8, 10, 4.6], [50, 6, 4]]) { const p = new V3(x, 0, z).applyMatrix4(f.matrixWorld); world.obstacles.push({ x: p.x, z: p.z, r: rr }); }
-    { const p = new V3(-30, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: p.x - 9, x1: p.x + 9, z0: p.z - 4.5, z1: p.z + 4.5 }); } }
+    { const p = new V3(-30, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: p.x - 9, x1: p.x + 9, z0: p.z - 4.5, z1: p.z + 4.5 }); }
+    { const a = new V3(-37, 0, -36).applyMatrix4(f.matrixWorld), b = new V3(-15, 0, -21).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), z0: Math.min(a.z, b.z), z1: Math.max(a.z, b.z) }); }      // (the bay's hearth)
+    // (the wide door, from the bay: walked up to, and in, to the back room)
+    { const p = forgeDoor.at.clone().applyMatrix4(forgeDoor.inside.matrixWorld).setY(0); const q = forgeDoor.at.clone().setZ(-14).applyMatrix4(forgeDoor.inside.matrixWorld).setY(0); world.exits.push({ name: 'the forge door', at: p, r: 5 }); forgeDoor.spot = { at: p.clone(), yaw: Math.atan2(q.x - p.x, q.z - p.z), look: q.clone().setY(16) }; } }
   // The Watchman's lantern, on a hook by the Dunns' door.
   { const f = dunns.face('front'), ln = new THREE.Group(); ln.position.set(-26, 32, 2); f.add(ln); box(ln, 2.4, 3.2, 2.4, 0, 0, 0, iron, { ink: 0.04 }); box(ln, 0.5, 2.6, 0.5, 0, 2.8, -1, iron, { ink: 0 });
     const lg = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 2.5), new THREE.MeshBasicMaterial({ color: srgb('#3a3028') })); ln.add(lg); lamps.push(lg.material); }
@@ -631,8 +645,12 @@ function build(scene, opts) {
     meadowGate: { at: GATE.clone().add(V(22, 22)), yaw: Math.PI * 0.25, look: GATE.clone().setY(10) },      // (just in at the meadow gate: where Peter comes and goes)
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
+  world.spots.forgeDoor = forgeDoor.spot;      // (at the wide door, in the bay: the back room through it)
+  // (the ground's height where it isn't the grass's: the footing's top, in an open bay)
+  world.ground = p => { for (const b of world.bays || []) if (p.x > b.x0 && p.x < b.x1 && p.z > b.z0 && p.z < b.z1) return b.h; return 0; };
+
   world.entries.inn = { at: [world.spots.innDoor.at.x - Math.sin(world.spots.innDoor.yaw) * 10, world.spots.innDoor.at.z - Math.cos(world.spots.innDoor.yaw) * 10], yaw: world.spots.innDoor.yaw + Math.PI };      // (out of the inn's door, onto the street)
-  world.entries.forge = { at: [world.spots.forge.at.x, world.spots.forge.at.z], yaw: world.spots.forge.yaw + Math.PI };      // (out of the back room and through the bay, onto the loop lane before it)
+  { const d = world.spots.forgeDoor, out = new V3(-Math.sin(d.yaw), 0, -Math.cos(d.yaw)), at = d.at.clone().addScaledVector(out, 11); world.entries.forge = { at: [at.x, at.z], yaw: d.yaw + Math.PI }; }      // (out of the back room, into the bay, a few steps from its door)
   world.entries.bakery = { at: [world.spots.bakeryDoor.at.x - Math.sin(world.spots.bakeryDoor.yaw) * 10, world.spots.bakeryDoor.at.z - Math.cos(world.spots.bakeryDoor.yaw) * 10], yaw: world.spots.bakeryDoor.yaw + Math.PI };      // (out of Mistress Pennock's door, onto the street)
   world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
   // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)

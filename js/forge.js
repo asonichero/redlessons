@@ -11,7 +11,7 @@
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
 const KIT = root.Cottage.kit, { toonMap, rnd, textures, box, solid, pole, srgb } = KIT;
 const X0 = -46, X1 = 46, Z0 = -36, Z1 = 2, EAVE = 40, FOOT = 2, RZ = (Z0 + Z1) / 2;      // (the back of js/village.js's forge, 96 by 74: what's behind its open bay)
-const DOOR = 0, DOOR_W = 26, DOOR_H = 30, VENTS = [-30, -10, 10, 30];      // (the wide door in the front wall, out to the bay; and the vents, high up)
+const DOOR = 26, DOOR_W = 26, DOOR_H = 30, VENTS = [-30, 30];      // (the door at the right as you come in from the bay, across from the workbench)      // (the wide door in the front wall, out to the bay; and the vents, high up)
 // The furniture's places (as arranged in the room editor). The hearth and its bellows are the walls'.
 const PIECES = { anvil: 'The anvil, on its stump (before the hearth)', tub: 'The slack tub', bench: 'The bench (under the workbench; brought out for corrections)', work: 'The workbench', rack: 'The tool rack' };
 const ROOM = KIT.roomLayout('red-lessons:room:forge', {
@@ -30,11 +30,11 @@ function build(scene) {
   const floorG = panel(new V3(0, 0, 0), new V3(0, 1, 0));
   { const f = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Z1 - Z0), earth); f.rotation.x = -Math.PI / 2; f.position.set(0, 0, RZ); f.receiveShadow = true; floorG.add(f);
     const d = new THREE.Mesh(new THREE.CircleGeometry(15, 24), T.mat('#4e4236')); d.rotation.x = -Math.PI / 2; d.position.set(-26, 0.03, Z1 - 14); floorG.add(d); }
-  // ── The walls: rough stone, sooted toward the top; the vents high in the back and the ends (shuttered open, daylight through); the front
+  // ── The walls: rough stone, sooted toward the top; two vents high in the back (shuttered open, daylight through); the front
   // wall with its wide door out to the bay.
   const walls = { back: { a: new V3(X1, 0, Z0), b: new V3(X0, 0, Z0), n: new V3(0, 0, 1), holes: VENTS.map(x => [x - 4, x + 4, EAVE - 9, EAVE - 3]) },
-    left: { a: new V3(X0, 0, Z0), b: new V3(X0, 0, Z1), n: new V3(1, 0, 0), holes: [[-21, -13, EAVE - 9, EAVE - 3]] },
-    right: { a: new V3(X1, 0, Z1), b: new V3(X1, 0, Z0), n: new V3(-1, 0, 0), holes: [[-21, -13, EAVE - 9, EAVE - 3]] },
+    left: { a: new V3(X0, 0, Z0), b: new V3(X0, 0, Z1), n: new V3(1, 0, 0) },
+    right: { a: new V3(X1, 0, Z1), b: new V3(X1, 0, Z0), n: new V3(-1, 0, 0) },
     front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), holes: [[-DOOR - DOOR_W / 2, -DOOR + DOOR_W / 2, 0, DOOR_H]] } };
   const W = {};
   for (const k in walls) {
