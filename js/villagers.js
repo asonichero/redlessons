@@ -215,6 +215,7 @@ function attach(P, w) {
     try {
       await meet(f);
       if (key === 'abney' && root.AbneyPromise && root.AbneyPromise.wants(w)) { await root.AbneyPromise.ask(P, w); return; }      // (she's a favour to ask)
+      if ((key === 'pennock' || key === 'abney') && w.chores && w.chores.canOffer(key)) { await w.chores.offer(P, key); return; }      // (would she help this afternoon?)
       if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;

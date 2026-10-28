@@ -26,8 +26,8 @@ const SHIFTS = {
     { id: 'pots', label: 'Scour the pots', place: 'tub', mins: 30, kind: 'shape' },
     { id: 'tables', label: 'Wipe down the tables', place: 'tables', mins: 20, kind: 'shape' },
     { id: 'fire', label: 'Build up the fire', place: 'fire', mins: 10, kind: 'reach' },
-    { id: 'ale', label: 'Draw the ale for the carrier’s men', place: 'counter', mins: 25, kind: 'ale' },
-    { id: 'carriers', label: 'Serve the carrier’s men', place: 'table2', mins: 50, kind: 'serve' },
+    { id: 'ale', label: 'Draw the ale for the carrier’s men', place: 'counter', mins: 25, kind: 'ale', carriers: true },
+    { id: 'carriers', label: 'Serve the carrier’s men', place: 'table2', mins: 50, kind: 'serve', carriers: true },      // (only on an afternoon asked for in the morning: the carrier's men are expected)
     { id: 'tea', label: 'Take Bess her tea', place: 'bess', mins: 15, kind: 'reach' },
     { id: 'sweep', label: 'Sweep out', place: 'floor', mins: 25, kind: 'sweep' },
   ] },
@@ -37,7 +37,9 @@ const stateOf = w => w.save.state.work || (w.save.state.work = { day: 0, id: nul
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.work); }, { work: true });
 // (a shift under way today, here)
 const current = (w, area) => { const s = stateOf(w); return s.id && s.day === w.cal.day && (!area || SHIFTS[s.id].area === area) ? s : null; };
-function begin(w, id) { change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; }); }
+function begin(w, id, o) { change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; s.short = !!(o && o.short); }); }
+// (a shift's tasks, as this one is: asked for on the day, by her, the inn's afternoon is without the carrier's men)
+const tasksOf = s => SHIFTS[s.id].tasks.filter(t => !(s.short && t.carriers));
 
 // The peel (Mistress Pennock's paddle for the oven), and a board of loaves, to carry.
 function peelProp() {
@@ -49,7 +51,7 @@ function peelProp() {
 function attach(P, w) {
   const st0 = current(w, w.area); if (!st0) return null;
   const S = root.Story, sh = SHIFTS[st0.id], W = P.world, spots = W.work || {}, m = P.motion, talk = P.talk;
-  const task = () => { const s = current(w); return s && sh.tasks[s.step] || null; };
+  const task = () => { const s = current(w); return s && tasksOf(s)[s.step] || null; };
   // (the boss's word, said while she works: nothing waits on it)
   const say = (text, face) => talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });
   const lines = (S.WORK && S.WORK[st0.id]) || {};
@@ -68,7 +70,7 @@ function attach(P, w) {
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
     w.cal.advance(t.mins);
-    const last = current(w).step + 1 >= sh.tasks.length;
+    const last = current(w).step + 1 >= tasksOf(current(w)).length;
     change(w, s => { s.step++; });
     if (last) await finish(); else w.refresh();
   }
@@ -99,7 +101,7 @@ function attach(P, w) {
   return { task, action };
 }
 
-const api = { begin, attach, current, SHIFTS };
+const api = { begin, attach, current, tasksOf, SHIFTS };
 root.Work = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

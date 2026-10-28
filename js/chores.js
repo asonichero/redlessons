@@ -20,7 +20,7 @@
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
-const NONE_ONE_IN = 4;
+const NONE_ONE_IN = 4, SHIFT_SLACK = 15;      // (a shift's begun within a quarter of an hour of its time, either side)
 const INTRO = ['eggs', 'bread', 'pot', 'bakery', 'well', 'dunns', 'jug', 'inn'];      // (the first errands, in turn: the Fowlers', the Pennocks, the forge, the well, the Dunns', the inn)      // (about one day in four nothing's asked)
 let wicker = null;      // (the cottage's wicker, made once)
 const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'the basket' };
@@ -137,7 +137,8 @@ function create(w) {
     const out = [], e = errand(), c = st(), W = P.world, sp = W.spots || {}, m = P.motion;
     if (area === 'village' && P.garden) out.push(...P.garden.actions());      // (the garden's own work, and its bench)      // (the garden's own work, from the paths between its rows: js/garden.js)
     if (e && (e.area || 'village') === area && area !== 'home') {      // (the errand's own place: the village's, or the Fowlers')
-      if (e && (e.state === 'accepted' || e.state === 'broken' || e.state === 'working') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
+      const early = e && e.shift && e.state === 'accepted' && cal.minute < e.by - SHIFT_SLACK;      // (a shift: not before a quarter of an hour before its time)
+      if (e && !early && (e.state === 'accepted' || e.state === 'broken' || e.state === 'working') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
     if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     return out;
@@ -150,7 +151,8 @@ function create(w) {
     const sp = P.world.spots[e.place], m = P.motion;
     await m.goTo(sp.at, sp.yaw);
     // (a shift of work, played inside: js/work.js; the errand's done when the work is)
-    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
+    if (e.shift && e.state === 'broken') { await P.converse(S.shiftMissed(e), { shot: false, keepCamera: true }); return; }      // (too late: they've managed without her)
+    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
     if (e.give && m.carry) { const it = m.drop(); if (it) it.obj.visible = false; }
     // (the one it's for, if they're there: facing her, and their own word for it)
     const f = e.who && P.figure ? P.figure(e.who) : null;
@@ -170,6 +172,19 @@ function create(w) {
   // (handed over somewhere else than its place: the eggs, at the Fowlers' gate, the first time; → whether it was this errand, and still owed)
   function fulfil(P, key) { const e = errand(); if (!e || e.key !== key || !(e.state === 'accepted' || e.state === 'broken')) return false; fulfilled(P, e); return true; }
   const owes = key => { const e = errand(); return !!(e && e.key === key && (e.state === 'accepted' || e.state === 'broken')); };
+  // Asked on the day, by Mistress Pennock (before noon) or Mistress Abney (before one), if Red's nothing else promised: will she help this
+  // afternoon? (By her, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.)
+  const OFFER = { pennock: { id: 'bakery', before: H('12:00') }, abney: { id: 'inn', before: H('13:00') } };
+  function canOffer(who) {
+    const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day) return false;
+    return !e || e.state === 'done' || e.state === 'little';
+  }
+  async function offer(P, who) {
+    const o = OFFER[who]; let yes = false; change(c => { c.offered = Object.assign({}, c.offered, { [who]: cal.day }); });
+    await P.converse(S.shiftOffer(who, { yes: () => { yes = true; } }), { shot: ['red', who] });
+    if (yes) change(c => { c.errand = { id: o.id, state: 'accepted', by: H(E[o.id].by), short: who === 'abney' }; c.last = o.id; });
+    w.refresh(); return yes;
+  }
   // A shift's work done (js/work.js): the errand with it, and what it was for.
   function shiftDone(id) {
     const e = errand(); if (!e || e.key !== id) return;
@@ -210,7 +225,7 @@ function create(w) {
   function tick(P) {
     if (!on()) return;
     const e = errand(), c = st();
-    if (e && e.state === 'accepted' && cal.minute > e.by) {
+    if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : 0)) {      // (a shift has a quarter of an hour's grace)
       change(cc => { cc.errand.state = 'broken'; }); rep.add('naughty', 1, 'a broken promise: ' + e.title.toLowerCase());
       if (P && P.talk) for (const [face, text] of S.broken(e.title)) P.talk.muse(text, { face });
       w.refresh();
@@ -227,9 +242,9 @@ function create(w) {
     const out = [], e = errand(), c = st();
     for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
-    const k = root.Work && root.Work.current(w), t = k && e && root.Work.SHIFTS[k.id].tasks[k.step];
+    const k = root.Work && root.Work.current(w), t = k && e && root.Work.tasksOf(k)[k.step];
     if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
-    else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + (e.needs === 'basket' && w.P && !basketIn(w.P) && w.area === 'home' ? ' (take a basket from the pegs)' : '') + '.');
+    else if (e && e.state === 'accepted') out.push(e.title + (e.shift ? ': at ' + clock(e.by) + ', give or take a quarter of an hour' : ': begin by ' + clock(e.by)) + (e.needs === 'basket' && w.P && !basketIn(w.P) && w.area === 'home' ? ' (take a basket from the pegs)' : '') + '.');
     else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');
     if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && w.area === 'village' && w.P && root.Garden.inside(w.P.motion.pos) ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');      // (what's left in it, once she's through the gate)
@@ -246,7 +261,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

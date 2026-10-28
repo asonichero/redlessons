@@ -1355,6 +1355,22 @@ const villagerTrust = (who, t, open) => {
     : n + ' trusts her, and would do a good deal for her.';
   return { name: n, text: text + (open >= 2 ? ' Takes her in hand, as she asked.' : open >= 1 ? ' Knows what she and her mother have.' : ''), trust: t };
 };
+// Asked on the day, at the counter or the inn door: will she help this afternoon? (ctx.yes())
+const shiftOffer = (who, ctx) => who === 'pennock' ? [
+  { who: 'pennock', face: 'smile', listen: { red: 'calm' }, text: 'Rose, love. My girl’s still poorly. If you’ve nothing else on, would you help me clear down this afternoon? One o’clock.' },
+  { choose: [
+    { text: 'I’d be glad to, Mistress Pennock.', face: 'smile', then: [{ run: ctx.yes }, { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Bless you. One, then, and not a minute after quarter past: the oven won’t wait.' }] },
+    { text: 'Not today, I’m sorry.', face: 'shy', then: [{ who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Another day, then.' }] },
+  ] },
+] : [
+  { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Miss Rose. I could use another pair of hands this afternoon, if they’re free. Two o’clock. It’s a quiet day: no carriers.' },
+  { choose: [
+    { text: 'Yes, Mistress Abney. Two o’clock.', face: 'smile', then: [{ run: ctx.yes }, { who: 'abney', face: 'calm', listen: { red: 'smile' }, text: 'Two. Not half past.' }] },
+    { text: 'I can’t today, Mistress Abney.', face: 'shy', then: [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Then you can’t. Another time.' }] },
+  ] },
+];
+// A shift let slide past its quarter of an hour's grace: they've managed without her.
+const shiftMissed = e => [{ who: 'red', face: 'wince', thought: true, text: e.shift === 'bakery' ? 'Too late. Mistress Pennock will have started without me, and she won’t want me under her feet now.' : 'Too late. Mistress Abney will have managed, and she’ll have something to say about it.' }];
 // Out of the door for the eggs with nothing to put them in.
 const basketReminder = () => [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Rose! The eggs. In what, your apron? Take a basket off the pegs, love.' }];
 // Asked again, after the first three (first: where it grows, reminded).
@@ -1558,5 +1574,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
