@@ -162,12 +162,13 @@ function create(opts) {
   // ── The pause menu, settings, the controls sheet ──
   const screen = (id, html) => { const s = document.createElement('div'); s.className = 'hScreen'; s.id = id; s.innerHTML = '<div class="hCard">' + html + '</div>'; document.body.appendChild(s); return s; };
   const pauseEl = screen('hPause', '<h2>Paused</h2><button class="primary" data-k="resume">Resume</button><button data-k="settings">Settings</button><button data-k="controls">Controls</button>' +
-    '<div class="journal"></div><div class="scenes"></div><div class="extra"></div><div class="links"></div><button data-k="title">Back to the title</button>');
+    '<div class="journal"></div><div class="scenes"></div><div class="extra"></div><div class="links"></div><button data-k="restart">Restart the day</button><button data-k="title">Back to the title</button>');
   const pc = pauseEl.querySelector('.hCard');
   if (opts.scenes && opts.scenes.length) { const d = pc.querySelector('.scenes'); d.innerHTML = '<h3>Chapter one</h3>'; opts.scenes.forEach(s => { const b = document.createElement('button'); b.textContent = s.label; b.onclick = () => { pause(false); s.run(); }; d.appendChild(b); }); }
   if (opts.extra) { const d = pc.querySelector('.extra'); if (opts.extraTitle) d.innerHTML = '<h3>' + opts.extraTitle + '</h3>'; d.appendChild(opts.extra); }
   if (opts.links && opts.links.length) { const d = pc.querySelector('.links'); d.innerHTML = '<h3>Elsewhere</h3>' + opts.links.map(l => '<a class="btn" href="' + l.href + '">' + l.label + '</a>').join(''); }
   if (!opts.title) pc.querySelector('[data-k=title]').remove();
+  if (!opts.restartDay) pc.querySelector('[data-k=restart]').remove();
   const setEl = screen('hSettings', '');
   const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
     ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'],
@@ -212,6 +213,7 @@ function create(opts) {
   }
   function pause(on) {
     if (on) drawJournal();
+    if (on) { const rb = pc.querySelector('[data-k=restart]'); if (rb) { const can = !opts.canRestart || opts.canRestart(); rb.disabled = !can; rb.title = can ? 'Back to this morning, after breakfast' : 'Not till the first morning of the chores'; } }      // (only once a morning's been begun)
     if (on === paused) return; paused = on; const p = P(), st = p && p.stage;
     pauseEl.classList.toggle('on', on); if (!on) { setEl.classList.remove('on'); sheet.classList.remove('on'); }
     if (st) { if (on) { wasHeld = st.held; st.held = true; } else st.held = wasHeld; }
@@ -238,6 +240,7 @@ function create(opts) {
     const k = e.target.dataset && e.target.dataset.k; if (e.target === pauseEl) return pause(false);
     if (k === 'resume') pause(false); else if (k === 'settings') openSettings(); else if (k === 'controls') sheet.classList.add('on');
     else if (k === 'title' && opts.title) { pause(false); opts.title(); }
+    else if (k === 'restart' && opts.restartDay && (!opts.canRestart || opts.canRestart()) && confirm('Start today again from the morning? Everything since breakfast is undone.')) { pause(false); opts.restartDay(); }
   });
   sheet.addEventListener('pointerdown', () => sheet.classList.remove('on'));
   $('hMenu').addEventListener('click', e => { e.stopPropagation(); pause(!paused); });

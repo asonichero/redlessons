@@ -137,7 +137,7 @@ function create(view, ui) {
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
-    RATE, go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
+    RATE, restartDay: () => restartDay(), canRestart: () => canRestart(), go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
   };
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.
@@ -325,7 +325,14 @@ function create(view, ui) {
   // (breakfast eaten, under the fade: the day opens on her taking a basket down from the pegs as her mother comes back from the dresser, the
   // bowls tipped and rinsed in the pail; then the day's asking, or, the first morning, what's to be hers to do)
   // (breakfast over at half past seven)
-  async function morning(text) { await fade(true, text || ''); cal.sleep(); cal.advance(30); w.breakfasted = true; await go('home', 'bed'); const P_ = P; if (!P_) return;
+  // (the day as it began, kept: the save as it was when the night was over, for "Restart the day")
+  const DAY_KEY = 'red-lessons:day-start';
+  const keepDay = () => { try { root.localStorage && root.localStorage.setItem(DAY_KEY, JSON.stringify(save.state)); } catch (e) { /* no storage */ } };
+  const dayKept = () => { try { const s = root.localStorage && root.localStorage.getItem(DAY_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } };
+  const canRestart = () => { const d = dayKept(); return !!(d && d.day === cal.day); };
+  async function restartDay() { const d = dayKept(); if (!d) return false; await fade(true, ''); save.import(d); await begin(); return true; }
+  async function morning(text) { await fade(true, text || ''); cal.sleep(); keepDay(); await begin(); }
+  async function begin() { cal.advance(30); w.breakfasted = true; await go('home', 'bed'); const P_ = P; if (!P_) return;
     const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered';
     if ((chores && chores.on()) || first) P_.act(async () => { await basketDown(P_); if (first) await P_.talkToMother({ stay: true }); else await chores.breakfast(P_); });
   }

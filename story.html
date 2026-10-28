@@ -105,7 +105,7 @@ const card = () => { hud.show(false); const c = document.createElement('div'); c
   document.body.appendChild(c); requestAnimationFrame(() => c.classList.add('on'));
   $('goon').onclick = async () => { c.remove(); hud.show(true); await world.morning(); }; $('totitle').onclick = () => location.reload(); };
 // The world (js/world.js), and the controls and menus (js/hud.js) for whichever place she's in.
-const hud = Hud.create({ get: () => world.P, title: () => location.reload(), journal: () => world.journal(),
+const hud = Hud.create({ get: () => world.P, title: () => location.reload(), restartDay: () => world.restartDay(), canRestart: () => world.canRestart(), journal: () => world.journal(),
   links: [{ label: 'Correction test', href: 'lap.html' }, { label: 'Room editor', href: 'rooms.html' }, { label: 'Character editor', href: 'editor.html' }] });
 hud.show(false);
 const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), quests: list => hud.quests(list), trust: (who, n) => hud.trust(who, n), basket: list => hud.basket(list), clock: (t, ph) => hud.clock(t, ph), fade, card });
