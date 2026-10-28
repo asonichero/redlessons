@@ -291,14 +291,14 @@ function attach(P, w) {
     if (root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
   }
   async function ringBell() {
-    const b = sp.bell, m = P.motion; await m.goTo(b.at, b.yaw); m.lookAt(b.look);
+    const b = sp.bell, m = P.motion; await lead(b.at, b.yaw); m.lookAt(b.look);      // (by the ways about, from wherever she is)
     for (let k = 0; k < 3; k++) { await m.reach('R', b.look.clone().add(new V3(0, -4, 0))); const A = root.GameAudio; if (A && A.curfewBell) A.curfewBell(1, 1); await P.wait(0.5); await m.release('R'); await P.wait(0.3); }
     m.lookAt(null); for (const k in figs) if (k !== 'tom' && figs[k].want) { const g = figs[k]; if (!g.sat) g.motion.face(yawTo(g.motion.pos, b.at)); }
     rep.add('mischievous', 1, 'ringing the curfew bell at midday, on a dare'); save.flag('rang-bell', cal.day);
   }
   // A knock at the Dunns' door, with Master William asleep upstairs after his night's round; and away before the shutter opens.
   async function knock() {
-    const d = sp.dunnsDoor, m = P.motion; await m.goTo(d.at, d.yaw);
+    const d = sp.dunnsDoor, m = P.motion; await lead(d.at, d.yaw);
     for (let k = 0; k < 3; k++) { await m.reach('R', d.look.clone().setY(16)); const A = root.GameAudio; if (A && A.thud) A.thud(0.35); await m.release('R'); }
     rep.add('mischievous', 1, 'knocking on the Dunns’ door, on a dare'); save.flag('woke-willie', cal.day);
     { const A = root.GameAudio; if (A && A.thud) setTimeout(() => A.thud(0.6), 700); }      // (his shutter, banged open overhead)
