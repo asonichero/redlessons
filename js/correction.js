@@ -220,7 +220,7 @@ async function run(P, o) {
       el.classList.add('on'); if (mine && i === 0) { hint.classList.add('on'); setTimeout(() => hint.classList.remove('on'), 7000); }
       const r = t.script ? await scripted(t.script, lap, c, sub, castKey) : await root.Discipline.run(lap, t.tier || 'light', {
         corrector: c, subject: sub, implement: t.implement, implementFrom: t.implementFrom, corner: !!(t.corner && corners.length),
-        say: (text, kind, k) => { const f = FACES[kind]; talk.caption(castKey, text, { face: Array.isArray(f) ? f[(k || 0) % f.length] : f, wait }); },
+        say: (text, kind, k) => { const f = FACES[kind]; return talk.caption(castKey, text, { face: Array.isArray(f) ? f[(k || 0) % f.length] : f, wait }); },
         sleep: ms => wait(ms / 1000),
       });
       r.subject = sub.id; r.marks = Object.assign({}, lap.st.marks); results.push(r);
@@ -242,7 +242,7 @@ async function run(P, o) {
       await wait(o.cornerTime == null ? 12 : o.cornerTime);
       // (and out of it: the corrector's last word)
       const last = cornered(); if (last) { const l = Cs.line(c, last.sub, 'after'); if (l) await talk.caption(castKey, l, { face: 'smile', wait }); }
-    } else await wait(results.length && (results[results.length - 1].stopped || results[results.length - 1].tooHarsh) ? 4.5 : turns.some(t => t.script) ? 0.3 : 3.5);      // (a story's own: the fade as soon as its last line's said)
+    } else await wait(results.length && (results[results.length - 1].stopped || results[results.length - 1].tooHarsh) || turns.some(t => t.script) ? 0.3 : 3.5);      // (stopped, by her word or too much, or a story's own: the fade as soon as the last line's said)
     // After (o.after(r): the story's lines for it), the player's own turn having been the last: sat up on the giver's lap, still in the chair
     // (js/lap.js's after): after her word, upright and dressed again; in high distress (past the edge of resistance, or too much), held close
     // as she is. Otherwise it's played in the room after, as before.

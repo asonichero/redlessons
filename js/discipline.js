@@ -43,7 +43,7 @@ async function run(lap, tier, env) {
   const own = env.implement === true ? c.implement : env.implement || null, from = env.implementFrom == null ? script.length - 1 : env.implementFrom;
   const say = env.say || (() => {}), sleep = env.sleep || (ms => new Promise(r => setTimeout(r, ms)));
   const line = (k, i) => C.line(c, s, k, i);
-  const tell = (k, i) => { const t = line(k, i); if (t) say(t, k, i || 0); return t; };
+  const tell = (k, i) => { const t = line(k, i); return t ? say(t, k, i || 0) : null; };      // (→ the line, being said: a page's say may give back when it's been read)
   const stopped = () => lap.st.rose || lap.st.ended || lap.pain.tooHarsh;      // (ended: the scene was closed under it)
   const idle = async () => { while (lap.busy() && !lap.st.rose && !lap.st.ended) await sleep(50); };
   let ease = 1;
@@ -70,7 +70,8 @@ async function run(lap, tier, env) {
   const word = !!lap.st.rose, tooHarsh = !word && !!lap.pain.tooHarsh, closed = !word && !tooHarsh && lap.st.ended, done = !word && !tooHarsh && !closed;
   const out = { hits: lap.st.hits, peak: lap.st.peak, stopped: word, rose: word, tooHarsh, done, implement: used ? own : null };
   if (closed) return out;
-  tell(word ? 'stop' : tooHarsh ? 'harsh' : 'done');
+  const said = tell(word ? 'stop' : tooHarsh ? 'harsh' : 'done');
+  if (!done && said && said.then) await said;      // (stopped: the corrector's word to it, read; and then the scene can close)
   if (done) { await sleep(1800); tell(env.corner ? 'corner' : 'after'); }      // (or to the corner, first, when the story sends them there)
   lap.end();
   return out;
