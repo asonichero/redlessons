@@ -233,7 +233,7 @@ function create(view, ui) {
     if (e) o.start = { at: e.at, yaw: e.yaw };
     if (e && e.camTurn != null) o.camTurn = e.camTurn;
     o.onExit = ex => { const to = A.exits[ex.name]; if (!to) return;
-      if (name === 'home' && chores && chores.forgot(P)) { P.act(() => chores.remind(P)); return false; }      // (out for the eggs without a basket: her mother calls her back)
+      if (name === 'home' && chores && chores.forgot(P)) { if (!P.busy) P.act(async () => { if (P.world.door && P.world.door.target) await P.useDoor(); await chores.remind(P); }); return false; }      // (out for the eggs without a basket, through a door left open: shut, and her mother calls her back (see doorGuard))
       if (name === 'home' && P.outfit === 'No cloak' && P.world.cloakHooks && P.world.cloakHooks.redHung) { P.world.cloakHooks.setRed(false); P.setOutfit('Hood down', true); }      // (her cloak off its hook and on, whenever she goes out: she's Little Red out there, for now)
       if (o.leaving) o.leaving(ex, to); go(to.area, to.entry, { walked: true }); };
     // Talking: whatever's on offer with whoever's here, or their word for the time of day.
@@ -242,6 +242,7 @@ function create(view, ui) {
       o.talk = () => { pending = q.offered({ where: 'home', who: 'maren' }).find(s => s.ref === 'maren.chores') ? 'maren.chores' : null; return pending === 'maren.chores' ? root.Story.chores() : root.Story.marenIdle(cal.part); };
       o.after = async kind => { if (kind === 'talk' && pending === 'maren.chores') { save.flag('curfew-agreed'); w.complete('maren.chores'); } pending = null; };
       o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : [], root.Evening ? root.Evening.actions(P, w) : []);
+      o.doorGuard = () => chores && chores.forgot(P) ? chores.remind(P) : null;      // (going to open the door for the eggs with no basket: her mother calls her back, and it stays shut)
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; });

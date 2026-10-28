@@ -83,8 +83,7 @@ function create(w) {
   }
   // (an errand that wants a basket of hers (the eggs), and she's none in her hands as she goes out of the door: her mother calls after her)
   const forgot = P => { const e = errand(); return !!(e && e.needs && (e.state === 'accepted' || e.state === 'broken') && !(e.needs === 'basket' && basketIn(P))); };
-  async function remind(P) { const m = P.motion; await P.converse(S.basketReminder(), { shot: ['red', 'mother'] });
-    const back = P.collide(m.pos.clone().add(new V3(Math.sin(m.yaw) * -12, 0, Math.cos(m.yaw) * -12)), 3); await m.goTo(back, m.yaw + Math.PI); }      // (and back in, to the pegs)
+  async function remind(P) { await P.converse(S.basketReminder(), { shot: ['red', 'mother'] }); }
   // What she's most known for lately, to colour how she says yes or no.
   const temper = () => { let best = null, v = 1; for (const k of ['wilful', 'mischievous', 'naughty']) if (rep.stat(k) > v) { v = rep.stat(k); best = k; } return best; };
 

@@ -183,6 +183,7 @@ function create(view, opts) {
   // her left; with her back to it, her right, behind her.
   async function useDoor() {
     const d = W.door, latch = wp(d.latch), n = d.inward ? d.inward.clone() : new V3(1, 0, 0), hinge = wp(d.pivot), opening = d.target === 0;      // (n: into the room)
+    if (opening && opts.doorGuard) { const held = opts.doorGuard(); if (held) { await held; return; } }      // (a page can keep it shut: her mother calling her back for a basket)
     const toHinge = flat(hinge).sub(flat(latch)).normalize();
     // (the hand on the hinge side, as she faces the doorway from inside)
     const hingeHand = sideOf(Math.atan2(-n.x, -n.z)).dot(toHinge) > 0 ? 'L' : 'R', other = hingeHand === 'L' ? 'R' : 'L';
