@@ -36,7 +36,7 @@
   <select id="room"><option value="cottage">The cottage (home)</option><option value="cabin">Grandmother’s cabin</option><option value="bakery">The bakery</option><option value="inn">The inn (the Wheatsheaf)</option><option value="forge">The forge</option></select>
   <h3>View</h3>
   <div class="btns" id="views"></div>
-  <div class="btns" style="margin-top:6px"><button id="scale">Rose, for scale</button></div>
+  <div class="btns" style="margin-top:6px"><button id="scale">Rose, for scale</button><button id="roof">Show the roof and beams</button></div>
   <h3>Furniture</h3>
   <div class="list" id="list"></div>
   <h3 id="selH">The piece</h3>
@@ -82,7 +82,14 @@ let R = null, set = null, L = null, sel = null, figure = null;
 function build() {
   if (set) { st.scene.remove(set.group); set = null; }
   L = R.M.layout(); set = R.M.build(st.scene); if (set.light) set.light(0.3);
-  list(); select(sel && set.pieces[sel] ? sel : null); out();
+  overhead(); list(); select(sel && set.pieces[sel] ? sel : null); out();
+}
+// (the roof, the rafters, the beams and the wall plates: everything up at the eaves and over, put out of the way to see the floor; or shown)
+let roofOn = false;
+function overhead() {
+  const eave = set.bounds && set.bounds.EAVE; if (!eave) return; set.group.updateMatrixWorld(true); const b = new THREE.Box3();
+  set.group.traverse(o => { if (!o.isMesh) return; if (o.userData.overhead == null) o.userData.overhead = b.setFromObject(o).min.y >= eave - 3; if (o.userData.overhead) o.visible = roofOn; });
+  $('roof').classList.toggle('on', roofOn);
 }
 // (a piece moved or turned: its group, and the things on it, there and then; and kept)
 function place(id) {
@@ -164,6 +171,7 @@ function room(k) {
   build(); select(null); box.children[0].click();
 }
 $('room').onchange = () => room($('room').value);
+$('roof').onclick = () => { roofOn = !roofOn; overhead(); };
 $('scale').onclick = () => {
   if (figure) { st.scene.remove(figure.root); figure = null; $('scale').classList.remove('on'); return; }
   const looks = Looks.load(); figure = Toon.make('red', looks.red || {}); figure.root.position.set(-14, 0, 18); figure.root.rotation.y = 0.6; st.scene.add(figure.root); st.cast(figure); $('scale').classList.add('on');
