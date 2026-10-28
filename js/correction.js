@@ -14,7 +14,8 @@
 //     corrector: 'maren', context, player: 'red', fade: (on, text) => …,
 //     turns: [{ subject: 'red', tier: 'light', implement: true | 'id', implementFrom, corner: true, cornerDress: { skirt: 'up' } }, …],
 //     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z], until: 'red' }],      (who: a rig; seated on a seat of the room, or standing; until: watching till that subject's own turn)
-//     cornerTime: 20, after: r => script })      (seconds, at the end, for those in the corner; after: the story's lines for after the player's
+//     cornerTime: 20, after: r => script,      (and where: at: { x, z, yaw } (the scene's place in the room, the giver's seat there, facing yaw; the middle by
+//     default), seat: 'bench' (a bench rather than a chair), hide: [the room's own things, put aside while it's played: the bench brought out]) })      (seconds, at the end, for those in the corner; after: the story's lines for after the player's
 //     own turn, played on the giver's lap: see run's end)      (a turn's script: the story's own correction as a dialogue: see scripted())
 //   → the first turn's result (Discipline.run's: { hits, peak, stopped, rose, tooHarsh, done, implement }), and turns: every turn's
 //   (still: Correction.run(play, { tier: 'light', fade }) — her mother, Red, the one turn)
@@ -81,7 +82,8 @@ async function run(P, o) {
   if (A && A.stopMusic) A.stopMusic(3);      // (no music under it)
   await fade(true);
   // The two of them as they walk about, put aside; whoever watches, set in the room; the lap scene at the middle of it.
-  const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
+  const AT = o.at || { x: 0, z: 0, yaw: 0 }, here = (x, z) => new V3(x, 0, z).applyAxisAngle(new V3(0, 1, 0), AT.yaw || 0).add(new V3(AT.x, 0, AT.z));      // (a point by the scene, in its own frame)
+  const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].concat(o.hide || []).filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
   const figs = [], cornerOf = {}, corners = (P.world.corners || []).slice();
   for (const w of o.watchers || []) {
     const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
@@ -205,7 +207,8 @@ async function run(P, o) {
       // (whoever's turn it is comes out of the corner for it)
       if (cornerOf[sub.id]) { cornerOf[sub.id].remove(); corners.push(cornerOf[sub.id].corner); delete cornerOf[sub.id]; }
       if (lap) { untick(); lap.end(); st.scene.remove(lap.stage); }
-      lap = root.Correction.current = root.Lap.create(null, { external: { scene: st.scene }, looks, giver: c.rig || 'gerda', subject: sub.rig || 'red', pitch: sub.pitch });      // (current: for a look in from outside)
+      lap = root.Correction.current = root.Lap.create(null, { external: { scene: st.scene }, looks, giver: c.rig || 'gerda', subject: sub.rig || 'red', pitch: sub.pitch, seat: o.seat });      // (current: for a look in from outside)
+      lap.stage.position.set(AT.x, 0, AT.z); lap.stage.rotation.y = AT.yaw || 0; lap.stage.updateMatrixWorld(true);      // (where the story puts it)
       untick = P.tick(dt => lap.update(dt));
       talk.cast[castKey] = Object.assign({ name: c.name, side: 'right', voice: c.voice, tint: '#6a3a4a', bg: '#e6d8e6' }, castWas || {}, { rig: lap.giverRig });
       view(ANGLES[angle], 0);
@@ -272,7 +275,7 @@ async function run(P, o) {
   // The room again: the player on her feet before her mother (when it's them), beside the chair, the marks under her skirt.
   const mine = results.find(r => r.subject === player), first = results[0] || {};
   if (P.npc && P.npcMotion) {
-    const mo = P.npcMotion, me = P.motion, at = P.collide(new V3(-6, 0, 2), 3.6), to = P.collide(new V3(7, 0, 4), 3.4);
+    const mo = P.npcMotion, me = P.motion, at = P.collide(here(-6, 2), 3.6), to = P.collide(here(7, 4), 3.4);
     mo.warp(at, Math.atan2(to.x - at.x, to.z - at.z)); me.warp(to, Math.atan2(at.x - to.x, at.z - to.z));
     if (mine) P.setDress({ skirt: 'down', drawers: 'up', marks: mine.marks });
     P.rig.setExpr(first.stopped || afterPlayed ? 'shy' : 'crying'); P.npc.setExpr(first.stopped ? 'shy' : 'calm');

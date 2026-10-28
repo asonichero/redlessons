@@ -1314,15 +1314,19 @@ function sit(r, seatY) {
 const seatFor = id => (DIM.shin + 0.8 - 2.55) * SPECS[id].scale;
 
 // ── Props. ──
-function makeChair(seatY) {
+// (kind 'bench': a plain backless bench, long across her front, as Mistress Pennock's by her counter)
+function makeChair(seatY, kind) {
   const g = new THREE.Group(), wood = '#9a6838', dark = '#6e4626', box = (w, h, d, x, y, z, hex) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(hex)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
     m.add(new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, h + 0.14, d + 0.14), INKM[0])); g.add(m); boxes.push({ c: new V3(x, y, z), h: new V3(w / 2, h / 2, d / 2) }); return m; };
   const boxes = [];
-  box(9.4, 0.9, 9.2, 0, seatY - 0.45, 1.8, wood);
-  for (const [x, z] of [[-4.1, -2.3], [4.1, -2.3], [-4.1, 6.0], [4.1, 6.0]]) box(0.9, seatY - 0.9, 0.9, x, (seatY - 0.9) / 2, z, dark);
-  for (const x of [-4.1, 4.1]) box(0.9, 11, 0.9, x, seatY + 5.5, -2.7, dark);
-  box(9.2, 2.2, 0.6, 0, seatY + 9.6, -2.75, wood); box(9.2, 1.4, 0.5, 0, seatY + 6.2, -2.75, wood);
+  if (kind === 'bench') { box(16, 0.9, 5.4, 0, seatY - 0.45, 0.6, wood); for (const x of [-6.5, 6.5]) box(1.2, seatY - 0.9, 4.2, x, (seatY - 0.9) / 2, 0.6, dark); }
+  else {
+    box(9.4, 0.9, 9.2, 0, seatY - 0.45, 1.8, wood);
+    for (const [x, z] of [[-4.1, -2.3], [4.1, -2.3], [-4.1, 6.0], [4.1, 6.0]]) box(0.9, seatY - 0.9, 0.9, x, (seatY - 0.9) / 2, z, dark);
+    for (const x of [-4.1, 4.1]) box(0.9, 11, 0.9, x, seatY + 5.5, -2.7, dark);
+    box(9.2, 2.2, 0.6, 0, seatY + 9.6, -2.75, wood); box(9.2, 1.4, 0.5, 0, seatY + 6.2, -2.75, wood);
+  }
   // How far a ball (world centre, radius) is inside any part of the chair.
   g.penetration = (pW, r) => { const q = g.worldToLocal(pW.clone()); let pen = 0; for (const b of boxes) { const dx = b.h.x + r - Math.abs(q.x - b.c.x), dy = b.h.y + r - Math.abs(q.y - b.c.y), dz = b.h.z + r - Math.abs(q.z - b.c.z); if (dx > 0 && dy > 0 && dz > 0) pen = Math.max(pen, Math.min(dx, dy, dz)); } return pen; };
   return g;

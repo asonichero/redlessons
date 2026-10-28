@@ -68,7 +68,7 @@ function create(view, opts) {
   const scene = ext ? ext.scene : st_.scene;
   const stage = new THREE.Group(); scene.add(stage);
   const GIVER = opts.giver || 'gerda', SUBJ = opts.subject || 'red';
-  const seatY = T.seatFor(GIVER), chair = T.makeChair(seatY), FLOOR = 0; stage.add(chair);
+  const seatY = T.seatFor(GIVER), chair = T.makeChair(seatY, opts.seat), FLOOR = 0; stage.add(chair);      // (opts.seat: 'bench', for a bench rather than a chair)
   let looks = L ? L.clean(opts.looks || L.load()) : { red: {}, gerda: {} };
   let gerda = null, red = null, frame = null, held = null, base = new V3();      // (gerda: whoever's giving it; red: whoever's across the lap)
 
@@ -487,17 +487,19 @@ function create(view, opts) {
   }
 
   // ── Cameras ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // (as seen with the scene where it's put in the room: its stage placed and turned; the views' points in the stage's own frame)
+  const at = (x, y, z) => stage.localToWorld(new V3(x, y, z)), by = (x, y, z) => new V3(x, y, z).applyQuaternion(stage.quaternion);
   const VIEWS = {
-    side: () => ({ pos: new V3(-3, 19, 64), look: new V3(-2, 11, 4) }),
-    behind: () => ({ pos: new V3(-50, 24, 18), look: new V3(-4, 11, 5) }),
-    giver: () => ({ pos: new V3(-7, 30, -11), look: new V3(-3, 12, 6) }),
-    top: () => ({ pos: new V3(-3, 62, 9), look: new V3(-3, 10, 6) }),
-    face: () => { if (held_) { const h = world(sitter.headGroup), f = new V3(-1, 0, 0.35).normalize(); return { pos: h.clone().addScaledVector(f, 20).add(new V3(0, 1, 0)), look: h.clone().add(new V3(0, -1, 0)) }; }      // (after, on the lap: her face, from in front of her)
-      return { pos: new V3(15, 4, 24), look: new V3(7.5, 8.5, 4.5) }; },
-    corrector: () => { const h = world(gerda.headGroup); return { pos: h.clone().add(new V3(4, -3, 22)), look: h.clone().add(new V3(0, -1.2, 0)) }; },      // (the corrector's face, from in front)
+    side: () => ({ pos: at(-3, 19, 64), look: at(-2, 11, 4) }),
+    behind: () => ({ pos: at(-50, 24, 18), look: at(-4, 11, 5) }),
+    giver: () => ({ pos: at(-7, 30, -11), look: at(-3, 12, 6) }),
+    top: () => ({ pos: at(-3, 62, 9), look: at(-3, 10, 6) }),
+    face: () => { if (held_) { const h = world(sitter.headGroup), f = by(-1, 0, 0.35).normalize(); return { pos: h.clone().addScaledVector(f, 20).add(new V3(0, 1, 0)), look: h.clone().add(new V3(0, -1, 0)) }; }      // (after, on the lap: her face, from in front of her)
+      return { pos: at(15, 4, 24), look: at(7.5, 8.5, 4.5) }; },
+    corrector: () => { const h = world(gerda.headGroup); return { pos: h.clone().add(by(4, -3, 22)), look: h.clone().add(new V3(0, -1.2, 0)) }; },      // (the corrector's face, from in front)
     // (the two of them after, on the lap: held, from in front, the giver's face and hers in the giver's shoulder; upright, from in front and to the giver's right, both faces)
-    seat: () => { const c = world(red.hips); return { pos: c.clone().add(new V3(-5, 24, 34)), look: c.clone().add(new V3(-1, -1, 0)) }; },      // (close on the seat, from the side and above: where the hand lands)
-    after: () => held_ && held_.kind === 'held' ? { pos: new V3(5, 21, 38), look: new V3(1.5, 15.5, 2) } : { pos: new V3(-30, 23, 40), look: new V3(-1.5, 12.5, 2) },
+    seat: () => { const c = world(red.hips); return { pos: c.clone().add(by(-5, 24, 34)), look: c.clone().add(by(-1, -1, 0)) }; },      // (close on the seat, from the side and above: where the hand lands)
+    after: () => held_ && held_.kind === 'held' ? { pos: at(5, 21, 38), look: at(1.5, 15.5, 2) } : { pos: at(-30, 23, 40), look: at(-1.5, 12.5, 2) },
   };
   function view_(name, ms) { const v = VIEWS[name](); if (st_) st_.go(v.pos, v.look, ms); return v; }
 

@@ -15,7 +15,7 @@ const DOOR = -22, DOOR_H = 38, HATCH = 18;      // (along the front wall, as x: 
 // oven, the counter and the door are the walls'.
 const PIECES = { table: 'The kneading table', racks: 'The racks of loaves', sacks: 'The flour sacks', bench: 'The bench by the counter' };
 const ROOM = KIT.roomLayout('red-lessons:room:bakery', {
-  table: { x: -18, z: -18, ry: 0 }, racks: { x: -42, z: 2, ry: 0 }, sacks: { x: 38, z: 4, ry: 0 }, bench: { x: 34, z: 26, ry: 0 },
+  table: { x: -18.5, z: -22.5, ry: 0 }, racks: { x: -42, z: 2, ry: 0 }, sacks: { x: 38, z: 22.5, ry: 0 }, bench: { x: 18, z: 25.5, ry: 0 },
 });
 
 function build(scene) {
@@ -23,8 +23,8 @@ function build(scene) {
   const oak = toonMap(tx.oak), oakDk = T.mat('#4e3420'), lime = toonMap(tx.lime), stone = toonMap(tx.stone), brick = T.mat('#9a5a3e'), iron = T.mat('#2e2a28'), flour = T.mat('#f2ecdf');
   const crust = [T.mat('#b8743a'), T.mat('#c98a4a'), T.mat('#a8642e')], sack = T.mat('#d8c8a0');
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [],
-    // (corners clear enough to stand in, facing into them: the back right, past the sacks; the front left, past the door)
-    corners: [{ at: new V3(X1 - 5, 0, Z0 + 5), yaw: Math.atan2(1, -1) }, { at: new V3(X0 + 5, 0, Z1 - 12), yaw: Math.atan2(-1, 1) }] };
+    // (the corner by the door, the front left, past it: where she stands with her nose to the wall, facing into it)
+    corners: [{ at: new V3(X0 + 5, 0, Z1 - 5), yaw: Math.atan2(-1, 1) }] };
   const panels = [], panel = (p, n) => { const g = new THREE.Group(); root_.add(g); panels.push({ g, p, n: n.normalize() }); return g; };
 
   // ── The floor: worn flags.
@@ -106,6 +106,17 @@ function build(scene) {
   { const pc = piece('bench', wall), g = pc.g;
     box(g, 16, 1.2, 5, 0, 9, 0, toonMap(tx.oak)); for (const sx of [-1, 1]) box(g, 1.2, 8.4, 4, sx * 6.5, 4.2, 0, oakDk);
     world.seats.push({ name: 'the bench', at: pc.P(0, 9.6, 0), facing: pc.ry + Math.PI, kind: 'stool' }); world.obstacles.push(pc.area(-8, 8, -2.5, 2.5));
+    // (where Mistress Pennock sits to take someone across her knee (js/correction.js's at, seat, hide): on the bench where it stands, by the
+    // counter; or the bench brought out into the middle of the room, facing the door, when there's more than one of them to see to)
+    world.lap = { bench: { at: Object.assign(pc.P(0, 0, 0), { yaw: pc.ry + Math.PI }), seat: 'bench', hide: [g] },
+      middle: { at: { x: 0, z: (Z0 + Z1) / 2, yaw: 0 }, seat: 'bench', hide: [g] } };
+  }
+  // ── The broom, leaning against the front wall the far side of the door from the corner.
+  { const g = W.front, x = DOOR + 10, z = Z1 - 2.2, straw = T.mat('#c8a860');
+    world.broom = [pole(g, new V3(x, 2.5, z - 1.4), new V3(x + 1.2, 30, z), 0.4, toonMap(tx.oak)),
+      solid(g, new THREE.ConeGeometry(2.4, 6, 10, 1, true).scale(1, 1, 0.45), straw, x - 0.1, 3, z - 1.5, { ink: 0.05 })];
+    world.broom[1].material.side = THREE.DoubleSide;
+    world.work_broom = { at: new V3(x, 0, z - 8), yaw: 0, look: new V3(x + 0.6, 16, z) };
   }
   // ── The door, in the front wall: planks on strap hinges, swinging in; out to the street.
   { const f = new THREE.Group(); f.position.set(DOOR, 0, Z1 - 0.4); W.front.add(f);
@@ -136,6 +147,7 @@ function build(scene) {
   world.work = {
     trough: at('table', 8, 10.5, Math.PI, 8, 17, 0), table: at('table', -9, 10.5, Math.PI, -9, 16, 0), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
     oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: at('racks', 8, 0, -Math.PI / 2, 0, 16, 0), counter: spot(18, 26, 0, 18, 14, 35),
+    broom: world.work_broom,
   };
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
   return { group: root_, update, tick, light, world, pieces, bounds: { X0, X1, Z0, Z1, EAVE } };
