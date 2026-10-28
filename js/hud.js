@@ -31,6 +31,8 @@ const ICONS = {
   keys: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   diary: '<path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"/><path d="M5 18a2 2 0 0 1 2-2h11"/><path d="M9 8h6M9 11h4"/>',
+  basket: '<path d="M4 11h16l-1.6 8.2a1.6 1.6 0 0 1-1.6 1.3H7.2a1.6 1.6 0 0 1-1.6-1.3z"/><path d="M7.5 11a4.5 5.5 0 0 1 9 0"/><path d="M9 14v4M12 14v4M15 14v4"/>',
+  down: '<path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 20h14"/>',
 };
 const svg = k => '<svg viewBox="0 0 24 24">' + (ICONS[k] || ICONS.act) + '</svg>';
 // (the icon and the short label for an action, from its words)
@@ -86,11 +88,13 @@ const CSS = `
 #hDiary { pointer-events: auto; width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
 #hDiary svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hDiary:hover { background: rgba(60,40,44,0.8); }
 #hQuests { display: none; font: italic 14px/1.35 Georgia, serif; color: #f6efe2; background: rgba(16,10,12,0.55); border: 1px solid #4a3a3c; border-radius: 8px; padding: 6px 11px; }
-#hHands { display: none; margin-top: 6px; font: 13px/1.3 Georgia, serif; color: #e8dcc4; background: rgba(16,10,12,0.5); border: 1px solid #4a3a3c; border-radius: 8px; padding: 4px 10px; width: fit-content; }
-#hHands.on { display: block; } body.talking #hHands, body.correcting #hHands { opacity: 0; }
+#hBasket { pointer-events: auto; width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: none; align-items: center; justify-content: center; padding: 0; }
+#hBasket.on { display: flex; } #hBasket svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hBasket:hover { background: rgba(60,40,44,0.8); }
+#hBasketCard .bl { font: 16px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0 4px; padding: 0; list-style: none; } #hBasketCard .bl li::before { content: '❧ '; color: #c9a84c; }
+#hBasketCard .none { font: italic 15px Georgia, serif; color: #c9a88c; }
 #hQuests.on { display: block; } #hQuests div { margin: 2px 0; padding-left: 12px; text-indent: -12px; } #hQuests div::before { content: '❧ '; color: #c9a84c; font-style: normal; }
 body.talking #hTop, body.correcting #hTop { opacity: 0; pointer-events: none; }
-@media (max-width: 640px) { #hQuests { font-size: 12.5px; padding: 4px 8px; } #hDiary { width: 34px; } }
+@media (max-width: 640px) { #hQuests { font-size: 12.5px; padding: 4px 8px; } #hDiary, #hBasket { width: 34px; } }
 /* (a change of trust, above the conversation's box) */
 #hTrust { position: fixed; left: 50%; bottom: 186px; transform: translateX(-50%); z-index: 22; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
 #hTrust .tn { font: 15px/1.3 Georgia, serif; padding: 5px 14px; border-radius: 16px; background: rgba(16,10,12,0.78); border: 1px solid; transition: opacity 1s; filter: drop-shadow(0 1px 4px #000); }
@@ -137,7 +141,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button></div><div id="hQuests"></div><div id="hHands"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hBasket" title="Her basket (B)" aria-label="Her basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -167,7 +171,7 @@ function create(opts) {
   const setEl = screen('hSettings', '');
   const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
     ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'],
-    ['<kbd>Q</kbd>', 'The other thing (lie down, on a bed)'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
+    ['<kbd>Q</kbd>', 'Put down what’s in her hands (or the other thing: lie down, on a bed)'], ['<kbd>B</kbd>, or the basket by the diary', 'What’s in her basket, while she’s carrying it'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>J</kbd>, or the book by the clock', 'Her diary'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
     '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
   // The diary: the whole journal in a pop-up of its own (the game held while it's open). J, or the button by the clock.
@@ -175,6 +179,18 @@ function create(opts) {
   let diaryTab = 'days';
   diaryEl.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); diaryTab = b.dataset.tab; diaryEl.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b)); drawJournal(diaryEl.querySelector('.journal'), diaryTab); }));
   let diaryHeld = null;
+  // Her basket: what's in it, in a card of its own (B, or the basket by the diary, while she's carrying it).
+  const basketEl = screen('hBasketCard', '<h2>Her basket</h2><div class="list"></div><div class="x">Esc, or click outside, to close</div>');
+  let basketList = null, basketHeld = null;
+  const drawBasket = () => { const box = basketEl.querySelector('.list'), esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    box.innerHTML = basketList && basketList.length ? '<ul class="bl">' + basketList.map(t => '<li>' + esc(t[0].toUpperCase() + t.slice(1)) + '</li>').join('') + '</ul>' : '<p class="none">Nothing in it yet.</p>'; };
+  function basketCard(on) {
+    const p = P(), st = p && p.stage; if (on && !basketList) return; if (on === basketEl.classList.contains('on')) return;
+    if (on) { drawBasket(); basketHeld = st ? st.held : null; if (st) st.held = true; } else if (st && basketHeld != null) st.held = basketHeld;
+    basketEl.classList.toggle('on', on);
+  }
+  basketEl.addEventListener('click', e => { if (e.target === basketEl) basketCard(false); });
+  addEventListener('keydown', e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyB' && !document.body.classList.contains('talking')) basketCard(!basketEl.classList.contains('on')); else if (e.code === 'Escape' && basketEl.classList.contains('on')) { e.stopImmediatePropagation(); basketCard(false); } }, true);
   function diary(on) {
     const p = P(), st = p && p.stage; if (on === diaryEl.classList.contains('on')) return;
     if (on) { drawJournal(diaryEl.querySelector('.journal'), diaryTab); diaryHeld = st ? st.held : null; if (st) st.held = true; } else if (st && diaryHeld != null) st.held = diaryHeld;
@@ -226,6 +242,7 @@ function create(opts) {
   sheet.addEventListener('pointerdown', () => sheet.classList.remove('on'));
   $('hMenu').addEventListener('click', e => { e.stopPropagation(); pause(!paused); });
   $('hDiary').addEventListener('click', e => { e.stopPropagation(); diary(true); });
+  $('hBasket').addEventListener('click', e => { e.stopPropagation(); basketCard(true); });
   $('hHelp').addEventListener('click', e => { e.stopPropagation(); sheet.classList.add('on'); });
 
   // ── The camera: in close, at the usual distance, or well back (the wheel still zooms between). ──
@@ -291,14 +308,15 @@ function create(opts) {
     const p = P(), o = p && p.offer;
     btn('hAct', o ? { icon: iconFor(o.label), label: verb(o.label), title: o.label, enabled: true } : { icon: 'act', label: 'Do', enabled: false });
     { const nr = !!(p && p.noRun); if ($('hRun')._nr !== nr) { $('hRun')._nr = nr; $('hRun').style.visibility = nr ? 'hidden' : ''; } }      // (no running there: no button for it)
-    btn('hAlt', o && o.alt ? { icon: 'lie', label: o.altLabel || 'Lie down', enabled: true } : { icon: 'lie', label: 'Lie down', enabled: false });
-    const chip = o ? o.label + '|' + (o.alt ? o.altLabel || 'Lie down' : '') : '';
+    const a = p && p.alt;      // (what Q does: the offer's other thing, or put down what's in her hands)
+    btn('hAlt', a ? { icon: a.down ? 'down' : 'lie', label: verb(a.label), title: a.label, enabled: true } : { icon: 'lie', label: 'Lie down', enabled: false });
+    const chip = (o ? o.label : '') + '|' + (a ? a.label : '');
     if (chip !== lastChip) {
       lastChip = chip; prompt.innerHTML = '';
-      if (o) { const part = (key, label, alt) => { const s = document.createElement('div'); s.className = 'p'; s.innerHTML = '<kbd>' + key + '</kbd>'; s.appendChild(document.createTextNode(label));
+      if (o || a) { const part = (key, label, alt) => { const s = document.createElement('div'); s.className = 'p'; s.innerHTML = '<kbd>' + key + '</kbd>'; s.appendChild(document.createTextNode(label));
           s.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const q = P(); if (q) q.use(alt); }); prompt.appendChild(s); };
-        part('E', o.label, false); if (o.alt) part('Q', o.altLabel || 'Lie down', true); }
-      prompt.classList.toggle('on', !!o);
+        if (o) part('E', o.label, false); if (a) part('Q', a.label, true); }
+      prompt.classList.toggle('on', !!(o || a));
     }
   }
   requestAnimationFrame(tick);
@@ -321,7 +339,7 @@ function create(opts) {
     quests(list) { const q = $('hQuests'), esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); list = list || []; const html = list.map(t => '<div>' + esc(t) + '</div>').join('');
       if (q.innerHTML !== html) q.innerHTML = html; q.classList.toggle('on', list.length > 0); objEl.classList.remove('on'); },
     diary,
-    hands(t) { const h = $('hHands'); if (h.textContent !== (t || '')) h.textContent = t || ''; h.classList.toggle('on', !!t); },      // (what's in her hands)
+    basket(list) { basketList = list; $('hBasket').classList.toggle('on', !!list); if (!list && basketEl.classList.contains('on')) basketCard(false); else if (basketEl.classList.contains('on')) drawBasket(); },      // (her basket, while she's carrying it: what's in it)
     clock(t, phase) { const c = $('hClock'); c.innerHTML = t ? t + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },
     show(on) { el.classList.toggle('hide', !on); if (!on) pause(false); },
   };

@@ -392,13 +392,13 @@ function build(scene, opts) {
       pole(hang, new V3(0, 0, 0), new V3(0, -2.4, 0), 0.08, twine, { ink: 0 });
       const kind = ['herb', 'lavender', 'basket', 'herb', 'lavender', 'herb', 'basket', 'lavender', 'herb'][i % 9];
       const peg = { at: pc.P(x, y - 0.4 - 2.4, z + 2.6), item: null, panel: g };      // (where a thing hangs from: the end of the twine)
-      if (kind === 'basket') {
+      if (kind === 'basket') { const hers = !pc.hers; pc.hers = true;      // (the first is hers; the other's her mother's, and stays on its peg)
         // A basket is a thing to carry: its own group, its origin at the middle of its base, so it can be set down on anything.
         const it = new THREE.Group(), bk = toonMap(tx.wicker), bowl = new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.0, 1.4], [3.2, 3.2], [3.3, 3.4]].map(([r, h]) => new THREE.Vector2(r, h)), 16);
         solid(it, bowl, bk, 0, 0, 0, { ink: 0.1 }).material.side = THREE.DoubleSide;
         solid(it, new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI), bk, 0, 3.4, 0, { ink: 0.06 });
-        const item = { obj: it, name: 'a basket', kind: 'basket', fill: { y: 3.2, r: 3.0 }, grip: new V3(0, 6.5, 0), hangs: true, radius: 3.4, panel: g };
-        peg.item = item; item.peg = peg; it.position.copy(peg.at).sub(item.grip); it.rotation.y = pc.ry; root_.add(it); world.items.push(item); pc.items.push({ obj: it, at: peg.at.clone().sub(item.grip).applyMatrix4(new THREE.Matrix4().copy(pc.g.matrix).invert()), ry: 0 });
+        const item = { obj: it, name: 'her basket', kind: 'basket', fill: { y: 3.2, r: 3.0 }, grip: new V3(0, 6.5, 0), hangs: true, radius: 3.4, panel: g, contents: [] };
+        peg.item = item; item.peg = peg; it.position.copy(peg.at).sub(item.grip); it.rotation.y = pc.ry; root_.add(it); if (hers) world.items.push(item); else item.kind = 'decor'; pc.items.push({ obj: it, at: peg.at.clone().sub(item.grip).applyMatrix4(new THREE.Matrix4().copy(pc.g.matrix).invert()), ry: 0 });
       } else {
         // A bunch hung head down: stems tied at the top, opening out below into leaves (or flower heads).
         const r = rnd(31 + i), n = 7;

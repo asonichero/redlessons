@@ -247,6 +247,7 @@ function create(view, ui) {
   }
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, noRun: !!A.noRun, light: cal.light() };      // (noRun: walking only: the wood, on her way home)
+    o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); };      // (put down out of doors: there still, when she comes back for it)
     if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc() : A.npc;
     // (where she comes in: the saved place, when taking the game up again; the way she came in; or the place's first)
     const saved = entry === 'saved' && save.state.at, list = A.entries === 'set' ? null : A.entries;
@@ -310,18 +311,13 @@ function create(view, ui) {
     if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
     if (guide) guide.update(P, dt);      // (the way to what's hers to do: js/guide.js)
-    if (ui.hands) ui.hands(handsText(P));      // (what's in her hands, under the list)
+    if (ui.basket) ui.basket(basketText(P));      // (her basket, by the diary, while she has it: what's in it)
     P.stage.setLight(lightFn ? lightFn() : cal.light());
     { const Au = root.GameAudio; if (Au && Au.musicTheme === 'wood' && Au.nodes.musicFilter) Au.nodes.musicFilter.frequency.value = 2200 - 1400 * cal.light(); }      // (the wood's music darkening with the light)
     if ((sinceSave += dt) > 3 && idle) { sinceSave = 0; const m = P.motion; save.change(s => { s.at = [Math.round(m.pos.x * 10) / 10, Math.round(m.pos.z * 10) / 10, Math.round(m.yaw * 100) / 100]; }, { at: true }); }
   }
-  // What she's carrying, for the HUD: the basket and what's in it, the pot, the butt (full: heavy, walking only).
-  function handsText(P_) {
-    const it = P_ && P_.motion && P_.motion.carry; if (!it || !it.name) return '';
-    const e = chores && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id];
-    const what = it.kind === 'basket' ? (it.full ? 'the basket, with ' + (E && E.pie && e.state !== 'carrying' ? 'Mama’s pie' : (E && E.carryName) || 'something') + ' in it' : 'the basket, empty') : it.kind === 'butt' ? (it.full ? 'the little butt, full (too heavy to run)' : 'the little butt, empty') : it.name.replace(/^an? /, 'the ');
-    return 'In her hands: ' + what;
-  }
+  // Her basket, for the HUD: while it's in her hands, what's in it (by name); otherwise nothing to show.
+  function basketText(P_) { const b = root.Chores && P_ && P_.motion ? root.Chores.basketOf(P_) : null; return b ? (b.contents || []).slice() : null; }
   let lastClock = ''; function refreshClock() { const c = 'Day ' + cal.day + ' · ' + cal.clock; if (c !== lastClock && ui.clock) { lastClock = c; ui.clock(c, q.phaseOf(q.phase())); } }
 
   // The next morning: the night passes (under a fade), and she's up, at home.

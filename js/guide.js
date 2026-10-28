@@ -21,7 +21,10 @@ function goal(w) {
   if (root.Peter && root.Peter.objective(w)) return { area: 'wood', spot: 'beech' };
   const ch = w.chores, e = ch && ch.on() && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id];
   if (E) {
-    if (e.state === 'accepted' || e.state === 'broken') { if (E.needs && w.area === 'home' && !(w.P && w.P.motion.carry && w.P.motion.carry.kind === E.needs)) return { area: 'home', spot: w.P && w.P.motion.carry && w.P.motion.carry.kind === 'basket' ? 'peg' : E.needs };      // (what the errand wants, from where it's kept; a basket in her hands, hung up first)
+    if (e.state === 'accepted' || e.state === 'broken') {
+      const has_ = w.P && w.P.motion.carry && w.P.motion.carry.kind === E.needs;
+      if (E.needs === 'basket' && !has_ && ch.basketWhere) { const b = ch.basketWhere(w.P); if (b && b.at) return { area: b.area, at: b.at }; if (b) return { area: 'home', spot: 'basket' }; }      // (her basket: where she put it down, or on its peg)
+      if (E.needs && w.area === 'home' && !has_) return { area: 'home', spot: E.needs };      // (what the errand wants, from where it's kept)
       return { area: E.area || 'village', spot: E.place }; }      // (a shift: its door, in the village)
     if (e.state === 'carrying') return { area: 'home', who: 'mother' };
   }
@@ -51,7 +54,7 @@ function pointOf(w, P, g) {
   if (g.spot === 'garden' && root.Garden && root.Garden.inside(P.motion.pos)) return null;      // (in the garden, its own marks show what's to do)
   if (g.spot === 'basin') return W.basin ? W.basin.at.clone().setY(0) : null;
   if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }
-  if (g.spot === 'basket') { const it = W.items.find(x => x.kind === 'basket' && x.peg); return it ? it.obj.position.clone() : null; }
+  if (g.spot === 'basket') { const it = W.items.find(x => x.kind === 'basket' && x.peg && !x.away); return it ? it.obj.position.clone() : null; }
   if (g.spot === 'peg') { const pg = W.pegs.find(x => !x.item); return pg ? pg.at.clone() : null; }
   if (g.spot === 'pot' || g.spot === 'butt') { const it = W.items.find(x => x.kind === g.spot && !x.away); return it ? it.obj.position.clone() : null; }
   if (g.spot) { const s = (W.spots && W.spots[g.spot]) || (P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots[g.spot]); return s ? s.at.clone() : null; }

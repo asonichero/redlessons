@@ -225,15 +225,14 @@ function attach(P, w) {
     if (!inside(m.pos) || !w.chores) return [];
     const g = stateOf(w), out = [], atBench = near(new V3(BENCH.x, 0, BENCH.z), 16);
     const basketAt = new V3(BENCH.x + 4, BENCH.y + 3, BENCH.z), trowelAt = new V3(BENCH.x - 5, BENCH.y + 1, BENCH.z);      // (each at its own end of the bench: the one she's nearer offered first)
-    // (the bench: a basket set down on it, or taken up again)
-    if (atBench && m.carry && m.carry.kind === 'basket' && !g.basket) out.push({ label: 'Put the basket on the bench', at: basketAt, run: basketDown });
-    if (atBench && !m.carry && g.basket) out.push({ label: 'Take the basket', at: basketAt, run: basketUp });
+    // (a basket left on the bench, from before baskets were put down anywhere: taken up again)
+    if (atBench && !m.carry && g.basket) out.push({ label: 'Take her basket', at: basketAt, run: basketUp });
     if (!w.chores.on() || w.chores.gardenTended()) return out;
     const holding = m.carry && m.carry.name === 'the watering can', trowelHeld = m.carry && m.carry.kind === 'trowel', hoe = plan(cal.day).jobs.includes('onions') && !g.jobs.onions;
-    if (atBench && !m.carry && g.trowel === 'bench' && hoe) out.push({ label: 'Take the trowel', at: trowelAt, run: takeTrowel });
+    if (atBench && g.trowel === 'bench' && hoe) out.push({ label: 'Take the trowel', at: trowelAt, run: m.carry ? () => P.handsFull() : takeTrowel });      // (her hands full: she'll have to put down what she has)
     if (atBench && trowelHeld && !hoe) out.push({ label: 'Put the trowel back', at: trowelAt, run: putTrowel });
     if (trowelHeld && hoe) { const r = ROWS.find(q => q.id === 'onions'), p = pathBeside('onions', m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 && m.pos.x < RX1) out.push({ label: r.job, at: new V3(m.pos.x, 4, r.z), run: () => job(r, p) }); }
-    if (g.can === 'butt' && !m.carry && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: takeCan });
+    if (g.can === 'butt' && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: m.carry ? () => P.handsFull() : takeCan });
     if (holding && g.water < WATER_PER_FILL && progress(w).dry.length && near(BUTT, 12)) out.push({ label: 'Fill the can at the butt', at: BUTT.clone().setY(6), run: fill });
     if (holding && !progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Put the can back by the butt', at: CAN.clone().setY(3), run: putCan });
     if (holding && g.water > 0) for (const r of FLOWERS) if (plan(cal.day).dry.includes(r.id) && !g.watered[r.id]) { const p = pathBeside(r.id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 - 10 && m.pos.x < RX1 + 10) out.push({ label: 'Water ' + r.name, at: p.clone().setY(12), run: () => water(r) }); }
@@ -244,8 +243,6 @@ function attach(P, w) {
     return out;
   }
   const benchStand = () => P.collide(new V3(BENCH.x, 0, BENCH.z - BENCH.d / 2 - 6), 3.2);
-  async function basketDown() { const s = benchStand(); await m.goTo(s, yawTo(s, new V3(BENCH.x, 0, BENCH.z))); await m.reach('R', new V3(BENCH.x + 4, BENCH.y + 3, BENCH.z)); const it = m.drop(); if (it) P.stage.scene.remove(it.obj);
-    change(w, g => { g.basket = { full: !!(it && it.full) }; }); benchBasket(); await m.release('R'); objective(); }
   async function basketUp() { const s = benchStand(); await m.goTo(s, yawTo(s, new V3(BENCH.x, 0, BENCH.z))); await m.reach('R', new V3(BENCH.x + 4, BENCH.y + 3, BENCH.z)); const b = stateOf(w).basket;
     change(w, g => { g.basket = null; }); benchBasket(); const it = w.chores.prop('basket', { empty: !b.full }); P.stage.scene.add(it.obj); m.hold(it, it.style); await m.release('R'); objective(); }
   async function takeTrowel() { const s = benchStand(); await m.goTo(s, yawTo(s, new V3(BENCH.x, 0, BENCH.z))); await m.reach('R', G.trowel.obj.position.clone()); G.trowel.obj.visible = false; const t = trowelProp(); P.stage.scene.add(t.obj); m.hold(t, 'hang'); await m.release('R'); change(w, g => { g.trowel = 'held'; }); objective(); }

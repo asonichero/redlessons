@@ -34,6 +34,7 @@ function talk(w) {
   if (s.asked && s.have) {
     const h = herb(s.asked), n = s.n + 1, again = s.n >= HERBS.length;
     out.push(...(again ? S.herbThanks(h.id) : S.herbGiven(h.id, n === HERBS.length)));
+    { const Ch = root.Chores, b = Ch && w.P && Ch.basketOf(w.P); if (b) Ch.takeOut(b, h.name); }      // (out of her basket, into her grandmother's hands)
     change(w, x => { x.n = n; x.asked = null; x.have = false; x.day = w.cal.day; x.told = false; });
     w.rep.trusts('hulda', again ? 0.5 : 1); w.cal.advance(again ? 10 : 20);
     if (n === HERBS.length && w.q.stateOf('hulda.errands') === 'offered') w.complete('hulda.errands');
@@ -54,10 +55,12 @@ function wood(P, w) {
   const S = root.Story, m = P.motion;
   const want = () => { const s = stateOf(w); return s.asked && !s.have && at[s.asked] ? herb(s.asked) : null; };
   async function gather() {
-    const h = want(); if (!h) return; const p = at[h.id], away = m.pos.clone().sub(p).setY(0); if (away.lengthSq() < 1) away.set(0, 0, 1); away.normalize();
+    const h = want(); if (!h) return; const Ch = root.Chores, b = Ch && Ch.basketOf(P);
+    if (Ch && !b) { if (w.chores && w.chores.noBasket) await w.chores.noBasket(P); return; }      // (gathered into her basket: without it, she remembers where it is)
+    const p = at[h.id], away = m.pos.clone().sub(p).setY(0); if (away.lengthSq() < 1) away.set(0, 0, 1); away.normalize();
     const to = P.collide(p.clone().setY(0).addScaledVector(away, 6), 3.2); await m.goTo(to, Math.atan2(p.x - to.x, p.z - to.z));
     for (let k = 0; k < 3; k++) { await m.reach(k % 2 ? 'L' : 'R', p.clone().add(new V3((k - 1) * 1.5, 2, 0))); await P.wait(0.5); await m.release(k % 2 ? 'L' : 'R'); }
-    change(w, x => { x.have = true; }); w.cal.advance(15);
+    change(w, x => { x.have = true; }); w.cal.advance(15); if (b) Ch.putIn(b, h.name);
     await P.converse(S.herbGathered(h.id), { shot: false, keepCamera: true });
     w.refresh();
   }

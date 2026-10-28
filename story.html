@@ -108,7 +108,7 @@ const card = () => { hud.show(false); const c = document.createElement('div'); c
 const hud = Hud.create({ get: () => world.P, title: () => location.reload(), journal: () => world.journal(),
   links: [{ label: 'Correction test', href: 'lap.html' }, { label: 'Room editor', href: 'rooms.html' }, { label: 'Character editor', href: 'editor.html' }] });
 hud.show(false);
-const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), quests: list => hud.quests(list), trust: (who, n) => hud.trust(who, n), hands: t => hud.hands(t), clock: (t, ph) => hud.clock(t, ph), fade, card });
+const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), quests: list => hud.quests(list), trust: (who, n) => hud.trust(who, n), basket: list => hud.basket(list), clock: (t, ph) => hud.clock(t, ph), fade, card });
 // Continue, if there's a game to take up again: where she was, and when.
 const saved = world.save.exists() && world.save.state.area;
 // (the picture of that night only once the game has come to it: before, the opening's)
