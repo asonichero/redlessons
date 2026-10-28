@@ -17,7 +17,7 @@ test('no code is swallowed by a comment at the end of a line', () => {
       // (a parenthesised note, then what reads as code: a name followed by a call, a property or an assignment, and a semicolon; a key and its
       // value; or a declaration or a statement)
       const c = line.slice(i + 2);
-      if (/\)\s+[A-Za-z_$][\w$.[\]]*\s*(\.|\(|=)[^;]*;/.test(c) || /\)\s+[A-Za-z_$][\w$]*\s*:\s*[{['"\d]/.test(c) || /\)\s+(const|let|var|function|if|for|while|return|await)\b[^;]*[;{]/.test(c)) found.push(f + ':' + (n + 1));      // (or an object's next key)
+      if (/\)\s+[A-Za-z_$][\w$.[\]]*\s*(\.|\(|=)[^;]*;/.test(c) || /\)\s+[A-Za-z_$][\w$]*\s*:\s*([{['"\d]|[A-Za-z_$][\w$.]*\()/.test(c) || /\)\s+(const|let|var|function|if|for|while|return|await)\b[^;]*[;{]/.test(c)) found.push(f + ':' + (n + 1));      // (or an object's next key)
     });
   }
   assert.deepEqual(found, [], 'code after a line comment, never run: ' + found.join(', '));

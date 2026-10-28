@@ -13,10 +13,10 @@ const X0 = -72, X1 = 72, Z0 = -38, Z1 = 40, EAVE = 44, FOOT = 3, RZ = (Z0 + Z1) 
 const DOOR = 4, DOOR_H = 38;
 // The furniture's places (as arranged in the room editor, rooms.html, whose changes, kept in the browser, the game builds the room from). The
 // hearth, the door and the windows are the walls'.
-const PIECES = { chair: 'Bess’s chair (and her footstool)', counter: 'The counter', barrels: 'The barrels, on their stillage', shelves: 'The shelves (tankards and jugs)', tableA: 'The long table (by the hearth)', tableB: 'The long table (by the door)', tableC: 'The long table (by the stair)', stair: 'The stair' };
+const PIECES = { chair: 'Bess’s chair (and her footstool)', counter: 'The counter', barrels: 'The barrels, on their stillage', shelves: 'The shelves (tankards and jugs)', tableA: 'A long table (the back)', tableB: 'A long table (by the hearth)', tableC: 'A long table (by the stair)', stair: 'The stair' };
 const ROOM = KIT.roomLayout('red-lessons:room:inn', {
-  chair: { x: -50, z: 16, ry: -2.042 }, counter: { x: 6, z: -14, ry: 0 }, barrels: { x: -4, z: -32.5, ry: 0 }, shelves: { x: 32, z: -36.5, ry: 0 },
-  tableA: { x: -24, z: 18, ry: 0 }, tableB: { x: 14, z: 20, ry: 0 }, tableC: { x: 46, z: 18, ry: 0 }, stair: { x: 66, z: -19, ry: 0 },
+  chair: { x: -41.5, z: -8.5, ry: -0.9599 }, counter: { x: 32.5, z: -4.5, ry: 0 }, barrels: { x: 31.5, z: -30, ry: 0 }, shelves: { x: 58, z: -18.5, ry: -1.5708 },
+  tableA: { x: -11.5, z: -24, ry: -1.5708 }, tableB: { x: -31, z: 18, ry: 0 }, tableC: { x: 43, z: 27, ry: -1.5708 }, stair: { x: 66, z: -19, ry: 0 },
 });
 
 function build(scene) {
@@ -135,10 +135,10 @@ function build(scene) {
   // (at a piece: in its own frame, so they go with it wherever it's put)
   const at = (id, x, z, yaw, lx, ly, lz) => { const pc = pieces[id], p = pc.P(x, 0, z), l = pc.P(lx, ly, lz); return { at: new V3(p.x, 0, p.z), yaw: yaw + pc.ry, look: l }; };
   // (Bess's: beside her chair, as it was in the room before it was turned, turned with it)
-  const bessAt = () => { const pc = pieces.chair, d = ROOM.LAYOUT.chair.ry, o = near(pc, -8, 6), l = near(pc, 0, 0); const p = pc.P(o.x, 0, o.z); return { at: new V3(p.x, 0, p.z), yaw: Math.PI * 0.3 + (pc.ry - d), look: pc.P(l.x, 14, l.z) }; };
+  const bessAt = () => { const pc = pieces.chair, o = near(pc, -8, 6), l = near(pc, 0, 0); const p = pc.P(o.x, 0, o.z), lk = pc.P(l.x, 14, l.z); return { at: new V3(p.x, 0, p.z), yaw: Math.atan2(lk.x - p.x, lk.z - p.z), look: lk }; };      // (facing her)
   world.work = {
     tub: spot(X0 + 16, -24, Math.PI, X0 + 16, 4, -29), tables: at('tableA', 0, 14, Math.PI, 0, 14, 2), fire: spot(X0 + 16, -2, -Math.PI / 2, X0 + 6, 4, -2),
-    counter: at('barrels', -10.5, 12, Math.PI, -10.5, 7, 4),      // (the ale drawn at the barrels: from the second, not the first) table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6),
+    counter: at('barrels', -10.5, 12, Math.PI, -10.5, 7, 4), table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6),      // (counter: the ale drawn at the barrels, from the second, not the first)
   };
   // (the washing tub by the hearth, for the pots)
   { solid(root_, new THREE.CylinderGeometry(4, 3.4, 4, 14, 1, true), oak, X0 + 16, 2, -29, { ink: 0.06 }).material.side = THREE.DoubleSide; const wt = new THREE.Mesh(new THREE.CircleGeometry(3.7, 14), T.mat('#6a8a9a')); wt.rotation.x = -Math.PI / 2; wt.position.set(X0 + 16, 3.2, -29); root_.add(wt);

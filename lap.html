@@ -42,6 +42,7 @@
   <div class="sub">Over the knee: any of the cast across any other's lap. Drag to orbit; the wheel zooms. Space smacks; R is the safe word. <a href="story.html">The game</a> · <a href="editor.html">Character editor</a> · <a href="rooms.html">Room editor</a></div>
   <h3>Who</h3>
   <div class="pick"><label>Corrector <select id="whoA"></select></label><label>Across the lap <select id="whoB"></select></label></div>
+  <div class="pick"><label>Where <select id="where"></select></label></div>
   <h3>The correction</h3>
   <div class="btns"><button id="smack" class="big">Smack</button><button id="run">Run</button><input id="runN" type="number" min="1" max="60" value="10"><button id="halt">Stop</button></div>
   <div class="btns" style="margin-top:6px"><button id="endBtn">End the correction</button><button id="word" class="red">Rose</button></div>
@@ -77,6 +78,10 @@
 <script src="js/toon.js"></script>
 <script src="js/looks.js"></script>
 <script src="js/cottage.js"></script>
+<script src="js/cabin.js"></script>
+<script src="js/bakery.js"></script>
+<script src="js/inn.js"></script>
+<script src="js/forge.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/pain.js"></script>
@@ -101,6 +106,20 @@
     sel.value = who[side];
     sel.onchange = () => { who[side] = sel.value; try { localStorage.setItem('red-lessons:lap-pair', JSON.stringify(who)); } catch (e) {} build(); };
   }
+  // Where it's played: a room of the game's, and the place in it (the room's own seat, where it has one for it; otherwise its own chair, in
+  // the middle of the room).
+  const WHERE = {
+    cottage: { name: 'The cottage (her chair, in the middle)' },
+    cabin: { name: 'Grandmother’s cabin (the middle)', set: s => Cabin.build(s) },
+    bakeryBench: { name: 'The bakery (her bench, by the counter)', set: s => Bakery.build(s), place: set => set.world.lap.bench },
+    bakeryMiddle: { name: 'The bakery (the bench brought into the middle)', set: s => Bakery.build(s), place: set => set.world.lap.middle },
+    inn: { name: 'The inn (the middle)', set: s => Inn.build(s) },
+    forge: { name: 'The forge (his bench)', set: s => Forge.build(s), place: set => set.world.lap.bench },
+  };
+  let where = 'cottage'; try { where = localStorage.getItem('red-lessons:lap-where') || where; } catch (e) { /* no storage */ }
+  if (!WHERE[where]) where = 'cottage';
+  { const sel = $('where'); for (const k in WHERE) { const o = document.createElement('option'); o.value = k; o.textContent = WHERE[k].name; sel.appendChild(o); }
+    sel.value = where; sel.onchange = () => { where = sel.value; try { localStorage.setItem('red-lessons:lap-where', where); } catch (e) { /* no storage */ } build(); }; }
   // The corrector for a figure (js/correctors.js), if they are one; their own implement, if so; and who they're taking in hand, as a subject.
   const correctorOf = id => { for (const k in C.CORRECTORS) if (C.CORRECTORS[k].rig === id) return C.corrector(k); return null; };
   const subjectOf = id => {
@@ -119,7 +138,8 @@
     const sub = subjectOf(who.B), c = correctorOf(who.A);
     if (!c || !Implements.LIST[c.implement]) st.implement = 'hand';
     else if (st.implement !== 'hand' && st.implement !== c.implement) st.implement = 'hand';
-    lap = Lap.create($('view'), { looks: L.load(), giver: who.A, subject: who.B, pitch: sub.pitch });
+    const E = WHERE[where] || WHERE.cottage;
+    lap = Lap.create($('view'), { looks: L.load(), giver: who.A, subject: who.B, pitch: sub.pitch, set: E.set, place: E.place });
     lap.set(Object.assign({}, st)); lap.view(camNow || 'side'); lap.start();
     const me = session;
     lap.on((type, d) => {

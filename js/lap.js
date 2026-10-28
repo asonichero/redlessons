@@ -64,9 +64,14 @@ const spring = (w, z) => ({ x: 0, v: 0, w, z, to(target, dt) { this.v += (this.w
 function create(view, opts) {
   opts = opts || {};
   // ── Stage ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  const ext = opts.external || null, st_ = ext ? null : root.Stage.create(view, { fov: 34 });
+  const ext = opts.external || null, st_ = ext ? null : root.Stage.create(view, { fov: 34, set: opts.set });      // (opts.set: the room, on a page of its own: the cottage by default)
+  // (opts.place(set) → { at: { x, z, yaw }, seat, hide }: where in the room it's played, on what, with what of the room's put aside for it)
+  const place = !ext && opts.place && st_.cottage ? opts.place(st_.cottage) || {} : {};
+  if (place.seat && !opts.seat) opts.seat = place.seat;
+  (place.hide || []).forEach(o => { o.visible = false; });
   const scene = ext ? ext.scene : st_.scene;
   const stage = new THREE.Group(); scene.add(stage);
+  if (place.at) { stage.position.set(place.at.x, 0, place.at.z); stage.rotation.y = place.at.yaw || 0; stage.updateMatrixWorld(true); }
   const GIVER = opts.giver || 'gerda', SUBJ = opts.subject || 'red';
   const seatY = T.seatFor(GIVER), chair = T.makeChair(seatY, opts.seat), FLOOR = 0; stage.add(chair);      // (opts.seat: 'bench', for a bench rather than a chair)
   let looks = L ? L.clean(opts.looks || L.load()) : { red: {}, gerda: {} };
@@ -142,8 +147,8 @@ function create(view, opts) {
     const qx = new Q().setFromAxisAngle(new V3(1, 0, 0), Math.PI / 2), qy = new Q().setFromAxisAngle(new V3(0, 1, 0), Math.PI / 2), qz = new Q().setFromAxisAngle(new V3(0, 0, 1), PITCH);
     frame.quaternion.copy(qz).multiply(qy).multiply(qx);          // her head along world +x, her front facing down, tipped head-down
     // Where she lies: hips above Gerda's right thigh, a little past its middle, her belly on the lap.
-    gerda.root.updateMatrixWorld(true);
-    const hip = gerda.thighR.getWorldPosition(new V3()), knee = gerda.kneeR.getWorldPosition(new V3());
+    stage.updateMatrixWorld(true);
+    const hip = stage.worldToLocal(gerda.thighR.getWorldPosition(new V3())), knee = stage.worldToLocal(gerda.kneeR.getWorldPosition(new V3()));      // (in the stage's own frame: it may be placed and turned in a room)
     const lapTop = lerp(hip.y, knee.y, 0.6) + 2.35 * gerda.scaleW;            // (the top of her thigh, under the drape of her skirt and apron)
     base.set(hip.x - 0.9, lapTop + 2.35 * red.scaleW + 0.2, lerp(hip.z, knee.z, 0.6));
     frame.position.copy(base);
