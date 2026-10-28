@@ -21,18 +21,19 @@ function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.
 
 // ── The plot: fenced, its gate on the west side by the cottage. Rows run east and west, flowers and vegetables in turn, with a path between each
 // two and a headland down either side; the water butt in the south-east corner, the can at its foot.
-const X0 = -344, X1 = -214, Z0 = -500, Z1 = -384, RX0 = -331, RX1 = -227;
+const X0 = -344, X1 = -214, Z0 = -514, Z1 = -384, RX0 = -331, RX1 = -227;
 const ROWS = [
-  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -400 },
-  { id: 'onions', kind: 'veg', name: 'the onions', z: -417, job: 'Hoe between the onions' },
-  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -434 },
-  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -451, job: 'Pick the caterpillars off the cabbages' },
-  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -468 },
-  { id: 'beans', kind: 'veg', name: 'the beans', z: -485, job: 'Tie the beans up their poles' },
+  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -414 },
+  { id: 'onions', kind: 'veg', name: 'the onions', z: -431, job: 'Hoe between the onions' },
+  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -448 },
+  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -465, job: 'Pick the caterpillars off the cabbages' },
+  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -482 },
+  { id: 'beans', kind: 'veg', name: 'the beans', z: -499, job: 'Tie the beans up their poles' },
 ];
-const PATHS = [-390, -408.5, -425.5, -442.5, -459.5, -476.5, -494],      // (paths between the rows wide enough to walk without brushing the beds)
+const PATHS = [-397, -422.5, -439.5, -456.5, -473.5, -490.5, -508],      // (paths between the rows wide enough to walk without brushing the beds; the one by the house wide, for the bench)
       HEAD = [-338.5, -219.5];
-const BUTT = V3 ? new V3(-217, 0, -387.5) : null, CAN = V3 ? new V3(-223, 0, -388.5) : null;      // (no THREE under node's tests: the plan and the state only)
+const BUTT = V3 ? new V3(-219, 0, -389) : null, CAN = V3 ? new V3(-226, 0, -390) : null;
+const BENCH = { x: -296, z: -388.5, w: 18, d: 4, y: 8 }, GATE = { x: X0, z: -397 };      // (the potting bench along the fence by the house: the trowel on it, room for a basket; the gate, from the path by the cottage)      // (no THREE under node's tests: the plan and the state only)
 const PER_ROW = 24, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
 const FLOWERS = ROWS.filter(r => r.kind === 'flowers');
 const inside = p => p.x > X0 && p.x < X1 && p.z > Z0 && p.z < Z1;
@@ -61,7 +62,7 @@ function build(parent, world) {
   const mat = c => T.mat(c), M = { soil: mat('#5a4030'), wet: mat('#3a281c'), path: mat('#9a8462'), stem: mat('#4e7a36'), leaf: mat('#6a9a3e'), dark: mat('#3e6a2a'), pole: mat('#7a5a38'), onion: mat('#efe6cf'), wood: mat('#6a4a2c'), hoop: mat('#3a3634') };
   const mesh = (geo, m, x, y, z, o) => { o = o || {}; const g = new THREE.Mesh(geo, m); g.position.set(x, y, z); if (o.rot) g.rotation.set(...o.rot); if (o.ink) g.add(new THREE.Mesh(T.hullGeo(geo, o.ink), T.INKM[0])); g.castShadow = o.shadow !== false; g.receiveShadow = true; G.add(g); return g; };
   // (the paths: trodden earth, along each row and down the headlands)
-  for (const z of PATHS) mesh(new THREE.BoxGeometry(X1 - X0 - 2, 0.12, z === PATHS[0] ? 11 : 10.6), M.path, (X0 + X1) / 2, 0.07, z, { shadow: false });
+  for (const z of PATHS) mesh(new THREE.BoxGeometry(X1 - X0 - 2, 0.12, z === PATHS[0] ? 24 : 10.6), M.path, (X0 + X1) / 2, 0.07, z, { shadow: false });
   for (const x of HEAD) mesh(new THREE.BoxGeometry(10, 0.12, Z1 - Z0 - 2), M.path, x, 0.07, (Z0 + Z1) / 2, { shadow: false });
   // (the beds: dug earth, a flower bed darker once it's watered)
   const beds = {};
@@ -73,6 +74,29 @@ function build(parent, world) {
   for (let x = RX0 + 4; x < RX1 - 2; x += 6) mesh(T.ell(2.3, 1.7, 2.3, 8, 6), M.leaf, x, 1.6, cab.z, { ink: 0.05 });
   for (let x = RX0 + 4; x < RX1 - 2; x += 8) for (const dz of [-1.6, 1.6]) { mesh(new THREE.CylinderGeometry(0.22, 0.28, 15, 5), M.pole, x, 7.3, beans.z + dz, { rot: [-dz * 0.07, 0, 0], ink: 0.06 });
     for (let y = 3; y < 13; y += 3) mesh(T.ell(1.1, 1.3, 1.1, 6, 4), M.leaf, x + (y % 2 ? 0.6 : -0.6), y, beans.z + dz * 0.8, { shadow: false }); }
+  // The picket fence round it, the gate in the west side where the path from the cottage comes in; the gate swings open as she comes to it.
+  { const pale = mat('#ece6d6'), post = mat('#d8d0bc'), geo = new THREE.BoxGeometry(0.9, 6.2, 0.35), tip = new THREE.ConeGeometry(0.62, 1.1, 4).rotateY(Math.PI / 4), pts = [];
+    const inGap = (p, gap) => gap && Math.abs(p.z - gap.z) < 6 && Math.abs(p.x - gap.x) < 1;
+    const run = (a, b, gap) => { const d = b.clone().sub(a), L = d.length(), n = Math.floor(L / 1.7), np = Math.ceil(L / 9);
+      for (let k = 0; k <= n; k++) { const p = a.clone().lerp(b, k / n); if (!inGap(p, gap)) pts.push([p, Math.atan2(d.x, d.z)]); }
+      for (let k = 0; k <= np; k++) { const p = a.clone().lerp(b, k / np); if (inGap(p, gap)) continue; world.obstacles.push({ x: p.x, z: p.z, r: 1.4 }); mesh(new THREE.BoxGeometry(1.3, 7.4, 1.3), post, p.x, 3.7, p.z, { ink: 0.04 }); }
+      for (const p of [gap && new V3(gap.x, 0, gap.z - 6), gap && new V3(gap.x, 0, gap.z + 6)]) if (p) { world.obstacles.push({ x: p.x, z: p.z, r: 1.4 }); mesh(new THREE.BoxGeometry(1.5, 8, 1.5), post, p.x, 4, p.z, { ink: 0.04 }); }      // (the gateposts)
+      const segs = gap ? [[a, new V3(a.x, 0, gap.z + (a.z < gap.z ? -6 : 6))], [new V3(a.x, 0, gap.z + (a.z < gap.z ? 6 : -6)), b]] : [[a, b]];
+      for (const y of [2, 4.6]) for (const [p0, p1] of segs) { const dd = p1.clone().sub(p0), LL = dd.length(); if (LL < 1) continue; const r = mesh(new THREE.BoxGeometry(0.5, 0.7, LL), post, (p0.x + p1.x) / 2, y, (p0.z + p1.z) / 2, { shadow: false }); r.rotation.y = Math.atan2(dd.x, dd.z); } };
+    run(new V3(X0, 0, Z1), new V3(X1, 0, Z1)); run(new V3(X1, 0, Z1), new V3(X1, 0, Z0)); run(new V3(X1, 0, Z0), new V3(X0, 0, Z0)); run(new V3(X0, 0, Z0), new V3(X0, 0, Z1), new V3(GATE.x, 0, GATE.z));
+    const pales = new THREE.InstancedMesh(geo, pale, pts.length), tips = new THREE.InstancedMesh(tip, pale, pts.length), M4 = new THREE.Matrix4(), Q = new THREE.Quaternion();
+    pts.forEach(([p, yaw], i) => { Q.setFromAxisAngle(new V3(0, 1, 0), yaw); M4.compose(new V3(p.x, 3.1, p.z), Q, new V3(1, 1, 1)); pales.setMatrixAt(i, M4); M4.compose(new V3(p.x, 6.75, p.z), Q, new V3(1, 1, 1)); tips.setMatrixAt(i, M4); });
+    pales.castShadow = true; pales.userData.keep = tips.userData.keep = true; G.add(pales, tips);
+    // (the gate: pales on a frame, hung from the post on the house side)
+    const hinge = new THREE.Group(); hinge.position.set(GATE.x, 0, GATE.z + 6); hinge.userData.keep = true; G.add(hinge);
+    for (let k = 0; k < 7; k++) { const z = -0.85 - k * 1.7; const pl = new THREE.Mesh(geo, pale); pl.position.set(0, 3.1, z); hinge.add(pl); const tp = new THREE.Mesh(tip, pale); tp.position.set(0, 6.75, z); hinge.add(tp); }
+    for (const y of [2, 4.6]) { const r = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 12), post); r.position.set(0.45, y, -6); hinge.add(r); }
+    world.gardenGate = { hinge, open: 0 }; }
+  // The potting bench by the house fence: the trowel on it.
+  { const wood = M.wood; mesh(new THREE.BoxGeometry(BENCH.w, 0.8, BENCH.d), wood, BENCH.x, BENCH.y, BENCH.z, { ink: 0.05 });
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.BoxGeometry(0.7, BENCH.y, 0.7), wood, BENCH.x + sx * (BENCH.w / 2 - 0.8), BENCH.y / 2, BENCH.z + sz * (BENCH.d / 2 - 0.5), { shadow: false });
+    world.obstacles.push({ x0: BENCH.x - BENCH.w / 2 - 0.5, x1: BENCH.x + BENCH.w / 2 + 0.5, z0: BENCH.z - BENCH.d / 2 - 0.5, z1: BENCH.z + BENCH.d / 2 + 0.5 }); }
+  const trowel = trowelProp(); trowel.obj.position.set(BENCH.x - 5, BENCH.y + 0.6, BENCH.z); trowel.obj.rotation.set(0, 0.3, Math.PI / 2); trowel.obj.userData.keep = true; G.add(trowel.obj);
   // The water butt in the corner, and the can at its foot.
   mesh(new THREE.CylinderGeometry(3, 2.7, 7, 14), M.wood, BUTT.x, 3.5, BUTT.z, { ink: 0.08 });
   for (const y of [1.4, 5.6]) mesh(new THREE.TorusGeometry(2.95, 0.18, 4, 18).rotateX(Math.PI / 2), M.hoop, BUTT.x, y, BUTT.z, { shadow: false });
@@ -111,11 +135,17 @@ function build(parent, world) {
   flowers.forEach(place);
 
   world.marenGarden = {
-    X0, X1, Z0, Z1, ROWS, PATHS, BUTT, CAN, group: G, flowers, can,
+    X0, X1, Z0, Z1, ROWS, PATHS, BUTT, CAN, BENCH, GATE, group: G, flowers, can, trowel,
     tread(id, down) { const f = flowers.find(q => q.id === id); if (f && f.down !== down) { f.down = down; place(f); } },
     water(row, wet) { const b = beds[row]; if (b) b.material.color.copy(wet ? M.wet.color : M.soil.color); },
   };
   return world.marenGarden;
+}
+// The trowel: a short wooden handle, a pointed iron blade.
+function trowelProp() {
+  const T = root.Toon, g = new THREE.Group(), add = (geo, c, y) => { const m = new THREE.Mesh(geo, T.mat(c)); m.position.y = y; m.add(new THREE.Mesh(T.hullGeo(geo, 0.04), T.INKM[0])); m.castShadow = true; g.add(m); return m; };
+  add(new THREE.CylinderGeometry(0.3, 0.34, 2.8, 8), '#8a6a42', -1.4); add(new THREE.ConeGeometry(0.75, 2.6, 4).scale(1, 1, 0.25), '#7a7e80', -4.1).rotation.x = Math.PI;
+  return { obj: g, name: 'the trowel', kind: 'trowel', grip: new V3(0, -0.6, 0), radius: 0.8, keep: true, style: 'hang' };
 }
 // The watering can: a squat tin can with a long spout and a handle over the top.
 function canProp() {
@@ -129,7 +159,8 @@ function canProp() {
 function stateOf(w) {
   const s = w.save.state, day = w.cal.day;
   const g = s.garden || (s.garden = { day: 0, pulled: [], watered: {}, jobs: {}, can: 'butt', water: 0, trampled: {}, petals: [], petalDay: 0, seen: {}, checked: day, evening: 0, pending: null });
-  if (g.day !== day) { g.day = day; g.pulled = []; g.watered = {}; g.jobs = {}; g.can = 'butt'; g.water = 0; }
+  if (g.day !== day) { g.day = day; g.pulled = []; g.watered = {}; g.jobs = {}; g.can = 'butt'; g.water = 0; g.trowel = 'bench'; }
+  if (!g.trowel) g.trowel = 'bench';      // (and a basket she's left on the bench: g.basket = { full }, there till she takes it)
   if (g.petalDay !== day) { g.petals = []; g.petalDay = day; }
   return g;
 }
@@ -138,8 +169,8 @@ const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.garden); }, { ga
 function progress(w) {
   const g = stateOf(w), p = plan(w.cal.day);
   const weeds = p.weeds.length - g.pulled.length, dry = FLOWERS.filter(r => p.dry.includes(r.id) && !g.watered[r.id]).map(r => r.name), jobs = p.jobs.filter(id => !g.jobs[id]).map(id => ROWS.find(r => r.id === id).job);
-  const can = g.can !== 'butt';
-  return { weeds, dry, jobs, can, begun: g.pulled.length + Object.keys(g.watered).length + Object.keys(g.jobs).length > 0, done: !weeds && !dry.length && !jobs.length && !can };
+  const can = g.can !== 'butt', trowel = g.trowel !== 'bench';
+  return { weeds, dry, jobs, can, trowel, begun: g.pulled.length + Object.keys(g.watered).length + Object.keys(g.jobs).length > 0, done: !weeds && !dry.length && !jobs.length && !can && !trowel };
 }
 function progressText(w) {
   const p = progress(w), parts = [];
@@ -147,6 +178,7 @@ function progressText(w) {
   if (p.dry.length) parts.push(p.dry.join(' and ').replace(/^the /, '') + ' to water');
   for (const j of p.jobs) parts.push(j.toLowerCase());
   if (!p.dry.length && p.can) parts.push('the can back by the butt');
+  if (!p.jobs.length && p.trowel) parts.push('the trowel back on the bench');
   return parts.join('; ');
 }
 
@@ -168,8 +200,16 @@ function attach(P, w) {
     for (const wd of weeds) wd.g.visible = !g.pulled.includes(wd.i);
     const today = plan(cal.day); for (const r of FLOWERS) G.water(r.id, !!g.watered[r.id] || !today.dry.includes(r.id));      // (watered, or wet from the night's rain, or not wanting it today)
     for (const f of G.flowers) G.tread(f.id, !!g.trampled[f.id]);
-    G.can.obj.visible = g.can === 'butt';
+    G.can.obj.visible = g.can === 'butt'; G.trowel.obj.visible = g.trowel === 'bench';
     if (g.can !== 'butt' && !m.carry) { const c = canProp(); P.stage.scene.add(c.obj); m.hold(c, 'hang'); }      // (still in her hands, if she went off with it)
+    if (g.trowel !== 'bench' && !m.carry) { const t = trowelProp(); P.stage.scene.add(t.obj); m.hold(t, 'hang'); }
+    benchBasket();
+  }
+  // (a basket she's left on the bench: there till she takes it again)
+  let onBench = null;
+  function benchBasket() {
+    const b = stateOf(w).basket; if (onBench) { P.stage.scene.remove(onBench.obj); onBench = null; } if (!b || !w.chores) return;
+    onBench = w.chores.prop('basket', { empty: !b.full }); onBench.obj.position.set(BENCH.x + 4, BENCH.y + 0.4, BENCH.z); P.stage.scene.add(onBench.obj);
   }
   show(); boots(P, w);
   const objective = () => w.refresh();
@@ -182,18 +222,33 @@ function attach(P, w) {
   };
   // Her work: what's offered, from close by.
   function actions() {
-    if (!inside(m.pos) || !w.chores || !w.chores.on() || w.chores.gardenTended()) return [];
-    const g = stateOf(w), out = [], holding = m.carry && m.carry.name === 'the watering can';
+    if (!inside(m.pos) || !w.chores) return [];
+    const g = stateOf(w), out = [], benchAt = new V3(BENCH.x, BENCH.y + 1, BENCH.z), atBench = near(new V3(BENCH.x, 0, BENCH.z), 16);
+    // (the bench: a basket set down on it, or taken up again)
+    if (atBench && m.carry && m.carry.kind === 'basket' && !g.basket) out.push({ label: 'Put the basket on the bench', at: benchAt, run: basketDown });
+    if (atBench && !m.carry && g.basket) out.push({ label: 'Take the basket', at: benchAt, run: basketUp });
+    if (!w.chores.on() || w.chores.gardenTended()) return out;
+    const holding = m.carry && m.carry.name === 'the watering can', trowelHeld = m.carry && m.carry.kind === 'trowel', hoe = plan(cal.day).jobs.includes('onions') && !g.jobs.onions;
+    if (atBench && !m.carry && g.trowel === 'bench' && hoe) out.push({ label: 'Take the trowel', at: benchAt, run: takeTrowel });
+    if (atBench && trowelHeld && !hoe) out.push({ label: 'Put the trowel back', at: benchAt, run: putTrowel });
+    if (trowelHeld && hoe) { const r = ROWS.find(q => q.id === 'onions'), p = pathBeside('onions', m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 && m.pos.x < RX1) out.push({ label: r.job, at: new V3(m.pos.x, 4, r.z), run: () => job(r, p) }); }
     if (g.can === 'butt' && !m.carry && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: takeCan });
     if (holding && g.water < WATER_PER_FILL && progress(w).dry.length && near(BUTT, 12)) out.push({ label: 'Fill the can at the butt', at: BUTT.clone().setY(6), run: fill });
     if (holding && !progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Put the can back by the butt', at: CAN.clone().setY(3), run: putCan });
     if (holding && g.water > 0) for (const r of FLOWERS) if (plan(cal.day).dry.includes(r.id) && !g.watered[r.id]) { const p = pathBeside(r.id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 - 10 && m.pos.x < RX1 + 10) out.push({ label: 'Water ' + r.name, at: p.clone().setY(12), run: () => water(r) }); }
     if (!m.carry) {
       for (const wd of weeds) if (!g.pulled.includes(wd.i)) { const p = pathBeside(wd.row, wd.x); if (near(p, 12)) out.push({ label: 'Pull up the weed', at: new V3(wd.x, 3, wd.z), run: () => pull(wd, p) }); }
-      for (const id of plan(cal.day).jobs) if (!g.jobs[id]) { const r = ROWS.find(q => q.id === id), p = pathBeside(id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 && m.pos.x < RX1) out.push({ label: r.job, at: new V3(m.pos.x, 4, r.z), run: () => job(r, p) }); }
+      for (const id of plan(cal.day).jobs) if (!g.jobs[id] && id !== 'onions') { const r = ROWS.find(q => q.id === id), p = pathBeside(id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 && m.pos.x < RX1) out.push({ label: r.job, at: new V3(m.pos.x, 4, r.z), run: () => job(r, p) }); }      // (the onions want the trowel: see above)
     }
     return out;
   }
+  const benchStand = () => P.collide(new V3(BENCH.x, 0, BENCH.z - BENCH.d / 2 - 6), 3.2);
+  async function basketDown() { const s = benchStand(); await m.goTo(s, Math.PI); await m.reach('R', new V3(BENCH.x + 4, BENCH.y + 3, BENCH.z)); const it = m.drop(); if (it) P.stage.scene.remove(it.obj);
+    change(w, g => { g.basket = { full: !!(it && it.full) }; }); benchBasket(); await m.release('R'); objective(); }
+  async function basketUp() { const s = benchStand(); await m.goTo(s, Math.PI); await m.reach('R', new V3(BENCH.x + 4, BENCH.y + 3, BENCH.z)); const b = stateOf(w).basket;
+    change(w, g => { g.basket = null; }); benchBasket(); const it = w.chores.prop('basket', { empty: !b.full }); P.stage.scene.add(it.obj); m.hold(it, it.style); await m.release('R'); objective(); }
+  async function takeTrowel() { const s = benchStand(); await m.goTo(s, Math.PI); await m.reach('R', G.trowel.obj.position.clone()); G.trowel.obj.visible = false; const t = trowelProp(); P.stage.scene.add(t.obj); m.hold(t, 'hang'); await m.release('R'); change(w, g => { g.trowel = 'held'; }); objective(); }
+  async function putTrowel() { const s = benchStand(); await m.goTo(s, Math.PI); await m.reach('R', G.trowel.obj.position.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); G.trowel.obj.visible = true; await m.release('R'); change(w, g => { g.trowel = 'bench'; }); objective(); await finished(); }
   async function takeCan() { await m.goTo(CAN.clone().add(new V3(-4, 0, -2)), yawTo(m.pos, CAN)); await m.reach('R', CAN.clone().setY(2)); G.can.obj.visible = false; const c = canProp(); P.stage.scene.add(c.obj); m.hold(c, 'hang'); await m.release('R'); change(w, g => { g.can = 'held'; }); objective(); }
   async function fill() { await m.goTo(BUTT.clone().add(new V3(-5, 0, -3)), yawTo(m.pos, BUTT)); await m.reach('L', BUTT.clone().setY(6.5)); await P.wait(1.2); await m.release('L'); change(w, g => { g.water = WATER_PER_FILL; }); spend(2); }
   async function putCan() { await m.goTo(CAN.clone().add(new V3(-4, 0, -2)), yawTo(m.pos, CAN)); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); G.can.obj.visible = true; change(w, g => { g.can = 'butt'; }); objective(); await finished(); }
@@ -215,6 +270,30 @@ function attach(P, w) {
     for (let k = 0; k < 3; k++) { await m.reach(k % 2 ? 'L' : 'R', new V3(p.x + (k - 1) * 3, r.id === 'beans' ? 6 + k * 2 : 1, r.z)); await P.wait(0.5); await m.release(k % 2 ? 'L' : 'R'); }
     m.lookAt(null); change(w, g => { g.jobs[r.id] = true; }); spend(8); await finished();
   }
+  // ── The gate, opened as she comes to it and swung to behind her; and, once she's through it, what's to do marked where it's done: each weed,
+  // the can (or the butt, with it empty; or the near end of the nearest dry row, with it full), the trowel and the onions, the bench to put
+  // things back on. None of it outside: there it's only "Tend Mama's garden".
+  const rings = [], ringMat = new THREE.MeshBasicMaterial({ color: 0xf2d27a, transparent: true, opacity: 0.85, depthWrite: false });
+  const ring = i => { while (rings.length <= i) { const r = new THREE.Mesh(new THREE.RingGeometry(1.8, 2.4, 24), ringMat); r.rotation.x = -Math.PI / 2; r.renderOrder = 5; P.stage.scene.add(r); rings.push(r); } return rings[i]; };
+  function marks() {
+    const out = [], g = stateOf(w), pr = progress(w), today = plan(cal.day); if (!w.chores || !w.chores.on() || w.chores.gardenTended()) return out;
+    const holding = m.carry && m.carry.name === 'the watering can', trowelHeld = m.carry && m.carry.kind === 'trowel', bench = new V3(BENCH.x, 0, BENCH.z - BENCH.d / 2 - 3);
+    for (const wd of weeds) if (!g.pulled.includes(wd.i)) out.push(new V3(wd.x, 0, wd.z));
+    if (pr.dry.length) { if (!holding && g.can === 'butt') out.push(CAN.clone()); else if (holding && g.water <= 0) out.push(BUTT.clone().add(new V3(-4, 0, -3)));
+      else if (holding) { let best = null, bd = 1e9; for (const r of FLOWERS) if (today.dry.includes(r.id) && !g.watered[r.id]) { const p = pathBeside(r.id, m.pos.x); for (const x of [RX0 + 1, RX1 - 1]) { const e = new V3(x, 0, p.z), d = e.distanceTo(flat(m.pos)); if (d < bd) { bd = d; best = e; } } } if (best) out.push(best); } }
+    else if (holding) out.push(CAN.clone());
+    if (today.jobs.includes('onions') && !g.jobs.onions) out.push(trowelHeld ? new V3(Math.min(RX1 - 4, Math.max(RX0 + 4, m.pos.x)), 0, pathBeside('onions', m.pos.x).z) : bench);
+    else if (trowelHeld) out.push(bench);
+    for (const id of today.jobs) if (id !== 'onions' && !g.jobs[id]) out.push(new V3((RX0 + RX1) / 2, 0, pathBeside(id, (RX0 + RX1) / 2).z));
+    return out;
+  }
+  const gate = P.world.gardenGate; let ringT = 0, wasIn = null;
+  const offMarks = P.tick(dt => {
+    { const nowIn = inside(m.pos); if (nowIn !== wasIn) { wasIn = nowIn; w.refresh(); } }      // (through the gate, or out of it: the list says as much, or as little)
+    if (gate) { const d = Math.hypot(m.pos.x - GATE.x, m.pos.z - GATE.z), want = d < 16 ? 1 : 0; gate.open += (want - gate.open) * (1 - Math.exp(-dt * 5)); gate.hinge.rotation.y = -1.6 * gate.open; }
+    ringT += dt; const list = inside(m.pos) && !P.busy ? marks() : [], s = 1 + 0.1 * Math.sin(ringT * 3);
+    list.forEach((p, i) => { const r = ring(i); r.visible = true; r.position.set(p.x, 0.35, p.z); r.scale.set(s, s, 1); }); for (let i = list.length; i < rings.length; i++) rings[i].visible = false;
+  });
   // ── Treading where she shouldn't: under her, a flower goes down (out of its line, crushed), its petals on her boots; and who might have seen.
   let mused = false, since = 0;
   const off = P.tick(dt => {

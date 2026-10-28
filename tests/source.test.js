@@ -14,9 +14,10 @@ test('no code is swallowed by a comment at the end of a line', () => {
       let i = line.indexOf('//');
       while (i > 0 && line[i - 1] === ':') i = line.indexOf('//', i + 2);      // (not a URL's)
       if (i <= 0 || !line.slice(0, i).trim()) return;      // (a comment on a line of its own is a comment)
-      // (a parenthesised note, then what reads as code: a name followed by a call, a property or an assignment, and a semicolon; or a key and its value)
+      // (a parenthesised note, then what reads as code: a name followed by a call, a property or an assignment, and a semicolon; a key and its
+      // value; or a declaration or a statement)
       const c = line.slice(i + 2);
-      if (/\)\s+[A-Za-z_$][\w$.[\]]*\s*(\.|\(|=)[^;]*;/.test(c) || /\)\s+[A-Za-z_$][\w$]*\s*:\s*[{['"\d]/.test(c)) found.push(f + ':' + (n + 1));      // (or an object's next key)
+      if (/\)\s+[A-Za-z_$][\w$.[\]]*\s*(\.|\(|=)[^;]*;/.test(c) || /\)\s+[A-Za-z_$][\w$]*\s*:\s*[{['"\d]/.test(c) || /\)\s+(const|let|var|function|if|for|while|return|await)\b[^;]*[;{]/.test(c)) found.push(f + ':' + (n + 1));      // (or an object's next key)
     });
   }
   assert.deepEqual(found, [], 'code after a line comment, never run: ' + found.join(', '));

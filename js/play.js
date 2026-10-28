@@ -72,21 +72,20 @@ function create(view, opts) {
   }
   function removeFigure(key) { const f = figs[key]; if (!f) return; st.scene.remove(f.rig.root); if (talk) delete talk.cast[key]; const i = W.obstacles.indexOf(f.ob); if (i >= 0) W.obstacles.splice(i, 1); delete figs[key]; }
 
-  // ── The camera, between scenes. Indoors it's anchored at the middle of the room, not on her: the whole room in view, turned round it by hand.
-  // Outdoors it's anchored on her, she in the middle of the view, and goes with her. Either way, a drag moves it any way about the anchor, round
+  // ── The camera, between scenes. It's anchored on her, she in the middle of the view, and goes with her (indoors, any wall between it and her
+  // isn't drawn while it's there). Either way, a drag moves it any way about the anchor, round
   // it and up over it or down toward the floor (never under it), and the camera button or the wheel steps between near, medium (where it starts)
   // and far; on a touch screen a pinch goes anywhere between near and far. Where it's been turned to, it stays: it doesn't swing round after her. (A scene can take it for a shot of its own: camHeld; or a page can leave it free: opts.camFree.)
   const chest = () => m.pos.clone().setY(rig.root.position.y + (m.lieW > 0.5 ? 2 : 20 * sc));
   const indoors = !opts.followCam;
-  const roomMid = () => B ? new V3((B.x0 + B.x1) / 2, 12, (B.z0 + B.z1) / 2) : new V3(0, 12, 0);
-  const anchor = () => indoors ? roomMid() : chest();
+  const anchor = () => chest();      // (on her, indoors and out: indoors, a wall between the camera and her isn't drawn while it's there)
   const camT = anchor();
   st.controls.minDistance = 14; st.controls.maxDistance = 200; st.controls.enablePan = false; st.controls.enableZoom = false;
   st.controls.maxPolarAngle = 2.3;      // (a drag down goes on past level, and the camera slides along the floor or the ground toward the anchor: see inRoom, ground)
   // (indoors: the camera kept inside the room, so there's never the blank outside of it in view: within the walls, above the floor and under
   // the roof's slope. Pulled in along its line to the anchor as far as it must be: so on the floor, dragged further down, it slides along it
   // toward the anchor.)
-  const RB = indoors && st.cottage && st.cottage.bounds && st.cottage.bounds.EAVE ? st.cottage.bounds : null;
+  const RB = null;      // (no longer kept inside the room: it goes where it must to keep her in view, and the walls it's beyond aren't drawn)
   const inside = p => { const m = 1.6, R = RB, half = (R.Z1 - R.Z0) / 2, roof = R.EAVE + (R.RIDGE - R.EAVE) * Math.max(0, 1 - Math.abs(p.z - (R.Z0 + R.Z1) / 2) / half);
     return p.x > R.X0 + m && p.x < R.X1 - m && p.z > R.Z0 + m && p.z < R.Z1 - m && p.y > 3 && p.y < roof - 3; };
   const inRoom = () => { if (!RB) return; const T = st.controls.target, off = st.camera.position.clone().sub(T); if (inside(st.camera.position) || !inside(T)) return;
@@ -99,7 +98,7 @@ function create(view, opts) {
   // (its three distances from the anchor, across the floor and up: near, medium (the usual), far. Outdoors, from her, scaled to her; indoors,
   // from the middle of the room, medium holding the whole room)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
-  const STEPS = indoors ? [[46, 28], [74, 44], [104, 64]] : [[24, 6], [40, 10], [64, 17]], SCALE = indoors ? 1 : sc; let camZ = 1, camHeld = false;      // (camHeld: a scene has the camera on a shot of its own)
+  const STEPS = indoors ? [[26, 9], [42, 15], [62, 24]] : [[24, 6], [40, 10], [64, 17]], SCALE = sc; let camZ = 1, camHeld = false;      // (indoors a little higher: over the furniture) (camHeld: a scene has the camera on a shot of its own)
   const stepAt = z => { const i = Math.min(1, Math.floor(z)), u = z - i, a = STEPS[i], b = STEPS[i + 1]; return [(a[0] + (b[0] - a[0]) * u) * SCALE, (a[1] + (b[1] - a[1]) * u) * SCALE]; };
   const camBack = !indoors && opts.camBack ? opts.camBack : stepAt(1);      // (a wider opening view in the open, easing in to medium)
   const az = start.yaw + Math.PI + (opts.camTurn || 0);      // (behind her as she starts, or turned round from there by opts.camTurn)

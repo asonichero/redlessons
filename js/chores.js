@@ -22,6 +22,7 @@ const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
 const NONE_ONE_IN = 4;
 const INTRO = ['eggs', 'bread', 'pot', 'bakery', 'well', 'dunns', 'jug', 'inn'];      // (the first errands, in turn: the Fowlers', the Pennocks, the forge, the well, the Dunns', the inn)      // (about one day in four nothing's asked)
+let wicker = null;      // (the cottage's wicker, made once)
 const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'the basket' };
 
 // Things carried: a bucket, two loaves in a cloth, the pot, a jug, a covered basket (o.empty: a basket with nothing in it). → an item for her
@@ -35,8 +36,12 @@ function prop(kind, o) {
   if (kind === 'pot') { add(new THREE.SphereGeometry(2, 12, 8, 0, Math.PI * 2, Math.PI * 0.3, Math.PI * 0.7), '#2e2a28', 0, -2.2, 0); add(new THREE.TorusGeometry(2, 0.18, 4, 14).rotateX(Math.PI / 2), '#2e2a28', 0, -1.1, 0, 0.03); grip = new V3(0, -0.6, 0); style = 'front'; name = 'the pot'; }
   if (kind === 'jug') { add(new THREE.LatheGeometry([[0.01, 0], [1.1, 0.1], [1.4, 1.2], [1.0, 2.6], [0.8, 3.0], [0.95, 3.3]].map(([r, y]) => new THREE.Vector2(r, y)), 12), '#c8946a', 0, -3.2, 0); add(new THREE.TorusGeometry(0.6, 0.15, 4, 10, Math.PI), '#c8946a', 1.2, -1.2, 0, 0.03); name = 'the jug'; }
   const empty = kind === 'basket' && o && o.empty;
-  if (kind === 'basket') { add(new THREE.CylinderGeometry(1.9, 1.5, 2, 12), '#b08850', 0, -2, 0); add(new THREE.TorusGeometry(1.6, 0.14, 4, 12, Math.PI), '#8e6a38', 0, -0.4, 0, 0.03); name = 'the basket'; }
-  const it = { obj: g, name, kind, grip, radius: 1.2, keep: true, style, fill: kind === 'basket' ? { y: -1, r: 1.8 } : null };
+  // (a basket: the cottage's own, the wicker bowl and its handle over the top, as on the pegs at home)
+  if (kind === 'basket') { const K = root.Cottage && root.Cottage.kit, wick = K ? (wicker || (wicker = K.toonMap(K.textures().wicker))) : T.mat('#b08850');
+    const bowl = new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.0, 1.4], [3.2, 3.2], [3.3, 3.4]].map(([r, h]) => new THREE.Vector2(r, h)), 16), handle = new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI);
+    for (const [geo, y, ink] of [[bowl, 0, 0.1], [handle, 3.4, 0.06]]) { const mm = new THREE.Mesh(geo, wick); mm.position.y = y; if (geo === bowl) mm.material = Object.assign(wick.clone(), { side: THREE.DoubleSide }); mm.add(new THREE.Mesh(T.hullGeo(geo, ink), T.INKM[0])); mm.castShadow = true; g.add(mm); }
+    grip = new V3(0, 6.5, 0); name = 'the basket'; }
+  const it = { obj: g, name, kind, grip, radius: kind === 'basket' ? 3.4 : 1.2, keep: true, style, fill: kind === 'basket' ? { y: 3.2, r: 3.0 } : null };
   if (kind === 'basket' && !empty) fill(it, true);
   return it;
 }
@@ -127,7 +132,7 @@ function create(w) {
   function actions(P, area) {
     if (!on() || !P) return [];
     const out = [], e = errand(), c = st(), W = P.world, sp = W.spots || {}, m = P.motion;
-    if (area === 'village' && !c.garden && P.garden) out.push(...P.garden.actions());      // (the garden's own work, from the paths between its rows: js/garden.js)
+    if (area === 'village' && P.garden) out.push(...P.garden.actions());      // (the garden's own work, and its bench)      // (the garden's own work, from the paths between its rows: js/garden.js)
     if (e && (e.area || 'village') === area && area !== 'home') {      // (the errand's own place: the village's, or the Fowlers')
       if (e && (e.state === 'accepted' || e.state === 'broken' || e.state === 'working') && sp[e.place] && (!e.give || m.carry)) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
@@ -210,7 +215,7 @@ function create(w) {
     else if (e && e.state === 'accepted') out.push(e.title + ': begin by ' + clock(e.by) + (e.needs === 'basket' && w.P && !basketIn(w.P) && w.area === 'home' ? ' (take a basket from the pegs)' : '') + '.');
     else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');
-    if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && root.Garden.progress(w).begun ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');
+    if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && w.area === 'village' && w.P && root.Garden.inside(w.P.motion.pos) ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');      // (what's left in it, once she's through the gate)
     { const t = root.Herbs && root.Herbs.objective(w); if (t) out.push(t); }      // (Grandmother's herbs: after what's asked at home)
     return out;
   }

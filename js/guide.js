@@ -46,6 +46,7 @@ function pointOf(w, P, g) {
   if (g.who === 'mother' || g.who === 'gran' || (g.who && P.npc && P.npc.key === g.who)) return P.npcMotion ? P.npcMotion.pos.clone() : null;
   if (g.who) { const f = P.figure(g.who); return f ? f.motion.pos.clone() : null; }
   if (g.herb) return W.herbs && W.herbs[g.herb] ? W.herbs[g.herb].clone() : null;
+  if (g.spot === 'garden' && root.Garden && root.Garden.inside(P.motion.pos)) return null;      // (in the garden, its own marks show what's to do)
   if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }
   if (g.spot === 'pegs') { const it = W.items.find(x => x.kind === 'basket' && x.peg); return it ? it.obj.position.clone() : null; }
   if (g.spot) { const s = (W.spots && W.spots[g.spot]) || (P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots[g.spot]); return s ? s.at.clone() : null; }
