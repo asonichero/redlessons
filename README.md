@@ -145,7 +145,7 @@ Whenever Red comes home after six of her own accord (walking in at her door, not
 - **The pie**: sent home by Mistress Pennock (told or kept back), or found out the next evening.
 - **The garden**: her mother's look round, every few days.
 
-Only one correction an evening; whatever else is owed waits for the next. If nothing's owed, her mother asks if she'll help with supper: *Of course* (forty minutes at the table together), an honest *I'm worn through*, or *Must I?* (a "won't": wilful, and counted with the errands' toward the week's three). Then she's in for the night: supper and bed, and it's morning. ("Sleep until morning" has the same word with her first.) Before six, coming in only brings up what can't wait: being sent home by Mistress Pennock.
+Only one correction an evening; whatever else is owed waits for the next. If nothing's owed, her mother asks if she'll help with supper: *Of course* (the two of them on the stools, turned to face each other over a bowl of potatoes, peeling while they talk the day over: forty minutes), an honest *I'm worn through*, or *Must I?* (a "won't": wilful, and counted with the errands' toward the week's three). Then supper's when she's ready for it: she washes at the jug and basin on the dresser, and it fades into the morning. Before nine she can slip out again first; after nine, at the door, her mother reminds her gently of the curfew, and the door stays shut. ("Sleep until morning" has the same word with her first.) Before six, coming in only brings up what can't wait: being sent home by Mistress Pennock.
 
 ## The inn (`js/inn.js`), and Mistress Abney's promise (`js/promise.js`)
 

@@ -277,6 +277,7 @@ function build(scene) {
     solid(g, new THREE.CylinderGeometry(0.9, 1.1, 0.5, 12), '#c9a24a', -5.5, DH + 1.05, 0, { ink: 0.03 }); solid(g, new THREE.CylinderGeometry(0.35, 0.35, 3.2, 8), '#f2ead8', -5.5, DH + 2.9, 0, { ink: 0.03 });
     solid(g, new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.2, 1.2], [3.4, 1.5]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#e8e2d4', 3, DH + 0.8, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
     solid(g, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.8], [1.0, 3.6], [0.8, 4.2], [1.1, 4.6]].map(([r, h]) => new THREE.Vector2(r, h)), 14), '#e8e2d4', 3, DH + 1.2, 0, { ink: 0.06 });
+    world.basin = { at: pc.P(3, DH + 1.6, 0), stand: pc.P(3, 0, DD / 2 + 6), facing: pc.ry + Math.PI };      // (the jug and basin: where she washes for supper)
     world.surfaces.push(Object.assign(pc.area(-DW / 2 + 2, DW / 2 - 2, -1, 1), { name: 'the dresser', y: DH + 0.8, panel: g, front: pc.turn(new V3(0, 0, 1)) }));
     world.obstacles.push(pc.area(-DW / 2 - 0.5, DW / 2 + 0.5, -DD / 2 - 0.5, DD / 2 + 0.5));
     // (beside it, on the side away from the door, the slop pail: where the breakfast bowls are tipped and rinsed)

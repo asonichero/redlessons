@@ -14,7 +14,7 @@ function goal(w) {
   if (off('maren.walk') || off('maren.homecoming')) return { area: 'home', who: 'mother' };      // (chapter one: home, along the path)
   { const V = w.P && w.P.villagers, d = V && V.dareObjective && V.dareObjective(); if (d) return /Back to Tom/.test(d) ? { area: 'village', who: 'tom' } : { area: 'village', spot: /bell/.test(d) ? 'bell' : 'dunnsDoor' }; }      // (Tom's dare, taken; and done, back to him)
   { const at = root.Flock && root.Flock.goal(w); if (at) return { area: 'village', at }; }      // (Bo's strays, when Red's said she'll help)
-  if (root.Evening && root.Evening.tableDue && root.Evening.tableDue(w)) return { area: 'home', spot: 'table' };
+  if (root.Evening && root.Evening.washDue && root.Evening.washDue(w)) return { area: 'home', spot: 'basin' };
   if (root.Evening && root.Evening.objective(w)) return { area: 'home', who: 'mother' };
   if (root.Pie && root.Pie.objective(w)) return { area: 'home', who: 'mother' };
   if (root.AbneyPromise && root.AbneyPromise.objective(w)) return { area: 'inn', who: 'bess' };
@@ -49,6 +49,7 @@ function pointOf(w, P, g) {
   if (g.at) return g.at.clone();
   if (g.herb) return W.herbs && W.herbs[g.herb] ? W.herbs[g.herb].clone() : null;
   if (g.spot === 'garden' && root.Garden && root.Garden.inside(P.motion.pos)) return null;      // (in the garden, its own marks show what's to do)
+  if (g.spot === 'basin') return W.basin ? W.basin.at.clone().setY(0) : null;
   if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }
   if (g.spot === 'basket') { const it = W.items.find(x => x.kind === 'basket' && x.peg); return it ? it.obj.position.clone() : null; }
   if (g.spot === 'peg') { const pg = W.pegs.find(x => !x.item); return pg ? pg.at.clone() : null; }
