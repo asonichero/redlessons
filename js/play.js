@@ -154,7 +154,7 @@ function create(view, opts) {
       if (look.outfit !== 'No cloak' && !h.redHung) add({ label: 'Hang up your cloak', run: () => hangCloak(true) }, h.peg);
       else if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     if (!m.carry) {
-      for (const it of W.items) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: () => take(it) }, p); }
+      for (const it of W.items) if (!it.away) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: () => take(it) }, p); }
       for (const s of W.seats) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
     } else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them)
       const it = m.carry;
@@ -310,7 +310,7 @@ function create(view, opts) {
     // Keys move her relative to the camera.
     const cf = flat(st.controls.target.clone().sub(st.camera.position)).normalize(), cr = new V3(-cf.z, 0, cf.x);
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
-    m.update(dt, { move: mv, run: input.run && !opts.noRun }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there)
+    m.update(dt, { move: mv, run: input.run && !opts.noRun && !(m.carry && m.carry.heavy) }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there; and with a heavy thing in her arms, the butt full)
     // Exits: walking into one tells the page (once).
     if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; if (opts.onExit(e) === false) exited = null; break; }
     // (the set: anything between the camera and her is cut away; only in play, with her there to be seen, not in a shot of the page's own)

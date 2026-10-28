@@ -370,6 +370,12 @@ function build(scene) {
     world.obstacles.push(pc.area(-cw / 2, cw / 2, -6.5, cd / 2));
     world.surfaces.push(Object.assign(pc.area(-cw / 2 + 2, cw / 2 - 2, -1, 1), { name: 'the chest', y: ch + 0.6 + cd / 2 * 0.45, panel: g, front: pc.turn(new V3(0, 0, 1)), when: () => world.chest.open < 0.05 }));
     for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) for (const sz of [-1, 1]) box(g, 1.2, ch + 0.2, 0.4, cx + x, ch / 2 + 0.6, cz + sz * (cd / 2 + 0.1), '#3a3634');
+    // (on it, the iron pot with the cracked handle, waiting to go to the smith for mending: a thing to carry, two-handed)
+    { const it = new THREE.Group(), iron = T.mat('#2e2a28'); solid(it, new THREE.SphereGeometry(2.4, 14, 10, 0, Math.PI * 2, Math.PI * 0.35, Math.PI * 0.65), iron, 0, 2.4, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
+      solid(it, new THREE.TorusGeometry(2.2, 0.2, 5, 16).rotateX(Math.PI / 2), iron, 0, 3.6, 0, { ink: 0.03 });
+      for (const sx of [-1, 1]) solid(it, new THREE.TorusGeometry(0.6, 0.15, 4, 10, Math.PI).rotateY(Math.PI / 2), iron, sx * 2.4, 3.4, 0, { ink: 0.02 });
+      const at = pc.P(-4, ch + 0.6 + cd / 2 * 0.45, 0); it.position.copy(at); it.rotation.y = pc.ry; root_.add(it);
+      world.items.push({ obj: it, name: 'the pot', kind: 'pot', grip: new V3(0, 3.6, 0), radius: 2.9, panel: g, home: at.clone() }); pc.items.push({ obj: it, at: new V3(-4, ch + 0.6 + cd / 2 * 0.45, 0), ry: 0 }); }
     box(g, 2.2, 3, 0.4, cx, ch - 0.6, cz + cd / 2 + 0.2, '#3a3634');
     for (const x of [-cw / 2 + 1.2, cw / 2 - 1.2]) for (const z of [-cd / 2 + 1, cd / 2 - 1]) box(g, 1.6, 0.8, 1.6, cx + x, 0.4, cz + z, oakDk);
   }
@@ -444,6 +450,14 @@ function build(scene) {
   // the chimney breast rising into the thatch; a log fire on iron fire-dogs, with an iron pot on a swinging crane over it, a kettle and the fire
   // irons on the hearth, and logs stacked beside it. The fire flickers (its flames, the embers, and the warm light it throws across the room).
   const fire = { flames: [], light: null, embers: null, t: 0 };
+  // The little water butt by the hearth: a cask with two hoops and a rope handle each side, filled at the well (three pails) and carried home.
+  { const it = new THREE.Group(), staves = toonMap(tx.oak || tx.door), hoop = T.mat('#3a3430');
+    solid(it, new THREE.CylinderGeometry(2.5, 2.3, 5, 14, 1, true), staves, 0, 2.5, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
+    solid(it, new THREE.CircleGeometry(2.3, 14).rotateX(-Math.PI / 2), staves, 0, 0.15, 0, { ink: 0 });
+    for (const y of [0.8, 4.2]) solid(it, new THREE.TorusGeometry(2.48, 0.14, 4, 16).rotateX(Math.PI / 2), hoop, 0, y, 0, { ink: 0.02 });
+    const water = new THREE.Mesh(new THREE.CircleGeometry(2.3, 14).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: srgb('#5a8aa0') })); water.position.y = 4.4; water.visible = false; it.add(water);
+    const at = new V3(-27, 0, Z1 - 7); it.position.copy(at); root_.add(it);
+    world.items.push({ obj: it, name: 'the little water butt', kind: 'butt', grip: new V3(0, 5, 0), radius: 3, home: at.clone(), water }); }
   { const g = sub(W.front), cx = -2, zb = Z1 - 2.6, D = 8, zf = zb - D, OW = 18, OH = 16, JW = 5;      // (zb: its back, in front of the foundation course)
     const ashlar = toonMap(tx.ashlar), soot = toonMap(tx.soot), iron = T.mat('#2e2a28'), bark = T.mat('#5a3e26');
     box(g, OW + 2 * JW + 6, 1.4, D + 9.6, cx, 0.7, Z1 - (D + 9.6) / 2, ashlar);                                // the hearthstone, raised a little
@@ -514,7 +528,7 @@ function build(scene) {
     for (const f of pieces) { const b = f.userData.box || (f.userData.box = new THREE.Box3().setFromObject(f).expandByScalar(3)); f.visible = !b.containsPoint(cp); }
     // (a thing on a wall's peg or a table goes with that wall, and with that table)
     const shown = o => { for (; o && o !== root_; o = o.parent) if (!o.visible) return false; return true; };
-    for (const it of world.items) it.obj.visible = !it.panel || shown(it.panel);
+    for (const it of world.items) it.obj.visible = !it.away && (!it.panel || shown(it.panel));      // (away: out of the house for the day, the pot at the forge)
   }
   // The door and the chest's lid swing toward where they're going (0 shut, 1 open), easing.
   function tick(dt) {

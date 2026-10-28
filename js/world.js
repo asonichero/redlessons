@@ -85,26 +85,27 @@ const AREAS = {
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
-    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); if (w.breakfasted) { w.breakfasted = false; atTable(P); } },
+    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); if (w.breakfasted) { w.breakfasted = false; atPegs(P); } },
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
     exits: { 'the door': { area: 'village', entry: 'home' } },      // (out of her door into the village)
   },
 };
 
 const RATE = 2;      // (game minutes a second, while she's about: a day from seven to the bell in seven minutes)
-// The morning, as it opens (js/world.js's morning): Red still on her stool at the table, her mother at the dresser with the bowls.
-function atTable(P) {
-  const W = P.world, m = P.motion, mm = P.npcMotion, V = THREE.Vector3, seat = W.seats.filter(s => s.name === 'the stool').sort((a, b) => a.at.z - b.at.z)[0];
-  if (seat) { const s = Object.assign({}, seat, { facing: seat.facing + Math.PI }), f = new V(Math.sin(s.facing), 0, Math.cos(s.facing));      // (turned to the table, where she ate)
-    m.warp(s.at.clone().setY(0).addScaledVector(f, 0.5), s.facing); m.sit(s); m.sitW = 1; P.sitting = s; P.rig.root.position.copy(m.pos); }
+// The morning, as it opens (js/world.js's morning): Red at the peg rail, reaching a basket down for the day, her mother at the dresser with the
+// bowls.
+function atPegs(P) {
+  const W = P.world, m = P.motion, mm = P.npcMotion, V = THREE.Vector3, it = W.items.find(x => x.kind === 'basket' && x.peg);
+  if (it) { const at = P.collide(it.peg.at.clone().setY(0).add(new V(0, 0, 8)), 3.4); m.warp(at, Math.PI); P.rig.root.position.copy(m.pos); }
   if (mm && W.pail) { const at = P.collide(W.pail.clone().setY(0).add(new V(8, 0, 2)), 3.4); mm.warp(at, Math.atan2(W.pail.x - at.x, W.pail.z - at.z)); }
 }
-async function upFromTable(P) {
-  const m = P.motion, mm = P.npcMotion, W = P.world, V = THREE.Vector3;
+async function basketDown(P) {
+  const m = P.motion, mm = P.npcMotion, W = P.world, V = THREE.Vector3, it = W.items.find(x => x.kind === 'basket' && x.peg);
+  let going = null;
   if (mm && W.pail) { const p = W.pail.clone(); for (let k = 0; k < 2; k++) { await mm.reach('R', p.clone().add(new V(0, 1.5 - k, 0))); await P.wait(0.4); await mm.release('R'); }      // (the last of the water tipped out of the bowls)
-    const to = P.collide(m.pos.clone().setY(0).add(new V(-14, 0, 6)), 3.4); const going = mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z));
-    await P.wait(1.2); if (P.sitting) await P.getUp(); await going; }
-  else if (P.sitting) await P.getUp();
+    const to = P.collide(m.pos.clone().setY(0).add(new V(10, 0, 12)), 3.4); going = mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)); }
+  if (it && !m.carry) await P.take(it);      // (a basket off its peg, for the day)
+  if (going) await going;
   if (mm) { await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); }
 }
 function create(view, ui) {
@@ -293,20 +294,28 @@ function create(view, ui) {
     if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
     if (guide) guide.update(P, dt);      // (the way to what's hers to do: js/guide.js)
+    if (ui.hands) ui.hands(handsText(P));      // (what's in her hands, under the list)
     P.stage.setLight(lightFn ? lightFn() : cal.light());
     { const Au = root.GameAudio; if (Au && Au.musicTheme === 'wood' && Au.nodes.musicFilter) Au.nodes.musicFilter.frequency.value = 2200 - 1400 * cal.light(); }      // (the wood's music darkening with the light)
     if ((sinceSave += dt) > 3 && idle) { sinceSave = 0; const m = P.motion; save.change(s => { s.at = [Math.round(m.pos.x * 10) / 10, Math.round(m.pos.z * 10) / 10, Math.round(m.yaw * 100) / 100]; }, { at: true }); }
+  }
+  // What she's carrying, for the HUD: the basket and what's in it, the pot, the butt (full: heavy, walking only).
+  function handsText(P_) {
+    const it = P_ && P_.motion && P_.motion.carry; if (!it || !it.name) return '';
+    const e = chores && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id];
+    const what = it.kind === 'basket' ? (it.full ? 'the basket, with ' + (E && E.pie && e.state !== 'carrying' ? 'Mama’s pie' : (E && E.carryName) || 'something') + ' in it' : 'the basket, empty') : it.kind === 'butt' ? (it.full ? 'the little butt, full (too heavy to run)' : 'the little butt, empty') : it.name.replace(/^an? /, 'the ');
+    return 'In her hands: ' + what;
   }
   let lastClock = ''; function refreshClock() { const c = 'Day ' + cal.day + ' · ' + cal.clock; if (c !== lastClock && ui.clock) { lastClock = c; ui.clock(c, q.phaseOf(q.phase())); } }
 
   // The next morning: the night passes (under a fade), and she's up, at home.
   // (and over breakfast her mother asks what's been asked of them: js/chores.js)
-  // (breakfast eaten, under the fade: the day opens on her getting down from the table as her mother comes back from the dresser, the bowls
-  // tipped and rinsed in the pail; then the day's asking, or, the first morning, what's to be hers to do)
+  // (breakfast eaten, under the fade: the day opens on her taking a basket down from the pegs as her mother comes back from the dresser, the
+  // bowls tipped and rinsed in the pail; then the day's asking, or, the first morning, what's to be hers to do)
   // (breakfast over at half past seven)
   async function morning(text) { await fade(true, text || ''); cal.sleep(); cal.advance(30); w.breakfasted = true; await go('home', 'bed'); const P_ = P; if (!P_) return;
     const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered';
-    if ((chores && chores.on()) || first) P_.act(async () => { await upFromTable(P_); if (first) await P_.talkToMother({ stay: true }); else await chores.breakfast(P_); });
+    if ((chores && chores.on()) || first) P_.act(async () => { await basketDown(P_); if (first) await P_.talkToMother({ stay: true }); else await chores.breakfast(P_); });
   }
 
   // ── Starting.

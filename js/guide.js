@@ -20,7 +20,7 @@ function goal(w) {
   if (root.Peter && root.Peter.objective(w)) return { area: 'wood', spot: 'beech' };
   const ch = w.chores, e = ch && ch.on() && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id];
   if (E) {
-    if (e.state === 'accepted' || e.state === 'broken') { if (E.needs === 'basket' && w.area === 'home' && !(w.P && w.P.motion.carry && w.P.motion.carry.kind === 'basket')) return { area: 'home', spot: 'pegs' };
+    if (e.state === 'accepted' || e.state === 'broken') { if (E.needs && w.area === 'home' && !(w.P && w.P.motion.carry && w.P.motion.carry.kind === E.needs)) return { area: 'home', spot: w.P && w.P.motion.carry && w.P.motion.carry.kind === 'basket' ? 'peg' : E.needs };      // (what the errand wants, from where it's kept; a basket in her hands, hung up first)
       return { area: E.area || 'village', spot: E.place }; }      // (a shift: its door, in the village)
     if (e.state === 'carrying') return { area: 'home', who: 'mother' };
   }
@@ -48,7 +48,9 @@ function pointOf(w, P, g) {
   if (g.herb) return W.herbs && W.herbs[g.herb] ? W.herbs[g.herb].clone() : null;
   if (g.spot === 'garden' && root.Garden && root.Garden.inside(P.motion.pos)) return null;      // (in the garden, its own marks show what's to do)
   if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }
-  if (g.spot === 'pegs') { const it = W.items.find(x => x.kind === 'basket' && x.peg); return it ? it.obj.position.clone() : null; }
+  if (g.spot === 'basket') { const it = W.items.find(x => x.kind === 'basket' && x.peg); return it ? it.obj.position.clone() : null; }
+  if (g.spot === 'peg') { const pg = W.pegs.find(x => !x.item); return pg ? pg.at.clone() : null; }
+  if (g.spot === 'pot' || g.spot === 'butt') { const it = W.items.find(x => x.kind === g.spot && !x.away); return it ? it.obj.position.clone() : null; }
   if (g.spot) { const s = (W.spots && W.spots[g.spot]) || (P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots[g.spot]); return s ? s.at.clone() : null; }
   return null;
 }

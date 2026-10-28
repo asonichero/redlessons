@@ -86,6 +86,8 @@ const CSS = `
 #hDiary { pointer-events: auto; width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
 #hDiary svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hDiary:hover { background: rgba(60,40,44,0.8); }
 #hQuests { display: none; font: italic 14px/1.35 Georgia, serif; color: #f6efe2; background: rgba(16,10,12,0.55); border: 1px solid #4a3a3c; border-radius: 8px; padding: 6px 11px; }
+#hHands { display: none; margin-top: 6px; font: 13px/1.3 Georgia, serif; color: #e8dcc4; background: rgba(16,10,12,0.5); border: 1px solid #4a3a3c; border-radius: 8px; padding: 4px 10px; width: fit-content; }
+#hHands.on { display: block; } body.talking #hHands, body.correcting #hHands { opacity: 0; }
 #hQuests.on { display: block; } #hQuests div { margin: 2px 0; padding-left: 12px; text-indent: -12px; } #hQuests div::before { content: '❧ '; color: #c9a84c; font-style: normal; }
 body.talking #hTop, body.correcting #hTop { opacity: 0; pointer-events: none; }
 @media (max-width: 640px) { #hQuests { font-size: 12.5px; padding: 4px 8px; } #hDiary { width: 34px; } }
@@ -135,7 +137,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button></div><div id="hQuests"></div><div id="hHands"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -319,6 +321,7 @@ function create(opts) {
     quests(list) { const q = $('hQuests'), esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); list = list || []; const html = list.map(t => '<div>' + esc(t) + '</div>').join('');
       if (q.innerHTML !== html) q.innerHTML = html; q.classList.toggle('on', list.length > 0); objEl.classList.remove('on'); },
     diary,
+    hands(t) { const h = $('hHands'); if (h.textContent !== (t || '')) h.textContent = t || ''; h.classList.toggle('on', !!t); },      // (what's in her hands)
     clock(t, phase) { const c = $('hClock'); c.innerHTML = t ? t + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },
     show(on) { el.classList.toggle('hide', !on); if (!on) pause(false); },
   };

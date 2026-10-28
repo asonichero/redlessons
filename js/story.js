@@ -369,25 +369,25 @@ const chores = () => [
 // happens where it's done, and what's said when it's brought home. Speakers 'mother' and 'red'; narration where someone isn't there to be
 // seen: met, what's said when the one it's for is there to say it (js/villagers.js); there, the narration when they aren't.
 const ERRANDS = {
-  well: { title: 'Water from the well', by: '10:00', place: 'well', action: 'Draw a bucket of water', carry: 'bucket', home: true, mins: 15,
-    ask: 'The butt’s low, and I’ll want water for the washing. Will you fetch a bucket from the well this morning, love?',
+  well: { title: 'Water from the well', by: '10:00', place: 'well', action: 'Fill the little butt at the well', needs: 'butt', carry: 'butt', carryName: 'the water', pails: true, home: true, mins: 15,
+    ask: 'The big butt’s low, and I’ll want water for the washing. Will you take the little one down to the well this morning, love, and fill it? Three pails does it.',
     there: [{ who: 'red', face: 'calm', thought: true, text: 'Down into the dark, and up again, heavy and slopping. My arms will know about this tomorrow.' },
       { who: 'red', face: 'calm', thought: true, text: 'Half the village has been at the well before me. I can tell by the wet on the stones.' }],
     back: { who: 'mother', face: 'smile', text: 'That’s the washing seen to. Thank you, love.' } },
-  bread: { title: 'Bread from the bakery', by: '11:00', place: 'bakery', action: 'Ask for Mama’s loaves', carry: 'loaves', home: true, mins: 15, who: 'baker',
+  bread: { title: 'Bread from the bakery', by: '11:00', place: 'bakery', action: 'Ask for Mama’s loaves', needs: 'basket', carry: 'basket', carryName: 'the loaves', home: true, mins: 15, who: 'baker',
     ask: 'Master Pennock’s keeping two loaves back for us. Will you fetch them before he sells them out from under us?',
     met: [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Two of the best, Miss Rose, and warm through. You tell your mother they’re the best of the batch.' },
       { who: 'red', face: 'smile', thought: true, text: 'He says that every time. They smell like every morning I can remember.' }],
     there: [{ who: 'red', face: 'smile', thought: true, text: 'Warm through the cloth. “The best of the batch,” he says. He says it every time.' },
       { who: 'red', face: 'smile', thought: true, text: 'They smell like every morning I can remember.' }],
     back: { who: 'mother', face: 'smile', text: 'Still warm. He does look after us.' } },
-  pot: { title: 'A pot to the forge for mending', by: '12:00', place: 'forge', action: 'Leave the pot with the smith', give: 'pot', mins: 15, who: 'smith',
-    ask: 'The big pot’s sprung its handle again. Will you take it down to the forge before noon? Master Ferrier said he’d see to it.',
+  pot: { title: 'A pot to the forge for mending', by: '12:00', place: 'forge', action: 'Leave the pot with the smith', needs: 'pot', leave: 'pot', mins: 15, who: 'smith',
+    ask: 'The big pot’s sprung its handle again. It’s on the chest: will you take it down to the forge before noon? Master Ferrier said he’d see to it.',
     met: [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Handle again? Leave it by the anvil. Tell your mother tomorrow.' },
       { who: 'red', face: 'cheeky', thought: true, text: 'Eleven words. That’s a speech, for Master Ferrier.' }],
     there: [{ who: 'red', face: 'calm', thought: true, text: 'All heat and ringing in there. He nodded without stopping. That means yes.' },
       { who: 'red', face: 'cheeky', thought: true, text: 'Tom’s nowhere about. Which means Tom’s somewhere he shouldn’t be.' }] },
-  jug: { title: 'A jug from the inn', by: '17:00', place: 'inn', action: 'Ask for Mama’s jug', carry: 'jug', home: true, mins: 15, who: 'abney',
+  jug: { title: 'A jug from the inn', by: '17:00', place: 'inn', action: 'Ask for Mama’s jug', needs: 'basket', carry: 'basket', carryName: 'the jug', home: true, mins: 15, who: 'abney',
     ask: 'Mistress Abney’s promised me a jug of her small beer for supper. Will you go along for it this afternoon?',
     met: [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Your mother’s jug. There. And how is she? And how are you, Miss Rose?' },
       { who: 'red', face: 'calm', text: 'Well, thank you, Mistress Abney.' },
@@ -395,7 +395,7 @@ const ERRANDS = {
     there: [{ who: 'red', face: 'shy', thought: true, text: 'She looked at me a little longer than the question needed.' },
       { who: 'red', face: 'shy', thought: true, text: 'She always looks as if she knows something I haven’t said yet.' }],
     back: { who: 'mother', face: 'calm', text: 'On the table, love. Was she well?' } },
-  dunns: { title: 'A basket for the Dunns', by: '15:00', place: 'dunns', action: 'Leave the basket at the Dunns’', give: 'basket', mins: 10, who: 'willie',
+  dunns: { title: 'A basket for the Dunns', by: '15:00', place: 'dunns', action: 'Leave the pie at the Dunns’', needs: 'basket', pie: true, mins: 10, who: 'willie',
     ask: 'I’ve a pie for the Dunns: Master William’s been on his rounds all week. Will you take it over this afternoon? Quietly, mind. He’ll be sleeping.',
     there: [{ who: 'red', face: 'calm', thought: true, text: 'Shutters closed upstairs: Master William’s asleep. On the step, then, and no knocking.' },
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and Master William would lean out and pretend to growl at us.' }] },
@@ -1373,6 +1373,12 @@ const shiftOffer = (who, ctx) => who === 'pennock' ? [
 const shiftMissed = e => [{ who: 'red', face: 'wince', thought: true, text: e.shift === 'bakery' ? 'Too late. Mistress Pennock will have started without me, and she won’t want me under her feet now.' : 'Too late. Mistress Abney will have managed, and she’ll have something to say about it.' }];
 // Out of the door for the eggs with nothing to put them in.
 const basketReminder = () => [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Rose! The eggs. In what, your apron? Take a basket off the pegs, love.' }];
+// Her mother, as Red goes to the door without what the errand wants (need: 'basket' | 'pot' | 'butt'; holding: what's in her hands instead).
+const needReminder = (need, holding) => {
+  const hands = holding === 'basket' && need !== 'basket' && need !== 'pie' ? ' Hang that basket up first: you’ve only the two hands.' : holding && holding !== need && !(need === 'pie' && holding === 'basket') ? ' And put that down first.' : '';
+  const say = { basket: 'Rose! In what, your apron? Take a basket off the pegs, love.', pot: 'Rose! The pot, for Master Ferrier. It’s on the chest.', butt: 'Rose! You’ll want the little butt to carry it in. By the hearth.', pie: 'Rose! The Dunns’ pie. Take a basket down, and I’ll put it in.' }[need] || 'Rose! You’ve forgotten something.';
+  return [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: say + hands }];
+};
 // Asked again, after the first three (first: where it grows, reminded).
 const herbAskAgain = (h, first) => [{ who: 'gran', face: 'smile', listen: { red: 'smile' }, text: first ? 'I’m out of ' + h.name.replace(/^the /, '') + ' again, love. You remember: ' + h.where + '.' : 'Some ' + h.name.replace(/^the /, '') + ' for me today, if you would.' }];
 const herbThanks = id => [{ who: 'gran', face: 'smile', listen: { red: 'smile' }, text: ({ yarrow: 'Lovely. That’ll see Fowler’s fingers through another month of nets.', sorrel: 'Good. And you didn’t make a face this time. You’re learning.', comfrey: 'Good girl. Into the pot it goes, for whoever needs it.' })[id] }];
@@ -1574,5 +1580,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
