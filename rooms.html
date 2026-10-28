@@ -69,12 +69,12 @@ const $ = id => document.getElementById(id), all = s => document.querySelectorAl
 const ROOMS = {
   // (the side views from just inside the walls, high up: a piece by a wall is hidden with it while the camera's outside that wall)
   cottage: { M: Cottage, views: { above: [[0, 175, 5], [0, 0, 4]], door: [[-50, 36, 30], [8, 6, -2]], hearth: [[0, 36, 40], [0, 6, -6]], pegs: [[0, 36, -32], [0, 6, 6]], window: [[50, 36, 6], [-8, 6, 2]] } },
-  forge: { M: Forge, views: { above: [[0, 160, 4], [0, 0, 1]], lane: [[0, 30, 64], [0, 6, -10]], hearth: [[-10, 32, -28], [0, 6, 10]], left: [[-42, 32, 1], [8, 6, 1]], right: [[42, 32, 1], [-8, 6, 1]] } },
+  forge: { M: Forge, views: { above: [[0, 150, -16], [0, 0, -17]], door: [[0, 30, 0], [0, 6, -26]], hearth: [[-10, 30, -32], [0, 6, -8]], left: [[-42, 30, -17], [8, 6, -17]], right: [[42, 30, -17], [-8, 6, -17]] } },
   bakery: { M: Bakery, views: { above: [[0, 160, 4], [0, 0, 3]], door: [[-20, 34, 34], [0, 6, -6]], oven: [[10, 34, -28], [0, 6, 8]], left: [[-42, 34, 4], [8, 6, 2]], right: [[42, 34, 4], [-8, 6, 2]] } },
   inn: { M: Inn, views: { above: [[0, 230, 4], [0, 0, 3]], door: [[4, 38, 38], [0, 6, -10]], counter: [[0, 38, -36], [0, 6, 10]], left: [[-70, 38, 4], [12, 6, 2]], right: [[70, 38, 4], [-12, 6, 2]] } },
   cabin: { M: Cabin, views: { above: [[0, 150, 4], [0, 0, 3]], door: [[-10, 32, 35], [0, 6, -4]], hearth: [[-42, 34, 4], [8, 6, 2]], oak: [[34, 36, -26], [-6, 6, 8]], bed: [[42, 34, 34], [-4, 6, 0]] } },
 };
-const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', window: 'From the window side', lane: 'From the lane', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right' };
+const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', window: 'From the window side', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right' };
 const st = Stage.create($('view'), { room: false });
 st.controls.maxDistance = 320;
 let R = null, set = null, L = null, sel = null, figure = null;

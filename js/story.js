@@ -1610,7 +1610,7 @@ const smithCaught = kind => [
   { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Aye, and this’ll be a bit of fun an’ all. Into the forge, the both of you. Same standard, Miss Rose, as you asked.' },
 ];
 const smithIndoors = () => [
-  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Tom first. Rose, you’ll stand there by the tub. Then you.' },
+  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Tom first. Fetch the bench out, lad. Rose, you’ll stand there by the tub. Then you.' },
   { who: 'red', face: 'shy', text: 'Yes, Master Ferrier.' },
 ];
 const smithTom = async S => {

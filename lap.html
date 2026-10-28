@@ -114,7 +114,7 @@
     bakeryBench: { name: 'The bakery (her bench, by the counter)', set: s => Bakery.build(s), place: set => set.world.lap.bench },
     bakeryMiddle: { name: 'The bakery (the bench brought into the middle)', set: s => Bakery.build(s), place: set => set.world.lap.middle },
     inn: { name: 'The inn (the middle)', set: s => Inn.build(s) },
-    forge: { name: 'The forge (his bench)', set: s => Forge.build(s), place: set => set.world.lap.bench },
+    forge: { name: 'The forge (the bench brought out)', set: s => Forge.build(s), place: set => set.world.lap.middle },
   };
   let where = 'cottage'; try { where = localStorage.getItem('red-lessons:lap-where') || where; } catch (e) { /* no storage */ }
   if (!WHERE[where]) where = 'cottage';

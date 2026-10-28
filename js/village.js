@@ -267,7 +267,7 @@ function build(scene, opts) {
     chimney: { x: 30, z: -12, w: 8, d: 8 } });
   // The forge, Master Ferrier's: stone, its front open on the loop lane east of the green: the hearth glowing inside, the anvil, the trough.
   const forge = house({ x: 292, z: 190, ry: -Math.PI / 2, w: 96, d: 74, eave: 44, ridge: 78, walls: 'stone', noFront: true,
-    windows: [{ side: 'left', at: 0, y: 17, w: 9, h: 8, shutters: false }], chimney: { x: -30, z: -24, w: 12, d: 12 } });
+    windows: [{ side: 'left', at: 0, y: 17, w: 9, h: 8, shutters: false }], chimney: { x: -26, z: 3, w: 12, d: 12 } });      // (up from the wall between the bay and the back room: the two hearths, back to back, share it)
   // The Thatchers' (Agnes's): south of the green, across the loop lane.
   const thatchers = house({ x: -16, z: 238, ry: Math.PI, w: 100, d: 70, eave: 45, ridge: 82, walls: 'frame',
     doors: [{ side: 'front', at: 20, w: 12, colour: '#5a6a8a' }],
@@ -428,7 +428,11 @@ function build(scene, opts) {
     tbox(inside, 18, 22, 10, -26, 21, -12, ashlar, 10);      // (the hood over it)
     { const bl = new THREE.Group(); bl.position.set(-6, 9, -14); inside.add(bl); solid(bl, T.ell(6, 1.6, 4, 12, 6), T.mat('#5a3e26'), 0, 0, 0, { ink: 0.06 }); box(bl, 1, 1, 9, 0, 1, 6, oakDk, { ink: 0.03 }); }
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(60, 26), new THREE.MeshBasicMaterial({ color: srgb('#ffb060'), transparent: true, opacity: 0.12, depthWrite: false })); glow.position.set(-10, 13, -2); inside.add(glow); glows.push({ glow: glow.material });
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(94, 44), new THREE.MeshBasicMaterial({ color: srgb('#2a1e16') })); back.position.set(0, 22, -14); inside.add(back);
+    // (the back of the bay: a stone wall, the back room behind it (js/forge.js), through a wide door of heavy planks in two leaves)
+    { const rub = toonMap(rep(vt.rubble, 1, 0.6)), DW = 26, DH = 30;
+      tbox(inside, 47 - DW / 2, 44, 3, -(47 + DW / 2) / 2, 22, -15.5, rub, 10); tbox(inside, 47 - DW / 2, 44, 3, (47 + DW / 2) / 2, 22, -15.5, rub, 10); tbox(inside, DW, 44 - DH, 3, 0, (44 + DH) / 2, -15.5, rub, 10);
+      for (const sx of [-1, 1]) { box(inside, DW / 2 - 0.2, DH, 1.2, sx * DW / 4, DH / 2, -14.2, toonMap(rep(textures().door || textures().oak, 1, 1)), { ink: 0.05 }); for (const y of [7, 15, 23]) box(inside, DW / 2 - 1, 1.2, 0.6, sx * DW / 4, y, -13.4, oakDk, { ink: 0.03 }); }
+      box(inside, DW + 3, 2, 2, 0, DH + 1, -13.8, oakDk, { ink: 0.04 }); }
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(92, 40), T.mat('#5a4a3a')); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0.1, 0); inside.add(floor);
     // (the anvil, on its stump, at the front of the bay; the slack tub; the wheel)
     { const a = new THREE.Group(); a.position.set(8, 0, 10); f.add(a); solid(a, new THREE.CylinderGeometry(3.4, 3.8, 9, 12), toonMap(rep(textures().oak, 1, 1)), 0, 4.5, 0, { ink: 0.08 });
@@ -628,7 +632,7 @@ function build(scene, opts) {
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
   world.entries.inn = { at: [world.spots.innDoor.at.x - Math.sin(world.spots.innDoor.yaw) * 10, world.spots.innDoor.at.z - Math.cos(world.spots.innDoor.yaw) * 10], yaw: world.spots.innDoor.yaw + Math.PI };      // (out of the inn's door, onto the street)
-  world.entries.forge = { at: [world.spots.anvil.at.x, world.spots.anvil.at.z], yaw: world.spots.anvil.yaw + Math.PI };      // (out of the forge, onto the loop lane before it)
+  world.entries.forge = { at: [world.spots.forge.at.x, world.spots.forge.at.z], yaw: world.spots.forge.yaw + Math.PI };      // (out of the back room and through the bay, onto the loop lane before it)
   world.entries.bakery = { at: [world.spots.bakeryDoor.at.x - Math.sin(world.spots.bakeryDoor.yaw) * 10, world.spots.bakeryDoor.at.z - Math.cos(world.spots.bakeryDoor.yaw) * 10], yaw: world.spots.bakeryDoor.yaw + Math.PI };      // (out of Mistress Pennock's door, onto the street)
   world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
   // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)

@@ -46,7 +46,7 @@ async function caught(P, w, kind) {
   smith.motion.face(yawTo(smith.motion.pos, m.pos)); await m.face(yawTo(m.pos, smith.motion.pos));
   await P.converse(S.smithCaught(kind), { shot: ['red', 'smith'] });
   V.letGo('smith'); if (tom) V.letGo('tom', true);
-  await w.go('forge', 'lane');
+  await w.go('forge', 'door');
   const Q = w.P; if (!Q) return true;
   Q.act(() => inTheForge(Q, w));      // (in the forge: hers to sit through, not walk out of)
   return true;
@@ -57,7 +57,7 @@ async function inTheForge(Q, w) {
   await Q.converse(S.smithIndoors(), { shot: ['red', 'smith'] });
   const r = await root.Correction.run(Q, Object.assign({ corrector: 'smith', fade: on => w.fade(on),
     turns: [{ subject: 'tom', script: S.smithTom, corner: true, cornerDress: { skirt: 'up', drawers: 'down' } }, { subject: 'red', script: S.smithRed }],
-    watchers: [{ who: 'red', at: [-26, 0], until: 'red', face: 'shy' }], cornerTime: 6 }, Q.world.lap ? Q.world.lap.bench : {}));      // (on his bench, by the wall: Rose by the slack tub, watching)
+    watchers: [{ who: 'red', at: [-24, -14], until: 'red', face: 'shy' }], cornerTime: 6 }, Q.world.lap ? Q.world.lap.middle : {}));      // (the bench brought out from under the workbench: Rose by the slack tub, watching)
   if (Q !== w.P) return;
   await Q.converse(S.smithAfter(r), { shot: ['red', 'smith'] });
   w.rep.settle('mischievous', 0.6); w.rep.settle('wilful', 0.3); w.rep.trusts('smith', 1);
