@@ -15,6 +15,9 @@ function create(view, opts) {
   view.appendChild(renderer.domElement);
   const scene = new THREE.Scene(); scene.background = new THREE.Color(srgb('#2a1f1c'));
   const camera = new THREE.PerspectiveCamera(opts.fov || 34, 1, 0.5, 600);
+  // (a left drag always goes round, whatever's held: Shift is to run, and the controls would take it, with Ctrl or Cmd, to mean pan. Seen
+  // first, before the controls' own listener, the press is made to look unmodified to them)
+  renderer.domElement.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') for (const k of ['shiftKey', 'ctrlKey', 'metaKey']) Object.defineProperty(e, k, { value: false }); }, true);
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 10; controls.maxDistance = 140; controls.minPolarAngle = 0.01; controls.maxPolarAngle = Math.PI - 0.01;      // (all the way round, over and under: the floor, like the walls, faces in, so from below it isn't drawn)
   // Light: a warm sky and a bounce off the floor, and the sun through the window, which casts the shadows.
