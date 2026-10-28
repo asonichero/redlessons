@@ -129,6 +129,8 @@ The village's people keep to their days. Where each is, is worked out from the d
 
 Each can be talked to (*Talk to Agnes*, and so on): a word by the time of day, something else if they've talked already today, and a little trust the first time each day. Peter Fowler's days off in the village come after the first visit to the Fowlers'. They walk the lanes and paths as a net of points (the shortest way, cutting corners where it's clear); those too far from the camera to make out aren't drawn.
 
+**Her mother in the day** (talking to her before six): whatever Red's brought home is given first, and the errand's done (the eggs out of the basket, the basket hers to hang up again); or, an errand with nothing to bring, she asks how it went, and Red says (fine; Tom kept her talking; harder than she thought); or, still to do, a reminder of it, and the time (late: it's not too late); or a word about nothing much (the Thatchers' hens, the Hallorans' mending, a sprig of rosemary on the step from Grandmother). Then the garden, if it's not done ("the garden won't tend itself"), or supper at six.
+
 ## Evenings at home (`js/evening.js`)
 
 Whenever Red comes home after six of her own accord (walking in at her door, not sent there by a scene), her mother has a word with her, and in it whatever she's learned that might call for a correction, in this order:

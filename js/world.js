@@ -239,7 +239,7 @@ function create(view, ui) {
     // Talking: whatever's on offer with whoever's here, or their word for the time of day.
     if (name === 'home') {
       let pending = null;
-      o.talk = () => { pending = q.offered({ where: 'home', who: 'maren' }).find(s => s.ref === 'maren.chores') ? 'maren.chores' : null; return pending === 'maren.chores' ? root.Story.chores() : root.Story.marenIdle(cal.part); };
+      o.talk = () => { pending = q.offered({ where: 'home', who: 'maren' }).find(s => s.ref === 'maren.chores') ? 'maren.chores' : null; return pending === 'maren.chores' ? root.Story.chores() : chores && chores.on() && cal.minute < 18 * 60 ? chores.marenTalk(P) : root.Story.marenIdle(cal.part); };      // (in the day: what she's brought, the errand, the garden: js/chores.js)
       o.after = async kind => { if (kind === 'talk' && pending === 'maren.chores') { save.flag('curfew-agreed'); w.complete('maren.chores'); } pending = null; };
       o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : [], root.Evening ? root.Evening.actions(P, w) : []);
       o.doorGuard = () => chores && chores.forgot(P) ? chores.remind(P) : null;      // (going to open the door for the eggs with no basket: her mother calls her back, and it stays shut)

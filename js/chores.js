@@ -175,11 +175,25 @@ function create(w) {
     change(c => { c.errand.state = 'done'; }); w.refresh();
   }
   // Home with it: handed to her mother, and her word for it.
-  async function giveHome(P, e) {
-    await P.approach(9);
+  async function giveHome(P, e) { await P.approach(9); await P.converse(marenTalk(P), { shot: ['red', 'mother'] }); }
+  // (what she's brought, out of her hands and her mother's: and the errand's done)
+  function handOver(P, e) {
     const b = basketIn(P); if (b) { fill(b, false); b.keep = false; } else { const it = P.motion.drop(); if (it) it.obj.visible = false; }      // (the eggs out of it, and the basket hers to hang up again)
-    await P.converse([e.back], { shot: ['red', 'mother'] });
-    change(c => { c.errand.state = 'done'; }); cal.advance(5); w.refresh();
+    change(c => { c.errand.state = 'done'; c.errand.told = true; }); cal.advance(5); w.refresh();
+  }
+  // Talking to her mother in the day: what she's brought, given first (and the errand done); or how the errand went, if it was one with
+  // nothing to bring, Red's to say; or a reminder, if it's still to do; or a word about nothing much. Then the garden, if it's not done, or
+  // supper at six.
+  function marenTalk(P) {
+    const e = errand(), c = st(), out = [];
+    if (e && e.state === 'carrying' && P.motion.carry) out.push({ run: () => handOver(P, e) }, e.back);
+    else if (e && (e.state === 'accepted' || e.state === 'broken')) out.push(...S.marenReminds(e, clock(e.by), e.state === 'broken'));
+    else if (e && e.state === 'done' && !e.told) out.push(...S.marenAsks(e, { told: () => change(cc => { cc.errand.told = true; }) }));
+    else out.push(...S.marenChat(cal.day, cal.part, { errand: e, asked: !!c.errand }));
+    const garden = !c.garden && cal.minute < H('19:00') && !(root.Garden && root.Garden.offToday(w));
+    if (garden) out.push(...S.marenGarden());
+    else if (cal.minute < H('18:00')) out.push(...S.marenSupper());
+    return out;
   }
   // What she's carrying, as she comes into a place: in her hands still.
   function dress(P, held) {
@@ -229,7 +243,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };

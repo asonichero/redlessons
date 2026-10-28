@@ -1244,6 +1244,33 @@ const promiseAfter = () => [
 // Mistress Pennock in her bakery, any other time.
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
+// ── Her mother in the day (js/chores.js's marenTalk). An errand still to do: a reminder (late: not too late).
+const marenReminds = (e, by, late) => late ? [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You said you’d see to it: ' + e.title.toLowerCase() + '. You’re late with it, but it’s not too late. Go on.' },
+] : [
+  { who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Don’t forget: ' + e.title.toLowerCase() + ', by ' + by + '.' },
+  { who: 'red', face: 'smile', text: 'I won’t, Mama.' },
+];
+// How it went, an errand with nothing to bring home (ctx.told()): hers to say.
+const marenAsks = (e, ctx) => [
+  { who: 'mother', face: 'smile', listen: { red: 'calm' }, text: 'How did you get on? ' + e.title + '.' },
+  { choose: [
+    { text: 'Fine, Mama. All done, and in good time.', face: 'smile', then: [{ run: ctx.told }, { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'That’s my girl.' }] },
+    { text: 'Done. Tom kept me talking on the way, though.', face: 'cheeky', then: [{ run: ctx.told }, { who: 'mother', face: 'calm', listen: { red: 'cheeky' }, text: 'He would. As long as it got done.' }] },
+    { text: 'Done. It was harder than I thought.', face: 'shy', then: [{ run: ctx.told }, { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Most things worth doing are. I’m glad you saw it through.' }] },
+  ] },
+];
+// Nothing much: a word, as the day is.
+const MAREN_CHAT = [
+  [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Mistress Thatcher’s hens have stopped laying again. She swears it’s the weather. I swear it’s the fox.' }],
+  [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'I’ve the Hallorans’ mending to finish before Sunday. If you see Bo Peep, tell her it’s near done.' }],
+  [{ who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Your grandmother sent word she’s well. In her way: a sprig of rosemary on the step, and nobody saw who left it.' }],
+  [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'There’s bread on the board if you’re hungry. Cut it straight, mind.' }],
+  [{ who: 'mother', face: 'cheeky', listen: { red: 'cheeky' }, text: 'Agnes Thatcher was by. She says Georgie Dunn’s writing her a poem. She says it like it’s a threat.' }],
+];
+const marenChat = (day, part, ctx) => (ctx.asked ? [] : [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Nobody’s asked anything of us today.' }]).concat(MAREN_CHAT[(day * 3 + ({ morning: 0, afternoon: 1 })[part] || 0) % MAREN_CHAT.length]);
+const marenGarden = () => [{ who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'And the garden won’t tend itself, love.' }];
+const marenSupper = () => [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Be home for supper, mind. Six o’clock.' }];
 const marenIdle = part => ({
   morning: [{ who: 'mother', face: 'smile', text: 'The garden won’t weed itself, love.' }],
   afternoon: [{ who: 'mother', face: 'calm', text: 'Back already? There’s bread on the board if you want it.' }],
@@ -1516,5 +1543,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
