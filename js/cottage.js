@@ -162,7 +162,7 @@ const ROOM = roomLayout('red-lessons:room:cottage', {
 });
 
 // ── The room ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-function build(scene) {
+function build(scene, opts) {
   const tx = textures(), root_ = new THREE.Group(); scene.add(root_);
   const oak = toonMap(tx.oak), oakDk = T.mat('#4e3420'), lime = toonMap(tx.lime), stone = toonMap(tx.stone);
   const panels = [];
@@ -174,7 +174,7 @@ function build(scene) {
   // A piece of furniture: its own group on a wall's panel, hidden (with what's on it) while the camera is inside it or within a few units of it,
   // so it never fills the view.
   const pieces = [], sub = parent => { const s = new THREE.Group(); parent.add(s); pieces.push(s); return s; };
-  const L = ROOM.layout(), F = furnish(L, PIECES, g => pieces.push(g)), piece = F.piece;      // (the furniture, each hidden like the rest while the camera's in it)
+  const L = ((opts && opts.room) || ROOM).layout(), F = furnish(L, PIECES, g => pieces.push(g)), piece = F.piece;      // (opts.room: another cottage's own layout, the Ferriers')      // (the furniture, each hidden like the rest while the camera's in it)
   const panel = (p, n) => { const g = new THREE.Group(); root_.add(g); panels.push({ g, p, n: n.normalize() }); return g; };
 
   // ── Floor and rug.
@@ -553,5 +553,7 @@ function build(scene) {
 }
 
 // (the kit, for the other sets: js/cabin.js, js/wood.js)
-root.Cottage = Object.assign({ build, PIECES, kit: { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK, roomLayout, furnish, nearWall } }, ROOM);
+// (the Ferriers' cottage: built as hers is, the furniture its own to arrange, starting where hers stands)
+const FERRIERS = roomLayout('red-lessons:room:ferriers', ROOM.LAYOUT);
+root.Cottage = Object.assign({ build, PIECES, FERRIERS, kit: { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK, roomLayout, furnish, nearWall } }, ROOM);
 })(typeof window !== 'undefined' ? window : globalThis);

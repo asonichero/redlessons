@@ -3,14 +3,20 @@
 // dough rising under a cloth; racks of loaves on the left wall; sacks of flour stacked on the right; the door and the half-door counter in the
 // front wall onto the street. A bench by the counter, where she sits to get her breath (and to take a boy across her knee).
 //
-//   const b = Bakery.build(scene)   → { group, update(camera), tick(dt), light(t), world }   (world as js/cottage.js's: seats, obstacles, door,
-//   bounds, exits, corners)
+//   const b = Bakery.build(scene)   → { group, update(camera), tick(dt), light(t), world, pieces }   (world as js/cottage.js's: seats, obstacles,
+//   door, bounds, exits, corners; pieces: the furniture, by id, as the layout set it, for the room editor, rooms.html)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
 const KIT = root.Cottage.kit, { toonMap, rnd, textures, box, solid, pole, srgb } = KIT;
 const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 50, FOOT = 3, RZ = (Z0 + Z1) / 2;
 const DOOR = -22, DOOR_H = 38, HATCH = 18;      // (along the front wall, as x: the door, and the half-door counter onto the street)
+// The furniture's places (as arranged in the room editor, rooms.html, whose changes, kept in the browser, the game builds the room from). The
+// oven, the counter and the door are the walls'.
+const PIECES = { table: 'The kneading table', racks: 'The racks of loaves', sacks: 'The flour sacks', bench: 'The bench by the counter' };
+const ROOM = KIT.roomLayout('red-lessons:room:bakery', {
+  table: { x: -18, z: -18, ry: 0 }, racks: { x: -42, z: 2, ry: 0 }, sacks: { x: 38, z: 4, ry: 0 }, bench: { x: 34, z: 26, ry: 0 },
+});
 
 function build(scene) {
   const tx = textures(), root_ = new THREE.Group(); scene.add(root_);
@@ -66,37 +72,40 @@ function build(scene) {
     world.peel.push(solid(g, new THREE.BoxGeometry(6, 0.6, 7.5).translate(0, 0, 0), toonMap(tx.oak), cx + 20.1, 3, z + 8.5, { rot: [Math.PI / 2 - 0.05, 0, 0.04], ink: 0.06 }));
     world.obstacles.push({ x0: cx - 18, x1: cx + 24, z0: Z0, z1: Z0 + 10 });
   }
+  // ── The furniture, each piece about its own middle, set where the layout says; with the wall it's nearest (hidden with it), or the floor.
+  const F = KIT.furnish(ROOM.layout(), PIECES), pieces = F.pieces, piece = F.piece, wall = KIT.nearWall(W, floorG, X0, X1, Z0, Z1);
   // ── The kneading table, down the back of the room: floured, a trough of dough under a cloth, loaves shaped and set to prove.
-  { const H = 15, x = -18, z = Z0 + 14, L = 36, D = 11;
-    box(root_, L, 1.6, D, x, H - 0.8, z, toonMap(tx.oak));
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(root_, 1.6, H - 1.6, 1.6, x + sx * (L / 2 - 2), (H - 1.6) / 2, z + sz * (D / 2 - 1.5), oakDk);
-    const dust = new THREE.Mesh(new THREE.PlaneGeometry(L - 6, D - 3), flour); dust.rotation.x = -Math.PI / 2; dust.position.set(x - 2, H + 0.02, z); root_.add(dust);
-    box(root_, 14, 4, 7, x + 8, H + 2, z, toonMap(tx.oak)); solid(root_, new THREE.SphereGeometry(5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, 0.35, 0.65), T.mat('#e8dcc0'), x + 8, H + 4, z, { ink: 0.05 });
-    for (let k = 0; k < 5; k++) solid(root_, T.ell(1.6, 1.0, 2.4, 10, 6), T.mat('#efe0c4'), x - 14 + k * 4, H + 1, z - 1, { ink: 0.04 });
-    world.obstacles.push({ x0: x - L / 2, x1: x + L / 2, z0: z - D / 2, z1: z + D / 2 });
-    world.surfaces.push({ x0: x - L / 2 + 2, x1: x + L / 2 - 2, z0: z - D / 2 + 1, z1: z + D / 2 - 1, y: H, name: 'the kneading table', front: new V3(0, 0, 1) });
+  { const pc = piece('table', wall), g = pc.g, H = 15, L = 36, D = 11;
+    box(g, L, 1.6, D, 0, H - 0.8, 0, toonMap(tx.oak));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 1.6, H - 1.6, 1.6, sx * (L / 2 - 2), (H - 1.6) / 2, sz * (D / 2 - 1.5), oakDk);
+    const dust = new THREE.Mesh(new THREE.PlaneGeometry(L - 6, D - 3), flour); dust.rotation.x = -Math.PI / 2; dust.position.set(-2, H + 0.02, 0); g.add(dust);
+    box(g, 14, 4, 7, 8, H + 2, 0, toonMap(tx.oak)); solid(g, new THREE.SphereGeometry(5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, 0.35, 0.65), T.mat('#e8dcc0'), 8, H + 4, 0, { ink: 0.05 });
+    for (let k = 0; k < 5; k++) solid(g, T.ell(1.6, 1.0, 2.4, 10, 6), T.mat('#efe0c4'), -14 + k * 4, H + 1, -1, { ink: 0.04 });
+    world.obstacles.push(pc.area(-L / 2, L / 2, -D / 2, D / 2));
+    world.surfaces.push(Object.assign(pc.area(-L / 2 + 2, L / 2 - 2, -D / 2 + 1, D / 2 - 1), { y: H, name: 'the kneading table', panel: g, front: pc.turn(new V3(0, 0, 1)) }));
   }
-  // ── Racks of loaves on the left wall: shelves, every one full.
-  { const g = W.left, x = X0 + 4, z0 = -14, z1 = 18;
-    for (const y of [8, 16, 24, 32]) { box(g, 7, 0.8, z1 - z0, x, y, (z0 + z1) / 2, toonMap(tx.oak));
-      const r = rnd(y * 7); for (let z = z0 + 2.5; z < z1 - 2; z += 4.2) solid(g, T.ell(1.6 + r() * 0.4, 1.1, 1.9, 10, 6), crust[Math.floor(r() * 3)], x + (r() - 0.5), y + 1.4, z, { ink: 0.04 }); }
-    for (const z of [z0, z1]) box(g, 7, 36, 1.2, x, 18, z, oakDk);
-    world.obstacles.push({ x0: X0, x1: X0 + 8, z0, z1 });
+  // ── Racks of loaves: shelves, every one full (against the left wall, as it was).
+  { const pc = piece('racks', wall), g = pc.g, z0 = -16, z1 = 16;
+    for (const y of [8, 16, 24, 32]) { box(g, 7, 0.8, z1 - z0, 0, y, 0, toonMap(tx.oak));
+      const r = rnd(y * 7); for (let z = z0 + 2.5; z < z1 - 2; z += 4.2) solid(g, T.ell(1.6 + r() * 0.4, 1.1, 1.9, 10, 6), crust[Math.floor(r() * 3)], r() - 0.5, y + 1.4, z, { ink: 0.04 }); }
+    for (const z of [z0, z1]) box(g, 7, 36, 1.2, 0, 18, z, oakDk);
+    world.obstacles.push(pc.area(-4, 4, z0, z1));
   }
-  // ── Sacks of flour on the right, stacked, one open with its scoop.
-  { const r = rnd(83);
-    for (const [x, z, y] of [[X1 - 6, -6, 0], [X1 - 6, 2, 0], [X1 - 6, 10, 0], [X1 - 6, -2, 6.4], [X1 - 6, 6, 6.4], [X1 - 14, 14, 0]]) solid(root_, T.ell(3.4, 3.4, 3.2, 10, 8), sack, x + (r() - 0.5), y + 3.2, z, { ink: 0.06, rot: [0, r(), 0] });
-    solid(root_, new THREE.CylinderGeometry(0.6, 0.8, 1.6, 8), flour, X1 - 14, 7, 14, { ink: 0.03 });
-    world.obstacles.push({ x0: X1 - 18, x1: X1, z0: -10, z1: 18 });
+  // ── Sacks of flour, stacked, one open with its scoop.
+  { const pc = piece('sacks', wall), g = pc.g, r = rnd(83);
+    for (const [x, z, y] of [[2, -10, 0], [2, -2, 0], [2, 6, 0], [2, -6, 6.4], [2, 2, 6.4], [-6, 10, 0]]) solid(g, T.ell(3.4, 3.4, 3.2, 10, 8), sack, x + (r() - 0.5), y + 3.2, z, { ink: 0.06, rot: [0, r(), 0] });
+    solid(g, new THREE.CylinderGeometry(0.6, 0.8, 1.6, 8), flour, -6, 7, 10, { ink: 0.03 });
+    world.obstacles.push(pc.area(-10, 8, -14, 14));
   }
   // ── The counter under the half-door: a broad board inside the hatch with loaves on it; the bench by it.
   { const g = W.front;
     box(g, 22, 1.4, 6, HATCH, 13, Z1 - 3, toonMap(tx.oak)); box(g, 22, 12, 1.4, HATCH, 6.5, Z1 - 5.5, oakDk);
     for (let k = 0; k < 4; k++) solid(g, T.ell(1.7, 1.1, 2, 10, 6), crust[k % 3], HATCH - 7 + k * 4.6, 14.6, Z1 - 3, { ink: 0.04 });
     world.obstacles.push({ x0: HATCH - 11, x1: HATCH + 11, z0: Z1 - 7, z1: Z1 });
-    const bx = X1 - 12, bz = Z1 - 12;
-    box(root_, 16, 1.2, 5, bx, 9, bz, toonMap(tx.oak)); for (const sx of [-1, 1]) box(root_, 1.2, 8.4, 4, bx + sx * 6.5, 4.2, bz, oakDk);
-    world.seats.push({ name: 'the bench', at: new V3(bx, 9.6, bz), facing: Math.PI, kind: 'stool' }); world.obstacles.push({ x0: bx - 8, x1: bx + 8, z0: bz - 2.5, z1: bz + 2.5 });
+  }
+  { const pc = piece('bench', wall), g = pc.g;
+    box(g, 16, 1.2, 5, 0, 9, 0, toonMap(tx.oak)); for (const sx of [-1, 1]) box(g, 1.2, 8.4, 4, sx * 6.5, 4.2, 0, oakDk);
+    world.seats.push({ name: 'the bench', at: pc.P(0, 9.6, 0), facing: pc.ry + Math.PI, kind: 'stool' }); world.obstacles.push(pc.area(-8, 8, -2.5, 2.5));
   }
   // ── The door, in the front wall: planks on strap hinges, swinging in; out to the street.
   { const f = new THREE.Group(); f.position.set(DOOR, 0, Z1 - 0.4); W.front.add(f);
@@ -122,13 +131,15 @@ function build(scene) {
   function light() {}
   // Where the work is done (js/work.js): where she stands for each, which way she faces, and what she reaches for.
   const spot = (x, z, yaw, lx, ly, lz) => ({ at: new V3(x, 0, z), yaw, look: new V3(lx, ly, lz) });
+  // (at a piece: x, z, the reach's height, in its own frame, and the way she faces in it; so they go with it wherever it's put)
+  const at = (id, x, z, yaw, lx, ly, lz) => { const pc = pieces[id], p = pc.P(x, 0, z), l = pc.P(lx, ly, lz); return { at: new V3(p.x, 0, p.z), yaw: yaw + pc.ry, look: l }; };
   world.work = {
-    trough: spot(-10, -7.5, Math.PI, -10, 17, -18), table: spot(-27, -7.5, Math.PI, -27, 16, -18), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
-    oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: spot(-34, 2, -Math.PI / 2, -42, 16, 2), counter: spot(18, 26, 0, 18, 14, 35),
+    trough: at('table', 8, 10.5, Math.PI, 8, 17, 0), table: at('table', -9, 10.5, Math.PI, -9, 16, 0), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
+    oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: at('racks', 8, 0, -Math.PI / 2, 0, 16, 0), counter: spot(18, 26, 0, 18, 14, 35),
   };
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
-  return { group: root_, update, tick, light, world, bounds: { X0, X1, Z0, Z1, EAVE } };
+  return { group: root_, update, tick, light, world, pieces, bounds: { X0, X1, Z0, Z1, EAVE } };
 }
 
-root.Bakery = { build, DOOR, Z1 };
+root.Bakery = Object.assign({ build, PIECES, DOOR, Z1 }, ROOM);
 })(typeof window !== 'undefined' ? window : globalThis);

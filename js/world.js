@@ -77,7 +77,7 @@ const AREAS = {
   // The Ferriers' cottage, in the mill lane (a cottage much like her own: js/cottage.js): where Master Ferrier takes Tom in hand, and Red with
   // him, once she's asked for the same standard (js/inhand.js).
   ferriers: {
-    name: 'The Ferriers’', music: 'home', npc: () => ({ id: 'smith', key: 'smith', name: 'Master Ferrier', at: [-12, 20], yaw: Math.PI, voice: 'smith', tint: '#4a3a32', bg: '#e4dcd4' }),
+    name: 'The Ferriers’', music: 'home', set: s => root.Cottage.build(s, { room: root.Cottage.FERRIERS }), npc: () => ({ id: 'smith', key: 'smith', name: 'Master Ferrier', at: [-12, 20], yaw: Math.PI, voice: 'smith', tint: '#4a3a32', bg: '#e4dcd4' }),
     talk: () => [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Off home with you, lass. Your mother’ll be wanting you.' }],
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 } },
     exits: { 'the door': { area: 'village', entry: 'ferriers' } },

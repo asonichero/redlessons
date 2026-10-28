@@ -3,14 +3,20 @@
 // across the back, barrels behind it and tankards on their hooks; settles and two long tables; the stair up to the rooms in the back right
 // corner; the door from the street in the front wall, and windows either side of it.
 //
-//   const inn = Inn.build(scene)   → { group, update(camera), tick(dt), light(t), world }   (world as js/cottage.js's: seats, obstacles, door,
-//   bounds, exits, corners; work: where an afternoon's work is done, for js/work.js)
+//   const inn = Inn.build(scene)   → { group, update(camera), tick(dt), light(t), world, pieces }   (world as js/cottage.js's: seats, obstacles,
+//   door, bounds, exits, corners; work: where an afternoon's work is done, for js/work.js; pieces: the furniture, for the room editor)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
 const KIT = root.Cottage.kit, { toonMap, rnd, textures, box, solid, pole, srgb } = KIT;
 const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 46, FOOT = 3, RZ = (Z0 + Z1) / 2;
 const DOOR = 4, DOOR_H = 38;
+// The furniture's places (as arranged in the room editor, rooms.html, whose changes, kept in the browser, the game builds the room from). The
+// hearth, the door and the windows are the walls'.
+const PIECES = { chair: 'Bess’s chair (and her footstool)', counter: 'The counter (and the barrels)', tableA: 'The long table (by the door)', tableB: 'The long table (by the stair)', stair: 'The stair' };
+const ROOM = KIT.roomLayout('red-lessons:room:inn', {
+  chair: { x: -24, z: 16, ry: -2.042 }, counter: { x: 9, z: -20, ry: 0 }, tableA: { x: -8, z: 12, ry: 0 }, tableB: { x: 24, z: 14, ry: 0 }, stair: { x: 40, z: -13, ry: 0 },
+});
 
 function build(scene) {
   const tx = textures(), root_ = new THREE.Group(); scene.add(root_);
@@ -61,35 +67,40 @@ function build(scene) {
     pole(g, new V3(x0 + 4, 9, hz - OW / 2), new V3(x0 + 4, 9, hz + OW / 2), 0.25, iron, { ink: 0 });
     fire.light = new THREE.PointLight(srgb('#ff9a4a'), 0.9, 110, 1.5); fire.light.position.set(x0 + 10, 8, hz); root_.add(fire.light);
     world.obstacles.push({ x0: X0, x1: X0 + D + 8, z0: hz - (OW / 2 + JW + 5), z1: hz + (OW / 2 + JW + 5) });
-    // (Bess's chair, a high-backed one with a cushion, drawn up to the fire's right; a stool for her feet)
-    const cx = X0 + 22, cz = hz + 18, c = new THREE.Group(); c.position.set(cx, 0, cz); c.rotation.y = -Math.PI * 0.65; root_.add(c);
+  }
+  // ── The furniture, each piece about its own middle, set where the layout says; with the wall it's nearest (hidden with it), or the floor.
+  const F = KIT.furnish(ROOM.layout(), PIECES), pieces = F.pieces, piece = F.piece, wall = KIT.nearWall(W, floorG, X0, X1, Z0, Z1);
+  const near = (pc, wx, wz) => new V3(wx, 0, wz).applyAxisAngle(new V3(0, 1, 0), -ROOM.LAYOUT[pc.id].ry);      // (an offset as it was in the room, before the piece was turned: into the piece's own frame)
+  // (Bess's chair, a high-backed one with a cushion, drawn up to the fire's right; a stool for her feet)
+  { const pc = piece('chair', wall), c = pc.g;
     box(c, 8, 1.2, 7.5, 0, 9, 0, oakDk); for (const [x, z] of [[-3.4, -3], [3.4, -3], [-3.4, 3], [3.4, 3]]) box(c, 1, 9, 1, x, 4.5, z, oakDk);
     box(c, 8, 16, 1.2, 0, 17, -3.4, oakDk); solid(c, KIT.slab(7, 1.4, 6.4, 1.2, 0.4), T.mat('#8a4a5a'), 0, 10, 0.2, { ink: 0.05 });
-    world.seats.push({ name: 'Bess’s chair', at: new V3(cx, 9.6, cz), facing: -Math.PI * 0.65, kind: 'chair' }); world.obstacles.push({ x: cx, z: cz, r: 5 });
-    box(root_, 5, 4, 4, cx + 6, 2, cz - 6, oakDk);
+    world.seats.push({ name: 'Bess’s chair', at: pc.P(0, 9.6, 0), facing: pc.ry, kind: 'chair' }); { const p = pc.P(0, 0, 0); world.obstacles.push({ x: p.x, z: p.z, r: 5 }); }
+    const fs = near(pc, 6, -6); box(c, 5, 4, 4, fs.x, 2, fs.z, oakDk);
     world.bessChair = world.seats[world.seats.length - 1];
   }
   // ── The counter across the back, barrels behind it on their stillage, tankards on hooks above, a jug and a row of pots on the counter.
-  { const z = Z0 + 12, x0 = -14, x1 = 32, H = 15;
-    box(root_, x1 - x0, H, 5, (x0 + x1) / 2, H / 2, z, oak); box(root_, x1 - x0 + 2, 1.2, 7, (x0 + x1) / 2, H + 0.6, z, oakDk);
-    for (let k = 0; k < 4; k++) { const bx = x0 + 6 + k * 11; solid(root_, new THREE.CylinderGeometry(4, 4, 9, 14).rotateX(Math.PI / 2), oak, bx, 7, Z0 + 4.5, { ink: 0.08 });
-      for (const dz of [-3, 3]) solid(root_, new THREE.TorusGeometry(4.05, 0.22, 4, 18), iron, bx, 7, Z0 + 4.5 + dz, { ink: 0 }); }
-    pole(root_, new V3(x0, 26, Z0 + 1.5), new V3(x1, 26, Z0 + 1.5), 0.3, oakDk, { ink: 0.04 });
-    for (let k = 0; k < 9; k++) solid(root_, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, x0 + 3 + k * 5, 23.6, Z0 + 2, { ink: 0.04 });
-    solid(root_, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.4], [1.1, 3], [0.9, 3.4], [1.1, 3.8]].map(([r, h]) => new THREE.Vector2(r, h)), 12), T.mat('#b07a4a'), x0 + 8, H + 1.2, z, { ink: 0.04 });
-    world.obstacles.push({ x0: x0 - 1, x1: x1 + 1, z0: Z0, z1: z + 3.5 });
-    world.surfaces.push({ x0: x0 + 2, x1: x1 - 2, z0: z - 2, z1: z + 2, y: H + 1.2, name: 'the counter', front: new V3(0, 0, 1) });
+  { const pc = piece('counter', wall), g = pc.g, x0 = -23, x1 = 23, H = 15, bz = -7.5;      // (bz: the barrels and the tankards, behind it, against the wall)
+    box(g, x1 - x0, H, 5, 0, H / 2, 0, oak); box(g, x1 - x0 + 2, 1.2, 7, 0, H + 0.6, 0, oakDk);
+    for (let k = 0; k < 4; k++) { const bx = x0 + 6 + k * 11; solid(g, new THREE.CylinderGeometry(4, 4, 9, 14).rotateX(Math.PI / 2), oak, bx, 7, bz, { ink: 0.08 });
+      for (const dz of [-3, 3]) solid(g, new THREE.TorusGeometry(4.05, 0.22, 4, 18), iron, bx, 7, bz + dz, { ink: 0 }); }
+    pole(g, new V3(x0, 26, -10.5), new V3(x1, 26, -10.5), 0.3, oakDk, { ink: 0.04 });
+    for (let k = 0; k < 9; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, x0 + 3 + k * 5, 23.6, -10, { ink: 0.04 });
+    solid(g, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.4], [1.1, 3], [0.9, 3.4], [1.1, 3.8]].map(([r, h]) => new THREE.Vector2(r, h)), 12), T.mat('#b07a4a'), x0 + 8, H + 1.2, 0, { ink: 0.04 });
+    world.obstacles.push(pc.area(x0 - 1, x1 + 1, -12, 3.5));
+    world.surfaces.push(Object.assign(pc.area(x0 + 2, x1 - 2, -2, 2), { y: H + 1.2, name: 'the counter', panel: g, front: pc.turn(new V3(0, 0, 1)) }));
   }
   // ── The tables, each with a bench either side; a settle against the front wall.
-  const tables = [[-8, 12], [24, 14]];
-  for (const [tx_, tz] of tables) { box(root_, 24, 1.4, 9, tx_, 13, tz, oak); for (const sx of [-1, 1]) box(root_, 1.6, 12.3, 7, tx_ + sx * 10, 6.2, tz, oakDk);
-    for (const sz of [-1, 1]) { box(root_, 22, 1.2, 4, tx_, 8.4, tz + sz * 8, oak); for (const sx of [-1, 1]) box(root_, 1.2, 7.8, 3, tx_ + sx * 9, 3.9, tz + sz * 8, oakDk);
-      world.seats.push({ name: 'the bench', at: new V3(tx_, 9, tz + sz * 8), facing: sz < 0 ? 0 : Math.PI, kind: 'stool' }); }
-    world.obstacles.push({ x0: tx_ - 12, x1: tx_ + 12, z0: tz - 10, z1: tz + 10 });
-    for (let k = 0; k < 3; k++) solid(root_, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, tx_ - 6 + k * 6, 15, tz + (k - 1) * 1.5, { ink: 0.04 }); }
+  for (const id of ['tableA', 'tableB']) { const pc = piece(id, wall), g = pc.g;
+    box(g, 24, 1.4, 9, 0, 13, 0, oak); for (const sx of [-1, 1]) box(g, 1.6, 12.3, 7, sx * 10, 6.2, 0, oakDk);
+    for (const sz of [-1, 1]) { box(g, 22, 1.2, 4, 0, 8.4, sz * 8, oak); for (const sx of [-1, 1]) box(g, 1.2, 7.8, 3, sx * 9, 3.9, sz * 8, oakDk);
+      world.seats.push({ name: 'the bench', at: pc.P(0, 9, sz * 8), facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool' }); }
+    world.obstacles.push(pc.area(-12, 12, -10, 10));
+    for (let k = 0; k < 3; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, -6 + k * 6, 15, (k - 1) * 1.5, { ink: 0.04 }); }
   // ── The stair up to the rooms, in the back right corner.
-  { for (let k = 0; k < 10; k++) box(root_, 10, 1.2, 4, X1 - 6, 2 + k * 4, Z0 + 26 - k * 2.4, oak); box(root_, 1, 42, 1, X1 - 11, 21, Z0 + 4, oakDk);
-    world.obstacles.push({ x0: X1 - 12, x1: X1, z0: Z0, z1: Z0 + 28 }); }
+  { const pc = piece('stair', wall), g = pc.g;
+    for (let k = 0; k < 10; k++) box(g, 10, 1.2, 4, 0, 2 + k * 4, 13 - k * 2.4, oak); box(g, 1, 42, 1, -5, 21, -15, oakDk);
+    world.obstacles.push(pc.area(-6, 6, -19, 9)); }
   // ── The door, in the front wall: out to the street.
   { const f = new THREE.Group(); f.position.set(DOOR, 0, Z1 - 0.4); W.front.add(f);
     const hinge = new THREE.Group(); hinge.position.set(-6.5, 0, 0); f.add(hinge);
@@ -105,9 +116,13 @@ function build(scene) {
 
   // Where an afternoon's work is done (js/work.js).
   const spot = (x, z, yaw, lx, ly, lz) => ({ at: new V3(x, 0, z), yaw, look: new V3(lx, ly, lz) });
+  // (at a piece: in its own frame, so they go with it wherever it's put)
+  const at = (id, x, z, yaw, lx, ly, lz) => { const pc = pieces[id], p = pc.P(x, 0, z), l = pc.P(lx, ly, lz); return { at: new V3(p.x, 0, p.z), yaw: yaw + pc.ry, look: l }; };
+  // (Bess's: beside her chair, as it was in the room before it was turned, turned with it)
+  const bessAt = () => { const pc = pieces.chair, d = ROOM.LAYOUT.chair.ry, o = near(pc, -8, 6), l = near(pc, 0, 0); const p = pc.P(o.x, 0, o.z); return { at: new V3(p.x, 0, p.z), yaw: Math.PI * 0.3 + (pc.ry - d), look: pc.P(l.x, 14, l.z) }; };
   world.work = {
-    tub: spot(-30, -24, Math.PI, -30, 4, -29), tables: spot(-8, 26, Math.PI, -8, 14, 14), fire: spot(-30, -2, -Math.PI / 2, -40, 4, -2),
-    counter: spot(8, 2, Math.PI, 8, 16, Z0 + 12), table2: spot(24, 28, Math.PI, 24, 15, 14), bess: spot(X0 + 22 - 8, 18 + 4, Math.PI * 0.3, X0 + 22, 14, 16), floor: spot(0, 0, 0, 0, 0.5, 6),
+    tub: spot(-30, -24, Math.PI, -30, 4, -29), tables: at('tableA', 0, 14, Math.PI, 0, 14, 2), fire: spot(-30, -2, -Math.PI / 2, -40, 4, -2),
+    counter: at('counter', -1, 22, Math.PI, -1, 16, 0), table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6),
   };
   // (the washing tub by the hearth, for the pots)
   { solid(root_, new THREE.CylinderGeometry(4, 3.4, 4, 14, 1, true), oak, -30, 2, -29, { ink: 0.06 }).material.side = THREE.DoubleSide; const wt = new THREE.Mesh(new THREE.CircleGeometry(3.7, 14), T.mat('#6a8a9a')); wt.rotation.x = -Math.PI / 2; wt.position.set(-30, 3.2, -29); root_.add(wt);
@@ -123,8 +138,8 @@ function build(scene) {
   }
   function light(t) { fire.lightK = 1 + 1.4 * t; }
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
-  return { group: root_, update, tick, light, world, bounds: { X0, X1, Z0, Z1, EAVE } };
+  return { group: root_, update, tick, light, world, pieces, bounds: { X0, X1, Z0, Z1, EAVE } };
 }
 
-root.Inn = { build, DOOR, Z1 };
+root.Inn = Object.assign({ build, PIECES, DOOR, Z1 }, ROOM);
 })(typeof window !== 'undefined' ? window : globalThis);
