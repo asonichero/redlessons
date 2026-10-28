@@ -223,14 +223,15 @@ function attach(P, w) {
   // Her work: what's offered, from close by.
   function actions() {
     if (!inside(m.pos) || !w.chores) return [];
-    const g = stateOf(w), out = [], benchAt = new V3(BENCH.x, BENCH.y + 1, BENCH.z), atBench = near(new V3(BENCH.x, 0, BENCH.z), 16);
+    const g = stateOf(w), out = [], atBench = near(new V3(BENCH.x, 0, BENCH.z), 16);
+    const basketAt = new V3(BENCH.x + 4, BENCH.y + 3, BENCH.z), trowelAt = new V3(BENCH.x - 5, BENCH.y + 1, BENCH.z);      // (each at its own end of the bench: the one she's nearer offered first)
     // (the bench: a basket set down on it, or taken up again)
-    if (atBench && m.carry && m.carry.kind === 'basket' && !g.basket) out.push({ label: 'Put the basket on the bench', at: benchAt, run: basketDown });
-    if (atBench && !m.carry && g.basket) out.push({ label: 'Take the basket', at: benchAt, run: basketUp });
+    if (atBench && m.carry && m.carry.kind === 'basket' && !g.basket) out.push({ label: 'Put the basket on the bench', at: basketAt, run: basketDown });
+    if (atBench && !m.carry && g.basket) out.push({ label: 'Take the basket', at: basketAt, run: basketUp });
     if (!w.chores.on() || w.chores.gardenTended()) return out;
     const holding = m.carry && m.carry.name === 'the watering can', trowelHeld = m.carry && m.carry.kind === 'trowel', hoe = plan(cal.day).jobs.includes('onions') && !g.jobs.onions;
-    if (atBench && !m.carry && g.trowel === 'bench' && hoe) out.push({ label: 'Take the trowel', at: benchAt, run: takeTrowel });
-    if (atBench && trowelHeld && !hoe) out.push({ label: 'Put the trowel back', at: benchAt, run: putTrowel });
+    if (atBench && !m.carry && g.trowel === 'bench' && hoe) out.push({ label: 'Take the trowel', at: trowelAt, run: takeTrowel });
+    if (atBench && trowelHeld && !hoe) out.push({ label: 'Put the trowel back', at: trowelAt, run: putTrowel });
     if (trowelHeld && hoe) { const r = ROWS.find(q => q.id === 'onions'), p = pathBeside('onions', m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 && m.pos.x < RX1) out.push({ label: r.job, at: new V3(m.pos.x, 4, r.z), run: () => job(r, p) }); }
     if (g.can === 'butt' && !m.carry && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: takeCan });
     if (holding && g.water < WATER_PER_FILL && progress(w).dry.length && near(BUTT, 12)) out.push({ label: 'Fill the can at the butt', at: BUTT.clone().setY(6), run: fill });
