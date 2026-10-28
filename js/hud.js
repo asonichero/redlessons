@@ -89,6 +89,11 @@ const CSS = `
 #hQuests.on { display: block; } #hQuests div { margin: 2px 0; padding-left: 12px; text-indent: -12px; } #hQuests div::before { content: '❧ '; color: #c9a84c; font-style: normal; }
 body.talking #hTop, body.correcting #hTop { opacity: 0; pointer-events: none; }
 @media (max-width: 640px) { #hQuests { font-size: 12.5px; padding: 4px 8px; } #hDiary { width: 34px; } }
+/* (a change of trust, above the conversation's box) */
+#hTrust { position: fixed; left: 50%; bottom: 186px; transform: translateX(-50%); z-index: 22; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+#hTrust .tn { font: 15px/1.3 Georgia, serif; padding: 5px 14px; border-radius: 16px; background: rgba(16,10,12,0.78); border: 1px solid; transition: opacity 1s; filter: drop-shadow(0 1px 4px #000); }
+#hTrust .tn.up { color: #9ee08a; border-color: #5aa04a; } #hTrust .tn.down { color: #f08a80; border-color: #b04a40; } #hTrust .tn.out { opacity: 0; }
+@media (max-width: 640px) { #hTrust { bottom: 150px; } #hTrust .tn { font-size: 13px; } }
 /* (the journal, in the pause menu) */
 .hCard .journal .ph { font-size: 13px; color: #c9a88c; margin: 2px 0 6px; } .hCard .journal .q { margin: 7px 0; font-size: 14px; line-height: 1.4; }
 .hCard .journal .q b { color: #f3e4b0; font-weight: normal; } .hCard .journal .q.main b { color: #e8504a; } .hCard .journal .q small { display: block; color: #c9b8a8; font-style: italic; }
@@ -294,6 +299,16 @@ function create(opts) {
     get paused() { return paused; },
     objective(t) { if (t) objEl.textContent = t; objEl.classList.toggle('on', !!t); },
     // (what's hers to do now, a line each, top left)
+    // A change of trust, just above where the conversation's box sits: green up, red down; two for the same person close together run as one.
+    trust(who, n) {
+      let box = $('hTrust'); if (!box) { box = document.createElement('div'); box.id = 'hTrust'; document.body.appendChild(box); }
+      let el = [...box.children].find(c => c.dataset.who === who && Date.now() - c.dataset.at < 2500);
+      if (el) { n += +el.dataset.n; el.remove(); }
+      if (!n) return;
+      el = document.createElement('div'); el.className = 'tn ' + (n > 0 ? 'up' : 'down'); el.dataset.who = who; el.dataset.n = n; el.dataset.at = Date.now();
+      el.textContent = (n > 0 ? '▲ ' : '▼ ') + who + (n > 0 ? ' trusts you more' : ' trusts you less');
+      box.appendChild(el); setTimeout(() => el.classList.add('out'), 3200); setTimeout(() => el.remove(), 4200);
+    },
     quests(list) { const q = $('hQuests'), esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); list = list || []; const html = list.map(t => '<div>' + esc(t) + '</div>').join('');
       if (q.innerHTML !== html) q.innerHTML = html; q.classList.toggle('on', list.length > 0); objEl.classList.remove('on'); },
     diary,

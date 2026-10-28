@@ -27,7 +27,7 @@ const WOLFE = { 'little-red': 2, 'hulda-cabin': 2, 'hulda-alone': 2, 'path-times
 const KNOWN = [2, 5];      // (a stat at these is 'some', then 'known for it')
 
 function create(save) {
-  const S = () => save.state;
+  const S = () => save.state, heard = [];
   const rep = {
     STATS, VILLAGE, FIGURES, WOLFE,
     add(stat, n, why) {
@@ -38,7 +38,8 @@ function create(save) {
     known: k => { const v = rep.stat(k); return v >= KNOWN[1] ? 2 : v >= KNOWN[0] ? 1 : 0; },
     // (a correction settles what it was for: some of it is forgiven, the rest stays as what she's known for)
     settle(stat, share) { const k = share == null ? 0.6 : share; save.change(s => { for (const st of stat ? [stat] : STATS) s.stats[st] = Math.round((s.stats[st] || 0) * (1 - k) * 10) / 10; }, { stat: stat || 'all' }); },
-    trusts(who, n) { save.change(s => { s.trust[who] = (s.trust[who] || 0) + (n == null ? 1 : n); }, { trust: who }); },
+    trusts(who, n) { const d = n == null ? 1 : n; save.change(s => { s.trust[who] = (s.trust[who] || 0) + d; }, { trust: who }); for (const f of heard) f(who, d); },
+    onTrust(fn) { heard.push(fn); },      // (told of each change of trust, as it happens: the HUD shows it)
     trust: who => S().trust[who] || 0,
     tell(who, level) { const l = level == null ? 1 : level; save.change(s => { s.open[who] = Math.max(s.open[who] || 0, l); }, { open: who }); },
     openness: who => S().open[who] || 0,

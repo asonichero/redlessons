@@ -127,6 +127,7 @@ function create(view, ui) {
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.
   const chores = root.Chores ? root.Chores.create(w) : null; w.chores = chores;
+  if (ui.trust) rep.onTrust((who, n) => { const D = root.QuestData && root.QuestData.PEOPLE[who]; if (n) ui.trust(who === 'abneyDaughter' ? 'Bess' : D ? D.name : who, n); });      // (a change of trust, shown as it happens)
   const guide = root.Guide && typeof document !== 'undefined' ? root.Guide.create(w) : null;
 
   // What to say she's about: the day's own (the errand, the garden), or the first step on offer here with a hint; or else, the main story's, or
