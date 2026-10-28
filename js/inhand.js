@@ -3,7 +3,7 @@
 //   • Telling Tom (tom.told, once he trusts her): talking to him, he says she's been odd since the pie; she can tell him what she and her
 //     mother have, or not yet (he'll ask again another day).
 //   • The same standard as Tom (tom.smith, once Tom knows): talking to Master Ferrier, she asks to answer to him as Tom does, for what they do
-//     together. Agreed, the next dare she takes with Tom, he's heard it from the anvil: home the both of them, to the Ferriers' cottage, Tom
+//     together. Agreed, the next dare she takes with Tom, he's heard it from the anvil: into the forge, the both of them, Tom
 //     first, then her, the other watching; and he tells her mother himself (a reprieve at home: js/evening.js).
 //   • Mistress Pennock's trust (pennock.trust, once she trusts her enough, after the pie): at the end of an afternoon's work, the key under the pot.
 //   • Mistress Abney (abney.inhand, once she trusts her enough): at the end of an afternoon's work, she says Red's something on her mind; Red
@@ -46,18 +46,18 @@ async function caught(P, w, kind) {
   smith.motion.face(yawTo(smith.motion.pos, m.pos)); await m.face(yawTo(m.pos, smith.motion.pos));
   await P.converse(S.smithCaught(kind), { shot: ['red', 'smith'] });
   V.letGo('smith'); if (tom) V.letGo('tom', true);
-  await w.go('ferriers', 'door');
+  await w.go('forge', 'lane');
   const Q = w.P; if (!Q) return true;
-  Q.act(() => atTheFerriers(Q, w));      // (in their cottage: hers to sit through, not walk out of)
+  Q.act(() => inTheForge(Q, w));      // (in the forge: hers to sit through, not walk out of)
   return true;
 }
-async function atTheFerriers(Q, w) {
+async function inTheForge(Q, w) {
   const S = root.Story;
   await Q.wait(0.6);
   await Q.converse(S.smithIndoors(), { shot: ['red', 'smith'] });
-  const r = await root.Correction.run(Q, { corrector: 'smith', fade: on => w.fade(on),
+  const r = await root.Correction.run(Q, Object.assign({ corrector: 'smith', fade: on => w.fade(on),
     turns: [{ subject: 'tom', script: S.smithTom, corner: true, cornerDress: { skirt: 'up', drawers: 'down' } }, { subject: 'red', script: S.smithRed }],
-    watchers: [{ who: 'red', at: [-26, 14], until: 'red', face: 'shy' }], cornerTime: 6 });
+    watchers: [{ who: 'red', at: [-26, 0], until: 'red', face: 'shy' }], cornerTime: 6 }, Q.world.lap ? Q.world.lap.bench : {}));      // (on his bench, by the wall: Rose by the slack tub, watching)
   if (Q !== w.P) return;
   await Q.converse(S.smithAfter(r), { shot: ['red', 'smith'] });
   w.rep.settle('mischievous', 0.6); w.rep.settle('wilful', 0.3); w.rep.trusts('smith', 1);

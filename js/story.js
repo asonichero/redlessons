@@ -1603,14 +1603,14 @@ const smithAsk = ctx => [
     { text: 'Only passing, Master Ferrier.', face: 'calm', then: [{ run: ctx.not }, { who: 'smith', face: 'calm', listen: { red: 'calm' }, text: 'Then pass. Mind the sparks.' }] },
   ] },
 ];
-// After a dare, once he's agreed: he's seen it. Then in his cottage, the two of them.
+// After a dare, once he's agreed: he's seen it. Then in the forge, the two of them.
 const smithCaught = kind => [
   { who: 'smith', face: 'stern', listen: { red: 'wince' }, text: kind === 'bell' ? 'The curfew bell, at noon. I heard it from the anvil, and I knew whose hand it was before it stopped.' : 'Master William’s shutter, and Master William’s voice, and the two of you running. I’ve ears, lad.' },
   { who: 'tom', face: 'wince', listen: { red: 'wince' }, text: 'It was only a bit of fun, Dad.' },
-  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Aye, and this’ll be a bit of fun an’ all. Home, the both of you. Same standard, Miss Rose, as you asked.' },
+  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Aye, and this’ll be a bit of fun an’ all. Into the forge, the both of you. Same standard, Miss Rose, as you asked.' },
 ];
 const smithIndoors = () => [
-  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Tom first. Rose, you’ll stand there. Then you.' },
+  { who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Tom first. Rose, you’ll stand there by the tub. Then you.' },
   { who: 'red', face: 'shy', text: 'Yes, Master Ferrier.' },
 ];
 const smithTom = async S => {

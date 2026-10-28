@@ -74,13 +74,13 @@ const AREAS = {
     entries: { door: { at: [-22, 26], yaw: Math.PI } },
     exits: { 'the door': { area: 'village', entry: 'bakery' } },
   },
-  // The Ferriers' cottage, in the mill lane (a cottage much like her own: js/cottage.js): where Master Ferrier takes Tom in hand, and Red with
-  // him, once she's asked for the same standard (js/inhand.js).
-  ferriers: {
-    name: 'The Ferriers’', music: 'home', set: s => root.Cottage.build(s, { room: root.Cottage.FERRIERS }), npc: () => ({ id: 'smith', key: 'smith', name: 'Master Ferrier', at: [-12, 20], yaw: Math.PI, voice: 'smith', tint: '#4a3a32', bg: '#e4dcd4' }),
+  // The forge, inside (js/forge.js): where Master Ferrier takes Tom in hand, and Red with him, once she's asked for the same standard
+  // (js/inhand.js).
+  forge: {
+    name: 'The forge', music: 'village', set: s => root.Forge.build(s), npc: () => ({ id: 'smith', key: 'smith', name: 'Master Ferrier', at: [-6, 6], yaw: Math.PI, voice: 'smith', tint: '#4a3a32', bg: '#e4dcd4' }),
     talk: () => [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Off home with you, lass. Your mother’ll be wanting you.' }],
-    entries: { door: { at: [-44, 31], yaw: Math.PI / 2 } },
-    exits: { 'the door': { area: 'village', entry: 'ferriers' } },
+    entries: { lane: { at: [0, 20], yaw: Math.PI } },
+    exits: { 'the lane': { area: 'village', entry: 'forge' } },
   },
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)

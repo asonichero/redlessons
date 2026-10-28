@@ -628,7 +628,7 @@ function build(scene, opts) {
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
   };
   world.entries.inn = { at: [world.spots.innDoor.at.x - Math.sin(world.spots.innDoor.yaw) * 10, world.spots.innDoor.at.z - Math.cos(world.spots.innDoor.yaw) * 10], yaw: world.spots.innDoor.yaw + Math.PI };      // (out of the inn's door, onto the street)
-  world.entries.ferriers = { at: [world.spots.ferriersDoor.at.x - Math.sin(world.spots.ferriersDoor.yaw) * 4, world.spots.ferriersDoor.at.z - Math.cos(world.spots.ferriersDoor.yaw) * 4], yaw: world.spots.ferriersDoor.yaw + Math.PI };      // (out of the Ferriers' door, into the mill lane)
+  world.entries.forge = { at: [world.spots.anvil.at.x, world.spots.anvil.at.z], yaw: world.spots.anvil.yaw + Math.PI };      // (out of the forge, onto the loop lane before it)
   world.entries.bakery = { at: [world.spots.bakeryDoor.at.x - Math.sin(world.spots.bakeryDoor.yaw) * 10, world.spots.bakeryDoor.at.z - Math.cos(world.spots.bakeryDoor.yaw) * 10], yaw: world.spots.bakeryDoor.yaw + Math.PI };      // (out of Mistress Pennock's door, onto the street)
   world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
   // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)

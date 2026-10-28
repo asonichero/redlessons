@@ -174,7 +174,7 @@ function build(scene, opts) {
   // A piece of furniture: its own group on a wall's panel, hidden (with what's on it) while the camera is inside it or within a few units of it,
   // so it never fills the view.
   const pieces = [], sub = parent => { const s = new THREE.Group(); parent.add(s); pieces.push(s); return s; };
-  const L = ((opts && opts.room) || ROOM).layout(), F = furnish(L, PIECES, g => pieces.push(g)), piece = F.piece;      // (opts.room: another cottage's own layout, the Ferriers')      // (the furniture, each hidden like the rest while the camera's in it)
+  const L = ((opts && opts.room) || ROOM).layout(), F = furnish(L, PIECES, g => pieces.push(g)), piece = F.piece;      // (opts.room: another layout of it)      // (the furniture, each hidden like the rest while the camera's in it)
   const panel = (p, n) => { const g = new THREE.Group(); root_.add(g); panels.push({ g, p, n: n.normalize() }); return g; };
 
   // ── Floor and rug.
@@ -553,7 +553,5 @@ function build(scene, opts) {
 }
 
 // (the kit, for the other sets: js/cabin.js, js/wood.js)
-// (the Ferriers' cottage: built as hers is, the furniture its own to arrange, starting where hers stands)
-const FERRIERS = roomLayout('red-lessons:room:ferriers', ROOM.LAYOUT);
-root.Cottage = Object.assign({ build, PIECES, FERRIERS, kit: { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK, roomLayout, furnish, nearWall } }, ROOM);
+root.Cottage = Object.assign({ build, PIECES, kit: { canvasTex, toonMap, rnd, textures, box, solid, slab, pole, srgb, INK, roomLayout, furnish, nearWall } }, ROOM);
 })(typeof window !== 'undefined' ? window : globalThis);
