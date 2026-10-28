@@ -219,12 +219,17 @@ function attach(P, w) {
       if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
+      // (Bess, on her bench: she asks Red to sit. Sat beside her, they talk, and Red's to get up when she will (as on the bench round the lime
+      // tree); not, a word, and no harm done. Only sitting with her brings Bess's trust)
+      if (key === 'bess' && !P.sitting) { let sit = false; await P.converse(S.bessInvite({ sit: () => { sit = true; } }), { shot: ['red', key] });
+        if (!sit) { change(s => { s.met[key] = true; }); return; }
+        const seat = seats(SEAT.inn).sort((a, b) => a.at.distanceTo(f.motion.pos) - b.at.distanceTo(f.motion.pos))[0]; if (seat) await P.sitOn(seat); }
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
       const ctx = { part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone,
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });
-      if (!today && key !== 'willie') rep.trusts(key, 0.5);      // (a little trust, the first talk of the day)
+      if (!today && key !== 'willie' && (key !== 'bess' || P.sitting)) rep.trusts(key, 0.5);      // (a little trust, the first talk of the day: Bess's, only sat with her)
       change(s => { s.talked[key] = cal.day; s.met[key] = true; });
       if (ctx.brokenPromise && key === 'abney') w.save.change(s => { s.promise.sorry = cal.day; }, { promise: true });      // (said sorry, to her face)
       if (key === 'tom' && w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');

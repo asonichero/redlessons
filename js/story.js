@@ -540,7 +540,7 @@ const VILLAGE = {
   },
   bess: {
     any: [
-      [{ who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'Miss Rose. Come and sit a minute; I’m not allowed to do anything but sit, and it’s dull without somebody to watch.' }],
+      [{ who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'There. Isn’t this better than rushing about? I’m not allowed to do anything but sit, and it’s dull without somebody to watch.' }],
       [{ who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'Mother has me out here so she can see me from every window. As if the babe’s going to come running out on its own.' },
         { who: 'red', face: 'smile', text: 'Would it dare?' }, { who: 'bess', face: 'cheeky', text: 'Not with my mother watching.' }],
       [{ who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'Everybody in the village comes by this bench sooner or later. You learn a great deal, sitting.' },
@@ -1339,6 +1339,14 @@ const granCallsIn = () => [
   { who: 'red', face: 'smile', text: 'It’s me, Grandmother.' },
   { who: 'gran', text: 'Then lift the latch, my love, and come in. I’m too comfortable to get up.' },
 ];
+// Bess on her bench by the inn door: come and sit (ctx.sit(): she does). Sitting, they talk; not, no harm done.
+const bessInvite = ctx => [
+  { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'Miss Rose. Come and sit a minute?' },
+  { choose: [
+    { text: 'Sit beside her.', face: 'smile', then: [{ run: ctx.sit }] },
+    { text: 'I can’t stop, Bess. Another time.', face: 'shy', then: [{ who: 'bess', face: 'calm', listen: { red: 'shy' }, text: 'Another time, then. I’ll be here. I’m always here.' }] },
+  ] },
+];
 // After nine, at the door with supper still to come: her mother, gently.
 const curfewNudge = () => [
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Rose. It’s gone nine, love. You know where you’re to be after nine.' },
@@ -1464,7 +1472,7 @@ const signpost = () => [{ who: 'red', face: 'smile', thought: true, text: '“To
 // The walk home, at the gap in the hedge to the Fowlers': not tonight.
 const forkShut = () => 'Not that way. I’m late enough already, and Mama will be at the door.';
 // ── Her diary's people: how each is with her, by their trust (and whether she's told them what she and her mother have). → { name, text }
-const TRUST_WHO = { hulda: 'Grandmother', peter: 'Peter', fowler: 'Master Fowler', tom: 'Tom', smith: 'Master Ferrier', pennock: 'Mistress Pennock', baker: 'Master Pennock', abney: 'Mistress Abney', abneyDaughter: 'Bess', agnes: 'Agnes', georgie: 'Georgie', willie: 'Master William', holt: 'Holt', bo: 'Bo' };
+const TRUST_WHO = { hulda: 'Grandmother', peter: 'Peter', fowler: 'Master Fowler', tom: 'Tom', smith: 'Master Ferrier', pennock: 'Mistress Pennock', baker: 'Master Pennock', abney: 'Mistress Abney', abneyDaughter: 'Bess', bess: 'Bess', agnes: 'Agnes', georgie: 'Georgie', willie: 'Master William', holt: 'Holt', bo: 'Bo' };
 const villagerTrust = (who, t, open) => {
   const n = TRUST_WHO[who] || who;
   const text = who === 'bo' && t >= 2 ? (t >= 3 ? 'Bo thinks the world of her, and comes to her first when the flock won’t mind.' : 'Bo looks up to her, the way you look up to someone a year or two ahead.')
@@ -1707,5 +1715,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
