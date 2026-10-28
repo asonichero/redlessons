@@ -4,23 +4,30 @@
 // share of the morning or the afternoon (so the clock comes out where the errand's time says), and whoever she's working for talking the
 // whole while. When the last is done, the errand's done; and until then, the door stays shut on her.
 //
+// The bakery's are timed, on a clock that runs quicker than the day's while she's in there:
+//   • Asked for at breakfast (mode 'errand'): Mistress Pennock has the mill run to do, so she gives Red the list and leaves her to it. Back
+//     when she said, she finds it done (the errand's trust), or not: then, before Red's confided in her, no trust for it; after, a correction.
+//   • Picked up on the day (mode 'picked': offered at the counter while she's still selling, never on a day Red has an errand): a shorter list,
+//     a head start for her when she's done selling. More than half of it done, and she's grateful (a little trust); less, and no harm done.
+//
 //   Work.begin(w, id) (chores: in through the door to it) · Work.attach(P, w) (the place, played: if a shift's under way here) · Work.SHIFTS
 //   (the bakery's afternoon; the inn's afternoon, Bess calling the work from her chair)
-// Kept in the save (state.work): { day, id, step }.
+// Kept in the save (state.work): { day, id, step, short, mode ('errand' | 'picked' | null), until (the minute the boss is back) }.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
+const SHIFT_RATE = 2.5;      // (game minutes a second, in a timed shift: a quarter quicker than the day's. The bakery's whole list, done briskly, is about seventy seconds' play)
 
 // The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it.
 const SHIFTS = {
-  bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', tasks: [      // (the afternoon: the clearing down after the morning's baking, and the next day begun)
-    { id: 'trough', label: 'Scrape out the dough trough', place: 'trough', mins: 25, kind: 'shape' },
-    { id: 'boards', label: 'Scrub down the boards', place: 'table', mins: 25, kind: 'shape' },
-    { id: 'ash', label: 'Rake the ash out of the oven', place: 'oven', mins: 20, kind: 'oven' },
-    { id: 'racks', label: 'Clear the racks', place: 'racks', mins: 15, kind: 'reach' },
-    { id: 'sift', label: 'Sift tomorrow’s flour', place: 'table', mins: 25, kind: 'shape' },
-    { id: 'sponge', label: 'Set the sponge for the morning', place: 'trough', mins: 30, kind: 'knead' },
-    { id: 'sweep', label: 'Sweep out', place: 'floor', mins: 30, kind: 'sweep' },
+  bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', away: 210, picked: ['trough', 'boards', 'racks', 'sweep'], tasks: [      // (the afternoon: the clearing down after the morning's baking, and the next day begun; away: the mill run; picked: the head start's list)
+    { id: 'trough', what: 'the trough', label: 'Scrape out the dough trough', place: 'trough', mins: 25, kind: 'shape' },
+    { id: 'boards', what: 'the boards', label: 'Scrub down the boards', place: 'table', mins: 25, kind: 'shape' },
+    { id: 'ash', what: 'the oven', label: 'Rake the ash out of the oven', place: 'oven', mins: 20, kind: 'oven' },
+    { id: 'racks', what: 'the racks', label: 'Clear the racks', place: 'racks', mins: 15, kind: 'reach' },
+    { id: 'sift', what: 'tomorrow’s flour', label: 'Sift tomorrow’s flour', place: 'table', mins: 25, kind: 'shape' },
+    { id: 'sponge', what: 'the sponge', label: 'Set the sponge for the morning', place: 'trough', mins: 30, kind: 'knead' },
+    { id: 'sweep', what: 'the floor', label: 'Sweep out', place: 'floor', mins: 30, kind: 'sweep' },
   ] },
   inn: { area: 'inn', boss: 'bess', errand: 'inn', tasks: [
     { id: 'pots', label: 'Scour the pots', place: 'tub', mins: 30, kind: 'shape' },
@@ -39,9 +46,10 @@ const stateOf = w => w.save.state.work || (w.save.state.work = { day: 0, id: nul
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.work); }, { work: true });
 // (a shift under way today, here)
 const current = (w, area) => { const s = stateOf(w); return s.id && s.day === w.cal.day && (!area || SHIFTS[s.id].area === area) ? s : null; };
-function begin(w, id, o) { change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; s.short = !!(o && o.short); }); }
-// (a shift's tasks, as this one is: asked for on the day, by her, the inn's afternoon is without the carrier's men)
-const tasksOf = s => SHIFTS[s.id].tasks.filter(t => !(s.short && t.carriers));
+function begin(w, id, o) { o = o || {}; change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; s.short = !!o.short; s.mode = o.mode || null; s.until = o.until || 0; s.back = false; }); }
+// (a shift's tasks, as this one is: asked for on the day, by her, the inn's afternoon is without the carrier's men; the bakery's head start,
+// its own short list)
+const tasksOf = s => SHIFTS[s.id].tasks.filter(t => !(s.short && t.carriers) && !(s.mode === 'picked' && !SHIFTS[s.id].picked.includes(t.id)));
 
 // The peel (Mistress Pennock's paddle for the oven), and a board of loaves, to carry.
 function peelProp() {
@@ -55,7 +63,12 @@ function attach(P, w) {
   const S = root.Story, sh = SHIFTS[st0.id], W = P.world, spots = W.work || {}, m = P.motion, talk = P.talk;
   const task = () => { const s = current(w); return s && tasksOf(s)[s.step] || null; };
   // (the boss's word, said while she works: nothing waits on it)
-  const say = (text, face) => talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });
+  const timed = !!st0.mode, mm = P.npcMotion, rig = P.npc;
+  let away = false, due = false;
+  const say = (text, face) => !away && talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });
+  // (the boss out of the place: off on the mill run, or still at her counter; and back in at the door)
+  const gone = () => { away = true; if (rig && rig.root) rig.root.visible = false; if (mm) mm.warp(new V3(0, 0, -900), 0); };
+  const inAt = () => { const e = W.entries && W.entries.door; return e ? new V3(e.at[0], 0, e.at[1]) : new V3(-22, 0, 26); };
   const lines = (S.WORK && S.WORK[st0.id]) || {};
   // The task in hand: offered at its place.
   W.actions = W.actions || [];
@@ -64,17 +77,30 @@ function attach(P, w) {
   // (the door shut on her until it's done)
   const door = (W.exits || []).find(e => e.name === 'the door'); if (door) { const was = door.when; door.when = () => !current(w) && (!was || was()); }
   w.refresh();
-  if (st0.step === 0) P.act(async () => { await P.wait(0.6); await P.converse(lines.start || [], { shot: ['red', sh.boss] }); });
+  if (timed && st0.mode === 'picked') { gone(); if (st0.step === 0) P.act(async () => { await P.wait(0.6); await P.converse(lines.picked || [], { shot: false, keepCamera: true }); }); }
+  else if (timed && (st0.until || st0.step > 0)) gone();      // (back in, with her already gone)
+  else if (st0.step === 0) P.act(async () => {
+    await P.wait(0.6); await P.converse(timed ? lines.list || [] : lines.start || [], { shot: ['red', sh.boss] });
+    if (timed) { change(w, s => { s.until = w.cal.minute + sh.away; }); if (mm) { await Promise.race([mm.goTo(P.collide(inAt(), 3), null), P.wait(5)]); } gone(); w.refresh(); }      // (the list given: and off, out of the door)
+  });
+  // (the timed shift's clock: quicker than the day's while she's in here, talk aside; and when it's run out, the boss back)
+  if (timed) P.tick(dt => {
+    const s = current(w); if (!s || !s.until || s.back) return;
+    if (!(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, P.busy ? SHIFT_RATE : SHIFT_RATE - (w.RATE || 2));      // (the day's own clock runs too, when she's not busy)
+    if (w.cal.minute >= s.until) due = true;
+    if (due && !P.busy) { due = false; P.act(back); }
+  });
 
   async function doTask(t) {
     const sp = spots[t.place]; await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look);
     const said = lines[t.id]; if (said) say(...said);
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
-    w.cal.advance(t.mins);
-    const last = current(w).step + 1 >= tasksOf(current(w)).length;
+    if (!timed) w.cal.advance(t.mins);
+    const s0 = current(w); if (!s0) return; const last = s0.step + 1 >= tasksOf(s0).length;
     change(w, s => { s.step++; });
-    if (last) await finish(); else w.refresh();
+    if (last && timed) { if (current(w).until && !current(w).back) await back(); }      // (all done before she's back: and then she is)
+    else if (last) await finish(); else w.refresh();
   }
   const reachAt = async (p, side, hold) => { await m.reach(side || 'R', p); await P.wait(hold || 0.4); await m.release(side || 'R'); };
   const peel = { take: async () => { const p = W.work.peel; await m.goTo(p.at, p.yaw); await reachAt(p.look, 'R', 0.2); (W.peel || []).forEach(o => { o.visible = false; }); const it = peelProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
@@ -91,6 +117,33 @@ function attach(P, w) {
     serve: async () => { const it = m.carry; if (it) { m.drop(); P.stage.scene.remove(it.obj); } await P.converse(lines.customers || [], { shot: false, keepCamera: true }); },
     reach: async sp => reachAt(sp.look),
   };
+  // The boss back (timed shifts): in at the door, and the list looked over. All of it, or not; and what comes of it.
+  async function back() {
+    const s = current(w); if (!s || s.back) return; change(w, x => { x.back = true; });
+    if (w.cal.minute < s.until) { await P.converse(lines.waiting || [], { shot: false, keepCamera: true }); w.cal.advance(s.until - w.cal.minute); }      // (done early: and she's not long)
+    const list = tasksOf(s), n = list.length, k = s.step, all = k >= n, left = list.slice(k).map(t => t.what || t.label.toLowerCase());
+    away = false; if (rig && rig.root) rig.root.visible = true;
+    if (mm) { const at = inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
+    if (s.mode === 'picked') {
+      const good = k * 2 > n;
+      await P.converse(good ? lines.pickedGood || [] : lines.pickedSome || [], { shot: ['red', sh.boss] });
+      if (good) w.rep.trusts(sh.boss, 0.5);
+      change(w, x => { x.id = null; }); w.refresh(); return;
+    }
+    if (all) return finish();
+    // (not all done: before she's confided in her, no trust for it; after, a correction, as she'd want)
+    change(w, x => { x.id = null; });
+    if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand, { short: true });
+    if (w.rep.openness(sh.boss) >= 1 && root.Correction) {
+      await P.converse(S.pennockShort(left, true), { shot: ['red', sh.boss] });
+      const r = await root.Correction.run(P, { corrector: sh.boss, fade: on => w.fade(on), turns: [{ subject: 'red', script: S.pennockShortRed }] });
+      if (P !== w.P) return;
+      await P.converse(S.pennockShortAfter(r), { shot: ['red', sh.boss] });
+      w.rep.settle('naughty', 0.5); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+      if (root.Evening) root.Evening.record(w, { what: 'shift', by: sh.boss, informs: true });      // (she'll tell Red's mother herself: a reprieve at home)
+    } else await P.converse(S.pennockShort(left, false), { shot: ['red', sh.boss] });
+    w.refresh();
+  }
   // Done: the errand done (js/chores.js), her word for it, and the door open again.
   async function finish() {
     change(w, s => { s.id = null; });
@@ -103,7 +156,7 @@ function attach(P, w) {
   return { task, action };
 }
 
-const api = { begin, attach, current, tasksOf, SHIFTS };
+const api = { begin, attach, current, tasksOf, SHIFTS, SHIFT_RATE };
 root.Work = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

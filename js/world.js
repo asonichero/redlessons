@@ -123,7 +123,7 @@ function create(view, ui) {
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
-    go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
+    RATE, go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
   };
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.

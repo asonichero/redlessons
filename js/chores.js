@@ -172,7 +172,7 @@ function create(w) {
     if (e.shift && e.state === 'broken') { await P.converse(S.shiftMissed(e), { shot: false, keepCamera: true }); return; }      // (too late: they've managed without her)
     if (e.from && cal.minute < H(e.from)) { await P.converse(e.early, { shot: false, keepCamera: true }); return; }      // (too early: nobody up to answer)
     if (e.state === 'missed') { change(c => { c.errand.knocked = true; }); await P.converse(e.gone, { shot: false, keepCamera: true }); return; }      // (too late: he's gone out)
-    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
+    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short, mode: e.shift === 'bakery' ? 'errand' : null }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
     if (e.leave && holding(P, e.leave)) { const it = m.drop(); if (it) { it.obj.visible = false; it.panel = null; it.away = !!it.home; change(c => { c.away = Object.assign({}, c.away, { [e.leave]: cal.day }); }); } }      // (left with the smith)
     if (e.pie && basketIn(P)) { fill(basketIn(P), false); basketIn(P).keep = false; }      // (the pie out of it, on their step; the basket hers again)
     if (e.pails) await pails(P, e);      // (the well: three pails drawn, and into the butt)
@@ -217,25 +217,27 @@ function create(w) {
   // (handed over somewhere else than its place: the eggs, at the Fowlers' gate, the first time; → whether it was this errand, and still owed)
   function fulfil(P, key) { const e = errand(); if (!e || e.key !== key || !(e.state === 'accepted' || e.state === 'broken')) return false; fulfilled(P, e); return true; }
   const owes = key => { const e = errand(); return !!(e && e.key === key && (e.state === 'accepted' || e.state === 'broken')); };
-  // Asked on the day, by Mistress Pennock (before noon) or Mistress Abney (before one), if Red's nothing else promised: will she help this
-  // afternoon? (By her, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.)
-  const OFFER = { pennock: { id: 'bakery', before: H('12:00') }, abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
+  // Asked on the day, by Mistress Pennock (before noon, at her counter: never on a day Red has an errand) or Mistress Abney (before one, if
+  // Red's nothing else promised). Mistress Pennock's is a head start on the clearing down, there and then, while she sells (js/work.js); by
+  // Mistress Abney, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.
+  const OFFER = { pennock: { id: 'bakery', before: H('12:00'), sold: H('12:30') }, abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
   function canOffer(who) {
     const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day) return false;
+    if (who === 'pennock') return !e && !(root.Work && root.Work.current(w));      // (not on an errand day: and not twice)
     return !e || e.state === 'done' || e.state === 'little';
   }
   async function offer(P, who) {
     const o = OFFER[who]; let yes = false; change(c => { c.offered = Object.assign({}, c.offered, { [who]: cal.day }); });
     await P.converse(S.shiftOffer(who, { yes: () => { yes = true; } }), { shot: ['red', who] });
+    if (yes && who === 'pennock' && root.Work) { root.Work.begin(w, 'bakery', { mode: 'picked', until: Math.max(OFFER.pennock.sold, cal.minute + 40) }); w.refresh(); await w.go('bakery', 'door'); return true; }      // (in, and at it: till she's sold out)
     if (yes) change(c => { c.errand = { id: o.id, state: 'accepted', by: o.by || H(E[o.id].by), short: who === 'abney' }; c.last = o.id; });
     w.refresh(); return yes;
   }
-  // A shift's work done (js/work.js): the errand with it, and what it was for.
-  function shiftDone(id) {
+  // A shift's work done (js/work.js): the errand with it, and what it was for. (o.short: the list not finished: done with, but nothing for it)
+  function shiftDone(id, o) {
     const e = errand(); if (!e || e.key !== id) return;
-    if (e.trust) rep.trusts(e.trust, 1);
-    if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest);
-    change(c => { c.errand.state = 'done'; }); w.refresh();
+    if (!(o && o.short)) { if (e.trust) rep.trusts(e.trust, 1); if (e.quest && w.q.stateOf && w.q.stateOf(e.quest) === 'offered') w.complete(e.quest); }
+    change(c => { c.errand.state = 'done'; c.errand.short = !!(o && o.short); }); w.refresh();
   }
   // Home with it: handed to her mother, and her word for it.
   async function giveHome(P, e) { await P.approach(9); await P.converse(marenTalk(P), { shot: ['red', 'mother'] }); }
@@ -294,8 +296,8 @@ function create(w) {
     const out = [], e = errand(), c = st();
     for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
-    const k = root.Work && root.Work.current(w), t = k && e && root.Work.tasksOf(k)[k.step];
-    if (t) out.push(e.title + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + '.');      // (at work: the task in hand)
+    const k = root.Work && root.Work.current(w), t = k && (e || k.mode === 'picked') && root.Work.tasksOf(k)[k.step];
+    if (t) out.push((e ? e.title : 'Mistress Pennock’s list') + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + (k.until && !k.back ? ' (she’s back at ' + clock(k.until) + ')' : '') + '.');      // (at work: the task in hand; a timed one, when she's back)
     else if (e && e.state === 'accepted') out.push(e.title + (e.shift ? ': at ' + clock(e.by) + ', give or take a quarter of an hour' : e.from ? ': after ' + clock(H(e.from)) + ', before ' + clock(e.by) : ': begin by ' + clock(e.by)) + (e.needs && w.P && !has(w.P, e) && w.area === 'home' ? ' (' + (w.P.motion.carry && !holding(w.P, e.needs) ? (basketIn(w.P) ? 'hang the basket up; ' : 'put ' + w.P.motion.carry.name + ' down; ') : '') + WHERE[e.needs] + ')' : '') + '.');
     else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');

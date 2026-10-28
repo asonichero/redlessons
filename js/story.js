@@ -403,7 +403,7 @@ const ERRANDS = {
     there: [{ who: 'red', face: 'calm', thought: true, text: 'Master William at the door in his shirtsleeves, rubbing his eyes. “A pie? Your mother’s a saint, Miss Rose. Tell her so from me.”' },
       { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and he would lean out and pretend to growl at us.' }] },
   bakery: { title: 'Help at the bakery', by: '13:00', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 170, who: 'pennock', trust: 'pennock', quest: 'pennock.helps', shift: 'bakery',      // (played inside: js/work.js)
-    ask: 'Mistress Pennock’s girl is poorly, and she’s short of hands. The baking’s done by noon, but there’s the clearing down after, and tomorrow’s to get ready. Will you go and help her this afternoon? By one, she said.',
+    ask: 'Mistress Pennock has the mill run to do this afternoon, and Master Pennock’s abed, so there’s nobody for the clearing down. Will you go and do it for her? She’ll give you the list at one, she said.',
     met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on. It’s all the dull half of baking, I’m afraid.' }],
     there: [{ who: 'red', face: 'smile', thought: true, text: 'Flour to my elbows, and Mistress Pennock talking the whole afternoon, about everything and everyone.' }] },
   inn: { title: 'Work at the inn', by: '16:00', place: 'inn', action: 'Go in to work for Mistress Abney', mins: 180, who: 'abney', trust: 'abney', quest: 'abney.work', shift: 'inn',      // (played inside: js/work.js)
@@ -840,6 +840,41 @@ const pieRed = async S => {
   await S.say(M, 'There. Up you get, love.', 'calm');
   await S.wait(1.0);
 };
+// Back from the mill, and the list not done (left: what's still to do; confided: Red's told her what she and her mother have, so she'll see to
+// it as Maren would).
+const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
+const pennockShort = (left, confided) => confided ? [
+  { who: 'pennock', face: 'stern', listen: { red: 'shy' }, text: 'Rose. ' + left[0][0].toUpperCase() + left[0].slice(1) + (left.length > 1 ? ', and ' + NUM[left.length - 1] + ' more besides,' : '') + ' not done. Three hours and a half I gave you.' },
+  { who: 'red', face: 'shy', text: 'I’m sorry, Mistress Pennock. I didn’t— the time went.' },
+  { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'It does, when you let it. You asked me to treat you as your mother would. So I shall. Come here.' },
+] : [
+  { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Oh. ' + left[0][0].toUpperCase() + left[0].slice(1) + (left.length > 1 ? ', and ' + NUM[left.length - 1] + ' more,' : '') + ' still to do.' },
+  { who: 'red', face: 'shy', text: 'I’m sorry, Mistress Pennock. I ran out of time.' },
+  { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Well. I’ll see to it myself. Run along home, love.' },
+  { who: 'red', face: 'wince', thought: true, text: 'She didn’t say anything else. That was worse.' },
+];
+// Over her knee by the trough, for the list not done.
+const pennockShortRed = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3, pace: 1.3 });
+  await S.wait(0.6);
+  await S.say(M, 'Over you come. When I leave you with my bakery, I need to know it’ll be done.', 'calm');
+  await S.step([M, 'Not half done. Not done if the time allows. Done.', 'stern'], 8);
+  await S.step([R, 'Yes, Mistress Pennock—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.6, pace: 1.5 });
+  await S.step([M, 'You’re quick when you want to be. I’ve seen it. So next time you’ll want to.'], 10);
+  await S.step([R, 'Ow— I will—'], 4);
+  await S.say(M, 'There. That’s all. Up you get, love.', 'calm');
+  await S.wait(1.0);
+};
+const pennockShortAfter = r => r && r.rose ? [
+  { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Sit a minute, Rose. You did right to stop me. We’ll say no more about it.' },
+] : [
+  { who: 'pennock', face: 'calm', listen: { red: 'teary' }, text: 'There. Done with. Now help me finish, the two of us, and then home.' },
+  { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'And I’ll still want you next time. Don’t think I won’t.' },
+  { who: 'red', face: 'shy', text: 'Thank you, Mistress Pennock.' },
+];
 // After: Mistress Pennock's word to her (r: how it went), and Tom sent home.
 const pieAfter = r => r && r.rose ? [
   { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Sit a minute, Rose. There’s milk. You did right to stop me.' },
@@ -959,7 +994,7 @@ const curfewAfter = how => [
 ].concat(how.willie ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And you’ll thank Master William when you see him. He could have left you to the dark.' }] : []);
 // What someone else has already dealt with (c: { what, by }): a reprieve. how: 'heard' (they told her), 'reported' (Red just did), 'late' (she
 // heard of it in the village, Red having kept it back).
-const DEALT = { pie: 'the pie', dare: 'the dare with Tom', abney: 'what you asked of her' };
+const DEALT = { pie: 'the pie', dare: 'the dare with Tom', abney: 'what you asked of her', shift: 'Mistress Pennock’s list, left half done' };
 const reprieve = (c, how) => {
   const who = FULL[c.by] || 'someone', what = DEALT[c.what] || c.what;
   if (c.what === 'pie' && how === 'heard') return pieMotherKnows();
@@ -1035,6 +1070,26 @@ const WORK = {
     sift: ['Through the fine sieve, and shake it, don’t press. Flour gets everywhere: in the cracks, in my hair, in Master Pennock’s moustache. He says it keeps him handsome.', 'smile'],
     sponge: ['A handful of this morning’s dough in the warm water, and the flour on top. Cover it, and by four tomorrow it’ll be up and wanting him.', 'calm'],
     sweep: ['And the floor, last thing, out of the door. Then we’re done, and you can sit.', 'smile'],
+    // (asked for at breakfast: the mill run's hers today, so it's the list, and Red left to it)
+    list: [
+      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love, and on the hour. I’ve the mill run to do, and Master Pennock’s in his bed, so it’s you and the list.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The trough, the boards, the oven raked, the racks cleared, tomorrow’s flour sifted, the sponge set, and the floor. I’ll be back by half past four.' },
+      { who: 'red', face: 'calm', text: 'All of it, by then?' },
+      { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'All of it, by then. You’ll manage. No dawdling at the window, mind: I’ll know.' },
+    ],
+    // (picked up at the counter: a head start for her, while she's still selling)
+    picked: [
+      { who: 'red', face: 'calm', thought: true, text: 'Her list’s chalked on the board by the door. The trough, the boards, the racks, the floor.' },
+      { who: 'red', face: 'smile', thought: true, text: 'As much of it as I can before she’s done at the counter.' },
+    ],
+    waiting: [{ who: 'red', face: 'smile', thought: true, text: 'All done, and not a sound of her yet. I’ll sit by the oven where it’s warm, and wait.' }],
+    pickedGood: [
+      { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Well! Look at this. You’ve had half my afternoon off me already. Bless you, Rose.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'smile' }, text: 'Off you go, love. I’ll finish. Take a bun for your trouble.' },
+    ],
+    pickedSome: [
+      { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Every bit helps, love. Off you go: I’ll see to the rest.' },
+    ],
     end: [
       { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'That’s us cleared, and tomorrow begun. You’ve good hands for it. Off you go, and take your mother a bun from me.' },
       { who: 'red', face: 'smile', text: 'Thank you, Mistress Pennock.' },
@@ -1417,9 +1472,9 @@ const villagerTrust = (who, t, open) => {
 };
 // Asked on the day, at the counter or the inn door: will she help this afternoon? (ctx.yes())
 const shiftOffer = (who, ctx) => who === 'pennock' ? [
-  { who: 'pennock', face: 'smile', listen: { red: 'calm' }, text: 'Rose, love. My girl’s still poorly. If you’ve nothing else on, would you help me clear down this afternoon? One o’clock.' },
+  { who: 'pennock', face: 'smile', listen: { red: 'calm' }, text: 'Rose, love. If you’ve nothing else on: would you go through and make a start on the clearing down, while I sell this lot? A head start’s worth an hour to me.' },
   { choose: [
-    { text: 'I’d be glad to, Mistress Pennock.', face: 'smile', then: [{ run: ctx.yes }, { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Bless you. One, then, and not a minute after quarter past: the oven won’t wait.' }] },
+    { text: 'I’d be glad to, Mistress Pennock.', face: 'smile', then: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Bless you. The list’s on the board. As much as you can, love, and I’ll be in when I’m sold out.' }, { run: ctx.yes }] },
     { text: 'Not today, I’m sorry.', face: 'shy', then: [{ who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Another day, then.' }] },
   ] },
 ] : [
@@ -1640,5 +1695,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
