@@ -70,12 +70,12 @@ const ROOMS = {
   cottage: { M: Cottage, views: { above: [[0, 175, 5], [0, 0, 4]], door: [[-50, 36, 30], [8, 6, -2]], hearth: [[0, 36, 40], [0, 6, -6]], pegs: [[0, 36, -32], [0, 6, 6]], window: [[50, 36, 6], [-8, 6, 2]] } },
   ferriers: { M: Object.assign({ build: s => Cottage.build(s, { room: Cottage.FERRIERS }), PIECES: Cottage.PIECES }, Cottage.FERRIERS), views: { above: [[0, 175, 5], [0, 0, 4]], door: [[-50, 36, 30], [8, 6, -2]], hearth: [[0, 36, 40], [0, 6, -6]], pegs: [[0, 36, -32], [0, 6, 6]], window: [[50, 36, 6], [-8, 6, 2]] } },
   bakery: { M: Bakery, views: { above: [[0, 160, 4], [0, 0, 3]], door: [[-20, 34, 34], [0, 6, -6]], oven: [[10, 34, -28], [0, 6, 8]], left: [[-42, 34, 4], [8, 6, 2]], right: [[42, 34, 4], [-8, 6, 2]] } },
-  inn: { M: Inn, views: { above: [[0, 160, 4], [0, 0, 3]], door: [[4, 34, 34], [0, 6, -6]], counter: [[0, 34, -28], [0, 6, 8]], left: [[-42, 34, 4], [8, 6, 2]], right: [[42, 34, 4], [-8, 6, 2]] } },
+  inn: { M: Inn, views: { above: [[0, 230, 4], [0, 0, 3]], door: [[4, 38, 38], [0, 6, -10]], counter: [[0, 38, -36], [0, 6, 10]], left: [[-70, 38, 4], [12, 6, 2]], right: [[70, 38, 4], [-12, 6, 2]] } },
   cabin: { M: Cabin, views: { above: [[0, 150, 4], [0, 0, 3]], door: [[-10, 32, 35], [0, 6, -4]], hearth: [[-42, 34, 4], [8, 6, 2]], oak: [[34, 36, -26], [-6, 6, 8]], bed: [[42, 34, 34], [-4, 6, 0]] } },
 };
 const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', window: 'From the window side', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right' };
 const st = Stage.create($('view'), { room: false });
-st.controls.maxDistance = 260;
+st.controls.maxDistance = 320;
 let R = null, set = null, L = null, sel = null, figure = null;
 
 function build() {

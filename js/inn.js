@@ -9,13 +9,14 @@
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
 const KIT = root.Cottage.kit, { toonMap, rnd, textures, box, solid, pole, srgb } = KIT;
-const X0 = -46, X1 = 46, Z0 = -32, Z1 = 38, EAVE = 46, FOOT = 3, RZ = (Z0 + Z1) / 2;
+const X0 = -72, X1 = 72, Z0 = -38, Z1 = 40, EAVE = 44, FOOT = 3, RZ = (Z0 + Z1) / 2;      // (the biggest room in the village, inside its biggest building: js/village.js's inn is 150 by 84)
 const DOOR = 4, DOOR_H = 38;
 // The furniture's places (as arranged in the room editor, rooms.html, whose changes, kept in the browser, the game builds the room from). The
 // hearth, the door and the windows are the walls'.
-const PIECES = { chair: 'Bess’s chair (and her footstool)', counter: 'The counter (and the barrels)', tableA: 'The long table (by the door)', tableB: 'The long table (by the stair)', stair: 'The stair' };
+const PIECES = { chair: 'Bess’s chair (and her footstool)', counter: 'The counter', barrels: 'The barrels, on their stillage', shelves: 'The shelves (tankards and jugs)', tableA: 'The long table (by the hearth)', tableB: 'The long table (by the door)', tableC: 'The long table (by the stair)', stair: 'The stair' };
 const ROOM = KIT.roomLayout('red-lessons:room:inn', {
-  chair: { x: -24, z: 16, ry: -2.042 }, counter: { x: 9, z: -20, ry: 0 }, tableA: { x: -8, z: 12, ry: 0 }, tableB: { x: 24, z: 14, ry: 0 }, stair: { x: 40, z: -13, ry: 0 },
+  chair: { x: -50, z: 16, ry: -2.042 }, counter: { x: 6, z: -14, ry: 0 }, barrels: { x: -4, z: -32.5, ry: 0 }, shelves: { x: 32, z: -36.5, ry: 0 },
+  tableA: { x: -24, z: 18, ry: 0 }, tableB: { x: 14, z: 20, ry: 0 }, tableC: { x: 46, z: 18, ry: 0 }, stair: { x: 66, z: -19, ry: 0 },
 });
 
 function build(scene) {
@@ -31,7 +32,7 @@ function build(scene) {
   { const f = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Z1 - Z0), toonMap(tx.boards)); f.rotation.x = -Math.PI / 2; f.position.set(0, 0, RZ); f.receiveShadow = true; floorG.add(f); }
   const walls = {
     back: { a: new V3(X1, 0, Z0), b: new V3(X0, 0, Z0), n: new V3(0, 0, 1) },
-    front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), holes: [[DOOR - 7, DOOR + 7, 0, DOOR_H], [-30, -18, 16, 28], [24, 36, 16, 28]] },
+    front: { a: new V3(X0, 0, Z1), b: new V3(X1, 0, Z1), n: new V3(0, 0, -1), holes: [[DOOR - 7, DOOR + 7, 0, DOOR_H], [-46, -34, 16, 28], [-26, -14, 16, 28], [24, 36, 16, 28], [46, 58, 16, 28]] },
     left: { a: new V3(X0, 0, Z0), b: new V3(X0, 0, Z1), n: new V3(1, 0, 0) },
     right: { a: new V3(X1, 0, Z1), b: new V3(X1, 0, Z0), n: new V3(-1, 0, 0) },
   };
@@ -80,18 +81,33 @@ function build(scene) {
     world.bessChair = world.seats[world.seats.length - 1];
   }
   // ── The counter across the back, barrels behind it on their stillage, tankards on hooks above, a jug and a row of pots on the counter.
-  { const pc = piece('counter', wall), g = pc.g, x0 = -23, x1 = 23, H = 15, bz = -7.5;      // (bz: the barrels and the tankards, behind it, against the wall)
+  // (the counter: out in the room, a jug on it; the barrels and the shelves behind, against the back wall, their own pieces)
+  { const pc = piece('counter', wall), g = pc.g, x0 = -23, x1 = 23, H = 15;
     box(g, x1 - x0, H, 5, 0, H / 2, 0, oak); box(g, x1 - x0 + 2, 1.2, 7, 0, H + 0.6, 0, oakDk);
-    for (let k = 0; k < 4; k++) { const bx = x0 + 6 + k * 11; solid(g, new THREE.CylinderGeometry(4, 4, 9, 14).rotateX(Math.PI / 2), oak, bx, 7, bz, { ink: 0.08 });
-      for (const dz of [-3, 3]) solid(g, new THREE.TorusGeometry(4.05, 0.22, 4, 18), iron, bx, 7, bz + dz, { ink: 0 }); }
-    pole(g, new V3(x0, 26, -10.5), new V3(x1, 26, -10.5), 0.3, oakDk, { ink: 0.04 });
-    for (let k = 0; k < 9; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, x0 + 3 + k * 5, 23.6, -10, { ink: 0.04 });
     solid(g, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.4], [1.1, 3], [0.9, 3.4], [1.1, 3.8]].map(([r, h]) => new THREE.Vector2(r, h)), 12), T.mat('#b07a4a'), x0 + 8, H + 1.2, 0, { ink: 0.04 });
-    world.obstacles.push(pc.area(x0 - 1, x1 + 1, -12, 3.5));
+    for (let k = 0; k < 3; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, x1 - 10 + k * 3, H + 2.5, 0.5, { ink: 0.04 });
+    world.obstacles.push(pc.area(x0 - 1, x1 + 1, -3.5, 3.5));
     world.surfaces.push(Object.assign(pc.area(x0 + 2, x1 - 2, -2, 2), { y: H + 1.2, name: 'the counter', panel: g, front: pc.turn(new V3(0, 0, 1)) }));
   }
+  // (the barrels, four on their stillage, hooped)
+  { const pc = piece('barrels', wall), g = pc.g, x0 = -23;
+    box(g, 48, 2.4, 9, 0, 1.2, 0, oakDk); for (const sx of [-1, 1]) box(g, 48, 1.2, 1.2, 0, 2.6, sx * 3.4, oakDk);
+    for (let k = 0; k < 4; k++) { const bx = x0 + 6 + k * 11.5; solid(g, new THREE.CylinderGeometry(4, 4, 9, 14).rotateX(Math.PI / 2), oak, bx, 7, 0, { ink: 0.08 });
+      for (const dz of [-3, 3]) solid(g, new THREE.TorusGeometry(4.05, 0.22, 4, 18), iron, bx, 7, dz, { ink: 0 });
+      solid(g, new THREE.CylinderGeometry(0.35, 0.35, 1.6, 6).rotateX(Math.PI / 2), iron, bx, 5, 5, { ink: 0 }); }      // (and a tap in each)
+    world.obstacles.push(pc.area(-25, 25, -5, 5.5));
+  }
+  // (the shelves: three of them, tankards along the top, jugs and pots below)
+  { const pc = piece('shelves', wall), g = pc.g, w_ = 30;
+    for (const y of [10, 18, 26]) box(g, w_, 0.9, 4, 0, y, 0, oak);
+    for (const sx of [-1, 1]) box(g, 1.2, 30, 4.4, sx * (w_ / 2 + 0.6), 15, 0, oakDk);
+    for (let k = 0; k < 8; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, -12.5 + k * 3.6, 27.8, 0, { ink: 0.04 });
+    for (let k = 0; k < 4; k++) solid(g, new THREE.LatheGeometry([[0.01, 0], [1.3, 0.1], [1.6, 1.4], [1.1, 3], [0.9, 3.4], [1.1, 3.8]].map(([r, h]) => new THREE.Vector2(r, h)), 12), T.mat(k % 2 ? '#b07a4a' : '#c8946a'), -10 + k * 6.5, 18.5, 0, { ink: 0.04 });
+    for (let k = 0; k < 5; k++) solid(g, new THREE.CylinderGeometry(1.6, 1.3, 2.4, 10), T.mat('#8a6a4a'), -11 + k * 5.5, 11.6, 0, { ink: 0.04 });
+    world.obstacles.push(pc.area(-16, 16, -2.5, 2.5));
+  }
   // ── The tables, each with a bench either side; a settle against the front wall.
-  for (const id of ['tableA', 'tableB']) { const pc = piece(id, wall), g = pc.g;
+  for (const id of ['tableA', 'tableB', 'tableC']) { const pc = piece(id, wall), g = pc.g;
     box(g, 24, 1.4, 9, 0, 13, 0, oak); for (const sx of [-1, 1]) box(g, 1.6, 12.3, 7, sx * 10, 6.2, 0, oakDk);
     for (const sz of [-1, 1]) { box(g, 22, 1.2, 4, 0, 8.4, sz * 8, oak); for (const sx of [-1, 1]) box(g, 1.2, 7.8, 3, sx * 9, 3.9, sz * 8, oakDk);
       world.seats.push({ name: 'the bench', at: pc.P(0, 9, sz * 8), facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool' }); }
@@ -112,7 +128,7 @@ function build(scene) {
     world.exits.push({ name: 'the door', at: new V3(DOOR, 0, Z1 - 4), r: 6, when: () => world.door.open > 0.6 });
   }
   // (the street, through the windows)
-  for (const x of [-24, 30]) { const v = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ color: srgb('#dfe6d0') })); v.position.set(x, 22, Z1 + 1.5); v.rotation.y = Math.PI; W.front.add(v); }
+  for (const x of [-40, -20, 30, 52]) { const v = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ color: srgb('#dfe6d0') })); v.position.set(x, 22, Z1 + 1.5); v.rotation.y = Math.PI; W.front.add(v); }
 
   // Where an afternoon's work is done (js/work.js).
   const spot = (x, z, yaw, lx, ly, lz) => ({ at: new V3(x, 0, z), yaw, look: new V3(lx, ly, lz) });
@@ -121,12 +137,12 @@ function build(scene) {
   // (Bess's: beside her chair, as it was in the room before it was turned, turned with it)
   const bessAt = () => { const pc = pieces.chair, d = ROOM.LAYOUT.chair.ry, o = near(pc, -8, 6), l = near(pc, 0, 0); const p = pc.P(o.x, 0, o.z); return { at: new V3(p.x, 0, p.z), yaw: Math.PI * 0.3 + (pc.ry - d), look: pc.P(l.x, 14, l.z) }; };
   world.work = {
-    tub: spot(-30, -24, Math.PI, -30, 4, -29), tables: at('tableA', 0, 14, Math.PI, 0, 14, 2), fire: spot(-30, -2, -Math.PI / 2, -40, 4, -2),
-    counter: at('counter', -1, 22, Math.PI, -1, 16, 0), table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6),
+    tub: spot(X0 + 16, -24, Math.PI, X0 + 16, 4, -29), tables: at('tableA', 0, 14, Math.PI, 0, 14, 2), fire: spot(X0 + 16, -2, -Math.PI / 2, X0 + 6, 4, -2),
+    counter: at('barrels', -10.5, 12, Math.PI, -10.5, 7, 4),      // (the ale drawn at the barrels: from the second, not the first) table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6),
   };
   // (the washing tub by the hearth, for the pots)
-  { solid(root_, new THREE.CylinderGeometry(4, 3.4, 4, 14, 1, true), oak, -30, 2, -29, { ink: 0.06 }).material.side = THREE.DoubleSide; const wt = new THREE.Mesh(new THREE.CircleGeometry(3.7, 14), T.mat('#6a8a9a')); wt.rotation.x = -Math.PI / 2; wt.position.set(-30, 3.2, -29); root_.add(wt);
-    world.obstacles.push({ x: -30, z: -29, r: 4.5 }); }
+  { solid(root_, new THREE.CylinderGeometry(4, 3.4, 4, 14, 1, true), oak, X0 + 16, 2, -29, { ink: 0.06 }).material.side = THREE.DoubleSide; const wt = new THREE.Mesh(new THREE.CircleGeometry(3.7, 14), T.mat('#6a8a9a')); wt.rotation.x = -Math.PI / 2; wt.position.set(X0 + 16, 3.2, -29); root_.add(wt);
+    world.obstacles.push({ x: X0 + 16, z: -29, r: 4.5 }); }
 
   const cp = new V3();
   function update(camera) { camera.getWorldPosition(cp); for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 2; }

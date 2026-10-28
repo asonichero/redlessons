@@ -63,7 +63,7 @@ const AREAS = {
     name: 'The Wheatsheaf', music: 'hearth', set: s => root.Inn.build(s), npc: () => ({ id: 'abney', key: 'abney', name: 'Mistress Abney', at: [18, 2], yaw: 0, voice: 'abney', tint: '#4a4a6a', bg: '#e0e0ea' }),
     talk: () => root.Story.abneyIdle(),
     dress(P, w) { seatBess(P); if (root.Work) P.work = root.Work.attach(P, w); if (root.AbneyPromise) P.promise = root.AbneyPromise.inn(P, w); },
-    entries: { door: { at: [4, 26], yaw: Math.PI } },
+    entries: { door: { at: [4, 30], yaw: Math.PI } },
     exits: { 'the door': { area: 'village', entry: 'inn' } },
   },
   // The bakery, inside (js/bakery.js): Mistress Pennock's. (Where the morning's help is worked (js/work.js), and the pie's end.)
