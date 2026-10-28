@@ -147,7 +147,7 @@ function create(view, opts) {
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
     for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run }, a.at);
-    if (W.door) { const d = W.door, p = wp(d.latch); add({ label: (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }
+    if (W.door) { const d = W.door, p = wp(d.latch); add({ label: d.knock && !d.target ? 'Knock at ' + d.name : (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }      // (knock: a door that's someone else's, opened to her from inside)
     if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
     // (her cloak: hung up on its hook by the door, or taken down and put on)
     if (W.cloakHooks && !m.carry) { const h = W.cloakHooks;
@@ -183,6 +183,7 @@ function create(view, opts) {
   async function useDoor() {
     const d = W.door, latch = wp(d.latch), n = d.inward ? d.inward.clone() : new V3(1, 0, 0), hinge = wp(d.pivot), opening = d.target === 0;      // (n: into the room)
     if (opening && opts.doorGuard) { const held = opts.doorGuard(); if (held) { await held; return; } }      // (a page can keep it shut: her mother calling her back for a basket)
+    if (opening && d.knock) { await d.knock(); return; }      // (someone else's door: she knocks, and it's for them to say come in)
     const toHinge = flat(hinge).sub(flat(latch)).normalize();
     // (the hand on the hinge side, as she faces the doorway from inside)
     const hingeHand = sideOf(Math.atan2(-n.x, -n.z)).dot(toHinge) > 0 ? 'L' : 'R', other = hingeHand === 'L' ? 'R' : 'L';

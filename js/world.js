@@ -92,6 +92,20 @@ const AREAS = {
 };
 
 const RATE = 2;      // (game minutes a second, while she's about: a day from seven to the bell in seven minutes)
+// At her grandmother's door, from the path: she knocks, and her grandmother calls her in (as in the tale: lift the latch), and the door swings
+// in for her. (An unseen voice: her grandmother's, from inside.)
+async function knockAtGran(P) {
+  const d = P.world.door, m = P.motion, V = THREE.Vector3, latch = d.latch.getWorldPosition(new V()), A = root.GameAudio;
+  const stand = P.collide(latch.clone().setY(0).add(new V(-1.5, 0, 7)), 3.2); await m.goTo(stand, Math.PI);
+  m.lookAt(latch.clone());
+  for (let k = 0; k < 3; k++) { await m.reach('R', latch.clone().add(new V(-1.5, 5, 0.6))); if (A && A.thud) A.thud(0.35); await P.wait(0.18); await m.release('R'); await P.wait(0.12); }
+  m.lookAt(null);
+  { const back = stand.clone().add(new V(9, 14, 34)); P.camHeld = true; P.stage.go(back, latch.clone().setY(12), 600); }      // (from behind her, the door before her)
+  const was = P.talk.cast.gran; P.talk.cast.gran = Object.assign({ side: 'right' }, HULDA, { rig: null });
+  try { await P.converse(root.Story.granCallsIn(), { shot: false, keepCamera: true }); } finally { if (was) P.talk.cast.gran = was; else delete P.talk.cast.gran; }
+  d.target = 1; await P.wait(0.9); P.camHeld = false;
+  P.exitBy('the cabin');
+}
 // The morning, as it opens (js/world.js's morning): Red at the peg rail, reaching a basket down for the day, her mother at the dresser with the
 // bowls.
 function atPegs(P) {
@@ -257,6 +271,7 @@ function create(view, ui) {
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; P_.flock = root.Flock ? root.Flock.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], P && P.flock ? P.flock.actions() : [], gateAction()); }
     if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : [], P && P.world.signpost ? [{ label: 'Read the signpost', at: P.world.signpost, run: () => P.converse(root.Story.signpost(), { shot: false, keepCamera: true }) }] : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
+    if (name === 'wood') o.place = chain(o.place, P_ => { const d = P_.world.door; if (d) d.knock = () => knockAtGran(P_); });      // (her grandmother's door: knocked at, from the path)
     if (name === 'cabin' && root.Herbs) o.talk = () => root.Herbs.talk(w);      // (her grandmother: the herb errands)      // (the beech: Peter's notes, and meeting him there)
     if (name === 'holding') { o.place = chain(o.place, P_ => { P_.fowlers = root.Holding ? root.Holding.people(P_, w) : null; }); o.actions = () => (P && P.fowlers ? P.fowlers.actions() : []).concat(chores ? chores.actions(P, 'holding') : []); }      // (and the eggs, when she's come for them)
     return o;

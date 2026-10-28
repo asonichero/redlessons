@@ -63,6 +63,8 @@ Where the meadow meets the wood: the fork leaves the meadow lane at a finger-pos
 
 ## Grandmother's herbs (`js/herbs.js`)
 
+At her grandmother's door, from the path, Red knocks (*Knock at the door*), and her grandmother calls her in from inside, as in the tale: *Who's that knocking? … Then lift the latch, my love, and come in.* The door swings in for her.
+
 Visiting her grandmother in the days after the cloak, Red's asked to fetch a herb, one at a time: yarrow from the meadow, west of the lane (flat white heads, leaves like feathers); wood sorrel on the stream's bank (three folded hearts, small white flowers: "taste one"); comfrey by the fallen tree, where the ground stays wet (big rough leaves, purple bells). Each grows where she says (a patch of it, drawn), and is gathered there (*Pick the yarrow*, and so on). Brought back, her grandmother teaches her what it's for: woundwort for cuts, sorrel for a fever and for knowing you're awake, knitbone for sprains and bruises ("if you ever want some, and would rather not say what for, you only have to ask"). One a visit; the next asked another day. Three brought, and the herb errands are done (one of the three things 1.3 waits on). Until the first is asked, the day's list says to visit her when there's time.
 
 ## Into the Wood: phase 1.3 (`js/intowood.js`, `js/inhand.js`)

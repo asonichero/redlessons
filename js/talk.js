@@ -26,7 +26,7 @@ const CSS = `
   border-radius: 18px; box-shadow: 0 6px 22px rgba(0,0,0,.3); padding: 16px 26px 18px; box-sizing: border-box; min-height: 104px; }
 .talk.left .box { padding-left: 156px; } .talk.right .box { padding-right: 156px; }
 .talk .frame { position: absolute; bottom: 6px; width: 132px; height: 144px; border: 2px solid rgba(107,74,50,.9); border-radius: 12px; background: transparent; display: none; overflow: hidden; }      /* (the portrait is drawn into it) */
-.talk.left .frame { left: 10px; display: block; } .talk.right .frame { right: 10px; display: block; }
+.talk.left .frame { left: 10px; display: block; } .talk.right .frame { right: 10px; display: block; } .talk.unseen .frame { display: none; }
 .talk .name { position: absolute; top: -18px; padding: 1px 14px; background: var(--tint, #8a5a3a); color: #fff8ec; border: 2px solid rgba(107,74,50,.9); border-radius: 8px;
   font: bold clamp(15px, 0.8vw + 8px, 19px)/1.5 Georgia, serif; letter-spacing: .02em; display: none; }
 .talk.left .name { left: 156px; display: block; } .talk.right .name { right: 156px; display: block; }
@@ -72,7 +72,7 @@ function create(stage, opts) {
   let portrait = null, pbuf = null, pimg = null;      // (portrait: { who } while a line with a speaker is up)
   function drawPortrait(renderer, scene) {
     if (!portrait || !el.classList.contains('on')) return;
-    const c = cast[portrait.who]; if (!c || !c.rig) return;
+    const c = cast[portrait.who]; if (!c || !c.rig || !c.rig.headGroup) return;      // (no figure: a voice from behind a door, unseen)
     // (drawn at twice the size and scaled down, so the fine lines of her face — lashes, brows, the set of the mouth — read as they do close to)
     const dpr = Math.min(2, root.devicePixelRatio || 1), cw = Math.max(2, Math.round(frame.clientWidth * dpr)), ch = Math.max(2, Math.round(frame.clientHeight * dpr));
     const ss = dpr >= 2 ? 1.5 : 2, w = Math.round(cw * ss), h = Math.round(ch * ss);
@@ -151,9 +151,9 @@ function create(stage, opts) {
   // ── Faces: a line sets the speaker's (and the listeners'); a look stays after the words have gone, as it would, and only eases back to her
   // resting face a good while later, if nothing has changed it since. ──
   const rest = {};
-  function face(who, name) { const c = cast[who]; if (!c || !c.rig.setExpr || !name) return; clearTimeout(rest[who]); c.rig.setExpr(name); }
+  function face(who, name) { const c = cast[who]; if (!c || !c.rig || !c.rig.setExpr || !name) return; clearTimeout(rest[who]); c.rig.setExpr(name); }
   function relax(who, ms) {
-    const c = cast[who]; if (!c || !c.rig.setExpr) return; clearTimeout(rest[who]); const was = c.rig.expr;
+    const c = cast[who]; if (!c || !c.rig || !c.rig.setExpr) return; clearTimeout(rest[who]); const was = c.rig.expr;
     rest[who] = setTimeout(() => { if (c.rig.expr === was && !playing) c.rig.setExpr('calm'); }, ms);
   }
 
@@ -181,7 +181,7 @@ function create(stage, opts) {
   // (the box set for whoever's speaking: her side, her name, her portrait; or for narration)
   function speaker(who) {
     const c = who ? cast[who] : null;
-    el.classList.add('on'); el.classList.toggle('narr', !c); el.classList.toggle('left', !!c && c.side !== 'right'); el.classList.toggle('right', !!c && c.side === 'right');
+    el.classList.add('on'); el.classList.toggle('narr', !c); el.classList.toggle('left', !!c && c.side !== 'right'); el.classList.toggle('right', !!c && c.side === 'right'); el.classList.toggle('unseen', !!c && !(c.rig && c.rig.headGroup));      // (unseen: a voice from somewhere else, no face to show)
     el.style.setProperty('--tint', c ? (c.tint || '#8a5a3a') : '#8a5a3a'); el.style.setProperty('--bg', c ? (c.bg || '#e8d6b8') : '#e8d6b8');
     nameEl.textContent = c ? c.name : ''; choicesEl.innerHTML = ''; moreEl.style.visibility = 'hidden';
     portrait = c ? { who } : null;
