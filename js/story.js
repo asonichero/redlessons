@@ -1296,6 +1296,10 @@ const agnesWell = n => {
       A('smile', 'There. That’s the Rose I know.')],
     [A('calm', 'Ten, the bell says, and ten, Mother says. The bell and Mother: the only two things in this village that agree.', 'calm'), R('pout', 'Mine says nine. Still.'),
       A('smile', 'You’re Little Red, love. They’ll keep you nine till you’re married.', 'pout'), R('cheeky', 'Then I’ll marry someone who keeps late hours.')],
+    [A('cheeky', 'Did you hear Tom rang the bell at noon? Or someone did. Mother says it was Tom. Mother says everything’s Tom.', 'cheeky'), R('cheeky', 'Sometimes it is Tom.'),
+      A('smile', 'Mostly it’s Tom.')],
+    [A('calm', 'Bo Peep lost three of them in the Hallorans’ beans last week. She cried, and then she laughed, and then the beans were gone.', 'smile'), R('smile', 'Poor Bo.'),
+      A('smile', 'Poor beans. She’s sweet on you, you know. Not like that: like a little sister. She copies how you do your hair.', 'shy')],
   ];
   return talks[n % talks.length];
 };

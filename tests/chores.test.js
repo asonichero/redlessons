@@ -27,6 +27,14 @@ test('at first, each errand in turn: eggs, the pot, the bakery, the jug, the Dun
   assert.deepEqual(order, ['eggs', 'pot', 'bakery', 'jug', 'dunns', 'inn', 'well', 'bread']);
 });
 
+test('the well comes round again after five cans from the garden butt, and not before', () => {
+  const { chores, save } = world();
+  save.change(s => { s.chores = s.chores || { day: 0, garden: false, errand: null, refusals: [], missed: 0 }; s.chores.asked = Object.keys(chores.ERRANDS); });
+  for (let d = 2; d < 120; d++) assert.notEqual(chores.pick(d), 'well');
+  for (let k = 0; k < 5; k++) chores.canFilled();
+  assert.equal(chores.pick(7), 'well'); assert.equal(chores.pick(8), 'well');
+});
+
 test('most days something is asked, never the same two days running', () => {
   const { chores, save } = world(); let none = 0, last = null;
   save.change(s => { s.chores = s.chores || { day: 0, garden: false, errand: null, refusals: [], missed: 0 }; s.chores.asked = Object.keys(chores.ERRANDS); });      // (the first round asked)

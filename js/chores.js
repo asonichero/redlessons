@@ -20,7 +20,7 @@
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
-const NONE_ONE_IN = 4, SHIFT_SLACK = 15;      // (a shift's begun within a quarter of an hour of its time, either side)
+const NONE_ONE_IN = 4, SHIFT_SLACK = 15, CANS = 5;      // (a shift's begun within a quarter of an hour of its time, either side; the garden's butt wants the well again after five cans)
 const INTRO = ['eggs', 'pot', 'bakery', 'jug', 'dunns', 'inn', 'well', 'bread'];      // (the first errands, in turn, from the second day: the Fowlers', the forge, the bakery's afternoon, the inn, the Dunns', the inn's evening, the well, the bakery's loaves)
 let wicker = null;      // (the cottage's wicker, made once)
 const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'the basket', butt: 'the little water butt' };
@@ -79,12 +79,13 @@ function create(w) {
     // her favour she's plans and friends enough to be tempted from it; then any, about one day in four none)
     const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id));
     if (next) return next;
+    if (((save.state.chores && save.state.chores.cans) || 0) >= CANS) return 'well';      // (five cans out of the butt since she last drew it full: the well, whatever else)
     if (rnd() < 1 / NONE_ONE_IN) return null;
     // (the shifts come round three times as often while what they lead to (Mistress Pennock's trust; Mistress Abney taking her in hand) is still
     // to come)
     const ids = Object.keys(E), last = save.state.chores && save.state.chores.last, open = r => w.q && w.q.stateOf && !['done'].includes(w.q.stateOf(r));
     const weight = id => (id === 'bakery' && open('pennock.trust')) || (id === 'inn' && open('abney.inhand')) ? 3 : 1;
-    const bag = []; for (const id of ids) if (id !== last) for (let k = 0; k < weight(id); k++) bag.push(id);
+    const bag = []; for (const id of ids) if (id !== last && id !== 'well') for (let k = 0; k < weight(id); k++) bag.push(id);
     return bag[Math.floor(rnd() * bag.length)];
   }
   // (something put in her hands)
@@ -181,14 +182,14 @@ function create(w) {
     await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
     fulfilled(P, e);
   }
-  // The well: the pail let down and drawn up, three times, and tipped into the butt at her feet; then it's full. The first time, and every fifth
-  // after, Agnes Thatcher's at the well too, and talks the while.
+  // The well: the pail let down and drawn up, three times, and tipped into the butt at her feet; then it's full. Agnes Thatcher's at the well
+  // too, and talks the while.
   async function pails(P, e) {
     const m = P.motion, b = holding(P, 'butt'), sp = P.world.spots[e.place], f = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw));
     if (!b) return; m.drop(); b.obj.position.copy(m.pos.clone().setY(0).addScaledVector(f, 5.5).addScaledVector(new V3(f.z, 0, -f.x), 4)); b.obj.rotation.set(0, m.yaw, 0);
     const well = (sp && sp.at ? sp.at.clone() : m.pos.clone()).addScaledVector(f, 6).setY(10), butt = b.obj.position.clone().setY(6);
     const n = (st().fills || 0) + 1; change(c => { c.fills = n; });
-    const V = P.villagers, agnes = n % 5 === 1 && V && V.summon ? V.summon('agnes', 'wellSide') : null;
+    const V = P.villagers, agnes = V && V.summon ? V.summon('agnes', 'wellSide') : null;
     if (agnes) { const at = P.collide(m.pos.clone().setY(0).addScaledVector(new V3(f.z, 0, -f.x), -12).addScaledVector(f, 3), 3.2); await Promise.race([V.walkTo('agnes', at, Math.atan2(m.pos.x - at.x, m.pos.z - at.z)), P.wait(6)]); agnes.motion.face(Math.atan2(m.pos.x - agnes.motion.pos.x, m.pos.z - agnes.motion.pos.z)); }
     const draw = async () => { for (let k = 0; k < 3; k++) {
       m.reach('L', well.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-1.5))); await m.reach('R', well.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(1.5))); await P.wait(agnes ? 1.6 : 0.7);
@@ -196,7 +197,7 @@ function create(w) {
       m.release('L'); await m.release('R');
       if (P.talk && !agnes) P.talk.muse(['One.', 'Two. My arms…', 'Three, and full.'][k], { face: k === 2 ? 'smile' : 'calm' });
     } };
-    if (agnes) { await Promise.all([draw(), P.converse(S.agnesWell(Math.floor(n / 5)), { shot: ['red', 'agnes'] })]); V.letGo('agnes'); rep.trusts('agnes', 0.5); }      // (she talks; Red draws)
+    if (agnes) { await Promise.all([draw(), P.converse(S.agnesWell(n - 1), { shot: ['red', 'agnes'] })]); V.letGo('agnes'); rep.trusts('agnes', 0.5); }      // (she talks; Red draws)
     else await draw();
     fill(b, true); const p = b.obj.position.clone().add(b.grip); m.lookAt(p);
     m.reach('L', p.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-2.4))); await m.reach('R', p.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(2.4)));
@@ -211,6 +212,8 @@ function create(w) {
     else change(c => { c.errand.state = 'done'; c.errand.late = late; });
     cal.advance(e.mins); w.refresh();
   }
+  // (a can filled at the garden's butt; and the butt filled again from the well, the count begun again)
+  const canFilled = () => change(c => { c.cans = (c.cans || 0) + 1; });
   // (handed over somewhere else than its place: the eggs, at the Fowlers' gate, the first time; → whether it was this errand, and still owed)
   function fulfil(P, key) { const e = errand(); if (!e || e.key !== key || !(e.state === 'accepted' || e.state === 'broken')) return false; fulfilled(P, e); return true; }
   const owes = key => { const e = errand(); return !!(e && e.key === key && (e.state === 'accepted' || e.state === 'broken')); };
@@ -242,7 +245,7 @@ function create(w) {
     if (b) { fill(b, false); b.keep = false; }      // (the eggs out of it, and the basket hers to hang up again)
     else if (it && it.home) { P.motion.drop(); fill(it, false); it.keep = false; it.obj.position.copy(it.home); it.obj.rotation.set(0, 0, 0); }      // (the butt: her mother takes it, and it's back by the hearth, emptied into the big one)
     else { const x = P.motion.drop(); if (x) x.obj.visible = false; }
-    change(c => { c.errand.state = 'done'; c.errand.told = true; }); cal.advance(5); w.refresh();
+    change(c => { c.errand.state = 'done'; c.errand.told = true; if (e.key === 'well') c.cans = 0; }); cal.advance(5); w.refresh();
   }
   // Talking to her mother in the day: what she's brought, given first (and the errand done); or how the errand went, if it was one with
   // nothing to bring, Red's to say; or a reminder, if it's still to do; or a word about nothing much. Then the garden, if it's not done, or
@@ -311,7 +314,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop };
