@@ -103,7 +103,7 @@ function create(stage, opts) {
 
   // ── The camera: side on to the two of them, far enough back to hold both, a little above, their heads in the upper part of the view (the
   // box covers the lower). It eases there, and back to where it was after. ──
-  let saved = null;
+  let saved = null, giveBack = null;      // (giveBack: the camera's handing back after the last conversation, still to come)
   function settle(names, ms) {
     const rigs = names.map(n => cast[n] && cast[n].rig).filter(Boolean); if (!rigs.length) return;
     const heads = rigs.map(r => r.headGroup.getWorldPosition(new V3())), mid = heads.reduce((a, b) => a.add(b), new V3()).divideScalar(heads.length);
@@ -212,7 +212,9 @@ function create(stage, opts) {
   let playing = false;
   async function play(script, o) {
     o = o || {}; playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile)
-    saved = { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: stage.controls.enabled };
+    // (if the last one's still handing the camera back, it's the player's: this one gives it back to them too, rather than keeping it held)
+    const wasEnabled = giveBack ? (clearTimeout(giveBack), giveBack = null, true) : stage.controls.enabled;
+    const mine = saved = { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: wasEnabled };
     stage.controls.enabled = false;
     if (o.shot !== false) settle(o.shot || Object.keys(cast));      // (shot: false, the camera's left where the scene has put it)
     const runList = async list => {
@@ -233,7 +235,7 @@ function create(stage, opts) {
     finally {
       el.classList.remove('on', 'thought'); portrait = null; playing = false; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
       for (const k in cast) relax(k, o.hold || 9000); unlook();
-      if (o.keepCamera) stage.controls.enabled = saved.enabled; else { stage.go(saved.pos, saved.look, 900); setTimeout(() => { stage.controls.enabled = saved.enabled; }, 950); }
+      if (o.keepCamera) stage.controls.enabled = mine.enabled; else { stage.go(mine.pos, mine.look, 900); giveBack = setTimeout(() => { giveBack = null; stage.controls.enabled = mine.enabled; }, 950); }
     }
     return picks;
   }

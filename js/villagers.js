@@ -266,23 +266,30 @@ function attach(P, w) {
   }
   // ── The dare taken: hers to do (the bell rung, three strokes; three knocks at the Dunns' door), Tom watching; then he's up to her, crowing.
   // Not done within the hour and a half, or not today, it lapses, and he goes off.
-  const dareOn = () => { const d = vs().dare; return d && d.day === cal.day && cal.minute <= d.until ? d : null; };
-  function dareObjective() { const d = dareOn(); return d ? (d.kind === 'bell' ? 'Tom’s dare: ring the curfew bell. Three strokes.' : 'Tom’s dare: three knocks at the Dunns’ door, and run.') : null; }
+  // (the dare done: Tom where he watched from, waiting for her to come back to him, an hour or so; then he gives up and goes off)
+  const dareOn = () => { const d = vs().dare; return d && !d.done && d.day === cal.day && cal.minute <= d.until ? d : null; };
+  const dareDone = () => { const d = vs().dare; return d && d.done && d.day === cal.day && cal.minute <= d.until ? d : null; };
+  function dareObjective() { const d = dareOn(); if (d) return d.kind === 'bell' ? 'Tom’s dare: ring the curfew bell. Three strokes.' : 'Tom’s dare: three knocks at the Dunns’ door, and run.';
+    return dareDone() ? 'Back to Tom.' : null; }
   function dareActions() {
-    const d = dareOn(); if (!d) { if (vs().dare) { change(s => { s.dare = null; }); if (figs.tom && figs.tom.watching) { figs.tom.watching = false; release(figs.tom); } } return []; }
+    const f = figs.tom, d = dareOn(), e = dareDone();
+    if (!d && !e) { if (vs().dare) { change(s => { s.dare = null; }); if (f && f.watching) { f.watching = false; release(f); } } return []; }
+    if (e) return f ? [{ label: 'Back to Tom', at: f.motion.pos.clone().setY(18), run: () => crow(e.kind) }] : [];
     return d.kind === 'bell' ? [{ label: 'Ring the curfew bell', at: sp.bell.look.clone(), run: () => doDare('bell') }] : [{ label: 'Knock at the Dunns’ door', at: sp.dunnsDoor.look.clone().setY(16), run: () => doDare('knock') }];
   }
   async function doDare(kind) {
-    const f = figs.tom; change(s => { s.dare = null; });
     if (kind === 'bell') await ringBell(); else await knock();
-    change(s => { s.dares = (s.dares || 0) + 1; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares');
-    if (f) { f.watching = false; const m = P.motion, near = P.collide(flat(m.pos).add(new V3(Math.sin(m.yaw) * 13, 0, Math.cos(m.yaw) * 13)), 3.2);
-      await Promise.race([walkTo('tom', near, null, 1.4), P.wait(8)]); f.path = null; f.motion.auto = null; f.motion.face(yawTo(f.motion.pos, m.pos)); await m.face(yawTo(m.pos, f.motion.pos));
-      try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); } finally { letGo('tom'); } }
+    change(s => { s.dares = (s.dares || 0) + 1; s.dare.done = true; s.dare.until = cal.minute + 60; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares');
+    w.refresh();
+  }
+  // (back to him, where he watched: and he crows)
+  async function crow(kind) {
+    const f = figs.tom; change(s => { s.dare = null; }); if (!f) return;
+    f.watching = false; await meet(f, 13);
+    try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); } finally { release(f); }
     w.refresh();
     if (root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
   }
-  // The dares. The curfew bell, rung at midday: across to it, three strokes, and back to Tom, quick, the green all turning round.
   async function ringBell() {
     const b = sp.bell, m = P.motion; await m.goTo(b.at, b.yaw); m.lookAt(b.look);
     for (let k = 0; k < 3; k++) { await m.reach('R', b.look.clone().add(new V3(0, -4, 0))); const A = root.GameAudio; if (A && A.curfewBell) A.curfewBell(1, 1); await P.wait(0.5); await m.release('R'); await P.wait(0.3); }
