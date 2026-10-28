@@ -84,3 +84,11 @@ test('the garden: hers each day, a little broken promise if it\'s left till dusk
   chores.tick(null); assert.equal(rep.stat('naughty'), 0.5, 'once a day');
   morning(cal); assert.equal(chores.objective(), 'Tend Mama’s garden.', 'a new day, the garden again');
 });
+
+test('Mistress Pennock offers a head start any morning Red’s not been asked for the bakery’s afternoon', () => {
+  const { chores, save, cal } = world(); cal.advance(150);      // (half past nine)
+  assert.equal(chores.canOffer('pennock'), true);
+  chores.answer('eggs', 'yes'); assert.equal(chores.canOffer('pennock'), true, 'an errand of another kind: still');
+  chores.answer('bakery', 'little'); assert.equal(chores.canOffer('pennock'), false, 'asked for the afternoon: not as well');
+  save.change(s => { s.chores.errand = null; }, { chores: true }); cal.advance(180); assert.equal(chores.canOffer('pennock'), false, 'past noon: sold nearly out');
+});

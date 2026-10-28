@@ -7,7 +7,7 @@
 // The bakery's are timed, on a clock that runs quicker than the day's while she's in there:
 //   • Asked for at breakfast (mode 'errand'): Mistress Pennock has the mill run to do, so she gives Red the list and leaves her to it. Back
 //     when she said, she finds it done (the errand's trust), or not: then, before Red's confided in her, no trust for it; after, a correction.
-//   • Picked up on the day (mode 'picked': offered at the counter while she's still selling, never on a day Red has an errand): a shorter list,
+//   • Picked up on the day (mode 'picked': offered at the counter while she's still selling, any day Red hasn't been asked for the afternoon): a shorter list,
 //     a head start for her when she's done selling. More than half of it done, and she's grateful (a little trust); less, and no harm done.
 //
 //   Work.begin(w, id) (chores: in through the door to it) · Work.attach(P, w) (the place, played: if a shift's under way here) · Work.SHIFTS

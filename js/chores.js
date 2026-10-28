@@ -217,13 +217,13 @@ function create(w) {
   // (handed over somewhere else than its place: the eggs, at the Fowlers' gate, the first time; → whether it was this errand, and still owed)
   function fulfil(P, key) { const e = errand(); if (!e || e.key !== key || !(e.state === 'accepted' || e.state === 'broken')) return false; fulfilled(P, e); return true; }
   const owes = key => { const e = errand(); return !!(e && e.key === key && (e.state === 'accepted' || e.state === 'broken')); };
-  // Asked on the day, by Mistress Pennock (before noon, at her counter: never on a day Red has an errand) or Mistress Abney (before one, if
+  // Asked on the day, by Mistress Pennock (before noon, at her counter: any day Red hasn't been asked for the bakery's afternoon) or Mistress Abney (before one, if
   // Red's nothing else promised). Mistress Pennock's is a head start on the clearing down, there and then, while she sells (js/work.js); by
   // Mistress Abney, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.
   const OFFER = { pennock: { id: 'bakery', before: H('12:00'), sold: H('12:30') }, abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
   function canOffer(who) {
     const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day) return false;
-    if (who === 'pennock') return !e && !(root.Work && root.Work.current(w));      // (not on an errand day: and not twice)
+    if (who === 'pennock') return !(e && e.id === 'bakery') && !(root.Work && root.Work.current(w));      // (any day she's not been asked for the afternoon's: and not twice)
     return !e || e.state === 'done' || e.state === 'little';
   }
   async function offer(P, who) {
