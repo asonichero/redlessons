@@ -178,6 +178,9 @@ const SPECS = {
     pal: { skin: '#fbe0cc', hair: '#e8c070', eyes: '#4a70b0', lips: '#d0707a', top: '#fbf4e4', bodice: '#a86a3a', skirt: '#d8a840', skirtDk: '#b88a2c', hem: '#fbf4e4' } },
   lucy: { name: 'Lucy Locket', age: 20, sex: 'f', scale: 0.87, seatH: 1.25, bust: 1.0, hair: 'curly', feet: 'boots', skirtLen: 9.5,
     pal: { skin: '#eec4a2', hair: '#2a1c16', eyes: '#6a4a2a', lips: '#c4585e', top: '#ece4d4', bodice: '#5a5a62', skirt: '#9ab0c4', skirtDk: '#7a90a6', hem: '#7a90a6' } },
+  // (Bo Peep, Halloran's granddaughter: eighteen and young for it, small, fair curls under a cap, in her shepherdess's blue and pink)
+  bo: { name: 'Bo Peep', age: 18, sex: 'f', scale: 0.82, bust: 0.95, hair: 'curly', hat: 'mob', feet: 'boots', skirtLen: 8.5, sleeves: 'elbow',
+    pal: { skin: '#fbe2d0', hair: '#f0d080', eyes: '#5a8ac0', lips: '#e0808a', top: '#fbf6ec', bodice: '#e8a0b0', skirt: '#a8c4e0', skirtDk: '#88a4c4', hem: '#fbf6ec', hat: '#fbf6ec' } },
   kitty: { name: 'Kitty Fisher', age: 24, sex: 'f', scale: 0.99, bust: 1.05, hair: 'long', feet: 'boots', skirtLen: 11,
     pal: { skin: '#f6d3b8', hair: '#16110f', eyes: '#2e6a40', lips: '#a8525a', top: '#f0e8d8', bodice: '#2e4a3a', skirt: '#3e6a4e', skirtDk: '#2e523c', hem: '#2e523c' } },
   brannock: { name: 'Mother Brannock', age: 58, sex: 'f', scale: 1.0, bust: 1.1, waist: 1.1, hair: 'bun', grey: true, hat: 'mob', feet: 'boots', skirtLen: 14, old: true, sleeves: 'long',

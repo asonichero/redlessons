@@ -592,7 +592,7 @@ function build(scene, opts) {
     api = stage || api; const c = sky(t); scene.background = c; scene.fog.color.copy(c); scene.fog.near = lerp(300, 120, t); scene.fog.far = lerp(1200, 600, t);
     const k = ss(0.45, 0.8, t); winM.color.copy(dark).lerp(lit, k); for (const m of lamps) m.color.copy(dark).lerp(lit, ss(0.55, 0.85, t));
     for (const g of glows) if (g.glow) g.glow.opacity = 0.12 + 0.2 * t;
-    sheep.visible = t > 0.62;      // (the flock penned for the night)
+    sheep.visible = world.flockPenned != null ? world.flockPenned : t > 0.62;      // (the flock penned for the night: from when Bo has them in, js/flock.js)
   }
   function follow(pos, dt, camera, at) {
     if (!api) return; const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();

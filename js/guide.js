@@ -13,6 +13,7 @@ function goal(w) {
   const q = w.q, cal = w.cal, off = r => q.stateOf && q.stateOf(r) === 'offered';
   if (off('maren.walk') || off('maren.homecoming')) return { area: 'home', who: 'mother' };      // (chapter one: home, along the path)
   { const V = w.P && w.P.villagers, d = V && V.dareObjective && V.dareObjective(); if (d) return /Back to Tom/.test(d) ? { area: 'village', who: 'tom' } : { area: 'village', spot: /bell/.test(d) ? 'bell' : 'dunnsDoor' }; }      // (Tom's dare, taken; and done, back to him)
+  { const at = root.Flock && root.Flock.goal(w); if (at) return { area: 'village', at }; }      // (Bo's strays, when Red's said she'll help)
   if (root.Evening && root.Evening.tableDue && root.Evening.tableDue(w)) return { area: 'home', spot: 'table' };
   if (root.Evening && root.Evening.objective(w)) return { area: 'home', who: 'mother' };
   if (root.Pie && root.Pie.objective(w)) return { area: 'home', who: 'mother' };
@@ -45,6 +46,7 @@ function pointOf(w, P, g) {
     if (!ex) return null; const gate = W.gate && W.gate.to === name && W.gate.at; return (gate || ex.at).clone(); }      // (a gate: at the gate itself, not past it)
   if (g.who === 'mother' || g.who === 'gran' || (g.who && P.npc && P.npc.key === g.who)) return P.npcMotion ? P.npcMotion.pos.clone() : null;
   if (g.who) { const f = P.figure(g.who); return f ? f.motion.pos.clone() : null; }
+  if (g.at) return g.at.clone();
   if (g.herb) return W.herbs && W.herbs[g.herb] ? W.herbs[g.herb].clone() : null;
   if (g.spot === 'garden' && root.Garden && root.Garden.inside(P.motion.pos)) return null;      // (in the garden, its own marks show what's to do)
   if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }

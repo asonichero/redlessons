@@ -18,7 +18,7 @@ const NAMES = {
   peter: 'Peter Fowler, the fowler (21)', fowler: 'Master Fowler, his grandfather (73)', tom: 'Tom Ferrier, the smith’s apprentice (20)', smith: 'Master Ferrier, the smith (46)',
   pennock: 'Mistress Pennock, the baker’s wife (44)', baker: 'Master Pennock, the baker (47)', abney: 'Mistress Abney, the innkeeper (52)',
   abneyDaughter: 'Bess Abney, her daughter (26)', halloran: 'Master Halloran, the farmer (66)', willie: 'William Dunn, the Watchman (42)',
-  georgie: 'Georgie Dunn, the miller’s lad (19)', agnes: 'Agnes Thatcher (19)', holt: 'Holt, the woodsman (41)', wolfe: 'Wolfe (36)',
+  georgie: 'Georgie Dunn, the miller’s lad (19)', agnes: 'Agnes Thatcher (19)', bo: 'Bo Peep, Halloran’s granddaughter (18)', holt: 'Holt, the woodsman (41)', wolfe: 'Wolfe (36)',
   motherBarrow: 'Mother Barrow (45)', fatherBarrow: 'Father Barrow (48)', weeBarrow: 'Wee Barrow (22)',
   lucy: 'Lucy Locket (20)', brannock: 'Mother Brannock, of the Shoe (58)', kitty: 'Kitty Fisher, of the Shoe (24)',
 };

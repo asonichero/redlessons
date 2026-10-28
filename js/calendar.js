@@ -43,6 +43,7 @@ function create(save) {
     },
     sleep() { cal.until('07:00', { nextDay: S().minute >= H(5) }); },
     // Time as she goes about: rate game minutes for each second (written only as whole minutes pass).
+    frac: () => Math.min(1, carry),      // (how far into the minute: for things that move with the clock)
     tick(dt, rate) { carry += dt * (rate == null ? 1 : rate); if (carry >= 1) { const n = Math.floor(carry); carry -= n; cal.advance(n); } },
     light: () => lightAt(S().minute),
     curfew: () => S().minute >= CURFEW || S().minute < CURFEW_END,

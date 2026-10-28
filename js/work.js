@@ -28,6 +28,8 @@ const SHIFTS = {
     { id: 'fire', label: 'Build up the fire', place: 'fire', mins: 10, kind: 'reach' },
     { id: 'ale', label: 'Draw the ale for the carrier’s men', place: 'counter', mins: 25, kind: 'ale', carriers: true },
     { id: 'carriers', label: 'Serve the carrier’s men', place: 'table2', mins: 50, kind: 'serve', carriers: true },      // (only on an afternoon asked for in the morning: the carrier's men are expected)
+    { id: 'suppers', label: 'Carry in the carrier’s men’s suppers', place: 'table2', mins: 40, kind: 'serve', carriers: true },      // (and their suppers, into the evening: straight home after)
+    { id: 'after', label: 'Clear after them', place: 'tables', mins: 30, kind: 'shape', carriers: true },
     { id: 'tea', label: 'Take Bess her tea', place: 'bess', mins: 15, kind: 'reach' },
     { id: 'sweep', label: 'Sweep out', place: 'floor', mins: 25, kind: 'sweep' },
   ] },

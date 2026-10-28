@@ -15,7 +15,7 @@
 'use strict';
 const STATS = ['wilful', 'mischievous', 'naughty'];
 // The village: who counts toward how far it's known (her mother and grandmother aside: they always know), by how much they talk.
-const VILLAGE = { peter: 1, tom: 1.2, smith: 1, pennock: 1.4, baker: 0.6, abney: 1.6, abneyDaughter: 0.6, halloran: 0.8, willie: 1.2, georgie: 1, agnes: 1.4, ferrierMistress: 1 };
+const VILLAGE = { peter: 1, tom: 1.2, smith: 1, pennock: 1.4, baker: 0.6, abney: 1.6, abneyDaughter: 0.6, halloran: 0.8, willie: 1.2, georgie: 1, agnes: 1.4, bo: 0.8, ferrierMistress: 1 };
 // Who minds what, among those who'll take her in hand.
 const FIGURES = {
   maren: { minds: 'wilful' }, hulda: { minds: 'mischievous' }, smith: { minds: 'wilful' }, pennock: { minds: 'naughty' },

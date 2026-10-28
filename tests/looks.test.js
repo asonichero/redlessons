@@ -12,7 +12,7 @@ test('only the cast is kept, and for the rest of them only what’s been changed
   assert.deepEqual(Object.keys(L.clean({ jack: { outfit: 'Outdoor' } })).sort(), ['gerda', 'red']);
   const c = L.clean({ peter: { hair: '#123456', outfit: 'x', skin: 'pink' }, holt: {} });
   assert.deepEqual(c.peter, { hair: '#123456' }); assert.equal(c.holt, undefined);
-  assert.equal(L.CAST.length, 23); assert.ok(L.CAST.includes('weeBarrow') && L.CAST.includes('willie'));
+  assert.equal(L.CAST.length, 24); assert.ok(L.CAST.includes('weeBarrow') && L.CAST.includes('willie') && L.CAST.includes('bo'));
 });
 
 test('every outfit and swatch is valid', () => {
