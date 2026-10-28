@@ -94,6 +94,9 @@ body.talking #hTop, body.correcting #hTop { opacity: 0; pointer-events: none; }
 #hTrust .tn { font: 15px/1.3 Georgia, serif; padding: 5px 14px; border-radius: 16px; background: rgba(16,10,12,0.78); border: 1px solid; transition: opacity 1s; filter: drop-shadow(0 1px 4px #000); }
 #hTrust .tn.up { color: #9ee08a; border-color: #5aa04a; } #hTrust .tn.down { color: #f08a80; border-color: #b04a40; } #hTrust .tn.out { opacity: 0; }
 @media (max-width: 640px) { #hTrust { bottom: 150px; } #hTrust .tn { font-size: 13px; } }
+/* (the diary's tabs) */
+.dtabs { display: flex; gap: 6px; margin: 0 0 8px; } .dtabs button { flex: 1; margin: 0; padding: 6px; font-size: 13px; } .dtabs button.on { background: #6a3a3e; border-color: #c9a84c; }
+.hCard .journal .q.cool b { color: #f08a80; }
 /* (the journal, in the pause menu) */
 .hCard .journal .ph { font-size: 13px; color: #c9a88c; margin: 2px 0 6px; } .hCard .journal .q { margin: 7px 0; font-size: 14px; line-height: 1.4; }
 .hCard .journal .q b { color: #f3e4b0; font-weight: normal; } .hCard .journal .q.main b { color: #e8504a; } .hCard .journal .q small { display: block; color: #c9b8a8; font-style: italic; }
@@ -166,24 +169,28 @@ function create(opts) {
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>J</kbd>, or the book by the clock', 'Her diary'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
     '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
   // The diary: the whole journal in a pop-up of its own (the game held while it's open). J, or the button by the clock.
-  const diaryEl = screen('hDiaryCard', '<h2>Her diary</h2><div class="journal"></div><div class="x">Click anywhere or press Esc to close</div>');
+  const diaryEl = screen('hDiaryCard', '<h2>Her diary</h2><div class="dtabs"><button data-tab="days" class="on">Her days</button><button data-tab="people">Her people</button></div><div class="journal"></div><div class="x">Esc, or click outside, to close</div>');
+  let diaryTab = 'days';
+  diaryEl.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); diaryTab = b.dataset.tab; diaryEl.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b)); drawJournal(diaryEl.querySelector('.journal'), diaryTab); }));
   let diaryHeld = null;
   function diary(on) {
     const p = P(), st = p && p.stage; if (on === diaryEl.classList.contains('on')) return;
-    if (on) { drawJournal(diaryEl.querySelector('.journal')); diaryHeld = st ? st.held : null; if (st) st.held = true; } else if (st && diaryHeld != null) st.held = diaryHeld;
+    if (on) { drawJournal(diaryEl.querySelector('.journal'), diaryTab); diaryHeld = st ? st.held : null; if (st) st.held = true; } else if (st && diaryHeld != null) st.held = diaryHeld;
     diaryEl.classList.toggle('on', on);
   }
-  diaryEl.addEventListener('click', () => diary(false));
+  diaryEl.addEventListener('click', e => { if (e.target === diaryEl) diary(false); });      // (outside the card)
   addEventListener('keydown', e => { if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; if (e.code === 'KeyJ' && !document.body.classList.contains('talking')) diary(!diaryEl.classList.contains('on')); else if (e.code === 'Escape' && diaryEl.classList.contains('on')) { e.stopPropagation(); diary(false); } }, true);
   let paused = false, wasHeld = false, audioWas = null;
   // The journal (opts.journal() → { phase, clock, lines: [{ name, main, state, step: { title, hint }, done, total }] }): where each line has got to.
   const STATE = { offered: '', waiting: 'waiting', gated: 'not yet', later: 'later', paused: 'paused', done: 'done' };
-  function drawJournal(into) {
+  // (tab: 'days', what's hers to do now and the story under way; 'people', how each of them is with her)
+  function drawJournal(into, tab) {
     const d = into || pc.querySelector('.journal'); if (!opts.journal) return; const j = opts.journal(); if (!j) { d.innerHTML = ''; return; }
     const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
-    d.innerHTML = '<h3>Her days</h3><div class="ph">' + esc(j.clock) + (j.phase ? ' · Act ' + j.phase.act + ', ' + esc(j.phase.name) : '') + '</div>' +
-      j.lines.map(l => '<div class="q ' + (l.main ? 'main ' : '') + l.state + '"><span class="st">' + (STATE[l.state] || '') + '</span><b>' + esc(l.name) + '</b>' +
-        (l.step && l.state !== 'done' ? ' — ' + esc(l.step.title) + (l.step.hint && l.state === 'offered' ? '<small>' + esc(l.step.hint) + '</small>' : '') : '') + '</div>').join('');
+    const head = '<div class="ph">' + esc(j.clock) + (j.phase ? ' · Act ' + j.phase.act + ', ' + esc(j.phase.name) : '') + '</div>';
+    if (tab === 'people') { d.innerHTML = head + (j.people.length ? j.people.map(p => '<div class="q ' + (p.trust < 0 ? 'cool' : '') + '"><b>' + esc(p.name) + '</b><small>' + esc(p.text) + '</small></div>').join('') : '<div class="q"><small>No one yet.</small></div>'); return; }
+    d.innerHTML = head + '<h3>Today</h3>' + (j.today.length ? j.today.map(t => '<div class="q"><b>' + esc(t) + '</b></div>').join('') : '<div class="q"><small>Nothing asked of her. The day’s her own.</small></div>') +
+      (j.steps.length ? '<h3>Under way</h3>' + j.steps.map(s => '<div class="q"><b>' + esc(s.name) + '</b> — ' + esc(s.title) + '<small>' + esc(s.hint) + '</small></div>').join('') : '');
   }
   function pause(on) {
     if (on) drawJournal();

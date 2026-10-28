@@ -142,10 +142,16 @@ function create(view, ui) {
     const list = [...new Set((chores ? chores.objectives() : []).concat(steps))].slice(0, 4);
     if (ui.quests) ui.quests(list); else if (ui.objective) ui.objective(list[0] || '');
   }
+  // Her diary: what's hers to do now (the day's: the garden, the errand, Grandmother's herb, and the evening's matters), then the steps of the
+  // story under way; and the people of her days, and how they are with her.
   function journal() {
-    const ph = q.phaseOf(q.phase());
-    const today = chores && chores.journalLine();
-    return { phase: ph, clock: 'Day ' + cal.day + ', ' + cal.clock, lines: (today ? [today] : []).concat(q.journal().map(j => Object.assign({}, j, { where: j.step && j.step.where }))) };
+    const ph = q.phaseOf(q.phase()), names = {}; for (const l of q.lines ? Object.values(q.lines) : []) names[l.id] = l.name;
+    const today = chores ? chores.objectives() : [];
+    const steps = q.offered().filter(s => s.hint && !s.optional).map(s => ({ name: names[s.line] || s.line, title: s.title, hint: s.hint }));
+    const people = [], tr = save.state.trust || {}, open = save.state.open || {};
+    for (const who of ['hulda', 'peter', 'fowler', 'tom', 'smith', 'pennock', 'baker', 'abney', 'abneyDaughter', 'agnes', 'georgie', 'willie', 'holt'])
+      if (tr[who] != null || open[who]) people.push(root.Story.villagerTrust(who, tr[who] || 0, open[who] || 0));
+    return { phase: ph, clock: 'Day ' + cal.day + ', ' + cal.clock, today, steps, people };
   }
 
   // ── Going somewhere: out of the place she's in (under a fade), the new one built, her put at the way in, and its scene, if one's on offer, played.
