@@ -23,9 +23,9 @@ const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m |
 const NONE_ONE_IN = 4, SHIFT_SLACK = 15, CANS = 5;      // (a shift's begun within a quarter of an hour of its time, either side; the garden's butt wants the well again after five cans)
 const INTRO = ['eggs', 'pot', 'bakery', 'jug', 'dunns', 'inn', 'well', 'bread'];      // (the first errands, in turn, from the second day: the Fowlers', the forge, the bakery's afternoon, the inn, the Dunns', the inn's evening, the well, the bakery's loaves)
 let wicker = null;      // (the cottage's wicker, made once)
-const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'her basket', butt: 'the little water butt' };
+const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'your basket', butt: 'the little water butt' };
 // (where each thing she's to take from home is kept, for the list)
-const WHERE = { basket: 'her basket’s on its peg', pot: 'the pot’s on the chest', butt: 'the little butt’s by the hearth' };
+const WHERE = { basket: 'your basket’s on its peg', pot: 'the pot’s on the chest', butt: 'the little butt’s by the hearth' };
 
 // Things carried: a bucket, two loaves in a cloth, the pot, a jug, a covered basket (o.empty: a basket with nothing in it), the little water
 // butt (o.empty: dry). → an item for her hands (motion's hold), not to be set down away from home.
@@ -49,7 +49,7 @@ function prop(kind, o) {
   if (kind === 'basket') { const K = root.Cottage && root.Cottage.kit, wick = K ? (wicker || (wicker = K.toonMap(K.textures().wicker))) : T.mat('#b08850');
     const bowl = new THREE.LatheGeometry([[0.01, 0], [2.4, 0.2], [3.0, 1.4], [3.2, 3.2], [3.3, 3.4]].map(([r, h]) => new THREE.Vector2(r, h)), 16), handle = new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI);
     for (const [geo, y, ink] of [[bowl, 0, 0.1], [handle, 3.4, 0.06]]) { const mm = new THREE.Mesh(geo, wick); mm.position.y = y; if (geo === bowl) mm.material = Object.assign(wick.clone(), { side: THREE.DoubleSide }); mm.add(new THREE.Mesh(T.hullGeo(geo, ink), T.INKM[0])); mm.castShadow = true; g.add(mm); }
-    grip = new V3(0, 6.5, 0); name = 'her basket'; }
+    grip = new V3(0, 6.5, 0); name = 'your basket'; }
   const it = { obj: g, name, kind, grip, radius: kind === 'basket' ? 3.4 : 1.2, keep: kind !== 'basket', hangs: kind === 'basket', style, fill: kind === 'basket' ? { y: 3.2, r: 3.0 } : null };
   if (kind === 'basket') { it.contents = (o && o.contents) ? o.contents.slice() : []; fill(it, it.contents.length > 0 || (!empty && !(o && o.contents))); }      // (her basket: what's in it, by name)
   return it;
@@ -321,7 +321,7 @@ function create(w) {
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     const k = root.Work && root.Work.current(w), t = k && (e || k.mode === 'picked') && root.Work.tasksOf(k)[k.step];
     if (t) out.push((e ? e.title : 'Mistress Pennock’s list') + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + (k.until && !k.back ? ' (she’s back at ' + clock(k.until) + ')' : '') + '.');      // (at work: the task in hand; a timed one, when she's back)
-    else if (e && e.state === 'accepted') out.push(e.title + (e.shift ? ': at ' + clock(e.by) + ', give or take a quarter of an hour' : e.from ? ': after ' + clock(H(e.from)) + ', before ' + clock(e.by) : ': begin by ' + clock(e.by)) + (e.needs && w.P && !has(w.P, e) && (w.area === 'home' || e.needs === 'basket') ? ' (' + (w.P.motion.carry && !holding(w.P, e.needs) ? 'put ' + w.P.motion.carry.name + ' down; ' : '') + (e.needs === 'basket' && basketLeft() ? 'her basket’s where she left it' : WHERE[e.needs]) + ')' : '') + '.');
+    else if (e && e.state === 'accepted') out.push(e.title + (e.shift ? ': at ' + clock(e.by) + ', give or take a quarter of an hour' : e.from ? ': after ' + clock(H(e.from)) + ', before ' + clock(e.by) : ': begin by ' + clock(e.by)) + (e.needs && w.P && !has(w.P, e) && (w.area === 'home' || e.needs === 'basket') ? ' (' + (w.P.motion.carry && !holding(w.P, e.needs) ? 'put ' + w.P.motion.carry.name + ' down; ' : '') + (e.needs === 'basket' && basketLeft() ? 'your basket’s where you left it' : WHERE[e.needs]) + ')' : '') + '.');
     else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     else if (e && e.state === 'broken') out.push(e.title + ': late, but not too late to do it.');
     if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && w.area === 'village' && w.P && root.Garden.inside(w.P.motion.pos) ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');      // (what's left in it, once she's through the gate)

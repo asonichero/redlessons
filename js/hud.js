@@ -141,7 +141,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hBasket" title="Her basket (B)" aria-label="Her basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -172,7 +172,7 @@ function create(opts) {
   const setEl = screen('hSettings', '');
   const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
     ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'],
-    ['<kbd>Q</kbd>', 'Put down what’s in her hands (or the other thing: lie down, on a bed)'], ['<kbd>B</kbd>, or the basket by the diary', 'What’s in her basket, while she’s carrying it'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
+    ['<kbd>Q</kbd>', 'Put down what’s in her hands (or the other thing: lie down, on a bed)'], ['<kbd>B</kbd>, or the basket by the diary', 'What’s in your basket, while she’s carrying it'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>J</kbd>, or the book by the clock', 'Her diary'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
     '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
   // The diary: the whole journal in a pop-up of its own (the game held while it's open). J, or the button by the clock.
@@ -181,7 +181,7 @@ function create(opts) {
   diaryEl.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); diaryTab = b.dataset.tab; diaryEl.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b)); drawJournal(diaryEl.querySelector('.journal'), diaryTab); }));
   let diaryHeld = null;
   // Her basket: what's in it, in a card of its own (B, or the basket by the diary, while she's carrying it).
-  const basketEl = screen('hBasketCard', '<h2>Her basket</h2><div class="list"></div><div class="x">Esc, or click outside, to close</div>');
+  const basketEl = screen('hBasketCard', '<h2>Your basket</h2><div class="list"></div><div class="x">Esc, or click outside, to close</div>');
   let basketList = null, basketHeld = null;
   const drawBasket = () => { const box = basketEl.querySelector('.list'), esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     box.innerHTML = basketList && basketList.length ? '<ul class="bl">' + basketList.map(t => '<li>' + esc(t[0].toUpperCase() + t.slice(1)) + '</li>').join('') + '</ul>' : '<p class="none">Nothing in it yet.</p>'; };

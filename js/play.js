@@ -146,7 +146,7 @@ function create(view, opts) {
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
-    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run }, a.at);
+    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run, full: a.full }, a.at);
     if (W.door) { const d = W.door, p = wp(d.latch); add({ label: d.knock && !d.target ? 'Knock at ' + d.name : (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }      // (knock: a door that's someone else's, opened to her from inside)
     if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
     // (her cloak: hung up on its hook by the door, or taken down and put on)
@@ -154,7 +154,7 @@ function create(view, opts) {
       if (look.outfit !== 'No cloak' && !h.redHung) add({ label: 'Hang up your cloak', run: () => hangCloak(true) }, h.peg);
       else if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
-    for (const it of W.items) if (!it.away && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it) }, p); }
+    for (const it of W.items) if (!it.away && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it), full: !!m.carry }, p); }
     if (!m.carry) for (const s of W.seats) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;
@@ -233,7 +233,8 @@ function create(view, opts) {
   // (put down, where she stands: Q. Outdoors, it stays where it was put (opts.onPut: the page keeps it there))
   async function putDown() { const it = m.carry; if (!it || it.keep) return; await putOn({ floor: true }); if (!W.items.includes(it)) W.items.push(it); if (opts.onPut) opts.onPut(it); }
   // (what Q does now: the offer's own other thing (lie down, on a bed); or, with something in her hands, put it down)
-  function altOf() { const o = offer[0]; if (o && o.alt) return { label: o.altLabel || 'Lie down', run: o.alt }; if (m.carry && !m.carry.keep && !sitting && !lying) return { label: 'Put ' + m.carry.name + ' down', run: putDown, down: true }; return null; }
+  // (shown: only when there's call for it, the offer something her hands are too full to take; Q puts it down whenever)
+  function altOf(shown) { const o = offer[0]; if (o && o.alt) return { label: o.altLabel || 'Lie down', run: o.alt }; if (m.carry && !m.carry.keep && !sitting && !lying && (!shown || (o && o.full))) return { label: 'Put ' + m.carry.name + ' down', run: putDown, down: true }; return null; }
   async function take(it) {
     const p = it.obj.position.clone().add(it.grip), s = approachFor(p);
     await m.goTo(s.at, yawTo(s.at, p));
@@ -331,7 +332,7 @@ function create(view, opts) {
     } else camT.copy(st.controls.target);
     if (indoors && st.camera.position.y < 3) st.camera.position.y = 3; else aboveGround();
     offer = busy() ? [] : options();
-    if (opts.prompt) { const o = offer[0], a = altOf(); const txt = doing ? '' : [o ? 'E  ' + o.label : '', a ? 'Q  ' + a.label : ''].filter(Boolean).join('   ·   '); if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
+    if (opts.prompt) { const o = offer[0], a = altOf(true); const txt = doing ? '' : [o ? 'E  ' + o.label : '', a ? 'Q  ' + a.label : ''].filter(Boolean).join('   ·   '); if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }
   st.start(frame);
   // What she wears: the skirt (on, lifted or off), and her outfit (her cloak, with the hood down or up, or none). The outfit is part of how she's
@@ -353,7 +354,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(); }, handsFull, putDown, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };
