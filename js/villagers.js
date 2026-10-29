@@ -225,7 +225,7 @@ function attach(P, w) {
         if (!sit) { change(s => { s.met[key] = true; }); return; }
         const seat = seats(SEAT.inn).sort((a, b) => a.at.distanceTo(f.motion.pos) - b.at.distanceTo(f.motion.pos))[0]; if (seat) await P.sitOn(seat); }
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
-      const ctx = { part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone,
+      const ctx = { part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone, tomAtTub: !!((station('tom', cal.day, cal.minute) || {}).stand === 'tub'),
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });

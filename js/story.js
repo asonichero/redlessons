@@ -483,7 +483,7 @@ const broken = title => [['wince', 'Oh no. ' + title + '. I said I would, and I 
 
 // ── The village's people (js/villagers.js): a word with each, by the time of day, and something else when they've already talked today.
 // ctx: { part, day, first (never met in the game yet), today (already talked today), errand (her objective, if she's one), curfew, working (Tom,
-// at the tub), potDone (her mother's pot left at the forge today) }.
+// at the tub), tomAtTub (for his father: Tom at it now, not off), potDone (her mother's pot left at the forge today) }.
 // Most of the village calls her Miss Rose; Agnes and Georgie, who grew up with her, Rose; Tom, Ridley, when he isn't calling her worse.
 const pickOf = (list, day) => list[((day || 0) % list.length + list.length) % list.length];
 const VILLAGE = {
@@ -536,6 +536,7 @@ const VILLAGE = {
       [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose.' }, { text: 'He nods, and goes back to his hammer. Master Ferrier was never one for more words than the work needs.' }],
       [{ who: 'smith', face: 'calm', listen: { red: 'calm' }, text: 'If you’re after Tom, he’s at the tub, and he’s staying at the tub.' }],
     ],
+    off: [{ who: 'smith', face: 'calm', listen: { red: 'calm' }, text: 'If you’re after Tom, he’s not at the tub today. Off somewhere he oughtn’t be, I don’t doubt.' }],
     after: [{ who: 'smith', face: 'calm', text: 'Your mother’s pot’s as good as new. Better. Tell her not to drop it on the hearthstone again.' }],
   },
   bess: {
@@ -603,6 +604,7 @@ const villager = (key, ctx) => {
   if (key === 'georgie' && ctx.part === 'dusk' && V.late) return V.late;
   if (ctx.today && V.again) return V.again;
   const said = pickOf(V.any, ctx.day + (ctx.today ? 1 : 0));
+  if (key === 'smith' && !ctx.tomAtTub && /at the tub/.test(said.map(l => l.text).join(' '))) return V.off;      // (Tom's day off, or done at the tub: not at it)
   return ctx.errand && V.errand ? said.concat(V.errand) : said;
 };
 

@@ -225,7 +225,7 @@ function create(view, opts) {
   function approachFor(p) {
     let n = new V3(0, 0, 1);
     for (const s of W.surfaces) if (p.x >= s.x0 - 3 && p.x <= s.x1 + 3 && p.z >= s.z0 - 3 && p.z <= s.z1 + 3) { n = s.front.clone(); return standFor(s.front.x ? new V3(s.front.x < 0 ? s.x0 : s.x1, 0, p.z) : new V3(p.x, 0, s.front.z > 0 ? s.z1 : s.z0), n, 7); }
-    if (p.z < B.z0 + 8) return standFor(p, n, 7.5);      // (on the back wall's pegs)
+    if (B && p.z < B.z0 + 8) return standFor(p, n, 7.5);      // (on the back wall's pegs)
     return standFor(p, flat(m.pos).sub(flat(p)).normalize(), 6);
   }
   // A knock at a door (at: a point on it): the arm up once, and the knuckles rapping n times, a knock heard each time they meet the wood;

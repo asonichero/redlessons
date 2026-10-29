@@ -128,7 +128,7 @@ function create(w) {
   // (an errand that wants a thing of hers (a basket for what's fetched; the pot for the forge; the little butt for the well), and she hasn't it in
   // her hands as she goes out of the door: her mother calls after her)
   const has = (P, e) => !e.needs || !!holding(P, e.needs) && !(e.pie && !(holding(P, e.needs).contents || []).includes(PIE));
-  const forgot = P => { const e = errand(); return !!(e && e.needs && e.state === 'accepted' && !has(P, e)); };
+  const forgot = P => { const e = errand(); return !!(e && e.needs && e.state === 'accepted' && !has(P, e) && !(e.needs === 'basket' && !holding(P, 'basket') && basketLeft())); };      // (her basket left out of doors: not to be kept in for it, but let go and fetch it)
   async function remind(P) { const e = errand(), it = P.motion.carry; await P.converse(S.needReminder(e ? (e.pie ? 'pie' : e.needs) : 'basket', it ? it.kind : null), { shot: ['red', 'mother'] }); }
   // What she's most known for lately, to colour how she says yes or no.
   const temper = () => { let best = null, v = 1; for (const k of ['wilful', 'mischievous', 'naughty']) if (rep.stat(k) > v) { v = rep.stat(k); best = k; } return best; };
