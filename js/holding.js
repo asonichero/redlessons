@@ -215,7 +215,8 @@ function people(P, w) {
       if (!f.motion.seat) { f.motion.lookAt(null); f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); }
       const st = w.save.state.fowlers || (w.save.state.fowlers = { met: {}, talked: {} }), first = !st.met[key], today = st.talked[key] === w.cal.day;
       const sending = key === 'peter' && root.Peter && root.Peter.awaiting(w) && figs.fowler;      // (the first visit: his grandfather comes over as they finish, to send him home with her)
-      const script = sending ? root.Peter.firstTalk(P, w, figs.fowler, f) : root.Story.fowlers(key, { first, today, day: w.cal.day, part: w.cal.part });
+      const asks = key === 'peter' && !sending && root.Peter && root.Peter.noteToday(w) ? root.Story.peterAsksNote() : [];      // (a note left in the beech, not read yet: he asks, shyly, if she's looked)
+      const script = sending ? root.Peter.firstTalk(P, w, figs.fowler, f) : asks.concat(root.Story.fowlers(key, { first, today, day: w.cal.day, part: w.cal.part }));
       await P.converse(script, { shot: ['red', key] });
       if (key === 'peter' && !sending && root.Peter) await root.Peter.notices(P, w);      // (he's noticed she's changed: js/peter.js)
       if (sending) { await root.Peter.sendHome(P, w); return; }

@@ -104,6 +104,17 @@ function wood(P, w) {
   const S = root.Story, sp = P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots.beech; if (!sp) return null;
   const knot = sp.reach.clone(), W = P.world; W.actions = W.actions || [];
   W.actions.push({ label: 'Look in the knot of the beech', get at() { return knot; }, when: () => noteToday(w) && !P.busy, run: read });
+  // (there before the hour he named: hers to wait, the time passing under a fade, and him coming along the path to her)
+  const early = () => { const mt = stateOf(w).meet; return mt && mt.day === w.cal.day && w.cal.minute < mt.at - 5 ? mt : null; };
+  W.actions.push({ label: 'Wait for Peter', get at() { return sp.at.clone().setY(12); }, when: () => !!early() && !P.busy && P.motion.pos.distanceTo(sp.at) < 40, run: waitFor });
+  async function waitFor() {
+    const mt = early(); if (!mt) return;
+    await w.fade(true); w.cal.advance(mt.at - w.cal.minute); show(true);
+    const dest = fig.motion.pos.clone(), from = P.collide(dest.clone().addScaledVector(sp.dir, 46), 3.2); fig.motion.warp(from, Math.atan2(dest.x - from.x, dest.z - from.z)); fig.rig.root.position.copy(from);
+    for (let i = 0; i < 20; i++) P.frame(1 / 60);
+    await w.fade(false);
+    await Promise.race([fig.motion.goTo(dest, Math.atan2(-sp.dir.x, -sp.dir.z)), P.wait(6)]);      // (along the path to her: then the meeting, as she's there)
+  }
   async function read() {
     const m = P.motion, at = knot.clone().setY(0).addScaledVector(sp.side3, -6); await m.goTo(at, Math.atan2(knot.x - at.x, knot.z - at.z)); m.lookAt(knot);
     await m.reach('R', knot.clone()); await P.wait(0.4); await m.release('R'); m.lookAt(null);
@@ -122,6 +133,9 @@ function wood(P, w) {
     // (a meeting missed: the hour gone by without her)
     if (!held) lapse(w);
     if (mt && fig && !held && !P.busy && P.motion.pos.distanceTo(fig.motion.pos) < 40) { held = true; P.act(meet); }
+    // (passing the beech with a note in it, the first time that day: she remembers what he said, and walks on; hers to look or not)
+    const st = stateOf(w); if (noteToday(w) && st.passed !== w.cal.day && P.talk && !P.talk.playing && P.motion.pos.distanceTo(knot.clone().setY(0)) < 34) {
+      change(w, s => { s.passed = w.cal.day; }); P.talk.muse(S.beechPassing(), { face: 'shy' }); }
   });
   async function meet() {
     const m = P.motion, f = fig, away = m.pos.clone().sub(f.motion.pos).setY(0).normalize(), at = P.collide(f.motion.pos.clone().setY(0).addScaledVector(away, 13), 3.2);
@@ -130,9 +144,11 @@ function wood(P, w) {
     await P.converse(S.beechMeeting(n, { owed: st.owed }), { shot: ['red', 'peter'] });
     await notices(P, w);
     w.cal.advance(40); w.rep.trusts('peter', 0.5);
+    await w.fade(true);      // (and he goes, under a fade: she's on her own again at the beech after)
     change(w, s => { s.meet = null; s.met++; s.owed = false; }); w.save.flag('met-peter', w.cal.day);
     if (stateOf(w).met >= 2 && w.q.stateOf && w.q.stateOf('peter.friends') === 'offered') w.complete('peter.friends');
-    held = false; w.refresh();
+    held = false; show(false); w.refresh(); for (let i = 0; i < 10; i++) P.frame(1 / 60);
+    await w.fade(false);
   }
   return { read, meeting };
 }
