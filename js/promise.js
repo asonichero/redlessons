@@ -90,14 +90,18 @@ async function evening(P, w) {
   change(w, p => { p.told = true; });
   await P.wait(0.4); await P.approach();
   await P.converse(S.promiseFoundOut(), { shot: ['red', 'mother'] });
-  const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.promiseCorrection(Sc) }], fade: on => w.fade(on) });
+  await root.Evening.owe(P, w, 'promise', {});      // (seen to at the evening's end: js/evening.js)
+  return true;
+}
+async function correct(P, w, how) {
+  const S = root.Story;
+  const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.promiseCorrection(Sc, how) }], fade: on => w.fade(on) });
   if (P !== w.P) return true;
   await P.converse(S.promiseAfter(), { shot: ['red', 'mother'] });
   w.rep.settle('naughty', 0.6); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
-  return true;
 }
 
-const api = { wants, ask, tempter, tempt, inn, evening, objective, excused, lapse, stateOf, FROM, LATE, BACK };
+const api = { wants, ask, tempter, tempt, inn, evening, correct, objective, excused, lapse, stateOf, FROM, LATE, BACK };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.AbneyPromise = api;      // (not "Promise": that name is the language's own)
 })(typeof window !== 'undefined' ? window : globalThis);

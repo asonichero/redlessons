@@ -350,7 +350,7 @@ async function evening(P, w, force) {
   if (report) {
     change(w, s => { s.pending = null; });
     await P.converse(S.gardenReport(report), { shot: ['red', 'mother'] });
-    await correct(P, w, { lied: true, caught: 'witness', who: report.who, rows: report.rows });
+    await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'witness', who: report.who, rows: report.rows });      // (seen to at the evening's end: js/evening.js)
     return true;
   }
   const ids = Object.keys(g.trampled).filter(id => g.trampled[id] > (g.checked || 0)), today = ids.some(id => g.trampled[id] === cal.day);
@@ -360,8 +360,8 @@ async function evening(P, w, force) {
   let answer = null;
   await P.converse(S.gardenAsk(rows, ids.length, { own: () => { answer = 'own'; }, lie: () => { answer = 'lie'; } }), { shot: ['red', 'mother'] });
   const petals = g.petals.some(q => q.until > cal.minute);
-  if (answer === 'own') { restore(); w.rep.add('naughty', 0.5, 'trampling her mother’s flowers'); await correct(P, w, { lied: false, rows }); return true; }
-  if (today && petals) { restore(); w.rep.add('naughty', 1.5, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await correct(P, w, { lied: true, caught: 'boots', rows }); return true; }
+  if (answer === 'own') { restore(); w.rep.add('naughty', 0.5, 'trampling her mother’s flowers'); await root.Evening.owe(P, w, 'garden', { lied: false, rows }); return true; }
+  if (today && petals) { restore(); w.rep.add('naughty', 1.5, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'boots', rows }); return true; }
   // (believed: but someone may have seen, and her mother will hear of it)
   const days = [...new Set(ids.map(id => g.trampled[id]))], seen = days.map(d => g.seen[d]).find(Boolean);
   const who = seen || (hash(cal.day, 91) < 0.35 ? passerby(cal.day) : null);
@@ -372,7 +372,7 @@ async function evening(P, w, force) {
 }
 // (no one near enough to see, as far as she knew: but someone in the lane, over the hedge)
 function passerby(day) { const keys = ['agnes', 'tom', 'georgie', 'pennock', 'abney']; return keys[Math.floor(hash(day, 93) * keys.length)]; }
-// Her mother takes her in hand for it, there and then: for the carelessness, and for the lie, if there was one.
+// Her mother takes her in hand for it, at the evening's end: for the carelessness, and for the lie, if there was one.
 async function correct(P, w, how) {
   const S = root.Story;
   await P.converse(S.gardenTakeInHand(how), { shot: ['red', 'mother'] });
@@ -384,7 +384,7 @@ async function correct(P, w, how) {
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
 }
 
-const api = { build, attach, boots, progress, progressText, evening, plan, offToday, lookDue, ROWS, PATHS, inside, stateOf, hash };
+const api = { build, attach, boots, progress, progressText, evening, correct, plan, offToday, lookDue, ROWS, PATHS, inside, stateOf, hash };
 root.Garden = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

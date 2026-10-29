@@ -118,7 +118,7 @@ async function evening(P, w, force) {
     let told = null;
     await P.wait(0.6); await P.approach();
     await P.converse(S.pieHome({ tell: () => { told = true; }, keep: () => { told = false; } }), { shot: ['red', 'mother'] });
-    if (told) { change(w, s => { s.pending = null; }); await correct(P, w, { withheld: false }); return true; }
+    if (told) { change(w, s => { s.pending = null; }); await root.Evening.owe(P, w, 'pie', { withheld: false }); return true; }      // (seen to at the evening's end: js/evening.js)
     change(w, s => { s.pending.told = false; });
     return false;
   }
@@ -128,7 +128,7 @@ async function evening(P, w, force) {
     w.rep.add('naughty', 1, 'keeping the pie from her mother');
     await P.wait(0.6); await P.approach();
     await P.converse(S.pieFoundOut(), { shot: ['red', 'mother'] });
-    await correct(P, w, { withheld: true });
+    await root.Evening.owe(P, w, 'pie', { withheld: true });
     return true;
   }
   return false;
@@ -142,7 +142,7 @@ async function correct(P, w, how) {
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
 }
 
-const api = { ready, dare, evening, objective, stateOf, AGAIN_AFTER };
+const api = { ready, dare, evening, correct, objective, stateOf, AGAIN_AFTER };
 root.Pie = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
