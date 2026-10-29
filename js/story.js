@@ -1602,6 +1602,7 @@ const willieBlessing = ctx => [
     { text: 'I’d rather it was only ever you, Mama.', face: 'shy', then: [{ run: ctx.no },
       { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Then it’s only me, and I’ll tell him so. He’ll understand. He asked so you could say no.' }] },
   ] },
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And I told him your hour’s nine, not the village’s ten. So he’ll be looking out for you from nine, now, bell or no bell.' },
 ];
 // Peter notices she's changed (ctx: { all(), some(), none() }).
 const peterNotices = ctx => [

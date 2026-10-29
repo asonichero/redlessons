@@ -210,7 +210,7 @@ function attach(P, w) {
     if (!f.sat) f.motion.face(yawTo(f.motion.pos, m.pos));
   }
   async function talkTo(key) {
-    if (key === 'willie' && cal.curfew() && root.Evening && !root.Evening.watchman(w)) return catchHer(figs.willie);      // (after the bell, he's not there to chat)
+    if (key === 'willie' && pastHers() && root.Evening && !root.Evening.watchman(w)) return catchHer(figs.willie);      // (past the curfew he holds her to, he's not there to chat)
     const f = figs[key]; if (!f) return; hold(f);
     try {
       await meet(f);
@@ -331,11 +331,13 @@ function attach(P, w) {
 
   // ── The Watchman, on his round after the bell: if he sees her out, he stops her, and walks her home (a few steps behind her; the meadow
   // gate shut to her while he does). At her door, js/evening.js has him hand her over.
-  // (the village's curfew is ten; hers is nine, which he knows once he's caught her once and walked her home: till then he leaves her be till ten)
-  const knowsHers = () => (save.state.flags || {})['willie-catch-1'] != null;
+  // (the village's curfew is ten, the bell at half past nine its fair warning; hers is nine, which he knows only once her mother's told him (her
+  // word with him at the well, js/evening.js's blessing): till then he leaves her be till ten)
+  const knowsHers = () => (save.state.flags || {})['willie-knows-curfew'] != null;
+  const pastHers = () => { const min = cal.minute; return min < H('5:30') || min >= (knowsHers() ? H('21:00') : H('22:00')); };
   function willieWatch() {
     const f = figs.willie; if (!f || !f.want || f.follow || f.held || f.scene || !root.Evening || root.Evening.watchman(w) || P.busy) return;
-    const min = cal.minute, late = min < H('5:30') || min >= (knowsHers() ? H('21:00') : H('22:00')); if (!late) return;
+    if (!pastHers()) return;
     const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < 110) P.act(() => catchHer(f));
   }
   // (half past nine: the bell, three strokes, rung by him)

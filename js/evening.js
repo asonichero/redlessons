@@ -114,6 +114,7 @@ async function blessing(P, w) {
   let yes = false;
   await P.wait(0.4); await P.approach();
   await P.converse(root.Story.willieBlessing({ yes: () => { yes = true; }, no: () => {} }), { shot: ['red', 'mother'] });
+  w.save.flag('willie-knows-curfew', w.cal.day);      // (and he knows her hour now: nine, not the village's ten)
   if (yes) { w.save.flag('maren-blesses-willie', w.cal.day); w.rep.tell('willie', 1); }
   w.complete('maren.willie');
 }
