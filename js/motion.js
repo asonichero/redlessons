@@ -137,6 +137,13 @@ function create(rig, opts) {
       else { mag = 0; if (a.yaw != null) m.faceYaw = a.yaw; if (m.speed < 1 && (a.yaw == null || Math.abs(angDiff(m.yaw, a.yaw)) < 0.06)) m.auto = null; }
     }
     if (mag > 0.01) dir.normalize(); else mag = 0;
+    // Into a wall, a fence or the furniture at a slant, she slides along it: the way she's asked to go is turned along what's in her way, looked
+    // for a step ahead (head on, she stops against it).
+    if (mag > 0 && opts.collide && !m.auto) {      // (her own walking: led somewhere, she goes as she's led)
+      const ahead = m.pos.clone().addScaledVector(dir, 2.5 * sc), got = opts.collide(ahead, 3.2 * sc), lost = ahead.clone().sub(got).setY(0);
+      if (lost.lengthSq() > 1e-4) { const n = lost.normalize(), into = dir.dot(n);
+        if (into > 0) { const t = dir.clone().addScaledVector(n, -into), tl = t.length(); if (tl > 0.12) { dir.copy(t.divideScalar(tl)); mag *= clamp(0.45 + tl * 0.7, 0.5, 1); } } }
+    }
     const top = (run ? GAIT.run : GAIT.walk) * sc, want = dir.clone().multiplyScalar(top * mag);
     const rate = want.lengthSq() > m.vel.lengthSq() ? GAIT.accel : GAIT.decel;
     const before = m.speed;

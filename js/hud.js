@@ -2,7 +2,7 @@
 // and menus): round glass buttons with a pale ring and line icons, a gold chip for what she can do here, a pause menu, settings and a sheet of
 // the controls.
 //
-//   Keys: WASD or arrows to walk, Shift (held) to run, E (or Space, Enter) to do what the chip offers, Q for the other thing (lie down, on a bed),
+//   Keys: WASD or arrows to walk, Shift (held) to run, E (or Enter) to do what the chip offers, Space to jump, Q for the other thing (lie down, on a bed),
 //   Esc for the menu, ? (or the keyboard button) for the controls. A drag goes round; the camera button, or the wheel, steps it near, medium or far.
 //   Touch (or ?touch in the address): a stick under the left thumb; under the right, the action button (labelled with what it'll do, greyed when
 //   there's nothing), the other action above it, and Run (held). Top right, the menu and the camera.
@@ -171,7 +171,7 @@ function create(opts) {
   if (!opts.restartDay) pc.querySelector('[data-k=restart]').remove();
   const setEl = screen('hSettings', '');
   const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
-    ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'],
+    ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'], ['<kbd>Space</kbd>', 'Jump'],
     ['<kbd>Q</kbd>', 'Put down what’s in her hands (or the other thing: lie down, on a bed)'], ['<kbd>B</kbd>, or the basket by the diary', 'What’s in your basket, while she’s carrying it'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>J</kbd>, or the book by the clock', 'Her diary'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
     '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
@@ -278,7 +278,7 @@ function create(opts) {
     if (typing(e) || el.classList.contains('hide')) return;
     if (e.key === '?' || e.code === 'F1') { sheet.classList.add('on'); e.preventDefault(); return; }
     if (e.repeat) return; held.add(e.code); const p = P();
-    if (p && ['KeyE', 'Space', 'Enter', 'NumpadEnter'].includes(e.code)) p.use();
+    if (p && ['KeyE', 'Enter', 'NumpadEnter'].includes(e.code)) p.use(); else if (p && p.jump && e.code === 'Space') p.jump();
     if (p && e.code === 'KeyQ') p.use(true);
     if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
     axes();

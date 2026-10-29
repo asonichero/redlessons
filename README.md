@@ -206,7 +206,7 @@ Her mother sits on a plain chair; Little Red lies face down across her lap, hips
 
 ## About the cottage (`play.html`, `js/play.js`, `js/motion.js`)
 
-Rose at home in the cottage, her mother by the hearth. **WASD** or the arrows walk her (relative to the camera), **Shift** runs, **E** does whatever's offered (in the gold chip at the bottom, which can be clicked too), **Q** lies down when she's sitting on the bed, the camera button (top right) or the wheel steps the camera between near, medium and far, **Esc** opens the menu (settings, the controls, her clothes, the other pages).
+Rose at home in the cottage, her mother by the hearth. **WASD** or the arrows walk her (relative to the camera), **Shift** runs, **Space** jumps, she slides along a wall or a fence she walks into at a slant, **E** does whatever's offered (in the gold chip at the bottom, which can be clicked too), **Q** lies down when she's sitting on the bed, the camera button (top right) or the wheel steps the camera between near, medium and far, **Esc** opens the menu (settings, the controls, her clothes, the other pages).
 
 **The camera, between scenes:** indoors it's anchored at the middle of the room, not on her, at medium distance to begin with; outdoors it's anchored on her, she in the middle of the view, and goes with her. Either way, a drag moves it any way about the anchor, round it and up over it or down toward the floor (where it’s turned, it stays), and the camera button or the wheel for near, medium or far; on a touch screen, a pinch anywhere between near and far. Seen from the wood, any part of her grandmother's cabin between the camera and her is cut away while it's there.
 
