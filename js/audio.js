@@ -300,5 +300,15 @@ A.thud = function (vol) {                                       // a heavy tread
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5 * v0, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(lp); lp.connect(g); g.connect(A.nodes.sfx || ctx.destination); o.start(t); o.stop(t + d + 0.1); }
 };
 
+A.knock = function (vol) {                                      // a knuckle on a wooden door: a sharp rap, and the plank's hollow note under it
+  if (!A.init()) return; const ctx = A.ctx, t = ctx.currentTime, v0 = vol == null ? 0.5 : vol, out = A.nodes.sfx || ctx.destination;
+  const n = ctx.createBufferSource(), buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.05), ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+  const bp = ctx.createBiquadFilter(), gn = ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 1.4; gn.gain.value = 0.9 * v0;
+  n.buffer = buf; n.connect(bp); bp.connect(gn); gn.connect(out); n.start(t);
+  const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(240, t); o.frequency.exponentialRampToValueAtTime(150, t + 0.08);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.55 * v0, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14); o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.2);
+};
+
 root.GameAudio = A;
 })(typeof window !== 'undefined' ? window : globalThis);

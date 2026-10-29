@@ -305,7 +305,7 @@ function attach(P, w) {
   // A knock at the Dunns' door, with Master William asleep upstairs after his night's round; and away before the shutter opens.
   async function knock() {
     const d = sp.dunnsDoor, m = P.motion; await lead(d.at, d.yaw);
-    for (let k = 0; k < 3; k++) { await m.reach('R', d.look.clone().setY(16)); const A = root.GameAudio; if (A && A.thud) A.thud(0.35); await m.release('R'); }
+    await P.knock(d.look.clone().setY(16), 3);      // (three knocks, the one arm)
     rep.add('mischievous', 1, 'knocking on the Dunns’ door, on a dare'); save.flag('woke-willie', cal.day);
     { const A = root.GameAudio; if (A && A.thud) setTimeout(() => A.thud(0.6), 700); }      // (his shutter, banged open overhead)
     const away = P.collide(flat(m.pos).add(new V3(-Math.sin(d.yaw) * 24, 0, -Math.cos(d.yaw) * 24)), 3.2); await m.goTo(away, null, { run: true });      // (and away, before he's at the window)

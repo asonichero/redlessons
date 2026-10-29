@@ -228,6 +228,16 @@ function create(view, opts) {
     if (p.z < B.z0 + 8) return standFor(p, n, 7.5);      // (on the back wall's pegs)
     return standFor(p, flat(m.pos).sub(flat(p)).normalize(), 6);
   }
+  // A knock at a door (at: a point on it): the arm up once, and the knuckles rapping n times, a knock heard each time they meet the wood;
+  // then the arm down.
+  async function knock(at, n) {
+    const N = n || 3, beat = 0.3, out = flat(m.pos).sub(flat(at)), A = root.GameAudio; if (out.lengthSq() < 1e-4) out.set(0, 0, 1); out.normalize();
+    let t = -1, last = -1;
+    const off = () => { if (t < 0) return 1.6; const k = Math.floor(t / beat); if (k >= N) return 1.6; const u = (t % beat) / beat; return 1.6 - 1.45 * Math.sin(Math.PI * Math.min(1, u * 1.6)); };      // (in to the wood quick, and back)
+    const un = tick(dt => { if (t < 0) return; t += dt; const k = Math.floor((t - beat * 0.31) / beat); if (k > last && k < N) { last = k; if (A && A.knock) A.knock(0.5); } });      // (the sound as the knuckles meet the wood: a third of the way into each beat)
+    m.lookAt(at.clone()); await m.reach('R', () => at.clone().addScaledVector(out, off()));
+    t = 0; await wait(beat * N + 0.15); un(); await m.release('R'); m.lookAt(null);
+  }
   // (her hands full, going for something else: a thought, and nothing taken)
   function handsFull() { const it = m.carry; if (!it || !talk) return; const S = root.Story; talk.muse(S && S.handsFull ? S.handsFull(it) : 'My hands are full.', { face: 'calm' }); }
   // (put down, where she stands: Q. Outdoors, it stays where it was put (opts.onPut: the page keeps it there))
@@ -354,7 +364,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

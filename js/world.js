@@ -98,8 +98,7 @@ async function knockAtGran(P) {
   const d = P.world.door, m = P.motion, V = THREE.Vector3, latch = d.latch.getWorldPosition(new V()), A = root.GameAudio;
   const stand = P.collide(latch.clone().setY(0).add(new V(-1.5, 0, 7)), 3.2); await m.goTo(stand, Math.PI);
   m.lookAt(latch.clone());
-  for (let k = 0; k < 3; k++) { await m.reach('R', latch.clone().add(new V(-1.5, 5, 0.6))); if (A && A.thud) A.thud(0.35); await P.wait(0.18); await m.release('R'); await P.wait(0.12); }
-  m.lookAt(null);
+  await P.knock(latch.clone().add(new V(-1.5, 5, 0)), 3);      // (three knocks, the one arm)
   { const back = stand.clone().add(new V(9, 14, 34)); P.camHeld = true; P.stage.go(back, latch.clone().setY(12), 600); }      // (from behind her, the door before her)
   const was = P.talk.cast.gran; P.talk.cast.gran = Object.assign({ side: 'right' }, HULDA, { rig: null });
   try { await P.converse(root.Story.granCallsIn(), { shot: false, keepCamera: true }); } finally { if (was) P.talk.cast.gran = was; else delete P.talk.cast.gran; }
