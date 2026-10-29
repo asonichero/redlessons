@@ -400,8 +400,15 @@ const ERRANDS = {
     mind: 'After three, mind, and before he’s out to the bell.',
     early: [{ who: 'red', face: 'shy', thought: true, text: 'Nothing. The shutters are still closed upstairs: he’s asleep. Not before three, Mama said.' }],
     gone: [{ who: 'red', face: 'wince', thought: true, text: 'Nobody. He’s gone out to the bell already, and Georgie’s not back. I left it too late.' }],
-    there: [{ who: 'red', face: 'calm', thought: true, text: 'Master William at the door in his shirtsleeves, rubbing his eyes. “A pie? Your mother’s a saint, Miss Rose. Tell her so from me.”' },
-      { who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and he would lean out and pretend to growl at us.' }] },
+    met: [{ who: 'willie', face: 'stern', listen: { red: 'shy' }, text: 'If that’s young Ferrier at his knocking again, I’ll— oh. Miss Rose.' },
+      { who: 'red', face: 'smile', listen: { willie: 'calm' }, text: 'Only me, Master William. Mama sent a pie. For all your nights on the rounds.' },
+      { give: 'pie' },      // (played: the pie out of her basket and into his hands)
+      { who: 'willie', face: 'smile', listen: { red: 'smile' }, text: 'A pie?' },
+      { who: 'willie', face: 'smile', listen: { red: 'smile' }, text: 'Your mother’s a saint, Miss Rose. Tell her so from me.' },
+      { who: 'red', face: 'cheeky', listen: { willie: 'smile' }, text: 'Georgie will want half of it.' },
+      { who: 'willie', face: 'calm', listen: { red: 'smile' }, text: 'Georgie can want. Off you go, now. Some of us have a night’s walking ahead.' }],
+    after: [{ who: 'red', face: 'smile', thought: true, text: 'Georgie and I used to play under that window, and he would lean out and pretend to growl at us.' }],
+    there: [{ who: 'red', face: 'calm', thought: true, text: 'Master William took the pie at the door, half asleep, and called Mama a saint.' }] },
   bakery: { title: 'Help at the bakery', by: '13:00', place: 'bakery', action: 'Go in to help Mistress Pennock', mins: 170, who: 'pennock', trust: 'pennock', quest: 'pennock.helps', shift: 'bakery',      // (played inside: js/work.js)
     ask: 'Mistress Pennock has the mill run to do this afternoon, and Master Pennock’s abed, so there’s nobody for the clearing down. Will you go and do it for her? She’ll give you the list at one, she said.',
     met: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love, you’re an angel. Sleeves up, apron on. It’s all the dull half of baking, I’m afraid.' }],

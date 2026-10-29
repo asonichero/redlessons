@@ -918,8 +918,8 @@ function make(id, look, opts) {
     cap.computeVertexNormals(); }
   const HAIR = S.hair || 'bun', SHORT = ['short', 'tousled', 'curly', 'tail', 'bald'].includes(HAIR) && (MAN || HAIR !== 'curly');
   // (short hair has less at the back; the cap itself stays whole over the crown, so the scalp never shows through it)
-  // (the hat worn: the Watchman, seated by someone's fire, has taken his off with his cape)
-  const HATW = S.cape && opts.seated ? null : S.hat;
+  // (the hat worn: the Watchman, seated by someone's fire, or at his own door by day (opts.indoors), has taken his off with his cape)
+  const HATW = S.cape && (opts.seated || opts.indoors) ? null : S.hat;
   const HV = K.hairVol * (SHORT ? 0.96 : 1), HAT = !!HATW && HATW !== 'mob'; cap.scale(K.hairVol, K.hairVol, K.hairVol);
   // (under a hat, nothing stands up out of the crown or lies over the forehead)
   const underHat = y => HAT && y > 1.0;
@@ -998,7 +998,7 @@ function make(id, look, opts) {
   const cloakParts = [];
   // (her grandmother wears a shawl the same way: shorter, no hood)
   // (and the Watchman's cape, longer than a shawl; seated to take someone in hand, he's set it aside)
-  if ((id === 'red' && look.outfit !== 'No cloak') || S.shawl || (S.cape && !opts.seated)) {
+  if ((id === 'red' && look.outfit !== 'No cloak') || S.shawl || (S.cape && !opts.seated && !opts.indoors)) {
     const prof = [[9.15, 1.32], [8.75, 2.6], [8.1, 3.7], [7.2, 4.05], [6.0, 4.15], [4.0, 4.2]];
     const rAt = y => { for (let i = 1; i < prof.length; i++) if (y >= prof[i][0]) { const [y0, r0] = prof[i - 1], [y1, r1] = prof[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return prof[prof.length - 1][1]; };
     const DEP = 0.8, PH0 = 0.42, PH1 = Math.PI * 2 - 0.42, SHW = S.shoulders || 1;      // (SHW: as wide as the shoulders it hangs from)

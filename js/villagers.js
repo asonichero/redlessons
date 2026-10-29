@@ -108,12 +108,12 @@ function attach(P, w) {
     return { obj: g, name: 'the lantern', grip: new V3(0, 0.4, 0), radius: 1, keep: true, style: 'hang' }; }
 
   // ── Out, and in again.
-  function spawn(key, want, arriving) {
-    const D = PEOPLE[key], rig = root.Toon.make(D.rig, looks[D.rig] || {});
+  function spawn(key, want, arriving, o) {
+    const D = PEOPLE[key], rig = root.Toon.make(D.rig, looks[D.rig] || {}, o && o.indoors ? { indoors: true } : undefined);      // (o.indoors: come to their own door as they are in the house: the Watchman without his hat and cape)
     const motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, key) });
     const f = { key, rig, motion, want: null, path: null, i: 0, sat: null, held: false, wait: 0, stuck: 0 };
     figs[key] = f; P.addFigure(key, { rig, motion, cast: { name: D.name, voice: D.voice, tint: D.tint, bg: D.bg } });
-    if (key === 'willie') { const l = lantern(); P.stage.scene.add(l.obj); motion.hold(l, 'hang'); f.lantern = l; }
+    if (key === 'willie' && !(o && o.indoors)) { const l = lantern(); P.stage.scene.add(l.obj); motion.hold(l, 'hang'); f.lantern = l; }
     const door = sp[D.door];
     if (arriving && door) { motion.warp(door.at, door.yaw + Math.PI); rig.root.position.copy(door.at); send(f, want); }
     else place(f, want);
@@ -313,8 +313,8 @@ function attach(P, w) {
 
   // ── For a scene: someone fetched out (at a spot, if they're not about), walked where it wants them (by the ways about), and let go again;
   // or kept in for the rest of the day.
-  function summon(key, spot) {
-    let f = figs[key]; if (!f) { f = spawn(key, { stand: spot }, false); }
+  function summon(key, spot, o) {
+    let f = figs[key]; if (!f) { f = spawn(key, { stand: spot }, false, o); }
     f.scene = {}; f.held = true; f.motion.auto = null; f.path = null; if (f.sat) { untake(f); f.motion.stand(); }
     return f;
   }

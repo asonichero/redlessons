@@ -195,6 +195,7 @@ function create(w) {
     if (e.state === 'missed') { change(c => { c.errand.knocked = true; }); await P.converse(e.gone, { shot: false, keepCamera: true }); return; }      // (too late: he's gone out)
     if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short, mode: e.shift === 'bakery' ? 'errand' : null }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
     if (e.leave && holding(P, e.leave)) { const it = m.drop(); if (it) { it.obj.visible = false; it.panel = null; it.away = !!it.home; change(c => { c.away = Object.assign({}, c.away, { [e.leave]: cal.day }); }); } }      // (left with the smith)
+    if (e.pie && P.villagers && P.villagers.summon && basketIn(P)) { await pieAtDoor(P, e); fulfilled(P, e); return; }      // (played: the knock, Master William at his door)
     if (e.pie && basketIn(P)) takeOut(basketIn(P), PIE);      // (the pie out of it, into Master William's hands)
     if (e.pails) await pails(P, e);      // (the well: three pails drawn, and into the butt)
     // (the one it's for, if they're there: facing her, and their own word for it)
@@ -202,6 +203,25 @@ function create(w) {
     if (f && e.met) { if (!f.sat) f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); m.face(Math.atan2(f.motion.pos.x - m.pos.x, f.motion.pos.z - m.pos.z)); }
     await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
     fulfilled(P, e);
+  }
+  // The Dunns': a knock, and Master William to the door as he is in the house, woken; the pie out of her basket into his hands, and a word;
+  // then in again, and her own thought, going.
+  async function pieAtDoor(P, e) {
+    const flat = v => new V3(v.x, 0, v.z), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+    const V = P.villagers, m = P.motion, d = P.world.spots.dunnsDoor, door = d.look.clone().setY(0), out = flat(d.at).sub(door).normalize();
+    await P.knock(d.look.clone().setY(16), 3);
+    const back = P.collide(door.clone().addScaledVector(out, 15), 3.2); await m.goTo(back, yawTo(back, door));      // (a step back from the door, for it to open)
+    await P.wait(1.4);
+    const f = V.summon('willie', 'dunnsDoor', { indoors: true }), at = door.clone().addScaledVector(out, 4);
+    f.motion.warp(at, yawTo(at, m.pos)); f.rig.root.position.copy(at); f.rig.root.rotation.y = f.motion.yaw;
+    { const A = root.GameAudio; if (A && A.thud) A.thud(0.3); }      // (the latch)
+    const b = basketIn(P), mid = () => f.motion.pos.clone().add(m.pos).multiplyScalar(0.5).setY(10.5);
+    const lines = e.met.map(l => l.give ? { run: async () => {      // (the pie handed over: out from under its cloth, and into his hands)
+      m.reach('L', mid()); await f.motion.reach('R', mid()); if (b) takeOut(b, PIE); m.release('L'); await f.motion.release('R'); } } : l);
+    await P.converse(lines, { shot: ['red', 'willie'] });
+    await V.walkTo('willie', door.clone().addScaledVector(out, 1), null);
+    V.letGo('willie');      // (in again: no station of his till the bell, so in at his door, and gone)
+    await P.converse(e.after, { shot: false, keepCamera: true });
   }
   // The well: the pail let down and drawn up, three times, and tipped into the butt at her feet; then it's full. Agnes Thatcher's at the well
   // too, and talks the while.
