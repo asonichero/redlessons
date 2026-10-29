@@ -21,7 +21,7 @@ function goal(w) {
   if (root.Peter && root.Peter.objective(w)) return { area: 'wood', spot: 'beech' };
   const ch = w.chores, e = ch && ch.on() && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id];
   if (E) {
-    if (e.state === 'accepted' || e.state === 'broken') {
+    if (e.state === 'accepted' || (e.state === 'broken' && E.shift)) {
       const has_ = w.P && w.P.motion.carry && w.P.motion.carry.kind === E.needs;
       if (E.needs === 'basket' && !has_ && ch.basketWhere) { const b = ch.basketWhere(w.P); if (b && b.at) return { area: b.area, at: b.at }; if (b) return { area: 'home', spot: 'basket' }; }      // (her basket: where she put it down, or on its peg)
       if (E.needs && w.area === 'home' && !has_) return { area: 'home', spot: E.needs };      // (what the errand wants, from where it's kept)

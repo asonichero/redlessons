@@ -131,7 +131,8 @@ async function supper(P, w) {
     const hearth = B ? P.collide(new V(-2, 0, B.z1 - 20), 3.2) : null;
     await Promise.all([stool ? P.sitOn(stool) : null, hearth ? mm.goTo(hearth, 0) : null]); }
   const c = w.save.state.chores || {}, e = c.errand && root.Story.ERRANDS[c.errand.id], fl = w.save.state.flags || {}, d = w.cal.day;
-  const day = { errand: e && c.day === d ? { title: e.title, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d ? !!c.garden : null,
+  const day = { errand: e && c.day === d ? { title: e.title, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d && !(root.Garden && root.Garden.offToday(w)) ? !!c.garden : null,      // (her mother's garden today: nothing for Red to say of it)
+   
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
   if (peeling) await peeling.done();

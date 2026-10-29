@@ -1302,8 +1302,10 @@ const promiseAfter = () => [
 const pennockIdle = () => [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Mind the oven, love. And don’t touch the board.' }];
 // Her mother, any other time: a word, by the time of day. (part: the calendar's)
 // ── Her mother in the day (js/chores.js's marenTalk). An errand still to do: a reminder (late: not too late).
-const marenReminds = (e, by, late) => late ? [
-  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You said you’d see to it: ' + e.title.toLowerCase() + '. You’re late with it, but it’s not too late. Go on.' },
+const marenReminds = (e, by, late, told) => late ? [
+  { run: told },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You said you’d see to it: ' + e.title.toLowerCase() + '. It’s too late for it now. I had to manage without.' },
+  { who: 'red', face: 'shy', text: 'I’m sorry, Mama.' },
 ] : [
   { who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Don’t forget: ' + e.title.toLowerCase() + ', by ' + by + '.' },
   { who: 'red', face: 'smile', text: 'I won’t, Mama.' },

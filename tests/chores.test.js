@@ -44,13 +44,15 @@ test('most days something is asked, never the same two days running', () => {
   assert.equal(chores.pick(5), chores.pick(5));
 });
 
-test('yes is a promise: begun in time, kept; let slide, broken (naughty), and she knows', () => {
+test('yes is a promise: begun in time, kept; a half hour past it, unspoken; after that broken (naughty), and too late', () => {
   const { chores, cal, rep } = world(); const id = 'bread', by = 11 * 60;
   chores.answer(id, 'yes');
   assert.match(chores.objective(), /^Bread from the bakery: begin by 11/);
   cal.advance(by - cal.minute); chores.tick(null); assert.match(chores.objective(), /begin by/, 'on the hour, not yet late');
+  cal.advance(30); chores.tick(null); assert.match(chores.objective(), /begin by/, 'within its grace: nothing said'); assert.equal(rep.stat('naughty'), 0);
   cal.advance(1); chores.tick(null);
-  assert.match(chores.objective(), /late, but not too late/); assert.equal(rep.stat('naughty'), 1);
+  assert.ok(!/Bread/.test(chores.objectives().join(' ')), 'too late: off the list'); assert.equal(rep.stat('naughty'), 1);
+  assert.equal(chores.owes(id), false, 'and not to be done');
   chores.tick(null); assert.equal(rep.stat('naughty'), 1, 'broken once, not every moment after');
 });
 
