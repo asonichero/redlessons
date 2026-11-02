@@ -1174,7 +1174,7 @@ const owedLater = (kind, early) => [{ who: 'mother', face: 'stern', listen: { re
 // Stood before her, after supper: what it's for, said plainly, before it's given. (garden: its own, js/garden.js's gardenTakeInHand)
 const OWED_FOR = {
   maintenance: () => 'Three things this week I gave you to do, and three you let slide. Not one of them was hard. You just didn’t.',
-  curfew: how => how.by === 'georgie' ? 'Out after the bell, and Georgie Dunn had to walk you to my door. A boy of fifteen, keeping his father’s watch, and you made him do that.'
+  curfew: how => how.by === 'georgie' ? 'Out after the bell, and Georgie Dunn had to walk you to my door. Keeping his father’s watch for the one night, and you made him spend it on you.'
     : how.willie ? 'Out after the bell, and brought to my door by the Watchman. He’d a round to walk, and you made him walk it with you.' : 'In after the bell. Nine o’clock is your hour, and you know it.',
   pie: how => how.withheld ? 'The pie off Mistress Pennock’s board. And then not a word to me, so I had it from a neighbour.' : 'The pie off Mistress Pennock’s board. You told me yourself, and I’m glad of that. But it was still taken.',
   promise: () => 'You gave Mistress Abney your word, and you didn’t keep it. Bess sat there waiting for you.',
