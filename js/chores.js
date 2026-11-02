@@ -72,6 +72,8 @@ function takeOut(b, what) { if (!b) return; b.contents = what == null ? [] : (b.
 const PIE = 'Mama’s pie', POT = 'the pot', LOAF = 'the loaf';
 // (what goes in her basket from the house, by its kind; tools (the trowel, the can, the butt, the broom) want her hands, and not with the basket)
 const STOW = { pot: POT, loaf: LOAF };
+// (things the story puts in her hands, made again in each place she carries them to: kind → (P, d) put in her hands)
+const MAKE = {};
 // (her basket: in her hand, out of doors, and at home or at her grandmother's; set by in the places of work (the inn, the bakery, the forge),
 // and at home when they sit down to the table (P.bag: see through, setBy and dress); what's in it there still hers to give)
 const basketOf = P => { const it = P && P.motion.carry; return it && it.kind === 'basket' ? it : P && P.bag || null; };
@@ -114,7 +116,7 @@ function create(w) {
   // basket is one of the cottage's own, off its peg; anywhere else, one like it (not to be set down away from home).
   const basketIn = basketOf;
   const holding = (P, kind) => { const it = P && P.motion.carry; return it && it.kind === kind ? it : null; };
-  function carried(P) { const it = P && P.motion.carry; return it && it.kind ? { kind: it.kind, full: !!it.full, contents: it.contents ? it.contents.slice() : undefined } : null; }
+  function carried(P) { const it = P && P.motion.carry; return it && it.kind ? { kind: it.kind, full: !!it.full, big: !!it.big, contents: it.contents ? it.contents.slice() : undefined } : null; }
   // Her basket: going in to a place of work, it's set by (where she's gone in); at home, set by when they sit to the table (setBy); coming out
   // of there, it's in her hand again. Each morning it's set by at home, so it goes out with her (Mama's pie in it, the day it's wanted).
   // → what she has in her hands in the place she's going
@@ -131,6 +133,7 @@ function create(w) {
     change(x => { x.bag = bag; }); P.motion.drop(); P.stage.scene.remove(it.obj); P.bag = st().bag; }
   function regive(P, d) {
     const W = P.world;
+    if (MAKE[d.kind]) { MAKE[d.kind](P, d); return; }      // (a story's own thing in her hands: the bluebells, js/chapter1.js)
     if (d.kind === 'pot' || d.kind === 'butt') { const it = W.items.find(x => x.kind === d.kind && !x.away);      // (home with it: the cottage's own, in her arms)
       if (it) { it.panel = null; P.motion.hold(it, 'front'); fill(it, d.full); it.keep = !!d.full; return; } }
     const it = hand(P, d.kind, { empty: (d.kind === 'basket' || d.kind === 'butt') && !d.full, contents: d.contents }); if (d.kind === 'butt') it.keep = !!d.full;
@@ -412,6 +415,6 @@ function create(w) {
   return { stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
-root.Chores = { create, prop, putIn, takeOut, basketOf, PIE, POT, LOAF, INSIDE };
+root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.Chores;
 })(typeof window !== 'undefined' ? window : globalThis);

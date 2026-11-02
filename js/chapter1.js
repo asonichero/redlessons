@@ -135,8 +135,10 @@ function posy(P, big) {
     const st = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, tip.length(), 4), Toon.mat('#4e7a36')); st.position.copy(tip).multiplyScalar(0.5); st.quaternion.setFromUnitVectors(new V3(0, 1, 0), tip.clone().normalize()); g.add(st);
     const h = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), Toon.mat(k % 2 ? '#5a6ad8' : '#7a7ae8')); h.position.copy(tip); g.add(h); }
   if (big) { const s = new THREE.Group(); s.add(...g.children); s.scale.setScalar(1.6); g.add(s); }      // (an armful: the bunch bigger all over)
-  return { obj: g, name: 'the bluebells', grip: new V3(0, big ? 1 : 0.6, 0), radius: big ? 3 : 1, keep: true };      // (keep: not to be put down: they're for her mother)
+  return { obj: g, name: 'the bluebells', kind: 'bluebells', big: !!big, grip: new V3(0, big ? 1 : 0.6, 0), radius: big ? 3 : 1, keep: true };      // (keep: not to be put down: they're for her mother)
 }
+// (carried from the wood through the village and home: made again in each place, js/chores.js's regive)
+if (root.Chores) root.Chores.MAKE.bluebells = (P, d) => P.motion.hold(posy(P, d.big), d.big ? 'front' : 'hang');
 // What the walk came to (flags.walk), and what she said of it: { walk, lingered (how many), bunch ('posy' | 'armful'), lied (true, false, or
 // null, not asked) }.
 const walkOf = w => { const walk = Object.assign({ bluebells: 0, stream: 0, beech: 0 }, w.save.state.flags.walk || {}), lied = w.save.state.flags['homecoming-lied'];
@@ -205,7 +207,7 @@ World.scene('ch1.homecoming', {
     if (P.outfit === 'No cloak') P.setOutfit('Hood down', true);      // (built again in it: so her motion is taken after)
     if (W.cloakHooks) W.cloakHooks.setRed(false);      // (it's on her, not on its hook)
     const me = P.motion;
-    me.hold(posy(P, walkOf(w).bunch === 'armful'), walkOf(w).bunch === 'armful' ? 'front' : 'hang');      // (the bluebells from the wood)
+    if (!(me.carry && me.carry.kind === 'bluebells')) me.hold(posy(P, walkOf(w).bunch === 'armful'), walkOf(w).bunch === 'armful' ? 'front' : 'hang');      // (the bluebells from the wood, if they're not in her hands already)
     if (W.door) { W.door.open = W.door.target = 1; }
     if (dw) { me.warp(dw.at, yawTo(dw.at, dw.foot)); P.rig.root.position.copy(dw.at); }
     if (mo && dw) { mo.warp(mo.pos, yawTo(mo.pos, dw.at)); P.mother.setExpr('concerned'); }
