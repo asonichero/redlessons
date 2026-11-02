@@ -2,10 +2,9 @@
 // her chair by the hearth, with Red for her legs. The carrier's men come in at about five (big Ned, old Amos, young Kit), sit at the table by
 // the hearth, and call for ale or stew; Red draws the ale at the barrels and ladles the stew from the pot on the fire, and takes each to the
 // man who asked. Keep one waiting too long and Bess hauls herself up and does it herself: the very thing her mother asked Red to see she
-// didn't. In the lulls, Red can sit with Bess a minute, and Bess's story comes out a piece at a time (one piece a shift: js/story.js's
-// WORK.inn.bess).
+// didn't. (In the lulls, Bess asks her to sit a minute: js/work.js.)
 //
-//   const s = InnShift.attach(P, w, { active() (the service is the task in hand), done() (all of them served) }) → { actions(), lull() }
+//   const s = InnShift.attach(P, w, { active() (the service under way), done() (all of them served) }) → { actions(), quiet(), up, gone() }
 // Kept in the save, with the shift (state.work.svc): { arrive (the minute they come), orders: [{ who, want, at, state }], up (Bess on her
 // feet, times), sat (Red sat with her, times) }. And state.bessTalk = { n } (the pieces of her story told, across shifts).
 (function (root) {
@@ -20,7 +19,7 @@ const MEN = [
 ];
 // (the evening's orders: who, for what, and how long after they've come in (game minutes); how long a man will wait)
 const ORDERS = [['ned', 'ale', 4], ['amos', 'stew', 12], ['kit', 'ale', 22], ['ned', 'stew', 34], ['amos', 'ale', 46], ['kit', 'stew', 56], ['ned', 'ale', 70]];
-const PATIENCE = 32, ARRIVE = 55, SITS = 2;
+const PATIENCE = 32, ARRIVE = 55;
 const WANT = { ale: { source: 'counter', label: 'Draw ale', give: 'his ale', prop: 'jug', style: 'hang' }, stew: { source: 'fire', label: 'Ladle out stew', give: 'his stew', prop: 'bowl', style: 'front' } };
 
 // A bowl of stew, to carry.
@@ -109,28 +108,19 @@ function attach(P, w, o) {
     const thanks = (lines.thanks || [])[i % Math.max(1, (lines.thanks || []).length)]; if (thanks) say(x.who, thanks, 'smile');
     w.cal.advance(3); w.refresh();
   }
-  async function sit() {
-    const f = bess(); change(v => { v.sat = (v.sat || 0) + 1; });
-    const n = (w.save.state.bessTalk || {}).n || 0, beats = lines.bess || [], beat = beats[n] || (lines.bessAgain || [])[n % Math.max(1, (lines.bessAgain || []).length)] || [];
-    if (f) { const at = spots.bess; await m.goTo(at.at, at.yaw); }
-    await P.converse(beat, { shot: ['red', 'bess'] });
-    if (n < beats.length) w.save.change(s => { s.bessTalk = { n: n + 1 }; });
-    w.rep.trusts('bess', 0.5); if (w.capacity) w.capacity.add(6, 'sitting with Bess');
-    w.cal.advance(8); w.refresh();
-  }
   function actions() {
     const s = svc(), out = [];
     if (s && due()) {
       if (carrying) { const x = s.orders[carrying.i], seat = seats[MEN.findIndex(d => d.key === x.who)]; if (seat) out.push({ label: 'Take ' + label(x) + ' ' + WANT[x.want].give, at: seat.at.clone().setY(16), run: () => give(carrying.i) }); }
       else for (const x of open()) { const i = s.orders.indexOf(x), wnt = WANT[x.want], sp = spots[wnt.source]; if (sp) out.push({ label: wnt.label + ' for ' + label(x), at: sp.look.clone(), run: () => m.carry ? P.handsFull() : fetch(i), full: !!m.carry }); }
     }
-    // (a lull: before they're in, or with nobody waiting; twice a shift at most)
-    const f = bess(); if (f && !carrying && !open().length && (!s || (s.sat || 0) < SITS) && (o.lull ? o.lull() : true)) out.push({ label: 'Sit with Bess a minute', at: f.motion.pos.clone().setY(14), run: sit });
     return out;
   }
   // (back in, with the men already in: there at their places)
   if (svc() && due()) for (let i = 0; i < MEN.length; i++) spawn(i, false);
-  return { actions, get up() { return (svc() || {}).up || 0; }, gone };
+  // (quiet: nobody waiting on her, and nothing in her hands for them: a time Bess might ask her to sit (js/work.js))
+  const quiet = () => !carrying && !open().length;
+  return { actions, quiet, get up() { return (svc() || {}).up || 0; }, gone };
 }
 
 const api = { attach, MEN, ORDERS, PATIENCE, ARRIVE };

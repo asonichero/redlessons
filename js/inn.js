@@ -120,6 +120,13 @@ function build(scene) {
   { const pc = piece('stair', wall), g = pc.g;
     for (let k = 0; k < 10; k++) box(g, 10, 1.2, 4, 0, 2 + k * 4, 13 - k * 2.4, oak); box(g, 1, 42, 1, -5, 21, -15, oakDk);
     world.obstacles.push(pc.area(-6, 6, -19, 9)); }
+  // ── The broom, leaning against the front wall beside the door.
+  { const g = W.front, x = DOOR + 12, z = Z1 - 2.2, straw = T.mat('#c8a860');
+    world.broom = [pole(g, new V3(x, 2.5, z - 1.4), new V3(x + 1.2, 30, z), 0.4, toonMap(tx.oak)),
+      solid(g, new THREE.ConeGeometry(2.4, 6, 10, 1, true).scale(1, 1, 0.45), straw, x - 0.1, 3, z - 1.5, { ink: 0.05 })];
+    world.broom[1].material.side = THREE.DoubleSide;
+    world.work_broom = { at: new V3(x, 0, z - 8), yaw: 0, look: new V3(x + 0.6, 16, z) };
+  }
   // ── The door, in the front wall: out to the street.
   { const f = new THREE.Group(); f.position.set(DOOR, 0, Z1 - 0.4); W.front.add(f);
     const hinge = new THREE.Group(); hinge.position.set(-6.5, 0, 0); f.add(hinge);
@@ -141,7 +148,8 @@ function build(scene) {
   const bessAt = () => { const pc = pieces.chair, o = near(pc, -8, 6), l = near(pc, 0, 0); const p = pc.P(o.x, 0, o.z), lk = pc.P(l.x, 14, l.z); return { at: new V3(p.x, 0, p.z), yaw: Math.atan2(lk.x - p.x, lk.z - p.z), look: lk }; };      // (facing her)
   world.work = {
     tub: spot(X0 + 16, -24, Math.PI, X0 + 16, 4, -29), tables: at('tableA', 0, 14, Math.PI, 0, 14, 2), fire: spot(X0 + 16, -2, -Math.PI / 2, X0 + 6, 4, -2),
-    counter: at('barrels', -10.5, 12, Math.PI, -10.5, 7, 4), table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6),      // (counter: the ale drawn at the barrels, from the second, not the first)
+    counter: at('barrels', -10.5, 12, Math.PI, -10.5, 7, 4), table2: at('tableB', 0, 14, Math.PI, 0, 15, 0), tableA: at('tableA', 0, 14, Math.PI, 0, 14, 2), tableC: at('tableC', 0, 14, Math.PI, 0, 14, 2),
+    stair: at('stair', 0, 20, Math.PI, 0, 14, 10), bess: bessAt(), floor: spot(0, 0, 0, 0, 0.5, 6), broom: world.work_broom,      // (stair: where Mistress Abney goes up to the rooms, and comes down)      // (counter: the ale drawn at the barrels, from the second, not the first)
   };
   // (the washing tub by the hearth, for the pots)
   { solid(root_, new THREE.CylinderGeometry(4, 3.4, 4, 14, 1, true), oak, X0 + 16, 2, -29, { ink: 0.06 }).material.side = THREE.DoubleSide; const wt = new THREE.Mesh(new THREE.CircleGeometry(3.7, 14), T.mat('#6a8a9a')); wt.rotation.x = -Math.PI / 2; wt.position.set(X0 + 16, 3.2, -29); root_.add(wt);

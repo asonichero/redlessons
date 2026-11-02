@@ -155,7 +155,7 @@ function create(view, opts) {
     const out = [], me = flat(m.pos), f = fwd();
     const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
-    if (talk && mm && !npcAway && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
+    if (talk && mm && !npcAway && mom.root.visible && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
@@ -327,7 +327,7 @@ function create(view, opts) {
   async function faceEachOther() { m.face(yawTo(m.pos, mm.pos)); mm.face(yawTo(mm.pos, m.pos)); await wait(0.5); }
   async function talkToMother(how) {
     const meet = () => how && how.stay ? faceEachOther() : approach();
-    if (opts.talk) { await meet(); talk.cast.red.rig = rig; const picks = await talk.play(opts.talk()); if (opts.after) await opts.after('talk', picks); return; }
+    if (opts.talk) { const script = opts.talk(); if (!script || !script.length) return; await meet(); talk.cast.red.rig = rig; const picks = await talk.play(script); if (opts.after) await opts.after('talk', picks); return; }      // (nothing to say: nothing played, rather than an empty box)
     if (!NPC || NPC.key !== 'mother') return;      // (the homecoming is her mother's, and no one else's)
     // (she came home in her grandmother's cloak)
     if (look.outfit === 'No cloak') setOutfit('Hood down', true);

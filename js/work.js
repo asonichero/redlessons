@@ -18,7 +18,8 @@
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const SHIFT_RATE = 2.5;      // (game minutes a second, in a timed shift: a quarter quicker than the day's. The bakery's whole list, done briskly, is about seventy seconds' play)
 
-// The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it.
+// The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it. Done in any
+// order, each offered where it's done, as she comes near it (as the garden's are); after: not till that one's done.
 const SHIFTS = {
   bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', away: 210, picked: ['trough', 'boards', 'racks', 'sweep'], tasks: [      // (the afternoon: the clearing down after the morning's baking, and the next day begun; away: the mill run; picked: the head start's list)
     { id: 'trough', what: 'the trough', label: 'Scrape out the dough trough', place: 'trough', mins: 25, kind: 'shape' },
@@ -29,17 +30,19 @@ const SHIFTS = {
     { id: 'sponge', what: 'the sponge', label: 'Set the sponge for the morning', place: 'trough', mins: 30, kind: 'knead' },
     { id: 'sweep', what: 'the floor', label: 'Sweep out', place: 'floor', mins: 30, kind: 'sweep' },
   ] },
-  // (the inn's evening, asked for at breakfast: Mistress Abney out till seven, Bess running it from her chair, and the carrier's men in at five
-  // (js/innshift.js); out: who it is that goes, and comes back to look it over. Offered on the day by Mistress Abney (short): an afternoon's
-  // tidying with her there, no carrier's men)
-  inn: { area: 'inn', boss: 'bess', out: 'abney', errand: 'inn', away: 180, tasks: [
+  // (the inn: Mistress Abney out of the room either way, so it's Bess's, from her chair. Carrier's day, given at breakfast: Abney away to Ashby
+  // till seven, and the carrier's men in at five (js/innshift.js). Offered on the day by Abney herself (short): an afternoon's tidying while
+  // she turns out the rooms upstairs, back down when the time's up. out: who goes, and comes back to look it over)
+  inn: { area: 'inn', boss: 'bess', out: 'abney', errand: 'inn', away: 180, shortAway: 150, tasks: [
     { id: 'fire', what: 'the fire', label: 'Build up the fire', place: 'fire', mins: 10, kind: 'reach' },
-    { id: 'tables', what: 'the tables', label: 'Wipe down the tables', place: 'tables', mins: 15, kind: 'shape' },
+    { id: 'tableA', what: 'the long table at the back', label: 'Wipe down the table', place: 'tableA', mins: 8, kind: 'shape', line: 'tables' },
+    { id: 'tableB', what: 'the table by the hearth', label: 'Wipe down the table', place: 'table2', mins: 8, kind: 'shape', line: 'tables' },
+    { id: 'tableC', what: 'the table by the stair', label: 'Wipe down the table', place: 'tableC', mins: 8, kind: 'shape', line: 'tables' },
     { id: 'pots', what: 'the pots', label: 'Scour the pots', place: 'tub', mins: 20, kind: 'shape' },
+    { id: 'tea', what: 'Bess’s tea', label: 'Take Bess her tea', place: 'counter', mins: 8, kind: 'tea' },      // (steeping on the bar: taken up there, and carried to her)
     { id: 'bowls', what: 'the bowls and bread', label: 'Set out the bowls and bread', place: 'table2', mins: 10, kind: 'shape', carriers: true },
     { id: 'service', what: 'the carrier’s men', label: 'See to the carrier’s men', place: 'table2', mins: 0, kind: 'service', carriers: true },      // (their orders, as they call them: js/innshift.js)
-    { id: 'after', what: 'their table', label: 'Clear after them', place: 'table2', mins: 15, kind: 'shape', carriers: true },
-    { id: 'tea', what: 'Bess’s tea', label: 'Take Bess her tea', place: 'bess', mins: 10, kind: 'reach', short: true },
+    { id: 'after', what: 'their table', label: 'Clear after them', place: 'table2', mins: 15, kind: 'shape', carriers: true, after: 'service' },
     { id: 'sweep', what: 'the floor', label: 'Sweep out', place: 'floor', mins: 20, kind: 'sweep' },
   ] },
 };
@@ -48,10 +51,15 @@ const stateOf = w => w.save.state.work || (w.save.state.work = { day: 0, id: nul
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.work); }, { work: true });
 // (a shift under way today, here)
 const current = (w, area) => { const s = stateOf(w); return s.id && s.day === w.cal.day && (!area || SHIFTS[s.id].area === area) ? s : null; };
-function begin(w, id, o) { o = o || {}; change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; s.short = !!o.short; s.mode = o.mode || null; s.until = o.until || 0; s.back = false; s.start = w.cal.minute; s.svc = null; }); }
+function begin(w, id, o) { o = o || {}; change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; s.done = []; s.basket = null; s.short = !!o.short; s.mode = o.mode || null; s.until = o.until || 0; s.back = false; s.start = w.cal.minute; s.svc = null; }); }
 // (a shift's tasks, as this one is: asked for on the day, by her, the inn's afternoon is without the carrier's men; the bakery's head start,
 // its own short list)
-const tasksOf = s => SHIFTS[s.id].tasks.filter(t => !(s.short && t.carriers) && !(!s.short && t.short) && !(s.mode === 'picked' && !SHIFTS[s.id].picked.includes(t.id)));      // (t.short: only on the short list)
+const tasksOf = s => SHIFTS[s.id].tasks.filter(t => !(s.short && t.carriers) && !(s.mode === 'picked' && !SHIFTS[s.id].picked.includes(t.id)));
+// (what's done of it, and what's still to do: in any order; s.step kept as the count)
+const doneOf = s => s.done || [];
+const leftOf = s => tasksOf(s).filter(t => !doneOf(s).includes(t.id));
+// (her basket, set aside as she comes in to work, and back in her hands as she goes: js/world.js asks for it on her way out)
+function stashed(w) { const s = stateOf(w); if (!s.basket) return null; const b = s.basket; change(w, x => { x.basket = null; }); return b; }
 
 // The broom, held in front of her, the head down at the floor ahead.
 function broomProp() {
@@ -74,53 +82,91 @@ const SHORT = { bakery: S => [S.pennockShort, S.pennockShortRed, S.pennockShortA
 function attach(P, w) {
   const st0 = current(w, w.area); if (!st0) return null;
   const ID = st0.id, S = root.Story, sh = SHIFTS[ID], W = P.world, spots = W.work || {}, m = P.motion, talk = P.talk;
-  const task = () => { const s = current(w); return s && tasksOf(s)[s.step] || null; };
-  // (the boss's word, said while she works: nothing waits on it)
-  const timed = !!st0.mode, mm = P.npcMotion, rig = P.npc;
-  let away = false, due = false;
+  const timed = !!st0.mode, mm = P.npcMotion, rig = P.npc, cur = () => current(w);
+  let away = false, due = false, carrying = null, offers = 0, offerDue = false;
   const say = (text, face) => !(away && (sh.out || sh.boss) === sh.boss) && talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });      // (the boss gone out: not if it's the boss who's gone)
-  // (the boss out of the place: off on the mill run, or still at her counter; and back in at the door)
+  // (the boss out of the place: off on the mill run, upstairs at the rooms, or still at her counter; and back in)
   const gone = () => { away = true; if (rig && rig.root) rig.root.visible = false; if (mm) mm.warp(new V3(0, 0, -900), 0); };
   const inAt = () => { const e = W.entries && W.entries.door; return e ? new V3(e.at[0], 0, e.at[1]) : new V3(-22, 0, 26); };
-  const lines = (S.WORK && S.WORK[st0.id]) || {};
-  // The task in hand: offered at its place.
-  W.actions = W.actions || [];
-  // (sweeping, where there's a broom: begun by taking it up, where it leans)
+  const lines = (S.WORK && S.WORK[ID]) || {};
+  // Her basket, if she came in with it: set by, and back in her hands as she goes.
+  // (each moment, since it's put back in her hands after the place is set up: js/chores.js's dress)
+  P.tick(() => { const it = m.carry; if (!cur() || !it || it.kind !== 'basket' || P.busy) return;
+    change(w, x => { x.basket = { kind: 'basket', full: !!it.full, contents: (it.contents || []).slice() }; }); m.drop(); it.obj.visible = false; P.stage.scene.remove(it.obj); w.refresh(); });
+  // What's to do: each task still to do, offered at its place; sweeping begun by taking up the broom where there is one; Bess's tea, taken up
+  // at the bar and given her where she sits.
   const byBroom = t => t && t.kind === 'sweep' && spots.broom;
-  const action = { get label() { const t = task(); return !t ? '' : byBroom(t) ? 'Take up the broom' : t.label; }, get at() { const t = task(); return !t ? new V3() : byBroom(t) ? spots.broom.look.clone() : spots[t.place].look.clone(); }, when: () => !!task() && task().kind !== 'service', run: () => doTask(task()) };
-  // (the inn's evening: the carrier's men, served as they call; and Bess to sit with in a lull)
-  const svc = st0.id === 'inn' && !st0.short && root.InnShift ? root.InnShift.attach(P, w, { active: () => { const t = task(); return !!t && t.kind === 'service'; },
-    done: () => { change(w, s => { s.step++; }); w.refresh(); }, lull: () => !P.busy }) : null;
-  if (svc) { W.more = W.more || []; W.more.push(() => current(w) ? svc.actions() : []); }
-  W.actions.push(action);
-  // (the door shut on her until it's done)
+  const open = () => { const s = cur(); return s ? leftOf(s).filter(t => t.kind !== 'service' && (!t.after || doneOf(s).includes(t.after))) : []; };
+  function actions() {
+    const s = cur(); if (!s || P.busy) return [];
+    if (carrying) return carrying.id === 'tea' && spots.bess ? [{ label: 'Give Bess her tea', at: spots.bess.look.clone(), run: () => giveTea() }] : [];
+    return open().map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: (byBroom(t) ? spots.broom : spots[t.place] || spots.floor).look.clone(), run: () => m.carry ? P.handsFull() : doTask(t) }));
+  }
+  W.more = W.more || []; W.more.push(actions);
+  // (the inn's evening: the carrier's men, served as they call, from when they come in)
+  const svc = ID === 'inn' && !st0.short && root.InnShift ? root.InnShift.attach(P, w, { active: () => { const s = cur(); return !!s && !doneOf(s).includes('service') && !s.back; },
+    done: () => { markDone('service'); } }) : null;
+  if (svc) W.more.push(() => cur() ? svc.actions() : []);
+  // (the door shut on her until it's over)
   const door = (W.exits || []).find(e => e.name === 'the door'); if (door) { const was = door.when; door.when = () => !current(w) && (!was || was()); }
   w.refresh();
-  if (timed && st0.mode === 'picked') { gone(); if (st0.step === 0) P.act(async () => { await P.wait(0.6); await P.converse(lines.picked || [], { shot: false, keepCamera: true }); }); }
-  else if (timed && (st0.until || st0.step > 0)) gone();      // (back in, with her already gone)
-  else if (st0.step === 0) P.act(async () => {
-    await P.wait(0.6); await P.converse(timed ? lines.list || [] : lines.start || [], { shot: ['red', sh.out || sh.boss] });
-    if (timed) { change(w, s => { s.until = w.cal.minute + sh.away; }); if (mm) { await Promise.race([mm.goTo(P.collide(inAt(), 3), null), P.wait(5)]); } gone(); w.refresh(); }      // (the list given: and off, out of the door)
+  // The start: the list given, and the boss away. (The bakery's head start: her list chalked up, and Mistress Pennock at the counter. The inn's
+  // short afternoon: Mistress Abney upstairs, Bess's word for it.)
+  const short = ID === 'inn' && st0.short;
+  if (timed && st0.mode === 'picked') { gone(); if (!doneOf(st0).length) P.act(async () => { await P.wait(0.6); await P.converse(lines.picked || [], { shot: false, keepCamera: true }); }); }
+  else if (timed && (st0.until || doneOf(st0).length)) gone();      // (back in, with her already gone)
+  else P.act(async () => {
+    await P.wait(0.6); await P.converse(short ? lines.short || [] : lines.list || [], { shot: ['red', sh.out || sh.boss] });
+    change(w, s => { s.until = w.cal.minute + (short ? sh.shortAway : sh.away); });
+    if (mm) await Promise.race([mm.goTo(P.collide(short && spots.stair ? spots.stair.at : inAt(), 3), null), P.wait(5)]);
+    gone(); w.refresh();
   });
-  // (the timed shift's clock: quicker than the day's while she's in here, talk aside; and when it's run out, the boss back)
-  if (timed) P.tick(dt => {
-    const s = current(w); if (!s || !s.until || s.back) return;
+  // (the shift's clock: quicker than the day's while she's in here, talk aside; and when it's run out, the boss back)
+  P.tick(dt => {
+    const s = cur(); if (!s || !s.until || s.back) return;
     if (!(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, P.busy ? SHIFT_RATE : SHIFT_RATE - (w.RATE || 2));      // (the day's own clock runs too, when she's not busy)
     if (w.cal.minute >= s.until) due = true;
     if (due && !P.busy) { due = false; P.act(back); }
   });
+  P.tick(() => { if (offerDue && !P.busy && !(talk && talk.playing) && cur() && !cur().back) { offerDue = false; P.act(sitWithBess); } });
 
+  function markDone(id) {
+    change(w, s => { s.done = (s.done || []).concat(id); s.step = s.done.length; });
+    const s = cur(); if (s && !leftOf(s).length && s.until && !s.back) P.act(back);      // (all of it done before she's back: and then she is, at her hour)
+    else { w.refresh(); if (ID === 'inn') maybeOffer(); }
+  }
   async function doTask(t) {
-    const sp = spots[t.place]; if (!byBroom(t)) { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); }
-    const said = lines[t.id]; if (said) say(...said);
+    const sp = spots[t.place] || spots.floor; if (!byBroom(t) && t.kind !== 'tea') { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); }
+    const said = lines[t.line || t.id]; if (said) say(...said);
+    if (t.kind === 'tea') { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); await reachAt(sp.look); const cup = cupProp(); P.stage.scene.add(cup.obj); m.hold(cup, 'hang'); m.lookAt(null); carrying = { id: 'tea', it: cup, t }; w.refresh(); return; }
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
-    if (!timed) w.cal.advance(t.mins);
     if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work');      // (a shift wears her down, task by task)
-    const s0 = current(w); if (!s0) return; const last = s0.step + 1 >= tasksOf(s0).length;
-    change(w, s => { s.step++; });
-    if (last && timed) { if (current(w).until && !current(w).back) await back(); }      // (all done before she's back: and then she is)
-    else if (last) await finish(); else w.refresh();
+    markDone(t.id);
+  }
+  async function giveTea() {
+    const c = carrying, sp = spots.bess; if (!c || !sp) return;
+    await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); await m.reach('R', sp.look.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await m.release('R'); m.lookAt(null);
+    carrying = null; const said = lines.tea; if (said) say(...said);
+    markDone('tea');
+  }
+  // Bess, now and then, with nobody waiting: will she sit a minute? On the bench nearest her chair; a piece of Bess's story, and then another
+  // if she stays; or she remembers she should get on.
+  function maybeOffer() {
+    const s = cur(), k = doneOf(s || {}).length; if (!s || s.back || offers >= 2 || carrying || (k !== 2 && k !== 4) || (svc && !svc.quiet())) return;      // (after the second thing done, and the fourth)
+    offers++; offerDue = true;      // (asked as soon as she's free: js/play.js runs one thing at a time)
+  }
+  async function sitWithBess() {
+    let yes = false; await P.converse(S.bessOffer({ yes: () => { yes = true; } }), { shot: ['red', 'bess'] }); if (!yes) return;
+    const chair = W.bessChair, seat = W.seats.filter(x => x.name === 'the bench').sort((a, b) => a.at.distanceTo(chair.at) - b.at.distanceTo(chair.at))[0];
+    if (seat) await P.sitOn(seat);
+    for (let k = 0; k < 2; k++) {
+      const n = (w.save.state.bessTalk || {}).n || 0, beats = lines.bess || [], beat = beats[n] || (lines.bessAgain || [])[(n + k) % Math.max(1, (lines.bessAgain || []).length)] || [];
+      await P.converse(beat, { shot: ['red', 'bess'] }); if (n < beats.length) w.save.change(x => { x.bessTalk = { n: n + 1 }; });
+      w.rep.trusts('bess', 0.25); if (w.capacity) w.capacity.add(5, 'sitting with Bess'); w.cal.advance(10);
+      if (k === 0) { let more = false; await P.converse(S.bessStay({ yes: () => { more = true; } }), { shot: ['red', 'bess'] }); if (!more) break; }
+    }
+    if (P.sitting) await P.getUp(); w.refresh();
   }
   const reachAt = async (p, side, hold) => { await m.reach(side || 'R', p); await P.wait(hold || 0.4); await m.release(side || 'R'); };
   const peel = { take: async () => { const p = W.work.peel; await m.goTo(p.at, p.yaw); await reachAt(p.look, 'R', 0.2); (W.peel || []).forEach(o => { o.visible = false; }); const it = peelProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
@@ -132,60 +178,71 @@ function attach(P, w) {
     knead: async sp => { for (let k = 0; k < 4; k++) { const p = sp.look.clone().add(new V3((k % 2 ? 1.5 : -1.5), 0, 0)); await Promise.all([m.reach('L', p.clone().add(new V3(-1.2, 0, 0))), m.reach('R', p)]); await P.wait(0.5); await Promise.all([m.release('L'), m.release('R')]); } },
     shape: async sp => { for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3((k - 1) * 4, 0, 1)), k % 2 ? 'L' : 'R', 0.6); },
     oven: async sp => { await peel.take(); await m.goTo(sp.at, sp.yaw); for (let k = 0; k < 2; k++) { await reachAt(sp.look.clone().add(new V3((k - 0.5) * 3, 0, 0)), 'R', 0.7); } await peel.put(); },
-    draw: async sp => { await peel.take(); await m.goTo(sp.at, sp.yaw); for (let k = 0; k < 2; k++) await reachAt(sp.look.clone().add(new V3((k - 0.5) * 3, 0, 0)), 'R', 0.7); await peel.put();
-      const tray = root.Chores ? root.Chores.prop('loaves') : null; if (tray) { P.stage.scene.add(tray.obj); m.hold(tray, 'front'); } },
     sweep: async sp => { const c = sp.at, br = W.work.broom;
       if (br) { await broom.take(); for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) await m.goTo(P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2), null, { speed: 0.5 }); await broom.put(); return; }      // (with the broom, where there's one)
       for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) { const to = P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2); m.reach('R', () => m.pos.clone().add(new V3(Math.sin(m.yaw) * 5, 0.5, Math.cos(m.yaw) * 5))); await m.goTo(to, null, { speed: 0.5 }); } await m.release('R'); },
-    racks: async sp => { const it = m.drop(); if (it) P.stage.scene.remove(it.obj); for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3(0, (k - 1) * 8, (k - 1) * 3)), 'R', 0.4); },
-    ale: async sp => { for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3((k - 1) * 3, 0, 0)), 'R', 0.6); const tray = root.Chores ? root.Chores.prop('jug') : null; if (tray) { P.stage.scene.add(tray.obj); m.hold(tray, 'hang'); } },
-    serve: async () => { const it = m.carry; if (it) { m.drop(); P.stage.scene.remove(it.obj); } await P.converse(lines.customers || [], { shot: false, keepCamera: true }); },
     reach: async sp => reachAt(sp.look),
   };
-  // The boss back (timed shifts): in at the door, and the list looked over. All of it, or not; and what comes of it.
+  // The boss back, at her hour (or as soon as it's all done, the time let go by): the list looked over, and what comes of it; then out of
+  // the door, and she's outside again.
   async function back() {
-    const s = current(w); if (!s || s.back) return; change(w, x => { x.back = true; });
-    if (w.cal.minute < s.until) { await P.converse(lines.waiting || [], { shot: false, keepCamera: true }); w.cal.advance(s.until - w.cal.minute); }      // (done early: and she's not long)
-    const list = tasksOf(s), n = list.length, k = s.step, all = k >= n, left = list.slice(k).map(t => t.what || t.label.toLowerCase()), who = sh.out || sh.boss;
+    const s = cur(); if (!s || s.back) return; change(w, x => { x.back = true; });
+    if (w.cal.minute < s.until) { await P.converse(lines.waiting || [], { shot: false, keepCamera: true }); w.cal.advance(s.until - w.cal.minute); }      // (done early: she waits out the time)
+    if (carrying) { const it = m.drop(); if (it) P.stage.scene.remove(it.obj); carrying = null; }
+    const list = tasksOf(s), n = list.length, k = doneOf(s).length, all = k >= n, left = leftOf(s).map(t => t.what || t.label.toLowerCase()), who = sh.out || sh.boss;
     const up = svc ? svc.up : 0; if (svc) svc.gone();      // (the inn: how many times Bess was on her feet; and the men up to their beds)
+    if (P.sitting) await P.getUp();
     away = false; if (rig && rig.root) rig.root.visible = true;
-    if (mm) { const at = inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
-    if (s.mode === 'picked') {
+    if (mm) { const at = short && spots.stair ? spots.stair.at : inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
+    change(w, x => { x.id = null; });
+    if (s.mode === 'picked') {      // (the bakery's head start: more than half of it, her thanks; less, no harm done)
       const good = k * 2 > n;
       await P.converse(good ? lines.pickedGood || [] : lines.pickedSome || [], { shot: ['red', sh.boss] });
       if (good) w.rep.trusts(sh.boss, 0.5);
-      change(w, x => { x.id = null; }); w.refresh(); return;
+    } else if (short) {      // (Mistress Abney's afternoon: more than half, a help; half, no more said; less, idle, and stricter than Mistress Pennock about it)
+      const good = k * 2 > n, idle = k * 2 < n, told = w.rep.openness('abney') >= 1;
+      if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand, { short: !good });
+      if (good || !idle) await P.converse(good ? S.abneyShortGood() : S.abneyShortHalf(), { shot: ['red', 'abney'] });
+      else if (told && root.Correction) { w.rep.add('naughty', 1, 'idling through Mistress Abney’s afternoon'); await correct(S.abneyIdled(left, true), S.abneyIdledRed); }
+      else { w.rep.trusts('abney', -0.5); await P.converse(S.abneyIdled(left, false), { shot: ['red', 'abney'] }); }
+    } else if (all && up < 2) { await finish(up); return; }
+    else {      // (not all done, or Bess up twice and more: before she's confided in her, no trust for it; after, a correction, as she'd want)
+      if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand, { short: true });
+      const [said] = (SHORT[ID] || SHORT.bakery)(S);
+      if (w.rep.openness(who) >= 1 && root.Correction) await correct(said(left, true, up));
+      else await P.converse(said(left, false, up), { shot: ['red', who] });
     }
-    if (all && up < 2) return finish(up);
-    // (not all done, or Bess up twice and more: before she's confided in her, no trust for it; after, a correction, as she'd want)
-    change(w, x => { x.id = null; });
-    if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand, { short: true });
-    const [said, script, after] = (SHORT[ID] || SHORT.bakery)(S);
-    if (w.rep.openness(who) >= 1 && root.Correction) {
-      await P.converse(said(left, true, up), { shot: ['red', who] });
-      const r = await root.Correction.run(P, Object.assign({ corrector: who, fade: on => w.fade(on), turns: [{ subject: 'red', script }] }, W.lap ? W.lap.bench : {}));      // (on her bench, where it stands by the counter)
-      if (P !== w.P) return;
-      await P.converse(after(r), { shot: ['red', who] });
-      w.rep.settle('naughty', 0.5); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
-      if (root.Evening) root.Evening.record(w, { what: 'shift', by: who, informs: true });      // (she'll tell Red's mother herself: a reprieve at home)
-    } else await P.converse(said(left, false, up), { shot: ['red', who] });
-    w.refresh();
+    await out();
   }
-  // Done: the errand done (js/chores.js), her word for it, and the door open again.
+  // (her correction, as she asked for it: on the bench where there is one; then her word after, and the other knows of it)
+  async function correct(said, own) {
+    const who = sh.out || sh.boss, [, std, after] = (SHORT[ID] || SHORT.bakery)(S), script = own || std;
+    await P.converse(said, { shot: ['red', who] });
+    const r = await root.Correction.run(P, Object.assign({ corrector: who, fade: on => w.fade(on), turns: [{ subject: 'red', script }] }, W.lap ? W.lap.bench : {}));
+    if (P !== w.P) return;
+    await P.converse(after(r), { shot: ['red', who] });
+    w.rep.settle('naughty', 0.5); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+    if (root.Evening) root.Evening.record(w, { what: 'shift', by: who, informs: true });      // (she'll tell Red's mother herself: a reprieve at home)
+  }
+  // Done: the errand done (js/chores.js), her word for it, and what follows from it; then outside.
   // (up: the inn, Bess on her feet the once: said, and let go)
   async function finish(up) {
-    change(w, s => { s.id = null; });
     if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand);
     await P.converse((up && lines.endOnce ? lines.endOnce : []).concat(lines.end || []), { shot: ['red', sh.out || sh.boss] });
     if (svc && !up) w.rep.trusts('bess', 0.5);      // (an evening without her on her feet: Bess's thanks too)
     const more = root.InHand && P.npc ? await root.InHand.afterShift(P, w, ID) : false;      // (Mistress Pennock's trust; Mistress Abney taking her in hand: js/inhand.js)
     if (!more && ID === 'inn' && root.AbneyPromise && P.npc) await root.AbneyPromise.ask(P, w);      // (and, at the end of an afternoon at the inn, Mistress Abney's favour to ask)
-    w.refresh();
+    await out();
   }
-  return { task, action };
+  // (the verdict given: a fade, and she's out in the street again, her basket back in her hands)
+  async function out() { if (P !== w.P) return; w.refresh(); await w.go('village', ID === 'inn' ? 'inn' : 'bakery'); }
+  // A cup of tea, to carry.
+  function cupProp() { const T = root.Toon, g = new THREE.Group(), c = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.8, 1.8, 10), T.mat('#e8e0d0')); c.position.y = 0.9; c.add(new THREE.Mesh(T.hullGeo(c.geometry, 0.05), T.INKM[0])); g.add(c);
+    return { obj: g, name: 'Bess’s tea', grip: new V3(0, 1.6, 0), radius: 1.2, keep: true, style: 'hang' }; }
+  return { actions };
 }
 
-const api = { begin, attach, current, tasksOf, SHIFTS, SHIFT_RATE };
+const api = { begin, attach, current, tasksOf, leftOf, doneOf, stashed, SHIFTS, SHIFT_RATE };
 root.Work = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
