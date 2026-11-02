@@ -108,7 +108,8 @@ async function settle(P, w, table) {
 async function stood(P, w, table) {
   const V = root.THREE.Vector3, mm = P.npcMotion, m = P.motion;
   await w.fade(true);
-  if (table) table.up(); else { if (P.sitting) { m.stand(); m.sitW = 0; P.sitting = null; } }
+  if (table) table.up(); else if (P.sitting) { root.Maren.unsit(m); P.sitting = null; }
+  if (mm && mm.seat) root.Maren.unsit(mm);
   if (mm) { const at = P.collide(new V(-6, 0, 2), 3.6), to = P.collide(new V(7, 0, 4), 3.4); mm.warp(at, Math.atan2(to.x - at.x, to.z - at.z)); m.warp(to, Math.atan2(at.x - to.x, at.z - to.z)); }
   for (let i = 0; i < 30; i++) P.frame(1 / 60); P.stage.camera.updateMatrixWorld();
   await w.fade(false);
@@ -142,14 +143,14 @@ async function aftercare(P, w, r, lines) {
     const seat = (k, o) => Object.assign({}, bed, { kind: 'bench', at: bed.at.clone().addScaledVector(along, k) });
     const red = seat(-3.2), mam = seat(3.2);
     const put = (mo, s) => { mo.warp(s.at.clone().setY(0).addScaledVector(f, 0.5), s.facing); mo.sit(s); mo.sitW = 1; };
-    if (P.sitting) { m.stand(); m.sitW = 0; } put(m, red); P.sitting = red; put(mm, mam);
+    if (P.sitting) root.Maren.unsit(m); if (mm.seat) root.Maren.unsit(mm); put(m, red); P.sitting = red; put(mm, mam);
     const arm = new V().subVectors(red.at, mam.at).dot(new V(Math.cos(bed.facing), 0, -Math.sin(bed.facing))) > 0 ? 'L' : 'R';
     mm.reach(arm, () => P.rig.root.position.clone().addScaledVector(along, -1.2 * P.rig.scaleW).add(new V(0, 15 * P.rig.scaleW, 0)));
     P.rig.setExpr('teary', 30);
     for (let i = 0; i < 30; i++) P.frame(1 / 60); st.camera.updateMatrixWorld();
     await P.wait(0.3); await w.fade(false);
     await P.converse(lines, { shot: ['red', 'mother'] });
-    await w.fade(true); mm.release(arm); m.stand(); m.sitW = 0; P.sitting = null; mm.stand(); mm.sitW = 0;
+    await w.fade(true); mm.release(arm); root.Maren.unsit(m); P.sitting = null; root.Maren.unsit(mm);
     return;
   }
   await w.fade(false); await P.converse(lines, { shot: ['red', 'mother'] }); await w.fade(true);

@@ -28,6 +28,8 @@ const dinnerDue = w => on(w) && w.cal.minute >= DINNER && w.cal.minute < BACK &&
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
 const missedDinner = w => on(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
 
+// (stood up at once, under a fade: off the seat, free to be put anywhere)
+const unsit = mo => { if (!mo) return; mo.sitW = mo.sitWant = 0; mo.lieW = mo.lieWant = 0; mo.seat = null; mo.locked = false; };
 // The two of them at the table, sat on the stools at either end of it, facing each other across it (at once: under a fade); plates before them
 // (o.plates), or a bowl of potatoes between them and one in each hand (o.peel: supper). → up(): stood again, and the table cleared.
 function atTable(P, w, o) {
@@ -36,7 +38,7 @@ function atTable(P, w, o) {
   const mid = new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2), [a, b] = st.slice().sort((p, q) => p.at.x - q.at.x || p.at.z - q.at.z);
   const facing = s => Math.atan2(mid.x - s.at.x, mid.z - s.at.z), things = [];
   const place = (mo, s) => { const seat = Object.assign({}, s, { facing: facing(s) }); mo.warp(s.at.clone().setY(0).addScaledVector(new V3(Math.sin(seat.facing), 0, Math.cos(seat.facing)), 0.5), seat.facing); mo.sit(seat); mo.sitW = 1; return seat; };
-  if (P.sitting) { m.stand(); m.sitW = 0; } if (mm.seat) { mm.stand(); mm.sitW = 0; }
+  if (P.sitting) unsit(m); if (mm.seat) unsit(mm);
   if (w.chores && w.chores.setBy) w.chores.setBy(P);      // (her basket set by while they sit: back in her hand when she goes out)
   P.sitting = place(m, a); place(mm, b);
   const on = (geo, col, x, y, z) => { const g = new THREE.Mesh(geo, T.mat(col)); g.position.set(x, y, z); g.add(new THREE.Mesh(T.hullGeo(geo, 0.05), T.INKM[0])); P.stage.scene.add(g); things.push(g); return g; };
@@ -44,7 +46,7 @@ function atTable(P, w, o) {
     if (o.plates) { on(new THREE.CylinderGeometry(2.2, 1.8, 0.35, 16), '#e2d8c4', p.x, p.y, p.z); on(T.ell(1.3, 0.5, 1.1, 10, 6), '#b8864a', p.x, p.y + 0.4, p.z); } }
   if (o.peel) { const bowl = on(new THREE.LatheGeometry([[0.01, 0], [2.6, 0.2], [3.4, 1.6], [3.6, 2]].map(([r, h]) => new THREE.Vector2(r, h)), 14), '#a87a4a', mid.x, tb.y + 0.1, mid.z); bowl.material.side = THREE.DoubleSide;
     for (let k = 0; k < 6; k++) on(new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.9, 1), '#c8a066', mid.x + Math.cos(k) * 1.6, tb.y + 1.7 + (k % 2) * 0.4, mid.z + Math.sin(k) * 1.6); }
-  return { seats: [a, b], mid, top: tb.y, up() { for (const g of things) P.stage.scene.remove(g); if (P.sitting) { m.stand(); m.sitW = 0; P.sitting = null; } if (mm.seat) { mm.stand(); mm.sitW = 0; } } };
+  return { seats: [a, b], mid, top: tb.y, up() { for (const g of things) P.stage.scene.remove(g); if (P.sitting) { unsit(m); P.sitting = null; } if (mm.seat) unsit(mm); } };
 }
 // Up from the table (under a fade): her mother at her work at once: gone, if it's the farm; at her needlework, sat in the chair by the
 // hearth. (Or just home: stood, as she is.)
@@ -88,7 +90,7 @@ async function dinner(P, w, how) {
   if (w.fade) await w.fade(false);
 }
 
-const api = { atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
+const api = { unsit, atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
 root.Maren = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
