@@ -334,7 +334,12 @@ function build(scene, opts) {
   // ── Her chair, the plain one she sits on to take someone in hand, kept under the peg rail, its back to the foot of the bed. (The correction sets
   // its own in the middle of the room, and puts this one out of sight meanwhile: world.chair.)
   { const pc = piece('chair', wall), seatY = T.seatFor('gerda'), ch = T.makeChair(seatY); pc.g.add(ch); world.chair = ch;      // (the chair itself, not its piece: the piece is shown and hidden with its wall each frame)
-    world.seats.push({ name: 'the chair', at: pc.P(0, seatY, 1.8), facing: pc.ry, kind: 'chair' }); world.obstacles.push(pc.area(-4.7, 4.7, -3.2, 6.6)); }
+    const seat = { name: 'the chair', at: pc.P(0, seatY, 1.8), facing: pc.ry, kind: 'chair' }, foot = pc.area(-4.7, 4.7, -3.2, 6.6); world.seats.push(seat); world.obstacles.push(foot);
+    // (moved, for her mother's needlework, to the hearth: beside the fire, turned toward it; and back under the peg rail for meals: world.moveChair)
+    const home = { x: pc.g.position.x, z: pc.g.position.z, ry: pc.g.rotation.y }, HEARTH = { x: 14, z: 22, ry: Math.atan2(-16, 12) };
+    world.moveChair = where => { const t = where === 'hearth' ? HEARTH : home; pc.g.position.set(t.x, 0, t.z); pc.g.rotation.y = t.ry; pc.g.updateMatrix(); pc.g.updateMatrixWorld(true); pc.g.userData.box = null;
+      seat.at = pc.P(0, seatY, 1.8); seat.facing = t.ry; Object.assign(foot, pc.area(-4.7, 4.7, -3.2, 6.6)); world.chairAt = where === 'hearth' ? 'hearth' : 'home'; };
+    world.chairAt = 'home'; }
 
   // ── The cloak hooks, on the hearth's wall by the door: three pegs on a short board, lower than the basket rail, where Red reaches them easily and
   // Maren needn't stoop. Maren's long cloak hangs on the first; Red's, when she's hung it up, on the last. (world.cloakHooks: where to stand to
@@ -430,7 +435,7 @@ function build(scene, opts) {
       solid(it, new THREE.TorusGeometry(1.1, 0.25, 6, 12, Math.PI * 1.2), '#a85a3a', 1.5, 3.2, 0, { rot: [0, 0, -1.2], ink: 0.05 }); }, tx_ - 2, tz - 8, new V3(0, 2.6, 0), 2, 0.6);
     thing('the bowl', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [2.2, 0.2], [3.2, 1.6], [3.4, 1.9]].map(([r, h]) => new THREE.Vector2(r, h)), 18), '#8a6a4a', 0, 0, 0, { ink: 0.08 }).material.side = THREE.DoubleSide; }, tx_ + 1, tz + 3, new V3(0, 1.6, 0), 3.4);
     thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
-    for (const it of world.items) { if (it.name === 'the bowl') it.fixed = true; if (it.name === 'the loaf') it.kind = 'loaf'; }      // (the bowl's the table's; the loaf, Mama's, for supper: js/chores.js)
+    for (const it of world.items) { if (it.name === 'the bowl' || it.name === 'the jug') it.fixed = true; if (it.name === 'the loaf') it.kind = 'loaf'; }      // (the bowl and the jug are the table's; the loaf, Mama's, for supper: js/chores.js)
     world.surfaces.push(Object.assign(pc.area(-D / 2 + 2, D / 2 - 2, -L / 2 + 2, L / 2 - 2), { name: 'the table', y: H, panel: g, front: pc.turn(new V3(-1, 0, 0)) }));
     world.obstacles.push(pc.area(-D / 2 - 0.5, D / 2 + 0.5, -L / 2, L / 2));
   }

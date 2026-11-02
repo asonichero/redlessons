@@ -40,6 +40,7 @@ function atTable(P, w, o) {
   const facing = s => Math.atan2(mid.x - s.at.x, mid.z - s.at.z), things = [];
   const place = (mo, s) => { const seat = Object.assign({}, s, { facing: facing(s) }); mo.warp(s.at.clone().setY(0).addScaledVector(new V3(Math.sin(seat.facing), 0, Math.cos(seat.facing)), 0.5), seat.facing); mo.sit(seat); mo.sitW = 1; return seat; };
   if (P.sitting) unsit(m); if (mm.seat) unsit(mm);
+  if (W.moveChair && W.chairAt !== 'home') W.moveChair('home');      // (her chair back under the peg rail, for the meal)
   if (w.chores && w.chores.setBy) w.chores.setBy(P);      // (her basket set by while they sit: back in her hand when she goes out)
   P.sitting = place(m, a); place(mm, b);
   const on = (geo, col, x, y, z) => { const g = new THREE.Mesh(geo, T.mat(col)); g.position.set(x, y, z); g.add(new THREE.Mesh(T.hullGeo(geo, 0.05), T.INKM[0])); P.stage.scene.add(g); things.push(g); return g; };
@@ -47,7 +48,9 @@ function atTable(P, w, o) {
     if (o.plates) { on(new THREE.CylinderGeometry(2.2, 1.8, 0.35, 16), '#e2d8c4', p.x, p.y, p.z); on(T.ell(1.3, 0.5, 1.1, 10, 6), '#b8864a', p.x, p.y + 0.4, p.z); } }
   if (o.peel) { const bowl = on(new THREE.LatheGeometry([[0.01, 0], [2.6, 0.2], [3.4, 1.6], [3.6, 2]].map(([r, h]) => new THREE.Vector2(r, h)), 14), '#a87a4a', mid.x, tb.y + 0.1, mid.z); bowl.material.side = THREE.DoubleSide;
     for (let k = 0; k < 6; k++) on(new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.9, 1), '#c8a066', mid.x + Math.cos(k) * 1.6, tb.y + 1.7 + (k % 2) * 0.4, mid.z + Math.sin(k) * 1.6); }
-  return { seats: [a, b], mid, top: tb.y, up() { for (const g of things) P.stage.scene.remove(g); if (P.sitting) { unsit(m); P.sitting = null; } if (mm.seat) unsit(mm); } };
+  // (up: stood behind her stool, clear of the table, facing it; her mother the same at hers, unless her work takes her: js/maren.js toWork)
+  const behind = (mo, s) => { const f = new V3(Math.sin(facing(s)), 0, Math.cos(facing(s))), at = P.collide(s.at.clone().setY(0).addScaledVector(f, -5), 3.2); mo.warp(at, facing(s)); };
+  return { seats: [a, b], mid, top: tb.y, up() { for (const g of things) P.stage.scene.remove(g); if (P.sitting) { unsit(m); P.sitting = null; } behind(m, a); if (mm.seat) unsit(mm); behind(mm, b); } };
 }
 // Up from the table (under a fade): her mother at her work at once: gone, if it's the farm; at her needlework, sat in the chair by the
 // hearth. (Or just home: stood, as she is.)
@@ -60,6 +63,7 @@ function toWork(P, w) {
 function sitDown(P) {
   const mm = P.npcMotion, ch = P.world.seats.find(s => s.kind === 'chair'); if (!mm || !ch || mm.seat === ch) return;
   if (P.sitting === ch) return;      // (Red's in it: she'll stand till it's free)
+  if (P.world.moveChair && P.world.chairAt !== 'hearth') P.world.moveChair('hearth');      // (her chair by the fire, to work in)
   mm.warp(ch.at.clone().setY(0).add(new root.THREE.Vector3(Math.sin(ch.facing), 0, Math.cos(ch.facing)).multiplyScalar(0.5)), ch.facing); mm.sit(ch); mm.sitW = 1;
 }
 // Dinner: the two of them at the table, on the stools, their plates before them; Red's account of her morning, and then her mother's word on it.
