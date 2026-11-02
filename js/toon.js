@@ -608,9 +608,10 @@ function make(id, look, opts) {
     for (let i = 0; i < cp.count; i++) { const x = cp.getX(i), y = cp.getY(i), z = cp.getZ(i), a = Math.atan2(x, z), cut = 0.75 * Math.exp(-((a / 0.3) ** 2)); if (y < 9.6) cp.setY(i, y + cut * (9.6 - y) / 1.6); }      // (a notch at the front: the two rounded lobes of a Peter Pan collar)
     cg.computeVertexNormals(); skinnedOn(rig.hips, cg, P.collar, torsoW, { ink: 0.03, side: THREE.DoubleSide }); }      // (a frilled collar, lying over the shoulders and the top of the chest, just outside the dress)
   if (P.sash) { const bz = -(0.74 * TD * 2.45) - 0.25;      // (the sash's bow, tied behind: the one part of it that stands out)
-    for (const sx of [-1, 1]) piece(ell(0.95, 0.55, 0.3, 10, 8), P.sash, rig.hips, sx * 0.75, 2.65, bz, { rot: [0, 0, sx * 0.45], ink: 0.03 });
-    piece(ell(0.35, 0.35, 0.3, 8, 6), P.sash, rig.hips, 0, 2.65, bz + 0.05, { ink: 0.03 });
-    for (const sx of [-1, 1]) piece(ell(0.28, 1.1, 0.12, 6, 6), P.sash, rig.hips, sx * 0.35, 1.45, bz + 0.1, { rot: [0, 0, sx * 0.15], ink: 0.03 }); }      // (its tails)
+    const by = 2.7 - D.torsoY;      // (on the torso, so it goes with her as she bends: its loops' tops level with the sash's top edge)
+    for (const sx of [-1, 1]) piece(ell(0.95, 0.55, 0.3, 10, 8), P.sash, rig.torso, sx * 0.75, by, bz, { rot: [0, 0, sx * 0.45], ink: 0.03 });
+    piece(ell(0.35, 0.35, 0.3, 8, 6), P.sash, rig.torso, 0, by, bz + 0.05, { ink: 0.03 });
+    for (const sx of [-1, 1]) piece(ell(0.28, 1.1, 0.12, 6, 6), P.sash, rig.torso, sx * 0.35, by - 1.05, bz + 0.1, { rot: [0, 0, sx * 0.15], ink: 0.03 }); }      // (its tails)
 
   // ── Arms: a full sleeve to the elbow (puffed at the shoulder for her), bare forearms, soft hands. ──
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
