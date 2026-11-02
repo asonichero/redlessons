@@ -168,6 +168,7 @@ function create(view, ui) {
       // (a scene can open on an establishing shot: another place seen from outside, without her, the camera easing in; then a fade, and the scene)
       if (sc && sc.establish) await establish(sc.establish, A.name);
       areaName = name; lightFn = null; timeOn = true; sceneNow = sc;
+      if (name === 'cabin') save.change(s => { s.green = Object.assign({ day: 0, n: {} }, s.green, { seen: cal.day }); }, { green: true });      // (up at her grandmother's: her mother asks after it, when it's been a while)
       let opts = baseOpts(name, entry);
       if (sc && sc.prepare) opts = sc.prepare(opts, w, step) || opts;
       P = root.Play.create(view, opts);

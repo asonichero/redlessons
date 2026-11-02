@@ -49,8 +49,9 @@ function station(key, day, min) {
   const h = Math.floor(min / 60), r = s => hash(day * 24 + h, s), lay = weekday(day) === LAY;
   if (layNight(day, min)) { if (key === 'georgie') return min >= H('22:00') || min < H('5:30') ? { round: true } : { stand: 'bell' }; if (key === 'willie') return null; }      // (Lay night: Georgie on the watch, his father abed)
   switch (key) {
-    case 'agnes': { if (min < H('8:00') || min >= H('19:30')) return null; const k = r(1); return k < 0.55 ? { stand: 'wellSide' } : k < 0.7 ? { sit: SEAT.lime, n: 0 } : k < 0.8 ? { stand: 'pondSide' } : { wander: true }; }
+    case 'agnes': { if (min < H('8:00') || min >= H('20:45')) return null; if (min >= H('19:00')) return { sit: SEAT.lime, n: 0 }; const k = r(1); return k < 0.55 ? { stand: 'wellSide' } : k < 0.7 ? { sit: SEAT.lime, n: 0 } : k < 0.8 ? { stand: 'pondSide' } : { wander: true }; }      // (of an evening, on the bench round the lime: js/green.js)
     case 'georgie': { const from = lay ? H('14:00') : H('15:00') + Math.floor(hash(day, 3) * 100); if ((!lay && hash(day, 2) > 0.7) || min < from || min >= H('20:45')) return null;      // (Lay day: the mill stopped, and he's about once he's slept off the watch)
+      if (min >= H('19:00')) return { sit: SEAT.lime, n: 1 };      // (beside Agnes, of an evening)
       const k = r(5); return k < 0.35 ? { stand: 'wellNear' } : k < 0.6 ? { sit: SEAT.inn, n: 2 } : { wander: true }; }      // (some days the mill keeps him late; most, he's about after three, and somewhere he can see the well)
     case 'tom': if (!lay && min >= H('7:00') && min < (slack(day) ? H('12:00') : H('15:00'))) return { stand: 'tub' };
       return min >= H('8:00') && min < H('20:45') ? { wander: true } : null;
@@ -59,7 +60,8 @@ function station(key, day, min) {
     case 'abney': return (min >= H('11:00') && min < H('13:30')) || (min >= H('17:00') && min < H('20:00')) ? { stand: 'innDoor' } : null;
     case 'pennock': return !lay && min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;      // (the counter till the bread's sold; the clearing down inside, of an afternoon)
     case 'baker': return !lay && min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;      // (baking from four, at the door with it till mid-morning; then to his bed)
-    case 'peter': { if (min < H('10:00') || min >= H('18:00')) return null; const k = r(7); return k < 0.4 ? { wander: true } : k < 0.7 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (only on his days off: see update)
+    case 'peter': { if (min < H('10:00') || min >= H('20:30')) return null; if (min >= H('19:00')) return { stand: 'pondSide' };      // (by the pond, of an evening)
+      if (min >= H('18:00')) return { sit: SEAT.lime, n: 2 }; const k = r(7); return k < 0.4 ? { wander: true } : k < 0.7 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (only on his days off: see update)
     case 'willie': return min >= H('22:00') || min < H('5:30') ? { round: true } : min >= H('21:15') ? { stand: 'bell' } : null;      // (out to the bell for half past nine, by it till ten, the village's curfew; then round till first light)
   }
   return null;
@@ -229,6 +231,7 @@ function attach(P, w) {
       if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
+      if (root.Green && await root.Green.invite(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (of an evening, on the green: js/green.js)
       if (key === 'bess' && root.Fair && root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', key] }); w.save.flag('bess-frock', cal.day); if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (after the fitting: her own frock, as a girl)
       if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)
       // (Bess, on her bench: she asks Red to sit. Sat beside her, they talk, and Red's to get up when she will (as on the bench round the lime

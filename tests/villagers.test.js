@@ -3,9 +3,9 @@ const test = require('node:test'), assert = require('node:assert/strict');
 require('../js/story.js'); const V = require('../js/villagers.js'), S = globalThis.Story;
 const H = h => Math.round(h * 60), DAYS = [...Array(300).keys()].map(d => d + 2);
 
-test('Agnes: out from eight till dusk, and most often by the well', () => {
+test('Agnes: out from eight, most often by the well by day; of an evening, on the bench by the lime, till near nine', () => {
   let well = 0, out = 0;
-  for (const d of DAYS) for (let h = 0; h < 24; h += 0.5) { const s = V.station('agnes', d, H(h)); if (h < 8 || h >= 19.5) assert.equal(s, null); else { out++; if (s.stand === 'wellSide') well++; } }
+  for (const d of DAYS) for (let h = 0; h < 24; h += 0.5) { const s = V.station('agnes', d, H(h)); if (h < 8 || h >= 20.75) assert.equal(s, null); else if (h >= 19) assert.equal(s.n, 0, 'on the bench of an evening'); else { out++; if (s.stand === 'wellSide') well++; } }
   assert.ok(well / out > 0.45 && well / out < 0.7, 'by the well ' + Math.round(100 * well / out) + '% of the day');
 });
 
