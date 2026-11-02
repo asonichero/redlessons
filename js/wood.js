@@ -248,11 +248,14 @@ function build(scene, opts) {
     for (let k = 0; k < 9; k++) { const a = k * 2.4, d = 1 + r4() * 4, x = herbs.yarrow.x + Math.cos(a) * d, z = herbs.yarrow.z + Math.sin(a) * d, h = 5 + r4() * 2;      // (yarrow: a stem, a flat white head)
       pole(root_, new V3(x, 0, z), new V3(x, h, z), 0.15, leaf, { ink: 0.02 }); solid(root_, new THREE.CylinderGeometry(1.4, 1.1, 0.5, 10), lace, x, h, z, { ink: 0.04 }); }
     for (let k = 0; k < 14; k++) { const a = k * 2.1, d = r4() * 4.5, x = herbs.sorrel.x + Math.cos(a) * d, z = herbs.sorrel.z + Math.sin(a) * d;      // (sorrel: low trefoils, little white flowers)
-      for (let j = 0; j < 3; j++) { const b = j * 2.1 + a; solid(root_, T.ell(0.7, 0.15, 0.7, 6, 4), leaf, x + Math.cos(b) * 0.6, 1.2, z + Math.sin(b) * 0.6, { ink: 0.02, shadow: false }); }
-      if (k % 3 === 0) solid(root_, T.ell(0.4, 0.4, 0.4, 6, 4), white, x, 1.9, z, { ink: 0.02, shadow: false }); }
+      for (let j = 0; j < 3; j++) { const b = j * 2.1 + a; solid(root_, T.ell(0.7, 0.15, 0.7, 6, 4), leaf, x + Math.cos(b) * 0.6, 0.35, z + Math.sin(b) * 0.6, { ink: 0.02, shadow: false }); }      // (on the ground)
+      if (k % 3 === 0) { pole(root_, new V3(x, 0, z), new V3(x, 1.5, z), 0.08, leaf, { ink: 0.015 }); solid(root_, T.ell(0.4, 0.4, 0.4, 6, 4), white, x, 1.7, z, { ink: 0.02, shadow: false }); } }      // (a flower on its stalk)
     for (let k = 0; k < 6; k++) { const a = k * 1.05, x = herbs.comfrey.x + Math.cos(a) * 2.5, z = herbs.comfrey.z + Math.sin(a) * 2.5;      // (comfrey: big rough leaves, and purple bells hanging)
-      solid(root_, T.ell(1.4, 0.4, 3.4, 8, 6), dark, x + Math.cos(a) * 1.6, 2.2, z + Math.sin(a) * 1.6, { ink: 0.04, rot: [0.5, -a + Math.PI / 2, 0] });
-      for (let j = 0; j < 3; j++) solid(root_, new THREE.ConeGeometry(0.4, 1, 6), bell, x + (j - 1) * 0.5, 4.2 - j * 0.3, z, { ink: 0.02, shadow: false }); } }
+      // (each leaf from the crown at the middle out along the ground, its tip resting there; a stalk up from the crown with the bells hanging off its top)
+      const lf = new THREE.Mesh(T.ell(1.4, 0.4, 3.4, 8, 6), dark); lf.position.set(0, 0, 3.2); lf.rotation.x = 0.12; const arm = new THREE.Group(); arm.add(lf); lf.add(new THREE.Mesh(T.hullGeo(lf.geometry, 0.04), T.INKM[0]));
+      arm.position.set(herbs.comfrey.x, 0.75, herbs.comfrey.z); arm.rotation.y = Math.PI / 2 - a; root_.add(arm); lf.castShadow = true;
+      pole(root_, new V3(x * 0.4 + herbs.comfrey.x * 0.6, 0, z * 0.4 + herbs.comfrey.z * 0.6), new V3(x, 4.9, z), 0.12, leaf, { ink: 0.015 });
+      for (let j = 0; j < 3; j++) { const b = a + (j - 1) * 0.9; solid(root_, new THREE.ConeGeometry(0.4, 1, 6), bell, x + Math.cos(b) * 0.35, 4.3 - j * 0.15, z + Math.sin(b) * 0.35, { ink: 0.02, shadow: false }); } } }
 
   // The meadow gate, this side: a field gate between two posts, swinging out to the village (js/world.js offers to go through it).
   const gate = (() => { const g = new THREE.Group(); g.position.copy(GATE); root_.add(g); const oak = toonMap(barkT);
