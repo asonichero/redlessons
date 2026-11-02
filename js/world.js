@@ -36,7 +36,12 @@ const AREAS = {
     exits: { 'the wood': { area: 'wood', entry: 'cabin' } },
     // (once she has the cloak, its parcel is gone from the dresser)
     dress(P, w) { const g = P.world.gift; if (g && w.q.done('hulda.cloak')) { g.obj.visible = false; const i = P.world.items.indexOf(g); if (i >= 0) P.world.items.splice(i, 1); }
-      if (root.IntoWood) root.IntoWood.cabin(P, w); },      // (Holt at the table, the first visit after the herbs: js/intowood.js)
+      if (root.IntoWood) root.IntoWood.cabin(P, w);      // (Holt at the table, the first visit after the herbs: js/intowood.js)
+      // (a slice of her cake, once a day: it sets her up again, as dinner does)
+      const tb = P.world.surfaces.find(s => s.name === 'the table');
+      if (tb && w.chores && w.chores.on()) (P.world.actions = P.world.actions || []).push({ label: 'Have a slice of Grandmother’s cake', at: new THREE.Vector3((tb.x0 + tb.x1) / 2, tb.y + 2, (tb.z0 + tb.z1) / 2),
+        when: () => w.save.state.cake !== w.cal.day && !P.npcAway && !P.busy, run: async () => { w.save.change(s => { s.cake = w.cal.day; }, { cake: true });
+          await P.approach(); await P.converse(root.Story.granCake(), { shot: ['red', 'gran'] }); if (w.capacity) w.capacity.add(25, 'Grandmother’s cake'); w.cal.advance(15); w.refresh(); } }); },
   },
   wood: {
     name: 'The wood', music: 'wood', set: s => root.Wood.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,

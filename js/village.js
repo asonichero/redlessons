@@ -330,7 +330,8 @@ function build(scene, opts) {
     for (let k = 0; k < 8; k++) { const an = k / 8 * Math.PI * 2, bg = new THREE.Group(); bg.position.set(Math.cos(an) * 10, 0, Math.sin(an) * 10); bg.rotation.y = -an + Math.PI / 2; g.add(bg);
       box(bg, 8.6, 0.9, 3.6, 0, 5.6, 0, plank); for (const sx of [-1, 1]) box(bg, 1, 5.2, 2.6, sx * 3.2, 2.6, 0, oakDk); }
     world.obstacles.push({ x: TREE.x, z: TREE.z, r: 14 });
-    for (let k = 0; k < 8; k += 2) { const an = k / 8 * Math.PI * 2 + Math.PI / 8; world.seats.push({ name: 'the bench round the lime tree', at: new V3(TREE.x + Math.cos(an) * 12.2, 5.6, TREE.z + Math.sin(an) * 12.2), facing: Math.atan2(Math.cos(an), Math.sin(an)), kind: 'stool' }); }
+    for (let k = 0; k < 8; k++) { const an = k / 8 * Math.PI * 2 + Math.PI / 8; world.seats.push({ name: 'the bench round the lime tree',      // (eight places round it: room for her when the others are sat there of an evening)
+      at: new V3(TREE.x + Math.cos(an) * 12.2, 5.6, TREE.z + Math.sin(an) * 12.2), facing: Math.atan2(Math.cos(an), Math.sin(an)), kind: 'stool' }); }
   }
   // The curfew bell: a small bell under a little pitched roof, on a frame of two posts, its rope hanging; rung at nine.
   const BELL = new V3(GREEN.x + 92, 0, GREEN.z - 46);

@@ -171,7 +171,7 @@ function create(view, opts) {
       if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
     for (const it of W.items) if (!it.away && !it.fixed && it !== m.carry) { const p = it.obj.position.clone().add(it.grip), into = !!(opts.stowable && opts.stowable(it)); add({ label: into ? 'Put ' + it.name + ' in your basket' : 'Take ' + it.name, run: m.carry && !into ? () => handsFull() : () => take(it), full: !!m.carry && !into }, p); }      // (into: what goes in her basket, the pot, the loaf; tools want her hands empty)
-    if (!m.carry) { for (const s of W.seats) if (!s.noSit) add({ label: 'Sit on ' + s.name, run: () => sitOn(s) }, s.at); }
+    if (!m.carry || m.carry.kind === 'basket') { for (const s of W.seats) if (!s.noSit) add({ label: 'Sit on ' + s.name, run: () => sitOn(s) }, s.at); }      // (her basket on her arm as she sits: she has it out of doors always)
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;
       if (it.hangs) for (const pg of W.pegs) if (!pg.item) add({ label: 'Hang ' + it.name + ' up', run: () => putOn({ peg: pg }) }, pg.at);
