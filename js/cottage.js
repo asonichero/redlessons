@@ -430,6 +430,7 @@ function build(scene, opts) {
       solid(it, new THREE.TorusGeometry(1.1, 0.25, 6, 12, Math.PI * 1.2), '#a85a3a', 1.5, 3.2, 0, { rot: [0, 0, -1.2], ink: 0.05 }); }, tx_ - 2, tz - 8, new V3(0, 2.6, 0), 2, 0.6);
     thing('the bowl', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [2.2, 0.2], [3.2, 1.6], [3.4, 1.9]].map(([r, h]) => new THREE.Vector2(r, h)), 18), '#8a6a4a', 0, 0, 0, { ink: 0.08 }).material.side = THREE.DoubleSide; }, tx_ + 1, tz + 3, new V3(0, 1.6, 0), 3.4);
     thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
+    for (const it of world.items) { if (it.name === 'the bowl') it.fixed = true; if (it.name === 'the loaf') it.kind = 'loaf'; }      // (the bowl's the table's; the loaf, Mama's, for supper: js/chores.js)
     world.surfaces.push(Object.assign(pc.area(-D / 2 + 2, D / 2 - 2, -L / 2 + 2, L / 2 - 2), { name: 'the table', y: H, panel: g, front: pc.turn(new V3(-1, 0, 0)) }));
     world.obstacles.push(pc.area(-D / 2 - 0.5, D / 2 + 0.5, -L / 2, L / 2));
   }

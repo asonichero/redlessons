@@ -232,7 +232,7 @@ function create(view, ui) {
   }
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, noRun: !!A.noRun, light: cal.light() };      // (noRun: walking only: the wood, on her way home)
-    o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); };      // (put down out of doors: there still, when she comes back for it)
+    o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); }; o.stowable = it => !!(chores && P && chores.stowable(P, it)); o.stow = it => chores.stow(P, it);      // (stow: the pot, the loaf, into her basket)      // (put down out of doors: there still, when she comes back for it)
     if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc() : A.npc;
     // (where she comes in: the saved place, when taking the game up again; the way she came in; or the place's first)
     const saved = entry === 'saved' && save.state.at, list = A.entries === 'set' ? null : A.entries;

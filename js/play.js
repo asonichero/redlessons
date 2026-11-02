@@ -166,7 +166,7 @@ function create(view, opts) {
     if (W.cloakHooks && !m.carry) { const h = W.cloakHooks;
       if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
-    for (const it of W.items) if (!it.away && !it.fixed && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it), full: !!m.carry }, p); }
+    for (const it of W.items) if (!it.away && !it.fixed && it !== m.carry) { const p = it.obj.position.clone().add(it.grip), into = !!(opts.stowable && opts.stowable(it)); add({ label: into ? 'Put ' + it.name + ' in your basket' : 'Take ' + it.name, run: m.carry && !into ? () => handsFull() : () => take(it), full: !!m.carry && !into }, p); }      // (into: what goes in her basket, the pot, the loaf; tools want her hands empty)
     if (!m.carry) { for (const s of W.seats) if (!s.noSit) add({ label: 'Sit on ' + s.name, run: () => sitOn(s) }, s.at); }
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;
@@ -275,6 +275,7 @@ function create(view, opts) {
     m.lookAt(p); const two = !it.hangs && it.radius > 2.6;
     if (two) { m.reach('L', p.clone().add(new V3(Math.cos(m.yaw) * it.radius * 0.8, 0, -Math.sin(m.yaw) * it.radius * 0.8))); await m.reach('R', p.clone().add(new V3(-Math.cos(m.yaw) * it.radius * 0.8, 0, Math.sin(m.yaw) * it.radius * 0.8))); }
     else await m.reach('R', p);
+    if (opts.stowable && opts.stowable(it)) { m.release('L'); await m.release('R'); m.lookAt(null); opts.stow(it); return; }      // (into her basket)
     if (it.peg) { it.peg.item = null; it.peg = null; }
     it.panel = null; it.inChest = false; m.hold(it, it.hangs || !two ? 'hang' : 'front'); it.spin = it.obj.rotation.y - m.yaw;
     m.release('L'); await m.release('R'); m.lookAt(null);

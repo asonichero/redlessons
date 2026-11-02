@@ -229,6 +229,7 @@ function attach(P, w) {
       if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
+      if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)
       // (Bess, on her bench: she asks Red to sit. Sat beside her, they talk, and Red's to get up when she will (as on the bench round the lime
       // tree); not, a word, and no harm done. Only sitting with her brings Bess's trust)
       if (key === 'bess' && !P.sitting) { let sit = false; await P.converse(S.bessInvite({ sit: () => { sit = true; } }), { shot: ['red', key] });

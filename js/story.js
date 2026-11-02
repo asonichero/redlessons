@@ -356,7 +356,7 @@ const nightThoughts = o => {
       curfew: ['calm', 'Nine o’clock. The bell’s at ten, but mine’s at nine. I’ll remember.'],
       pie: ['pout', 'Tom Ferrier never gets caught. I always do. Maybe that’s the lesson.'],
       promise: ['shy', 'Bess, by the fire, watching the door for me. I’ll go first thing and say sorry.'],
-      garden: ['shy', 'Her flowers. I’ll mind the paths.'] }[o.kind] || ['calm', 'It’s done with, anyway. She said so.']);
+      garden: ['shy', 'Her flowers. I’ll mind the paths.'], loaf: ['cheeky', 'The ducks, though. Peter laughing at the brown one. I can’t be sorry about all of it.'] }[o.kind] || ['calm', 'It’s done with, anyway. She said so.']);
   } else if ((!e || st === 'done' || st === 'carrying') && d.garden !== false && !d.noDinner && !d.dare && !d.late) out.push(['smile', 'She said she was proud of me. She meant it, too: I could tell.']);
   else if (e && st === 'broken') out.push(['shy', 'I let ' + e.it + ' slide. She didn’t say much. That’s almost worse.']);
   else out.push(['calm', 'Not my best day. Not my worst, either.']);
@@ -967,6 +967,78 @@ const pieFoundOut = () => [
   { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: '“Oh.” A pie off her board, on Tom Ferrier’s say-so, and the two of you marched to the forge. And you sat at my table last night and said you were tired.' },
 ];
 // Her mother's correction for the pie: her hand, longer for keeping it back (how: { withheld }).
+// ── The loaf (js/loaf.js): her mother's, off the board; the ducks, with Peter. what: 'the loaf' (from home) | 'the loaves' (the bakery's)
+// (Peter at the pond, with nothing to give them: the idea, planted)
+const ducksWish = () => [
+  { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Red. Look at them. The brown one’s been chasing the white one round the reeds all morning.' },
+  { who: 'red', face: 'smile', text: 'What did the white one do?' },
+  { who: 'peter', face: 'calm', listen: { red: 'cheeky' }, text: 'Nothing, as far as I can see. That’s ducks for you.' },
+  { who: 'peter', face: 'bashful', listen: { red: 'smile' }, text: 'I’d feed them, if I’d thought to bring a crust. Grandad says bread’s for people. Grandad’s never seen a duck’s face when it gets some.' },
+  { who: 'red', face: 'cheeky', thought: true, text: 'There’s bread at home. On the board.' },
+];
+// (bread in her basket: he's seen it)
+const ducksAsk = (what, ctx) => [
+  { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: what === 'the loaves' ? 'Is that Master Pennock’s bread? It smells like it. Oh, Red, the ducks would think it was the fair.' : 'Is that a loaf in your basket? Oh, Red. The ducks would think it was the fair.' },
+  { choose: [
+    { text: 'Just a little, then.', face: 'cheeky', then: [{ run: ctx.yes }, { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Come on, then. Before they see us and riot.' }] },
+    { text: 'I can’t. It’s Mama’s.', face: 'shy', then: [{ who: 'peter', face: 'calm', listen: { red: 'shy' }, text: 'No. Course not. Another time.' }] },
+  ] },
+];
+const ducksFed = what => [
+  { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Not all at once! Little bits. Look, the small one never gets any. Throw it to the small one.' },
+  { who: 'red', face: 'smile', listen: { peter: 'smile' }, text: 'Here, little one! Here! Oh, the brown one’s got it again.' },
+  { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'He’s a bully. Grandad would say he’s got prospects.' },
+  { who: 'red', face: 'smile', listen: { peter: 'smile' }, text: 'Another bit. And another. Oh, they’re so pleased.' },
+  { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: what === 'the loaves' ? 'That’s… that’s all of it, Red. Both of them.' : 'That’s the last of it.' },
+];
+const ducksAfter = what => what === 'the loaves' ? 'Both loaves. Gone. Mama sent me for those.' : 'Every crumb of it. Mama’s supper loaf.';
+// Her mother, before supper: the loaf's gone off the board. (ctx.back: Red owns up, and puts it back; otherwise she says she doesn't know)
+const loafAsk = ctx => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'The loaf’s gone off the board. I left it there for supper. You don’t know anything about it, I suppose?' },
+  { choose: [
+    { text: 'I took it, Mama. It’s here, in my basket.', face: 'shy', then: [{ run: ctx.back },
+      { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Then put it back on the board. And don’t take what isn’t yours, even in this house.' },
+      { who: 'red', face: 'shy', text: 'Yes, Mama. I’m sorry.' },
+      { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'You owned up to it. That counts.' }] },
+    { text: 'No, Mama. I don’t know.', face: 'shy', then: [
+      { who: 'mother', face: 'calm', listen: { red: 'wince' }, text: 'Hm. Then the mice are bolder than I thought.' },
+      { who: 'red', face: 'wince', thought: true, text: 'It’s right there in my basket. Under the cloth.' }] },
+  ] },
+];
+// (gone: given to the ducks, or lost)
+const loafGone = ducks => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'The loaf’s gone off the board. I left it there for supper. You don’t know anything about it, I suppose?' },
+  { who: 'red', face: 'shy', listen: { mother: 'stern' }, text: ducks ? 'I took it, Mama. And Peter and I… fed it to the ducks.' : 'I took it, Mama. And now I don’t know where it is.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: ducks ? 'To the ducks.' : 'You took it, and lost it.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Then it’s supper without bread.' },
+];
+const loavesGone = () => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And Master Pennock’s loaves? He was keeping them back for us.' },
+  { who: 'red', face: 'shy', listen: { mother: 'stern' }, text: 'I had them, Mama. I did fetch them. And then Peter and I… fed them to the ducks.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Both of them. Two days’ bread, to the ducks.' },
+];
+const loafCorrection = async (S, how) => {
+  const M = 'corrector', R = 'subject', more = how.bakery ? 0.2 : 0;
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.4 + more, pace: 1.35 });
+  await S.wait(0.8);
+  await S.say(M, how.bakery ? 'Two loaves, Little Red. That I sent you for.' : 'The loaf off my board, Little Red. That you knew was for supper.', 'stern');
+  await S.step([M, 'Taken without asking. That’s the first of it.'], 8);
+  await S.step([R, 'I know, Mama—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.6 + more, pace: 1.55 });
+  await S.step([M, how.ducks ? 'And thrown to the ducks, because a boy smiled at you by the pond.' : 'And lost, because you didn’t think about it at all.'], 10);
+  await S.step([R, 'It wasn’t— ow— it wasn’t like that—'], 4);
+  await S.step([M, 'Bread costs. Somebody baked it, and somebody paid for it, and neither of them was you.'], 10);
+  await S.smacks(6);
+  if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
+  await S.say(M, 'There. It’s done. Up you get.', 'calm');
+  await S.wait(1.2);
+};
+const loafAfter = how => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Better?' },
+  { who: 'red', face: 'shy', text: how.ducks ? 'Better. The ducks did enjoy it, though.' : 'Better. I’m sorry about the bread.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: how.ducks ? 'I’m sure they did. Next time, ask me for the heel of yesterday’s, and you can both go. Now, bed.' : 'I know. Now, bed.' },
+];
 const pieMaren = async (S, how) => {
   const M = 'corrector', R = 'subject', more = how.withheld ? 0.25 : 0;
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.4 + more, pace: 1.35 });
@@ -1106,6 +1178,7 @@ const OWED_FOR = {
     : how.willie ? 'Out after the bell, and brought to my door by the Watchman. He’d a round to walk, and you made him walk it with you.' : 'In after the bell. Nine o’clock is your hour, and you know it.',
   pie: how => how.withheld ? 'The pie off Mistress Pennock’s board. And then not a word to me, so I had it from a neighbour.' : 'The pie off Mistress Pennock’s board. You told me yourself, and I’m glad of that. But it was still taken.',
   promise: () => 'You gave Mistress Abney your word, and you didn’t keep it. Bess sat there waiting for you.',
+  loaf: how => how.bakery ? 'Master Pennock’s loaves, that I sent you for, thrown to the ducks. That was our bread for two days.' : how.ducks ? 'The loaf off my board, taken without asking, and thrown to the ducks.' : 'The loaf off my board, taken without asking, and lost.',
 };
 const owedNow = (kind, how) => !OWED_FOR[kind] ? [] : [
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Now, then. You know what’s owed.' },
@@ -1126,6 +1199,7 @@ const dinnerCall = how => how === 'arrived' ? [
 const dinner = r => {
   const M = (face, text, red) => ({ who: 'mother', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, listen: { mother: 'calm' }, text }), out = [];
   out.push(M('smile', 'Well, then. Tell me your morning.', 'calm'));
+  if (r.given) out.push(...r.given);      // (what she's brought home, handed across the table first)
   // (hers first: what she's done, and not)
   const e = r.errand && ERRANDS[r.errand.id], st = r.errand && r.errand.state, told = [];
   if (e && (st === 'done' || st === 'carrying')) told.push('I ' + e.did + '.');
@@ -1987,5 +2061,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

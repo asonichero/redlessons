@@ -28,7 +28,7 @@ function create(w) {
     // Each frame, with the game minutes gone by: worn or rested by what she's doing; and a thought as she crosses each line, once a day.
     tick(P, dt, mins) {
       if (!P || !P.motion || !(mins > 0)) return;
-      const m = P.motion, out = w.area !== 'home', moving = m.speed > 1, running = moving && m.runB > 0.5, heavy = !!(m.carry && m.carry.keep && m.carry.kind);
+      const m = P.motion, out = w.area !== 'home', moving = m.speed > 1, running = moving && m.runB > 0.5, heavy = !!(m.carry && (m.carry.heavy || (m.carry.keep && m.carry.kind)));      // (the full butt; her basket with the pot in it)
       let d = 0;
       if (P.sitting) d += (out ? RATE.sit : RATE.sitHome) * mins;
       else { if (out) d -= RATE.about * mins; if (running) d -= RATE.run * mins; if (heavy) d -= RATE.heavy * mins; if (out && w.cal.dark()) d -= RATE.dark * mins; }

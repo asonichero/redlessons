@@ -60,6 +60,7 @@ async function home(P, w, o) {
     if (!owes(w) && root.Pie) await root.Pie.evening(P, w, true);
     if (!owes(w) && root.AbneyPromise) await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
     if (!owes(w) && root.Garden && w.chores && w.chores.on()) await root.Garden.evening(P, w, true);
+    if (!owes(w) && root.Loaf && w.chores && w.chores.on()) await root.Loaf.evening(P, w);      // (the loaf off the board: js/loaf.js)
     if (!owes(w) && P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
     // (then the evening as it always goes: supper at the table, and her day)
     if (P !== w.P) return;
@@ -89,8 +90,8 @@ async function raise(P, w) {
 // stood before her mother, who says what it's for; under another, it's given; and after it, always, the two of them: held, if she reached
 // tears, or sat together on the bed if not. Then bed, and her thoughts on the day.
 // (each correction's own → its result: and after it, the words said in the aftercare)
-const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how) };
-const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how) };
+const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how), loaf: (P, w, how) => root.Loaf.correct(P, w, how) };
+const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how) };
 async function settle(P, w, table) {
   // (setting her right covers the bell too, if that's owed as well tonight: the rest waits)
   const list = stateOf(w).owed || [], o = list.find(x => x.kind === 'maintenance') || list[0], S = root.Story; if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); if (table) { await w.fade(true); table.up(); await w.fade(false); } return; }
