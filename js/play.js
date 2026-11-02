@@ -92,9 +92,21 @@ function create(view, opts) {
     let lo = 0, hi = 1; for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (inside(T.clone().addScaledVector(off, mid))) lo = mid; else hi = mid; }
     st.camera.position.copy(T).addScaledVector(off, lo); };
   // (outdoors: kept above the ground the same way, pulled in along its line toward the anchor, so looking up from low it slides along the grass)
-  const aboveGround = () => { if (RB) return; const T = st.controls.target, c = st.camera.position; if (c.y >= 3 || T.y <= 3.5) return; c.copy(T).addScaledVector(c.clone().sub(T), (T.y - 3) / (T.y - c.y)); };
+  // (the floor where it is: the set's own, where it isn't level; above it a little, the camera's lowest. With the anchor itself that low, it's
+  // lifted straight up instead)
+  const floorAt = p => (W.ground ? W.ground(p) || 0 : 0) + 3;
+  let camR = 0, pulled = false;      // (how far out it was before the floor pulled it in: and back out to it, as it's lifted off the floor again; only what the floor took)
+  const aboveGround = () => { if (RB) return; const T = st.controls.target, c = st.camera.position, lo = Math.max(floorAt(c), floorAt(T));
+    if (c.y >= lo + 0.05) { const r = c.distanceTo(T);
+      if (pulled && camR > r + 0.05 && T.y > lo) { const off = c.clone().sub(T), n = Math.min(camR, r + 1.5), low = off.y < 0 ? (T.y - lo) / -off.y * r : Infinity; off.setLength(Math.min(n, low)); c.copy(T).add(off); }
+      else { pulled = false; camR = r; } return; }
+    pulled = true;
+    if (T.y <= lo + 0.5) { c.y = lo; return; }
+    const off = c.clone().sub(T), k = (T.y - lo) / (T.y - c.y); c.copy(T).addScaledVector(off, k); };      // (the line measured before the camera's moved onto it)
   const correcting = () => typeof document !== 'undefined' && document.body.classList.contains('correcting');      // (a correction: the camera the player's, within the room)
-  st.afterControls = () => { st.controls.maxPolarAngle = correcting() ? UNDER : LEVEL; if (!opts.camFree && (correcting() || (!camHeld && !(talk && talk.playing))) && !st.moving && st.controls.enabled) { inRoom(); aboveGround(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
+  // (in a correction, slid along the floor toward the anchor it's nearer than its usual least: so it's let be that near, or the controls would
+  // push it back out, under the floor)
+  st.afterControls = () => { st.controls.maxPolarAngle = correcting() ? UNDER : LEVEL; st.controls.minDistance = correcting() ? 3 : 14; if (!opts.camFree && (correcting() || (!camHeld && !(talk && talk.playing))) && !st.moving && st.controls.enabled) { inRoom(); aboveGround(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
   // (its three distances from the anchor, across the floor and up: near, medium (the usual), far. Outdoors, from her, scaled to her; indoors,
   // from the middle of the room, medium holding the whole room)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)
@@ -196,6 +208,7 @@ function create(view, opts) {
       if (ahead > -0.3) await m.goTo(m.pos, m.yaw + angDiff(m.yaw, yawTo(m.pos, latch)) * 0.75);
       side = fwd().dot(n) < 0 ? hingeHand : other;      // (facing the doorway, the hand on the hinge side is the near one; with her back to it, the other)
     }
+    if (m.carry && m.carryStyle === 'hang') side = 'L';      // (her basket on her right arm: the left for the latch)
     const reach = () => m.armReach(side);
     m.lookAt(() => wp(d.latch)); await m.reach(side, () => wp(d.latch).add(new V3(0.6, 0, 0)));
     d.target = opening ? 1 : 0;
@@ -234,8 +247,9 @@ function create(view, opts) {
     let t = -1, last = -1;
     const off = () => { if (t < 0) return 1.6; const k = Math.floor(t / beat); if (k >= N) return 1.6; const u = (t % beat) / beat; return 1.6 - 1.45 * Math.sin(Math.PI * Math.min(1, u * 1.6)); };      // (in to the wood quick, and back)
     const un = tick(dt => { if (t < 0) return; t += dt; const k = Math.floor((t - beat * 0.31) / beat); if (k > last && k < N) { last = k; if (A && A.knock) A.knock(0.5); } });      // (the sound as the knuckles meet the wood: a third of the way into each beat)
-    m.lookAt(at.clone()); await m.reach('R', () => at.clone().addScaledVector(out, off()));
-    t = 0; await wait(beat * N + 0.15); un(); await m.release('R'); m.lookAt(null);
+    const hand = m.carry && m.carryStyle === 'hang' ? 'L' : 'R';      // (her basket on her right arm: knocking with the left)
+    m.lookAt(at.clone()); await m.reach(hand, () => at.clone().addScaledVector(out, off()));
+    t = 0; await wait(beat * N + 0.15); un(); await m.release(hand); m.lookAt(null);
   }
   // (her hands full, going for something else: a thought, and nothing taken)
   function handsFull() { const it = m.carry; if (!it || !talk) return; const S = root.Story; talk.muse(S && S.handsFull ? S.handsFull(it) : 'My hands are full.', { face: 'calm' }); }
@@ -277,9 +291,19 @@ function create(view, opts) {
     if (where.peg) { where.peg.item = it; it.peg = where.peg; }
     m.release('L'); await m.release('R'); m.lookAt(null);
   }
+  // (a way there round what's in it: straight, if nothing's between; else by the shortest corner, a point round the far end, both legs clear)
+  const clearLine = (a, b, r) => { const d = b.distanceTo(a), n = Math.max(2, Math.ceil(d / 2)); for (let k = 1; k < n; k++) { const p = a.clone().lerp(b, k / n); if (collide(p, r).distanceTo(p) > 0.6) return false; } return true; };
+  function around(to, r) {
+    const from = flat(m.pos); if (clearLine(from, to, r)) return [];
+    let best = null;
+    for (const rad of [10, 16, 24, 34]) { for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, q = to.clone().add(new V3(Math.cos(a) * rad, 0, Math.sin(a) * rad)), c = collide(q, r);
+      if (c.distanceTo(q) > 0.6 || !clearLine(from, q, r) || !clearLine(q, to, r)) continue; const len = from.distanceTo(q) + q.distanceTo(to); if (!best || len < best.len) best = { q, len }; } if (best) break; }
+    return best ? [best.q] : [];
+  }
   async function sitOn(seat) {
-    // Up to the seat, turn her back to it, and sit.
+    // Up to the seat (round the table, or whatever's between), turn her back to it, and sit.
     const f = new V3(Math.sin(seat.facing), 0, Math.cos(seat.facing)), front = collide(flat(seat.at).addScaledVector(f, 4.5 * sc + 2), R * 0.5);
+    for (const q of around(front, R * 0.8)) await m.goTo(q, null);
     await m.goTo(front, seat.facing); await m.sit(seat); sitting = seat;
   }
   async function lieDown() { await m.lie(sitting); lying = true; }

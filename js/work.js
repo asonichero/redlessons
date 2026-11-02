@@ -80,7 +80,9 @@ function attach(P, w) {
   const lines = (S.WORK && S.WORK[st0.id]) || {};
   // The task in hand: offered at its place.
   W.actions = W.actions || [];
-  const action = { get label() { const t = task(); return t ? t.label : ''; }, get at() { const t = task(); return t ? spots[t.place].look.clone() : new V3(); }, when: () => !!task(), run: () => doTask(task()) };
+  // (sweeping, where there's a broom: begun by taking it up, where it leans)
+  const byBroom = t => t && t.kind === 'sweep' && spots.broom;
+  const action = { get label() { const t = task(); return !t ? '' : byBroom(t) ? 'Take up the broom' : t.label; }, get at() { const t = task(); return !t ? new V3() : byBroom(t) ? spots.broom.look.clone() : spots[t.place].look.clone(); }, when: () => !!task(), run: () => doTask(task()) };
   W.actions.push(action);
   // (the door shut on her until it's done)
   const door = (W.exits || []).find(e => e.name === 'the door'); if (door) { const was = door.when; door.when = () => !current(w) && (!was || was()); }
@@ -100,7 +102,7 @@ function attach(P, w) {
   });
 
   async function doTask(t) {
-    const sp = spots[t.place]; await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look);
+    const sp = spots[t.place]; if (!byBroom(t)) { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); }
     const said = lines[t.id]; if (said) say(...said);
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
