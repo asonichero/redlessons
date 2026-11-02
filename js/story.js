@@ -654,6 +654,9 @@ const VILLAGE = {
     again: [{ who: 'bess', face: 'smile', text: 'Still here. Still sitting. Still growing.' }],
   },
   abney: {
+    first: [{ who: 'abney', face: 'calm', listen: { red: 'smile' }, text: 'Miss Rose. Now, you’re a sensible girl. Bess is near her time, and some nights I’ve the carriers in till all hours. Would you sit up with her, one of these nights, if I asked? Just to be there.' },
+      { who: 'red', face: 'shy', listen: { abney: 'calm' }, text: 'If you asked, Mistress Abney. I don’t know that I’d know what to do.' },
+      { who: 'abney', face: 'smile', listen: { red: 'shy' }, text: 'Nobody does, the first time. Being there’s most of it.' }],
     carrier: [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Carrier’s day. I’ll have the yard full of horses and the house full of men by five, and Bess wanting to wait on them all.' }],
     any: [
       [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. Your mother keeping well?' }, { who: 'red', face: 'calm', text: 'Yes, Mistress Abney.' },
@@ -663,6 +666,9 @@ const VILLAGE = {
     ],
   },
   pennock: {
+    first: [{ who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'Miss Rose! Let me look at you. Twenty, near enough, and still at home with your mother. Have you any prospects, dear? A young man? A trade?' },
+      { who: 'red', face: 'shy', listen: { pennock: 'smile' }, text: 'Not… as such, Mistress Pennock.' },
+      { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'Well. There’s time. Come and help me of an afternoon, and you’ll have a trade at least.' }],
     baking: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Baking day, love! Double of everything for tomorrow. Don’t lean on anything, it’s all still warm.' }],
     any: [
       [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love! Look at you. Growing like a weed, and twice as pretty.' }, { who: 'red', face: 'bashful', text: 'Mistress Pennock…' },

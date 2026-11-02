@@ -252,6 +252,7 @@ function attach(P, w) {
       change(s => { s.talked[key] = cal.day; s.met[key] = true; });
       if (ctx.brokenPromise && key === 'abney') w.save.change(s => { s.promise.sorry = cal.day; }, { promise: true });      // (said sorry, to her face)
       if (key === 'tom' && w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
+      if (first && (key === 'pennock' || key === 'abney') && w.q.stateOf) { const ref = key === 'pennock' ? 'pennock.prospects' : 'abney.asks'; if (w.q.stateOf(ref) === 'offered') w.complete(ref); }      // (her prospects asked after; asked to sit up with Bess)
     } finally { release(f); }
   }
 

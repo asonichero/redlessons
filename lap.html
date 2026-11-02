@@ -43,6 +43,7 @@
   <h3>Who</h3>
   <div class="pick"><label>Corrector <select id="whoA"></select></label><label>Across the lap <select id="whoB"></select></label></div>
   <div class="pick"><label>Where <select id="where"></select></label></div>
+  <div class="pick"><label>Present <select id="present"></select></label><label>As <select id="presentAs"></select></label></div>
   <h3>The correction</h3>
   <div class="btns"><button id="smack" class="big">Smack</button><button id="run">Run</button><input id="runN" type="number" min="1" max="60" value="10"><button id="halt">Stop</button></div>
   <div class="btns" style="margin-top:6px"><button id="endBtn">End the correction</button><button id="word" class="red">Rose</button></div>
@@ -87,6 +88,8 @@
 <script src="js/pain.js"></script>
 <script src="js/implements.js"></script>
 <script src="js/lap.js"></script>
+<script src="js/mocap.js"></script>
+<script src="js/motion.js"></script>
 <script src="js/correctors.js"></script>
 <script src="js/discipline.js"></script>
 <script>
@@ -120,6 +123,42 @@
   if (!WHERE[where]) where = 'cottage';
   { const sel = $('where'); for (const k in WHERE) { const o = document.createElement('option'); o.value = k; o.textContent = WHERE[k].name; sel.appendChild(o); }
     sel.value = where; sel.onchange = () => { where = sel.value; try { localStorage.setItem('red-lessons:lap-where', where); } catch (e) { /* no storage */ } build(); }; }
+  // Someone else present: none, or any of the cast, there as one of three: supervising (standing by the seat, watching it done), waiting
+  // (their own turn to come, standing off to the side), or after (theirs done: in the corner, facing it, hands on their head, the marks on them).
+  const AS = { supervising: 'Supervising', waiting: 'Waiting', after: 'After' };
+  let present = { who: '', as: 'supervising' }; try { present = Object.assign(present, JSON.parse(localStorage.getItem('red-lessons:lap-present') || '{}')); } catch (e) { /* no storage */ }
+  if (present.who && !L.CAST.includes(present.who)) present.who = '';
+  { const sel = $('present'), none = document.createElement('option'); none.value = ''; none.textContent = 'None'; sel.appendChild(none);
+    for (const id of L.CAST) { const o = document.createElement('option'); o.value = id; o.textContent = L.NAMES[id]; sel.appendChild(o); }
+    const as = $('presentAs'); for (const k in AS) { const o = document.createElement('option'); o.value = k; o.textContent = AS[k]; as.appendChild(o); }
+    sel.value = present.who; as.value = present.as; as.disabled = !present.who;
+    const keep = () => { try { localStorage.setItem('red-lessons:lap-present', JSON.stringify(present)); } catch (e) { /* no storage */ } };
+    sel.onchange = () => { present.who = sel.value; as.disabled = !present.who; keep(); presentFig(); };
+    as.onchange = () => { present.as = as.value; keep(); presentFig(); }; }
+  let fig = null;
+  function presentFig() {
+    if (fig) { fig.off(); lap.stageView.scene.remove(fig.rig.root); fig = null; }
+    if (!present.who || !lap) return;
+    const V = THREE.Vector3, g = lap.group, sv = lap.stageView, rig = Toon.make(present.who, L.load()[present.who] || {}); sv.scene.add(rig.root); if (sv.cast) sv.cast(rig);
+    const m = Motion.create(rig, {}), W = (x, z) => g.localToWorld(new V(x, 0, z)).setY(0), gy = g.rotation.y, sc = rig.scaleW || 1;
+    const seat = g.localToWorld(new V(0, 0, 2)).setY(0), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+    let at, yaw;
+    const corner = sv.cottage && sv.cottage.world && sv.cottage.world.corners && sv.cottage.world.corners[0];
+    if (present.as === 'supervising') { at = W(-15, -9); yaw = yawTo(at, seat); rig.setExpr('calm'); }
+    else if (present.as === 'waiting') { at = W(20, -5); yaw = yawTo(at, seat); rig.setExpr('shy'); }
+    else { if (corner) { at = corner.at.clone(); yaw = corner.yaw; } else { at = W(-24, -22); yaw = gy + Math.PI; } rig.setExpr('teary');
+      rig.setDress({ skirt: 'up', drawers: 'down', marks: { L: 0.55, R: 0.55 } }); }
+    m.warp(at, yaw); rig.root.position.copy(at);
+    const fw = () => new V(Math.sin(m.yaw), 0, Math.cos(m.yaw)), sd = () => new V(Math.cos(m.yaw), 0, -Math.sin(m.yaw));
+    if (present.as === 'after') {      // (hands on the head, as js/correction.js's corner)
+      const top = s => () => { const h = rig.headGroup.getWorldPosition(new V()); return h.add(new V(0, 1.9 * sc, 0)).addScaledVector(sd(), (s === 'L' ? 1 : -1) * 0.9 * sc).addScaledVector(fw(), -0.35 * sc); };
+      m.reach('L', top('L')); m.reach('R', top('R')); }
+    else {      // (hands together: behind the back, supervising; in front, waiting)
+      const k = present.as === 'supervising' ? -2.0 : 2.2, hands = s => () => m.pos.clone().add(new V(0, 10.6 * sc, 0)).addScaledVector(fw(), k * sc).addScaledVector(sd(), (s === 'L' ? 1 : -1) * 0.35 * sc);
+      m.reach('L', hands('L')); m.reach('R', hands('R')); }
+    const off = lap.addTick(dt => { m.update(dt, null); if (present.as !== 'after') m.lookAt(lap.group.localToWorld(new V(0, 12, 2))); rig.tick(dt); });
+    fig = { rig, off };
+  }
   // The corrector for a figure (js/correctors.js), if they are one; their own implement, if so; and who they're taking in hand, as a subject.
   const correctorOf = id => { for (const k in C.CORRECTORS) if (C.CORRECTORS[k].rig === id) return C.corrector(k); return null; };
   const subjectOf = id => {
@@ -150,7 +189,7 @@
     });
     $('word').textContent = sub.word; $('word').title = 'The safe word (R)';
     $('subjH').textContent = pron(who.B) + ' distress';
-    implements(c); wardrobe(); tierButtons(c); label();
+    implements(c); wardrobe(); tierButtons(c); label(); presentFig();
   }
   const ended = html => { const e = $('end'); e.hidden = false; e.innerHTML = html; };
 

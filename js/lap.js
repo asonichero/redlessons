@@ -509,7 +509,9 @@ function create(view, opts) {
   function view_(name, ms) { const v = VIEWS[name](); if (st_) st_.go(v.pos, v.look, ms); return v; }
 
   // ── Each frame ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  const extraTicks = [];      // (others in the room with it, on a page of their own: ticked with it (lap.html's present))
   function update(dt) {
+    for (const f of extraTicks) f(dt);
     // (paused: the scene held while something else happens elsewhere, the pain, the colour and the clothes as they are; the giver still breathes)
     if (st.paused) { if (st.lapHands) handsInLap(); gerda.tick(dt); return; }
     if (held_) { poseHeld(dt); sitter.tick(dt); gerda.tick(dt); return; }
@@ -582,6 +584,8 @@ function create(view, opts) {
     start() { if (st_) st_.start(update); },
     stop() { if (st_) st_.stop(); },
     stageView: st_,
+    group: stage,      // (the stage's own frame: the seat at its middle, the giver facing +z)
+    addTick(f) { extraTicks.push(f); return () => { const i = extraTicks.indexOf(f); if (i >= 0) extraTicks.splice(i, 1); }; },
   };
   build(); update(0.016);
   return api;
