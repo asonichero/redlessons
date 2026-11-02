@@ -73,7 +73,7 @@
   // Each change rebuilds the character (it takes a moment, and keeps the code that builds them in one place).
   let build = function (side) {
     if (rigs[side]) turn.remove(rigs[side].root);
-    const id = who[side], r = rigs[side] = Toon.make(id, look[id] || {}); r.root.position.x = X[side]; r.root.rotation.y = side === 'A' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);
+    const id = who[side], r = rigs[side] = Toon.make(id, Object.assign({}, look[id] || {}, id === 'red' ? GOWNS[gown].look : {})); r.root.position.x = X[side]; r.root.rotation.y = side === 'A' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);      // (Rose's dress: shown here only; in the game, the day decides it)
     r.setExpr(faces[side]); r.setDress(dressView());
   };
   const VIEWS = { front: [[0, 20, 88], [0, 15, 0]], side: [[88, 20, 0], [0, 15, 0]], back: [[0, 20, -88], [0, 15, 0]], faces: [[0, 28.5, 34], [0, 28, 0]] };
@@ -94,6 +94,9 @@
   // The panel for each of them: an outfit row (where they have outfits), a colour row per feature, and their face.
   const FEATURES = [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips'], ['cloak', 'Cloak']];
   let syncers = { A: [], B: [] };
+  // (Rose's dress, to look at: her everyday, the blue one her mother made for the fair, or the same at the end of a careless day)
+  const GOWNS = { 'Everyday': { look: {} }, 'Fair dress': { look: { gown: 'fair', spoil: {} } }, 'Fair dress, after the day': { look: { gown: 'fair', spoil: { earth: 0.5, soot: 0.4, wet: 0.3 } } } };
+  let gown = 'Everyday';
   const lookOf = id => (look[id] = look[id] || {});
   // (the colour in force: the one set here, or their own)
   const colourOf = (id, k) => lookOf(id)[k] || (Toon.palette(id, {})[k]);
@@ -103,6 +106,10 @@
     if (L.OUTFITS[id]) {
       box.insertAdjacentHTML('beforeend', '<h3>Outfit</h3>'); const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
       for (const o of L.OUTFITS[id]) { const b = document.createElement('button'); b.textContent = o; b.onclick = () => { lookOf(id).outfit = o; changed(side); }; row.appendChild(b); syncers[side].push(() => b.classList.toggle('on', lookOf(id).outfit === o)); }
+    }
+    if (id === 'red') {
+      box.insertAdjacentHTML('beforeend', '<h3>Dress</h3>'); const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
+      for (const g of Object.keys(GOWNS)) { const b = document.createElement('button'); b.textContent = g; b.onclick = () => { gown = g; for (const s of ['A', 'B']) if (who[s] === 'red') build(s); sync(); }; row.appendChild(b); syncers[side].push(() => b.classList.toggle('on', gown === g)); }
     }
     for (const [k, name] of FEATURES) {
       if (k === 'cloak' && id !== 'red') continue;
