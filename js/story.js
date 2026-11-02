@@ -356,7 +356,11 @@ const bedtime = (r, how) => r && (r.rose || r.tooHarsh) ? [
 // (tonight's correction, if any), r (how it went) }
 const nightThoughts = o => {
   const d = o.day || {}, r = o.r, e = d.errand && ERRANDS[d.errand.id], st = d.errand && d.errand.state, out = [];
-  if (o.kind) {
+  const fairNight = o.kind === 'dress' || /^fair/.test(o.kind || '');
+  if (o.kind === 'fairClean') out.push(['smile', 'Not a mark on it, all day. She looked at me like I was the fair.']);
+  else if (o.kind === 'fairOwned') out.push(['calm', 'A mark on the hem, and I told her, and she just said thank you. We’ll mend it in the morning.']);
+  if (fairNight) out.push(['smile', 'The fiddle going, and the lanterns, and everyone out on the green.'], ['wince', 'And Agnes’s face, when Georgie ran. In front of everyone. I keep seeing it.']);
+  if (o.kind && !/^fair/.test(o.kind)) {
     out.push(r && r.rose ? ['shy', 'I said my name, and she stopped. Straight away, the way she promised.']
       : r && (r.tooHarsh || r.peak >= 1) ? ['teary', 'It still stings. But she held me after till I’d cried it all out, and that’s the bit I’ll remember.']
       : ['shy', 'It still stings. Less than it did.']);
@@ -365,8 +369,11 @@ const nightThoughts = o => {
       pie: ['pout', 'Tom Ferrier never gets caught. I always do. Maybe that’s the lesson.'],
       promise: ['shy', 'Bess, by the fire, watching the door for me. I’ll go first thing and say sorry.'],
       wood: ['shy', 'The path in the half dark, and every root a hand. Out before dusk. She’s right.'],
+      dress: ['shy', 'Tomorrow we’ll wash it, she said. Together. Dresses can be mended.'],
+      fairClean: ['smile', 'Not a mark on it, all day. She looked at me like I was the fair.'],
+      fairOwned: ['calm', 'A mark on the hem, and I told her, and she just said thank you. We’ll mend it in the morning.'],
       garden: ['shy', 'Her flowers. I’ll mind the paths.'], loaf: ['cheeky', 'The ducks, though. Peter laughing at the brown one. I can’t be sorry about all of it.'] }[o.kind] || ['calm', 'It’s done with, anyway. She said so.']);
-  } else if ((!e || st === 'done' || st === 'carrying') && d.garden !== false && !d.noDinner && !d.dare && !d.late) out.push(['smile', 'She said she was proud of me. She meant it, too: I could tell.']);
+  } else if (/^fair/.test(o.kind || '')) { /* (the fair's own, above) */ } else if ((!e || st === 'done' || st === 'carrying') && d.garden !== false && !d.noDinner && !d.dare && !d.late) out.push(['smile', 'She said she was proud of me. She meant it, too: I could tell.']);
   else if (e && st === 'broken') out.push(['shy', 'I let ' + e.it + ' slide. She didn’t say much. That’s almost worse.']);
   else out.push(['calm', 'Not my best day. Not my worst, either.']);
   if (d.herb) out.push(['smile', d.herb.name.charAt(0).toUpperCase() + d.herb.name.slice(1) + '. I’ll remember what Grandmother said about it, I will.']);
@@ -474,6 +481,7 @@ const fairBreakfast = kind => ({
   session: 'The dress again this morning. No peeking over my shoulder: you’ll see it when it’s done.',
   rest: 'No needle today: my eyes want a rest. I’ll be about the house, and in and out of the garden.',
   fitting: 'The dress this afternoon, and I want you home at four to try it on, so I can pin the hem. Four, Little Red. Not ten past.',
+  mend: 'The dress, this morning, you and I: a wash, and the hem seen to, and it’ll be as good as it was. Then the day’s your own.',
   fair: 'Fair day! I’m down on the green with the flowers from first thing, and your grandmother’s coming in with her remedies, beside me. No garden, no errand. But there’ll be plenty wanting fetching, and I’ll want you when I call. And you’re in your new dress, so mind it.',
 })[kind] || null;
 // The fitting (js/fair.js): her mother calls her over (late: she's kept her waiting), and into the dress, stood in the middle of the room, her
@@ -1246,6 +1254,7 @@ const OWED_FOR = {
     : how.willie ? 'Out after the bell, and brought to my door by the Watchman. He’d a round to walk, and you made him walk it with you.' : 'In after the bell. Nine o’clock is your hour, and you know it.',
   pie: how => how.withheld ? 'The pie off Mistress Pennock’s board. And then not a word to me, so I had it from a neighbour.' : 'The pie off Mistress Pennock’s board. You told me yourself, and I’m glad of that. But it was still taken.',
   promise: () => 'You gave Mistress Abney your word, and you didn’t keep it. Bess sat there waiting for you.',
+  dress: how => how.hid ? 'The dress. Spoiled, and then hidden from me, as if I’d not see it.' : 'The dress your mother made you, a week of evenings, and spoiled in a day.',
   wood: () => 'In the wood after dusk. Out of it before the light goes: that’s been the rule since you could walk, and it’s not for nothing.',
   loaf: how => how.bakery ? 'Master Pennock’s loaves, that I sent you for, thrown to the ducks. That was our bread for two days.' : how.ducks ? 'The loaf off my board, taken without asking, and thrown to the ducks.' : 'The loaf off my board, taken without asking, and lost.',
 };
@@ -1389,6 +1398,78 @@ const fairGive = id => ({
   fairing: [{ who: 'red', face: 'smile', listen: { bess: 'smile' }, text: 'From Mistress Thatcher, Bess. A ribbon, for the baby’s cap. A bit of the fair.' }, { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'Oh, look at it. Yellow. Tell her thank you. And sit a minute, and tell me everything. Who’s dancing with who?' }],
 })[id] || [];
 const fairEwe = () => [{ text: 'The old ewe lifts her head from the cabbages, chewing, and considers her; then lets herself be led, round by the paths, out of the gate and back to Bo’s pens.' }];
+// The dancing (js/fairday.js): Peter asks (easy: he trusts her well enough not to stammer), they dance; and Georgie's kiss (step 0: the green;
+// 1: the kiss; 2: Tom and the lads, and Georgie running; 3: Agnes, after).
+const fairDanceAsk = (easy, ctx) => (easy ? [
+  { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Red. The Miller’s starting a reel. Dance with me?' },
+] : [
+  { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'Red. I— the Miller’s… there’s a reel. If you… only if you want. I’m not much good. At reels.' },
+]).concat([{ choose: [
+  { text: 'I’d love to.', face: 'smile', then: [{ run: ctx.yes }] },
+  { text: 'Not just now, Peter.', face: 'shy', then: [{ who: 'peter', face: 'calm', listen: { red: 'shy' }, text: 'No. Course not. Later, maybe.' }] },
+] }]);
+const fairDance = easy => easy ? [
+  { text: 'The fiddle goes up, and they go round, and Peter knows the steps better than he lets on; and she’s laughing before the first turn’s done.' },
+  { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'You’ve flour on your nose. From the gingerbread.' },
+  { who: 'red', face: 'cheeky', listen: { peter: 'smile' }, text: 'I have not.' },
+  { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: 'You have. I like it.' },
+] : [
+  { text: 'The fiddle goes up, and they go round, and Peter treads on her foot twice and says sorry three times; and then he stops counting under his breath, and it’s easier.' },
+  { who: 'red', face: 'smile', listen: { peter: 'bashful' }, text: 'You’re better at reels than you said.' },
+  { who: 'peter', face: 'bashful', listen: { red: 'smile' }, text: 'I’ve been practising. With Grandad’s broom. Don’t tell anyone.' },
+];
+const fairKiss = step => [
+  [{ text: 'Across the ground, Agnes is dancing with the carrier’s lad, laughing, her green ribbon flying. Georgie Dunn’s at the edge, very red, watching her. Then he isn’t at the edge any more.' }],
+  [{ text: 'He has her by the shoulders before she knows he’s there, and kisses her, full on the mouth, there in front of the whole green. She hadn’t asked him to. Everyone sees it.' },
+   { who: 'agnes', face: 'surprised', listen: { georgie: 'bashful' }, text: 'Georgie—' }],
+  [{ who: 'tom', face: 'cheeky', listen: { georgie: 'shy' }, text: 'Oho! Dunn! Look at Dunn! Lads! Come and see what Dunn’s about!' },
+   { text: 'Tom and the lads come over roaring, and Georgie looks at them, and at Agnes, crying now, and runs. Down the mill lane, and gone, and leaves her standing there.' }],
+  [{ who: 'agnes', face: 'crying', listen: { red: 'wince' }, text: 'Don’t. Rose, don’t. Everyone saw. Everyone.' },
+   { who: 'red', face: 'wince', thought: true, text: 'Her face, in front of the whole village. And him gone, as if it had been nothing to do with him.' }],
+][step] || [];
+// The fair's night (js/evening.js): her mother, in from her stall, and the dress. kind: 'clean' | 'marked' (a little: ctx.own, Red owns it)
+// | 'spoilt'.
+const fairHome = (kind, ctx) => kind === 'clean' ? [
+  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Well. Let me look at you.' },
+  { who: 'red', face: 'shy', thought: true, text: 'She doesn’t say anything for a long moment. Just looks: the hem, the sleeves, the blue.' },
+  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Not a mark on it. All day, through all of that. I’m proud of you, love. Truly.' },
+] : [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: kind === 'spoilt' ? 'Rose. Come into the light.' : 'Well. Let me look at you.' },
+  { choose: [
+    { text: kind === 'spoilt' ? 'I know, Mama. I’m sorry. I spoiled it.' : 'There’s a mark on the hem, Mama. I’m sorry.', face: 'shy', then: [{ run: ctx.own }] },
+    { text: 'It’s fine, Mama. It was a lovely day.', face: 'shy', then: [] },
+  ] },
+];
+const fairOwned = () => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Hm. So there is. Thank you for telling me.' },
+  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'We’ll wash it and see to the hem in the morning, the two of us. It’ll come out. Now, bed: you’re asleep on your feet.' },
+];
+const fairFound = () => [
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Fine, is it. And what’s this, on the hem? And this?' },
+  { who: 'red', face: 'wince', text: 'Mama—' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You stood there and told me it was fine.' },
+];
+const dressCorrection = async (S, how) => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.35, pace: 1.3 });
+  await S.wait(0.8);
+  await S.say(M, 'A week of evenings, that dress. And the cloth kept back all those years.', 'stern');
+  await S.step([M, 'I told you to mind it. Hooves and cinders, I said.'], 8);
+  await S.step([R, 'I know, Mama—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.55, pace: 1.5 });
+  if (how.hid) { await S.step([M, 'And then to stand there and tell me it was fine.'], 10); await S.step([R, 'I’m sorry! I didn’t want you to be sad—'], 4); }
+  else await S.step([M, 'The quick way, every time. The quick way’s what spoils things.'], 10);
+  await S.smacks(how.spoilt ? 8 : 6);
+  if (how.also) await how.also(S);
+  await S.say(M, 'There. It’s done. Up you get.', 'calm');
+  await S.wait(1.2);
+};
+const dressAfter = how => [
+  { who: 'mother', face: 'calm', listen: { red: 'teary' }, text: 'Better?' },
+  { who: 'red', face: 'teary', text: how.hid ? 'Better. I should have just said.' : 'Better. I’m sorry about the dress.' },
+  { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'In the morning we’ll wash it, you and I, and mend what wants mending. Dresses can be mended. Now, bed.' },
+];
 const dayTalk = (how, day) => {
   const M = (face, text, red) => ({ who: 'mother', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, text }), out = [];
   out.push(how === 'yes' ? M('smile', 'Now, then. Peel, and tell me your day.', 'smile') : how === 'little' ? M('calm', 'Sit there and tell me about it, then, while I do these.', 'shy')
@@ -2237,5 +2318,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

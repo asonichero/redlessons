@@ -329,6 +329,7 @@ function create(view, ui) {
     const away = !root.Maren.home(w), first = marenP !== P; marenP = P;
     if (first) dinnerHow = 'entered';
     if (P.npcAway !== away) { P.npcGo(away, first ? null : new V3(-10, 0, 21)); if (!away && !first) dinnerHow = 'arrived'; }
+    if (!away && idle && !P.busy && !P.npcMoving && root.Fair && root.Fair.isFair(w) && cal.minute >= root.Fair.ENDS && root.Evening && root.Evening.stateOf(w).done !== root.Evening.night(cal)) { P.act(() => root.Evening.home(P, w, {})); return; }      // (fair night: her mother in from her stall, and Red home before her)
     if (!away && idle && !P.busy && !P.npcMoving && root.Fair && root.Fair.fittingDue(w)) { P.act(() => root.Fair.fitting(P, w)); return; }      // (the fitting, from four on the Fifth day of the fair's week)
     if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) { const how = dinnerHow; P.act(() => root.Maren.dinner(P, w, how)); }
     else if (!away && idle && !P.busy && !P.npcMoving && root.Maren.at(w) === 'needle' && !(P.npcMotion && P.npcMotion.seat)) root.Maren.sitDown(P);      // (at her needlework: in the chair by the hearth)

@@ -103,7 +103,7 @@ function attach(P, w) {
     return out;
   }
   W.more = W.more || []; W.more.push(actions);
-  ewe(P, w);
+  ewe(P, w); kissWatch(P, w);
   return { actions, figs };
 }
 // A villager's place on fair day: everyone at the fair, from when it opens till ten (null before it, and after: in their doors).
@@ -148,6 +148,7 @@ function takeItem(P, w, e) { const b = bag(P); if (b) root.Chores.takeOut(b, e.i
 async function talk(P, w, key) {
   if (!root.Fair || !root.Fair.isFair(w)) return false;
   const S = root.Story, st = fstate(w), min = w.cal.minute, shot = { shot: ['red', key] };
+  if (key === 'peter' && min >= DANCE_FROM && !st.danceAsked && !st.kissed) { await dance(P, w, P.villagers && P.villagers.here('peter')); return true; }      // (the dancing: he asks her)
   const give = ERR.find(e => e.who === key && st.have[e.id] && !st.done[e.id] && e.item);
   if (give && key !== 'thatcherWife') { await P.converse(S.fairGive(give.id), shot); takeItem(P, w, give); w.rep.trusts(key === 'mother' || key === 'gran' ? (key === 'gran' ? 'hulda' : 'maren') : key, 0.5); return true; }
   const ask = ERR.find(e => e.who === key && !st.asked[e.id] && !st.done[e.id] && min >= e.from && !(e.id === 'dinner' && !st.done.purse));
@@ -208,6 +209,60 @@ function ewe(P, w) {
     run: async () => { const S = root.Story; await P.converse(S.fairEwe(), { shot: false, keepCamera: true }); await w.fade(true); g.visible = false; fchange(w, s => { s.done.ewe = true; }); w.cal.advance(15); await w.fade(false); w.rep.trusts('bo', 1); if (P.talk) P.talk.muse('Back in the pen, and Bo’s face. She looked at me like I’d hung the moon.', { face: 'smile' }); w.refresh(); } });
   return g;
 }
+// ── The dancing, from seven: Peter asks her (shy, or easy, as he trusts her), and the two of them go round to the Miller's fiddle in the middle
+// of the green; and in the middle of it, Georgie catches Agnes by the shoulders and kisses her, there in front of everyone. She cries; Tom and
+// the lads come roaring; and Georgie runs, down the mill lane, and leaves her standing. (If Red's not dancing, it happens all the same, by half
+// past eight, if she's near enough to see it.) Agnes and Georgie's line: docs/quest-plan.md.
+const DANCE_FROM = H('19:00'), KISS_BY = H('20:30');
+async function dance(P, w, f) {
+  const S = root.Story, m = P.motion, peter = f, trust = (w.save.state.trust || {}).peter || 0, easy = trust >= 3;
+  let yes = false;
+  await P.converse(S.fairDanceAsk(easy, { yes: () => { yes = true; } }), { shot: ['red', 'peter'] });
+  fchange(w, s => { s.danceAsked = true; });
+  if (!yes) return;
+  // (into the middle, under a fade: hands joined, going round)
+  await w.fade(true);
+  const V = P.villagers, c = DANCE.clone(); if (V) V.summon('peter', 'dance');
+  let t = 0, on = true; const r = 4.5, spin = P.tick(dt => { if (!on) return; t += dt * 0.6; const a = t, me = c.clone().add(new V3(Math.cos(a) * r, 0, Math.sin(a) * r)), him = c.clone().add(new V3(-Math.cos(a) * r, 0, -Math.sin(a) * r));
+    m.warp(me, yawTo(me, him)); P.rig.root.position.copy(me); if (peter) { peter.motion.warp(him, yawTo(him, me)); peter.rig.root.position.copy(him); } });
+  m.reach('L', () => m.pos.clone().lerp(peter ? peter.motion.pos : m.pos, 0.5).setY(11)); if (peter) peter.motion.reach('R', () => peter.motion.pos.clone().lerp(m.pos, 0.5).setY(11));
+  P.camHeld = true; P.stage.go(c.clone().add(new V3(0, 18, 34)), c.clone().setY(9), 0);
+  await P.wait(0.4); await w.fade(false);
+  await P.converse(S.fairDance(easy), { shot: false, keepCamera: true });
+  fchange(w, s => { s.danced = true; }); w.rep.trusts('peter', easy ? 1 : 1.5);
+  await kiss(P, w, () => { on = false; if (spin) spin(); m.release('L'); if (peter) peter.motion.release('R'); });
+  P.camHeld = false; if (V) V.letGo('peter');
+}
+async function kiss(P, w, stop) {
+  const S = root.Story, V = P.villagers; if (!V || fstate(w).kissed) { if (stop) stop(); return; }
+  fchange(w, s => { s.kissed = true; }); w.save.flag('fair-kiss', w.cal.day);
+  const ag = V.summon('agnes', 'danceEdge'), ge = V.summon('georgie', 'danceEdge'), tom = V.summon('tom', 'danceEdge2');
+  const at = DANCE.clone().add(new V3(12, 0, -6)); ag.motion.warp(at, yawTo(at, DANCE)); ag.rig.root.position.copy(at);
+  const gat = at.clone().add(new V3(9, 0, 4)); ge.motion.warp(gat, yawTo(gat, at)); ge.rig.root.position.copy(gat);
+  await P.converse(S.fairKiss(0), { shot: false, keepCamera: true });
+  if (stop) stop();
+  // (he goes to her, and has her by the shoulders before she knows it)
+  await Promise.race([V.walkTo('georgie', at.clone().add(new V3(3.2, 0, 1.4)), yawTo(at.clone().add(new V3(3.2, 0, 1.4)), at), 1.4), P.wait(4)]);
+  ag.motion.face(yawTo(ag.motion.pos, ge.motion.pos)); ge.motion.reach('L', ag.rig.root.position.clone().add(new V3(0.6, 14, -1))); ge.motion.reach('R', ag.rig.root.position.clone().add(new V3(0.6, 14, 1)));
+  await P.wait(0.8); ag.rig.setExpr('surprised');
+  await P.converse(S.fairKiss(1), { shot: ['agnes', 'georgie'] });
+  ag.rig.setExpr('crying', 6); ge.motion.release('L'); ge.motion.release('R');
+  // (Tom and the lads, roaring; and Georgie gone, down the mill lane)
+  const tAt = at.clone().add(new V3(-10, 0, 10)); await Promise.race([V.walkTo('tom', tAt, yawTo(tAt, ge.motion.pos), 1.3), P.wait(4)]);
+  await P.converse(S.fairKiss(2), { shot: ['tom', 'georgie'] });
+  const away = P.world.spots.millGate ? P.world.spots.millGate.at.clone() : at.clone().add(new V3(80, 0, 60)); V.walkTo('georgie', away, null, 1.8); await P.wait(2.5);
+  V.letGo('georgie', true);
+  await P.converse(S.fairKiss(3), { shot: ['red', 'agnes'] });
+  V.letGo('agnes'); V.letGo('tom');
+  w.refresh();
+}
+// (not dancing, but near: it happens all the same, by half past eight)
+function kissWatch(P, w) {
+  let since = 0; P.tick(dt => { if ((since += dt) < 1) return; since = 0;
+    if (!root.Fair.isFair(w) || fstate(w).kissed || w.cal.minute < KISS_BY || P.busy) return;
+    if (P.motion.pos.distanceTo(DANCE) > 70) return;
+    P.act(() => kiss(P, w)); });
+}
 // What's hers to do today, for the objectives.
 function objectives(w) {
   if (!root.Fair || !root.Fair.isFair(w)) return [];
@@ -217,7 +272,7 @@ function objectives(w) {
   return out;
 }
 
-const api = { attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, FIDDLE, OPEN, ENDS };
+const api = { dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, FIDDLE, OPEN, ENDS };
 root.FairDay = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

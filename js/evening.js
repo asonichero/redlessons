@@ -40,6 +40,8 @@ async function home(P, w, o) {
   o = o || {};
   const cal = w.cal, S = root.Story, st = stateOf(w), excused = !!(root.AbneyPromise && root.AbneyPromise.excused(w)), late = cal.curfew() && !excused, walked = !!watchman(w);      // (excused: walked home by Mistress Abney, after sitting with Bess)
   if (!P || !P.npc) return;
+  // (fair day: her mother's at her stall till ten; the night's word once they're both in, after it: js/fair.js)
+  if (root.Fair && root.Fair.isFair(w)) { if (cal.minute >= root.Fair.ENDS && st.done !== night(cal)) { change(w, s => { s.done = night(cal); }); await fairNight(P, w); } return; }
   // (before six, and not late: only what can't wait)
   if (!o.bed && !late && !walked && cal.minute < H('18:00')) { if (root.Pie && !P.npcAway) await root.Pie.evening(P, w); return; }      // (her mother in: out at the farm, it waits)
   // (after the curfew's been seen to: the bread and cheese if she wants it, and bed when she goes to it)
@@ -90,8 +92,8 @@ async function raise(P, w) {
 // stood before her mother, who says what it's for; under another, it's given; and after it, always, the two of them: held, if she reached
 // tears, or sat together on the bed if not. Then bed, and her thoughts on the day.
 // (each correction's own → its result: and after it, the words said in the aftercare)
-const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how), loaf: (P, w, how) => root.Loaf.correct(P, w, how), wood: (P, w, how) => woodCorrect(P, w, how) };
-const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how), wood: () => root.Story.woodAfter() };
+const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how), loaf: (P, w, how) => root.Loaf.correct(P, w, how), dress: (P, w, how) => dressCorrect(P, w, how), wood: (P, w, how) => woodCorrect(P, w, how) };
+const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how), dress: how => root.Story.dressAfter(how), wood: () => root.Story.woodAfter() };
 async function settle(P, w, table) {
   // (setting her right covers the bell too, if that's owed as well tonight: the rest waits)
   const list = stateOf(w).owed || [], o = list.find(x => x.kind === 'maintenance') || list[0], S = root.Story; if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); if (table) { await w.fade(true); table.up(); await w.fade(false); } return; }
@@ -226,6 +228,22 @@ async function brought(P, w) {
   finally { f.remove(); delete P.talk.cast[who]; }
   change(w, s => { s.walking = 0; });
 }
+// ── The fair's night: home, both of them, after ten. No supper (they ate at the fair). Her mother sees the dress, and how it's come through
+// the day: clean, and she's proud; a little marked, and Red owns it (they'll wash and mend it in the morning) or says it's fine (and her mother
+// finds it when she hangs it up: corrected, for the hiding); spoiled, and she's corrected for it (and for hiding it, if she tries). Then bed.
+async function fairNight(P, w) {
+  const S = root.Story, n = root.Fair.spoilt(w), d = w.cal.day;
+  await P.wait(0.4); await P.approach();
+  if (n < 0.15) { await P.converse(S.fairHome('clean'), { shot: ['red', 'mother'] }); w.rep.trusts('maren', 1); await toBed(P, w, { kind: 'fairClean' }); return; }
+  let owned = false;
+  await P.converse(S.fairHome(n < 0.6 ? 'marked' : 'spoilt', { own: () => { owned = true; } }), { shot: ['red', 'mother'] });
+  if (owned && n < 0.6) { w.save.change(s => { s.fair.mend = d + 1; }, { fair: true }); await P.converse(S.fairOwned(), { shot: ['red', 'mother'] }); await toBed(P, w, { kind: 'fairOwned' }); return; }
+  if (!owned) { w.rep.add('naughty', 1, 'hiding what she’d done to the dress'); await P.converse(S.fairFound(), { shot: ['red', 'mother'] }); }
+  w.rep.add('naughty', n >= 0.6 ? 1 : 0.5, 'spoiling the dress her mother made her');
+  await owe(P, w, 'dress', { hid: !owned, spoilt: n >= 0.6 });
+  w.save.change(s => { s.fair.mend = d + 1; }, { fair: true });
+  await settle(P, w, null);
+}
 // ── Home after the bell, or brought to the door by the Dunns: no supper. Handed over (if she was brought), her mother's word on it, and
 // straight into the correction; after it, the aftercare; then the night's her own in the house: the bread and cheese on the board if she
 // wants it, and bed when she goes to it (and her thoughts there). If Master William has seen to it himself already (state.dealt: the
@@ -253,6 +271,12 @@ async function lateHome(P, w, walked) {
   w.refresh();
 }
 // ── In the wood after dusk (js/world.js marks it): her mother's own rule, the wood's, apart from the village's curfew.
+async function dressCorrect(P, w, how) {
+  if (P.setGown) P.setGown(null);      // (out of it, under the fade: it's hung up, and she's in her shift and skirt)
+  const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => root.Story.dressCorrection(Sc, how) }], fade: on => w.fade(on) });
+  w.rep.settle('naughty', 0.6); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+  return r;
+}
 async function woodCorrect(P, w, how) {
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => root.Story.woodCorrection(Sc, how) }], fade: on => w.fade(on) });
   w.rep.settle('wilful', 0.6); if (r && r.rose) w.save.flag('rose-said', w.cal.day);

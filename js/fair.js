@@ -53,7 +53,7 @@ function marenAt(w) {
   return part && m >= a && m < b ? 'needle' : 'home';
 }
 // The curfew lifted on fair day, till the fair ends at ten.
-const curfewLifted = w => isFair(w) && w.cal.minute < ENDS;
+const curfewLifted = w => isFair(w) && w.cal.minute < ENDS + 30;      // (and half an hour after, to walk home)
 
 // Her mother's word for the day at breakfast (in place of where she'll be): the planting's last day; the week of the dress; the fitting.
 function breakfast(w) {
@@ -61,6 +61,7 @@ function breakfast(w) {
   if (ph === 'last') return S.fairBreakfast('last');
   if (ph === 'week') { const i = sessions(w).findIndex(([x]) => x === d); return S.fairBreakfast(i === 0 ? 'first' : i === 3 ? 'fitting' : i > 0 ? 'session' : weekday(d) === 7 ? 'lay' : 'rest'); }
   if (ph === 'fair') return S.fairBreakfast('fair');
+  if (stateOf(w).mend === d) return S.fairBreakfast('mend');      // (the morning after: the dress washed and mended, the two of them)
   return null;
 }
 // ── The fitting: from four on the Fifth day, with Red home and her mother at her needlework: arms up, and into it, and the hem pinned.
@@ -102,7 +103,9 @@ function objective(w) {
   return null;
 }
 
-const api = { frockDue, arm, gatesMet, phase, isFair, marenAt, curfewLifted, breakfast, fittingDue, fitting, gown, spoil, objective, sessions, fitDay, stateOf, FIT, ENDS };
+// (what's on the dress, all told: 0 clean; a little, under 0.6; spoiled, above)
+const spoilt = w => { const s = stateOf(w).spoil || {}; return (s.earth || 0) + (s.soot || 0) + (s.wet || 0) + (s.tear || 0); };
+const api = { spoilt, frockDue, arm, gatesMet, phase, isFair, marenAt, curfewLifted, breakfast, fittingDue, fitting, gown, spoil, objective, sessions, fitDay, stateOf, FIT, ENDS };
 root.Fair = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
