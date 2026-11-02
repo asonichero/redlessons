@@ -315,6 +315,7 @@ function create(view, ui) {
     if (first) dinnerHow = 'entered';
     if (P.npcAway !== away) { P.npcGo(away, first ? null : new V3(-10, 0, 21)); if (!away && !first) dinnerHow = 'arrived'; }
     if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) { const how = dinnerHow; P.act(() => root.Maren.dinner(P, w, how)); }
+    else if (!away && idle && !P.busy && !P.npcMoving && root.Maren.at(w) === 'needle' && !(P.npcMotion && P.npcMotion.seat)) root.Maren.sitDown(P);      // (at her needlework: in the chair by the hearth)
   }
   // Her basket, for the HUD: while it's in her hands, what's in it (by name); otherwise nothing to show.
   function basketText(P_) { const b = root.Chores && P_ && P_.motion ? root.Chores.basketOf(P_) : null; return b ? (b.contents || []).slice() : null; }
@@ -336,7 +337,7 @@ function create(view, ui) {
   async function begin() { cal.advance(30); w.breakfasted = true; const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered', sit = (chores && chores.on()) || first;
     let table = null; await go('home', 'bed', { ready: P_ => { if (sit && root.Maren) table = root.Maren.atTable(P_, w, { plates: true }); } }); const P_ = P; if (!P_) return;
     if (sit) P_.act(async () => { if (first) await P_.talkToMother({ seated: true }); else await chores.breakfast(P_, { seated: true });
-      if (table) { await fade(true); table.up(); await fade(false); } });
+      if (table) { await fade(true); table.up(); if (root.Maren) root.Maren.toWork(P_, w); await fade(false); } });
   }
 
   // ── Starting.

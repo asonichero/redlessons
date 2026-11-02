@@ -46,6 +46,19 @@ function atTable(P, w, o) {
     for (let k = 0; k < 6; k++) on(new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.9, 1), '#c8a066', mid.x + Math.cos(k) * 1.6, tb.y + 1.7 + (k % 2) * 0.4, mid.z + Math.sin(k) * 1.6); }
   return { seats: [a, b], mid, top: tb.y, up() { for (const g of things) P.stage.scene.remove(g); if (P.sitting) { m.stand(); m.sitW = 0; P.sitting = null; } if (mm.seat) { mm.stand(); mm.sitW = 0; } } };
 }
+// Up from the table (under a fade): her mother at her work at once: gone, if it's the farm; at her needlework, sat in the chair by the
+// hearth. (Or just home: stood, as she is.)
+function toWork(P, w) {
+  const where = at(w), mm = P.npcMotion; if (!mm) return;
+  if (where === 'farm') { if (P.npcGo) P.npcGo(true, null); return; }
+  if (where === 'needle') sitDown(P);
+}
+// (at her needlework: on the chair by the hearth)
+function sitDown(P) {
+  const mm = P.npcMotion, ch = P.world.seats.find(s => s.kind === 'chair'); if (!mm || !ch || mm.seat === ch) return;
+  if (P.sitting === ch) return;      // (Red's in it: she'll stand till it's free)
+  mm.warp(ch.at.clone().setY(0).add(new root.THREE.Vector3(Math.sin(ch.facing), 0, Math.cos(ch.facing)).multiplyScalar(0.5)), ch.facing); mm.sit(ch); mm.sitW = 1;
+}
 // Dinner: the two of them at the table, on the stools, their plates before them; Red's account of her morning, and then her mother's word on it.
 // how: 'entered' (Red's come in at dinner time: straight to the table, under a fade), 'arrived' (Red's in already, and her mother comes in
 // from the farm, glad to find her: a word, and then the table), 'home' (her mother home anyway, at her needlework: the same, without the door).
@@ -70,11 +83,12 @@ async function dinner(P, w, how) {
   // (and up from the table, under a fade, the plates cleared)
   if (w.fade) await w.fade(true);
   table.up();
-  w.cal.advance(30);
+  w.cal.advance(Math.max(1, BACK - w.cal.minute));      // (and back to her work: the farm, or her needlework)
+  toWork(P, w);
   if (w.fade) await w.fade(false);
 }
 
-const api = { atTable, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
+const api = { atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
 root.Maren = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
