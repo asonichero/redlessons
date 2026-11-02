@@ -6,11 +6,11 @@
 
 Wolfe is the main story, and every other quest line feeds it. The game runs in three acts of three phases each. Most quest lines open early and finish by the end of Act 1 or Act 2, then come back in Act 3 as help in the search for Hulda.
 
-- **Act 1, Little Red:** the village. Red takes up the cloak, builds trust with the village figures and finishes their quests. Holt and Wolfe both appear late in the act.
-- **Act 2, Further In:** the wood. The Barrows and the Shoe, Wolfe drawing her in, Hulda going quiet unnoticed, and the errand with cake and wine at the end.
+- **Act 1, Little Red:** the village. Red takes up the cloak, builds trust with the village figures and finishes their quests; the spring fair. The wood only on Grandmother's herb paths and the way to her cabin, where Holt is met late in the act.
+- **Act 2, Further In:** the wood, explored. Wolfe met, the Barrows and the Shoe, Wolfe drawing her in, Hulda going quiet unnoticed, and the errand with cake and wine at the end.
 - **Act 3, Rose:** the search for Hulda, the trap, and Wolfe brought to justice, faced as Rose.
 
-The principle running through all three acts: every authority over Red is one she chose, and her name, Rose, stops any of them at once. Wolfe is the only figure who earns trust in private rather than in front of others, and that difference is what the player learns to read.
+The principle running through all three acts: every authority over Red is one she chose, and her name, Rose, stops any of them at once. Everyone in the game is an adult; only Red acts otherwise, by her own choice. Between others the same holds: authority is given by the one who submits to it (the smith's over Tom is a master's, not a father's), never by a third party's blessing. Wolfe is the only figure who earns trust in private rather than in front of others, and that difference is what the player learns to read.
 
 ### Setting and voices
 
@@ -84,13 +84,14 @@ Key: ● active quest · ○ paused · – in the background (done, or a side th
 
 | Line | 1.1 | 1.2 | 1.3 | 2.1 | 2.2 | 2.3 | 3.1 | 3.2 | 3.3 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Wolfe** |  |  | ● | ● | ● | ● | ● | ● | ● |
+| **Wolfe** |  |  |  | ● | ● | ● | ● | ● | ● |
 | Maren | ● | ● | ● | ● | ● | ● | ● | ● | ● |
 | Hulda | ● | ● | ● | ● | ○ | ○ | ○ | ● | ● |
 | Peter | ● | ● | ● | ○ | ● | ● | ● | ● | ● |
 | Tom and the smith | ● | ● | ● | – | – | – | – | ● | – |
 | Mistress Pennock | ● | ● | ● | – | – | ● | – | ● | – |
 | Mistress Abney | ● | ● | ● | – | ● | ● | – | ● | – |
+| Agnes and Georgie |  | ● | ● | – | – | – | – | – | ● |
 | Holt |  |  | ● | ● | ● | ● | ● | ● | ● |
 | The Barrows |  |  |  | ● | ● | – | – | ● | – |
 | The Shoe |  |  |  | ● | ● | – | – | ● | – |
@@ -100,9 +101,9 @@ Key: ● active quest · ○ paused · – in the background (done, or a side th
 Read across a row for one character, down a column for one phase. Hulda and Peter are the only lines that pause; everyone with a finished quest comes back in 3.2.
 
 1. **1.1 The Cloak:** chapter one. Maren's homecoming and the safe word. The village figures, Peter and Tom introduced.
-2. **1.2 The Village:** trust and disclosure with Mistress Pennock, Mistress Abney and Tom. The pie, on Tom's dare. Hulda's herb errands. Mary's garden and other chores agreed with Maren.
-3. **1.3 Into the Wood:** Holt met at Hulda's. First meeting with Wolfe. Village quests complete. Willie Winkie's first catch, if any.
-4. **2.1 Further In:** Bo Peep's strays lead Red to the Barrows. Wolfe's chance meetings. Lucy found in the village. Hulda's last visit. Peter waits on the Barrows.
+2. **1.2 The Village:** trust and disclosure with Mistress Pennock, Mistress Abney and Tom. The pie, on Tom's dare. Hulda's herb errands. Mary's garden and other chores agreed with Maren. The spring fair, and Georgie's kiss.
+3. **1.3 Into the Wood:** Holt met at Hulda's. Agnes and Georgie settled, in the wood, with Red between them. Village quests complete. Willie Winkie's first catch, if any.
+4. **2.1 Further In:** first meeting with Wolfe, at the stream. Bo Peep's strays lead Red to the Barrows. Wolfe's chance meetings. Lucy found in the village. Hulda's last visit. Peter waits on the Barrows.
 5. **2.2 The Shoe:** the mending errand and the night there. Mistress Abney's daughter's confinement keeps Red in the village for weeks. Hulda goes quiet. Peter and Red's first agreement.
 6. **2.3 The Errand:** the forged note, the cake and wine, the cabin. Holt stops Wolfe, holds Red to account there, and brings her home.
 7. **3.1 The Reckoning:** Maren's apologies; Holt holds her to account, Red watching. Rose takes up the search.
@@ -117,7 +118,7 @@ Each step is tagged with its phase: 1.1 The Cloak, 1.2 The Village, 1.3 Into the
 
 What he wants: Hulda's craft, for his own gain rather than for what she uses it for, and Red, plainly and carnally.
 
-1. **1.3** First meeting, at the stream, when Red is alone. Charming and interested in her.
+1. **2.1** First meeting, at the stream, when Red is alone: Act 2 opens on it. Charming and interested in her.
 2. **2.1** Chance meetings, only ever when she's alone. He asks far more than he tells. Every answer she gives him is tracked.
 3. **2.2** He learns about Hulda, the cabin and Little Red, and suggests keeping things between them. Off screen, he goes after Hulda for her craft. She escapes, injured, and hides deeper in the wood; he intercepts her messages.
 4. **2.3** He forges the note asking for Red with cake and wine. He's waiting at the cabin, saying Hulda will be back soon.
@@ -139,7 +140,7 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 **Her day (Act 1).** It's planting time: most days Maren is out at the Hallorans' farm from after breakfast (7.30), home at 12.30 for dinner with Red, and out again till supper (6). Some days she has needlework, and works at home for a part of the day instead. Dinner is Red's midday check-in: the meal fills her capacity again, and Maren looks over her morning (the garden, the errand, anything she's seen), never correcting there, but letting her know what's coming if she doesn't put it right.
 
 **The fair dress** (1.2; the rhyme behind it, *Little Polly Flinders*, never named: the player makes the connection if they know it). Over her needlework days Maren makes Red a new dress for the spring fair: the first new thing Rose has had in years, made with her mother's time. Bess has her own story of a new frock spoilt by the hearth as a girl, and of her mother catching her; told as Bess's, not as a warning.
-  - **Fair day, on the green.** Maren has a stall: she sells flowers from Mary's garden; Hulda sells her medicines beside her. Their errands are not optional: Maren's (more flowers cut and brought from the garden, change, her dinner), Hulda's (more of the herbs Red has learnt, fetched from where they grow). Other sellers ask favours too, any of which Red may turn down to spare her capacity: Master Ferrier wants something brought from the forge (mind the soot underfoot); others need no risky path at all. Bo can't leave her flock to chase a sheep that's got out of the pen into a crop row: there's one clean way to it, and dirt by any other. A fairing brought back to Bess, who can't go.
+  - **Fair day, on the green.** Maren has a stall: she sells flowers from Mary's garden; Hulda sells her medicines beside her. Their errands are not optional: Maren's (more flowers cut and brought from the garden, change, her dinner), Hulda's (more of the herbs Red has learnt, fetched from where they grow). Other sellers ask favours too, any of which Red may turn down to spare her capacity: Master Ferrier wants something brought from the forge (mind the soot underfoot); others need no risky path at all. Bo can't leave her flock to chase a sheep that's got out of the pen into a crop row: there's one clean way to it, and dirt by any other. A fairing brought back to Bess, who can't go. At the dancing, Georgie kisses Agnes and runs (Agnes and Georgie, step 2).
   - **The garden that day.** The lettuce and onion beds are one, and the cockle shells and silver bells one, each reached only from one side. With flowers cut for the stall there are gaps in the beds, where she can step in to reach across without harm, if she's careful: hurrying through the beds is the quick way, and spoils the dress and the flowers.
   - **The dress shows it**: earth, soot, a wet or torn hem. Every shortcut is hers to take; nothing is refused.
   - **After.** Clean: Maren's quiet pride; Bess wants every detail. A little spoiled, owned at supper: washed and mended with Maren the next morning (a needlework morning, restoring). Spoiled, or hidden: an evening correction, last thing, for spoiling her new clothes (and for the hiding, if she hid it), then the mending. No one else corrects her for it: it's Maren's dress.
@@ -205,6 +206,21 @@ Fearless, wry, and a watcher ("You learn a great deal, sitting"). Practically, s
 1. **1.2** On her bench and at the inn: company, if Red sits with her (only sitting brings her trust). The inn's shifts are hers to run from her chair while her mother's out; in their lulls, her story comes out a piece at a time. Abney's promise: the evening by the fire with her.
 2. **2.2** Her confinement (see Mistress Abney).
 
+### Agnes and Georgie (Georgie Porgie)
+
+**Agnes Thatcher** is at the well most days, and knows everything said at it. **Georgie Dunn**, the miller's apprentice and the Watchman's son, has been sweet on her for a year, and wrote her a poem. Both grown, both Red's friends since they were small. The rhyme: Georgie Porgie kissed the girls and made them cry; when the boys came out to play, Georgie Porgie ran away. Never named in the game.
+
+1. **1.1–1.2** Village colour: the poem, Georgie mooning at the well, Agnes pretending not to notice.
+2. **1.2 The fair.** Carried away by the day, Georgie kisses Agnes in front of everyone, at the dancing: she hadn't asked for it, and it makes her small in front of the whole green. She cries. Tom and the lads come over roaring at it, and Georgie runs, leaving her standing there. Red sees it, as one of the fair's encounters; nothing she does on the day mends it.
+3. **1.3** Agnes stops coming to the well. Red finds her elsewhere. She doesn't want an apology: she wants him to feel it as she did, and doesn't know how that could be.
+4. **1.3** With Agnes's trust high enough, Red tells her what being Little Red means, and what makes a correction work: asked for, a word that stops it, and the after mattering as much. Agnes becomes the friend Red confides in (about Peter, later).
+5. **1.3** Georgie, his trust high (after Lay night, when he walked her home and it was awkward and honest), is ashamed, and running made it worse. Red puts it to him plainly; it's his to choose, and both answers go on:
+   - **Yes:** he asks Agnes to hold him to account. Red sets the terms with both of them: where, his word to stop it, and whether she's there (Agnes asks her to be). It's done in the wood, off the herb path, away from the village's eyes and ears: Agnes and Georgie, Red watching. Then the after, the two of them; and the well is the well again.
+   - **No:** he says sorry, and means it, and it isn't enough. Agnes is civil to him; the well is quieter than it was.
+   No blessing is asked of anyone: it's between the two of them, and his yes is all the authority it needs.
+6. **2.x** Gossip and errands; a friend Red confides in about Peter. If step 5 went the first way, Peter may say so when it's their turn (2.2): "Like Agnes and Georgie?"
+7. **3.2–3.3** Something seen at the mill, if a lead is needed there (Georgie); at the gathering when Rose speaks (Agnes).
+
 ### Holt (the Woodsman)
 
 1. **1.3** Introduced at Hulda's.
@@ -260,8 +276,6 @@ These figures have no steps to complete, but each has a job in every phase so th
 | Who | Act 1 | Act 2 | Act 3 |
 | --- | --- | --- | --- |
 | Willie Winkie | On his rounds every night. Red rarely breaks curfew yet. First catch (any time from 1.2): he walks her home for Maren to deal with; she's corrected for the curfew. | Tom's dusk dares make catches likelier. From the second catch, if Red is open and Maren has given her blessing, he offers to deal with her himself: agreed between him and Red alone, never procedural, never on his round. He walks her home and it's done there, by her own fire, with her own slipper from the hearth, his cape set aside; then Maren puts the kettle on. | Saw a figure in the wood at night. The village's authority when Wolfe is brought to account. |
-| Georgie Dunn | Village colour; the poem to Agnes; small mischief alongside Red. | Gossip and errands. | Something seen at the mill, if a lead is needed there. |
-| Agnes Thatcher | Village colour; the target of Georgie's poem. | Gossip; a friend Red can confide in about Peter. | At the gathering when Rose speaks. |
 | Master Fowler | Peter's grandfather, at the smallholding: warns about the wood, asks after Hulda. | Notices Hulda hasn't been by. | Tells Peter, which starts 3.2; at the gathering. |
 | The Ferriers, Mistress Pennock, Mistress Abney (once complete) | From 1.3: background figures. Each still corrects her in the open world, weighted by the stat they care about most. | Same; also supply the errand (cake, wine). | Called back as leads and help in the search. |
 | Rotating villagers | Only once village-wide openness is high enough. | Same. | Witnesses; the crowd at the end. |
@@ -274,7 +288,7 @@ Twelve gates hold the story in order. The three act gates are hard; the rest ope
 
 | Gate | Opens | Requires |
 | --- | --- | --- |
-| Act 1 to Act 2 | Phase 2.1 | Ferriers, Mistress Pennock and Mistress Abney complete; Holt met; first meeting with Wolfe |
+| Act 1 to Act 2 | Phase 2.1 | Ferriers, Mistress Pennock and Mistress Abney complete; the fair passed, and Agnes and Georgie settled one way or the other; Holt met |
 | Act 2 to Act 3 | Phase 3.1 | The errand played out at the cabin |
 | Act 3 finale | Phase 3.3 | Hulda found |
 | The smith takes her in hand | Tom step 5 | Red has told Tom |
@@ -282,6 +296,7 @@ Twelve gates hold the story in order. The three act gates are hard; the rest ope
 | The Shoe | Shoe step 2 | Lucy met in the village, and Maren handing over the mending |
 | Hulda's silence | Wolfe step 3 | Mistress Abney's daughter's confinement keeping Red in the village (2.2) |
 | The forged note | Wolfe step 4 | Enough disclosure to Wolfe to make it convincing; otherwise he uses what Hulda's intercepted letters said |
+| Agnes holds Georgie to account | Agnes and Georgie step 5 | The fair passed; Agnes's trust high, and Red's disclosure to her; Georgie's trust high, and his own yes; Red taken in hand by someone besides her mother (Mistress Pennock or Mistress Abney) |
 | Willie Winkie's offer | His Act 2 behaviour | A second catch, Red open village-wide, and Maren's blessing |
 | Rotating villagers | Open-world corrections | Village-wide openness past a threshold |
 | Each middle-tier figure | Taking her in hand | Trust built, then Red's own disclosure to them |
