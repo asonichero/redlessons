@@ -335,6 +335,12 @@ function palette(id, look) {
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: cloak, skirtDk: shade(cloak, -0.3),      // (her skirt the red of her cloak)
      
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
+    // (the fair dress her mother made: forget-me-not blue, a dark blue bodice laced in cream; and what the day's put on it: earth and a wet hem
+    // darken it from the bottom, soot greys it, a tear shows the petticoat's white at the hem)
+    if (l.gown === 'fair') { const sp = l.spoil || {}, dirt = Math.min(1, (sp.earth || 0) + (sp.wet || 0) * 0.6), soot = Math.min(1, sp.soot || 0);
+      const mix = (a, b, t) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), c = k => Math.round(((x >> k) & 255) * (1 - t) + ((y >> k) & 255) * t); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
+      const sk = mix('#7898c8', '#6a6a70', soot * 0.6), skd = mix(shade('#7898c8', -0.25), '#5a4a32', dirt * 0.8);
+      Object.assign(P, { blouse: mix('#faf4e6', '#9a9690', soot * 0.5), bodice: '#2c3a62', lace: '#f2e6c4', skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : mix('#f2e6c4', '#5a4a32', dirt) }); }
   } else if (id === 'gran') {
     const shawl = '#7d6a8c';
     Object.assign(P, { cloak: shawl, cloakDk: shade(shawl, -0.3), lining: '#e2d8c8', lace: '#c9b8d4', blouse: '#efe6d4', bodice: '#4e3e56', skirt: '#5a6444', skirtDk: '#454e34', hem: '#454e34',

@@ -100,7 +100,7 @@ function attach(P, w) {
   const nearestLoose = p => { let best = null, bd = 1e9; for (const s of flock || []) if (s.state === 'loose') { const d = s.obj.position.distanceTo(p); if (d < bd) { bd = d; best = s; } } return best; };
   function home_(s) { s.state = 'home'; s.path = [gate.clone().add(new V3((Math.random() - 0.5) * 6, 0, 8)), gate.clone(), pen.clone()]; }
   async function ask() {
-    const m = P.motion; change(x => { x.asked = cal.day; });
+    const m = P.motion; change(x => { x.asked = cal.day; }); if (!(save.state.flags || {})['bo-met']) save.flag('bo-met', cal.day);
     const near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2);
     await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(12)]);
     bo.motion.face(yawTo(bo.motion.pos, m.pos)); await m.face(yawTo(m.pos, bo.motion.pos));
@@ -127,7 +127,7 @@ function attach(P, w) {
   function actions() {
     const f = st(); if (!bo || scattered || boBusy || P.busy || f.talked === cal.day) return [];
     return [{ label: 'Talk to Bo', at: bo.motion.pos.clone().setY(18), run: async () => {
-      change(x => { x.talked = cal.day; }); boBusy = true; const m = P.motion; await m.face(yawTo(m.pos, bo.motion.pos));
+      change(x => { x.talked = cal.day; }); if (!(save.state.flags || {})['bo-met']) save.flag('bo-met', cal.day); boBusy = true; const m = P.motion; await m.face(yawTo(m.pos, bo.motion.pos));
       await P.converse(S.boHello(cal.day), { shot: ['red', 'bo'] }); rep.trusts('bo', 0.5); boBusy = false; } }];
   }
   // (for the list and the guide: the strays still out, when she's said she'll help)

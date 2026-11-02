@@ -54,7 +54,7 @@ function plan(day) {
 }
 const MAREN_TENDS = 0.2;
 // (her mother's day in the garden: no work for Red)
-function offToday(w) { const g = stateOf(w), d = w.cal.day; return g.rest === d ? 'after' : hash(d, 500) < MAREN_TENDS ? 'maren' : null; }
+function offToday(w) { const g = stateOf(w), d = w.cal.day; if (root.Fair && root.Fair.isFair(w)) return 'fair'; return g.rest === d ? 'after' : hash(d, 500) < MAREN_TENDS ? 'maren' : null; }
 
 // ── Building it (js/village.js gives it the village's root; the fence is the village's own).
 function build(parent, world) {

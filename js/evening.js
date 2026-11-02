@@ -90,8 +90,8 @@ async function raise(P, w) {
 // stood before her mother, who says what it's for; under another, it's given; and after it, always, the two of them: held, if she reached
 // tears, or sat together on the bed if not. Then bed, and her thoughts on the day.
 // (each correction's own → its result: and after it, the words said in the aftercare)
-const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how), loaf: (P, w, how) => root.Loaf.correct(P, w, how) };
-const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how) };
+const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how), loaf: (P, w, how) => root.Loaf.correct(P, w, how), wood: (P, w, how) => woodCorrect(P, w, how) };
+const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how), wood: () => root.Story.woodAfter() };
 async function settle(P, w, table) {
   // (setting her right covers the bell too, if that's owed as well tonight: the rest waits)
   const list = stateOf(w).owed || [], o = list.find(x => x.kind === 'maintenance') || list[0], S = root.Story; if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); if (table) { await w.fade(true); table.up(); await w.fade(false); } return; }
@@ -246,6 +246,12 @@ async function lateHome(P, w, walked) {
   await w.fade(false);
   change(w, s => { s.owed = (s.owed || []).filter(x => x.kind !== 'curfew'); s.abed = n; s.ate = 0; s.tonight = { kind: 'curfew', r: r ? { rose: !!r.rose, tooHarsh: !!r.tooHarsh, peak: r.peak || 0 } : null }; });
   w.refresh();
+}
+// ── In the wood after dusk (js/world.js marks it): her mother's own rule, the wood's, apart from the village's curfew.
+async function woodCorrect(P, w, how) {
+  const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => root.Story.woodCorrection(Sc, how) }], fade: on => w.fade(on) });
+  w.rep.settle('wilful', 0.6); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+  return r;
 }
 async function curfewCorrect(P, w, how) {
   const S = root.Story;

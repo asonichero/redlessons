@@ -16,7 +16,9 @@ function create(view, opts) {
   W.obstacles = W.obstacles || []; W.items = W.items || []; W.seats = W.seats || []; W.surfaces = W.surfaces || []; W.pegs = W.pegs || []; W.exits = W.exits || [];
   st.setLight(opts.light || 0);
   let look = (root.Looks && Looks.load ? Looks.load() : {}).red;
-  let rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig);
+  let gown = opts.gown || null;      // (what she's wearing under the cloak, when it's not her everyday: { kind: 'fair', spoil: { earth, soot, wet, tear } }, js/fair.js)
+  const dressed = l => gown ? Object.assign({}, l, { gown: gown.kind, spoil: gown.spoil || {} }) : l;
+  let rig = Toon.make('red', dressed(look)); st.scene.add(rig.root); st.cast(rig);
   const sc = rig.scaleW, R = 3.2 * sc, start = opts.start || { at: [4, 2], yaw: Math.PI };
   rig.root.position.set(start.at[0], 0, start.at[1]); rig.root.rotation.y = start.yaw;
   let dress = { skirt: 'down' };
@@ -384,13 +386,15 @@ function create(view, opts) {
   // What she wears: the skirt (on, lifted or off), and her outfit (her cloak, with the hood down or up, or none). The outfit is part of how she's
   // built, so changing it builds her again where she stands, carrying whatever she was carrying; it's kept with her looks, for every page.
   function setDress(d) { dress = Object.assign({}, dress, d); rig.setDress(dress); }
+  // (her gown: the fair dress, or her everyday (null); spoil: what's on it. Built again, as setOutfit)
+  function setGown(g) { gown = g || null; setOutfit(look.outfit, true); }
   function setOutfit(outfit, force) {
     if ((doing && !force) || !root.Looks) return;
     const all = Looks.load(); all.red.outfit = outfit; look = Looks.save(all).red;
     if (sitting || lying) { sitting = null; lying = false; }
     const at = m.pos.clone(), yaw = m.yaw, carry = m.carry, style = m.carryStyle;
     st.scene.remove(rig.root);
-    rig = Toon.make('red', look); st.scene.add(rig.root); st.cast(rig); rig.root.position.copy(at); rig.root.rotation.y = yaw;
+    rig = Toon.make('red', dressed(look)); st.scene.add(rig.root); st.cast(rig); rig.root.position.copy(at); rig.root.rotation.y = yaw;
     m = Motion.create(rig, { collide, ground }); if (carry) m.hold(carry, style);
     rig.setDress(dress); if (talk) talk.cast.red.rig = rig;
   }
@@ -400,7 +404,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, setGown, get gown() { return gown; }, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

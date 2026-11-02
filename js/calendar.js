@@ -59,7 +59,7 @@ function create(save) {
     frac: () => Math.min(1, carry),      // (how far into the minute: for things that move with the clock)
     tick(dt, rate) { carry += dt * (rate == null ? 1 : rate); if (carry >= 1) { const n = Math.floor(carry); carry -= n; cal.advance(n); } },
     light: () => lightAt(S().minute),
-    curfew: () => S().minute >= CURFEW || S().minute < CURFEW_END,
+    curfew: () => (S().minute >= CURFEW && !(cal.lifted && cal.lifted(S().minute))) || S().minute < CURFEW_END,      // (lifted: a night her curfew's let go for a while (fair day, till ten): set by js/world.js)
     get weekday() { return weekday(S().day); }, get dayName() { return dayName(S().day); }, get lay() { return weekday(S().day) === LAY; },
     layNight: () => layNight(S().day, S().minute),
     dark: () => ['dusk', 'night'].includes(partAt(S().minute)),

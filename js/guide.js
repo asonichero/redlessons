@@ -16,6 +16,7 @@ function goal(w) {
   { const at = root.Flock && root.Flock.goal(w); if (at) return { area: 'village', at }; }      // (Bo's strays, when Red's said she'll help)
   if (root.Evening && root.Evening.washDue && root.Evening.washDue(w)) return { area: 'home', spot: 'basin' };
   if (root.Evening && root.Evening.objective(w)) return { area: 'home', who: 'mother' };
+  if (root.Fair && root.Fair.objective(w)) return { area: 'home', who: 'mother' };      // (home by four, for the fitting)
   if (root.Pie && root.Pie.objective(w)) return { area: 'home', who: 'mother' };
   if (root.AbneyPromise && root.AbneyPromise.objective(w)) return { area: 'inn', who: 'bess' };
   if (root.Peter && root.Peter.objective(w)) return { area: 'wood', spot: 'beech' };

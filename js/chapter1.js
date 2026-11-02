@@ -77,7 +77,7 @@ World.scene('ch1.tea', {
 // she stops (the stop takes its time), and at each she can stay longer (a choice: more bluebells, longer by the water thinking, longer with
 // Peter's carving and what it was); every time she stays, she's later home, and her mother's correction is the heavier for it. What she did
 // is kept (flags.walk: { bluebells, stream, beech }, 1 for each she stayed at), and she comes home with the bluebells: a posy, or an armful.
-const STOP_MINS = 15, LINGER_MINS = 25, PATH_MINS = 115;      // (game minutes: the whole path at any pace, each stop, each time she stays)
+const STOP_MINS = 20, LINGER_MINS = 20, PATH_MINS = 135;      // (game minutes: the whole path at any pace, each stop, each time she stays: out of the wood about eight, home in the dark; staying at all three, about nine)
 World.scene('ch1.walk', {
   ownObjective: true,
   prepare(o, w) {

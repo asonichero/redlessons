@@ -98,6 +98,7 @@ function create(w) {
     // Baking day (the Pennocks at it themselves, all day) nor Lay day)
     const wd = root.Calendar ? root.Calendar.weekday(day) : ((day - 1) % 7) + 1;
     if (wd === 7) return null;
+    if (root.Fair && root.Fair.isFair(w, day)) return null;      // (fair day: only the fair's own errands)
     const fits = id => !(id === 'inn' && wd !== 4) && !(id === 'bakery' && wd === 6);
     const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id) && fits(id));
     if (next) return next;      // (the first of them not yet asked that suits the day: the inn's evening waits for Carrier's day, the rest go on meanwhile)
@@ -176,9 +177,10 @@ function create(w) {
   // ── Breakfast: the asking. (Played at home, the morning she wakes: js/world.js's morning.)
   async function breakfast(P, o) {
     if (!on() || !P || !P.npc) return;
+    if (root.Fair) root.Fair.arm(w);      // (the fair's days set, once its gates are met)
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
-      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay,      // (her mother's own day: js/maren.js)
+      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay, fair: root.Fair ? root.Fair.breakfast(w) : null, fairDay: !!(root.Fair && root.Fair.isFair(w)),      // (her mother's own day: js/maren.js)
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
     await P.wait(0.8); if (!(o && o.seated)) await P.approach();      // (seated: across the table from her already)
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
@@ -306,7 +308,7 @@ function create(w) {
   // Mistress Abney, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.
   const OFFER = { pennock: { id: 'bakery', before: H('12:00'), sold: H('12:30') }, abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
   function canOffer(who) {
-    const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day || cal.lay) return false;      // (Lay day: no work offered)
+    const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day || cal.lay || (root.Fair && root.Fair.isFair(w))) return false;      // (fair day: no shifts)      // (Lay day: no work offered)
     if (who === 'pennock') return !(e && e.id === 'bakery') && !(root.Work && root.Work.current(w));      // (any day she's not been asked for the afternoon's: and not twice)
     return !e || e.state === 'done' || e.state === 'little';
   }
@@ -390,7 +392,7 @@ function create(w) {
   function objectives() {
     if (!on()) return [];
     const out = [], e = errand(), c = st();
-    for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
+    for (const M of [root.Fair, root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     if (root.Maren && cal.minute >= H('11:30') && cal.minute < root.Maren.BACK && root.Maren.stateOf(w).dinner !== cal.day) out.push('Home for dinner with Mama, at half past twelve.');      // (she's back from the farm for it)
     const k = root.Work && root.Work.current(w), left = k && (e || k.mode === 'picked') ? root.Work.leftOf(k).filter(t => t.kind !== 'service') : null;

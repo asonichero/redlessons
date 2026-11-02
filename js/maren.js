@@ -19,11 +19,12 @@ const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.maren); }, { mar
 const on = w => !!(w.chores && w.chores.on());
 function at(w) {
   const m = w.cal.minute, n = needlework(w.cal.day);
+  { const f = root.Fair && on(w) ? root.Fair.marenAt(w) : null; if (f) return f; }      // (the fair's week: home, at the dress; fair day: at her stall)
   if (!on(w) || (w.cal.lay) || m < OUT || m >= HOME || (m >= DINNER && m < BACK)) return 'home';      // (Lay day: home all day)
   if ((n === 'morning' && m < DINNER) || (n === 'afternoon' && m >= BACK)) return 'needle';
   return 'farm';
 }
-const home = w => at(w) !== 'farm';
+const home = w => at(w) !== 'farm' && at(w) !== 'fair';
 const dinnerDue = w => on(w) && w.cal.minute >= DINNER && w.cal.minute < BACK && stateOf(w).dinner !== w.cal.day;
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
 const missedDinner = w => on(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;

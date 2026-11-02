@@ -108,6 +108,7 @@ async function knockAtGran(P) {
 function create(view, ui) {
   ui = ui || {};
   const save = root.Save.create(), cal = root.Calendar.create(save), rep = root.Reputation.create(save);
+  cal.lifted = () => !!(root.Fair && w && root.Fair.curfewLifted(w));      // (fair day: her curfew lifted till the fair ends at ten)
   let areaName = null, P = null, going = null, lightFn = null, timeOn = true, sinceSave = 0, sceneNow = null;
   const q = root.Quests.create(save, root.QuestData, { rep, cal, area: () => areaName });
   const fade = async (on, text) => { if (ui.fade) await ui.fade(on, text); };
@@ -234,6 +235,7 @@ function create(view, ui) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, noRun: !!A.noRun, light: cal.light() };      // (noRun: walking only: the wood, on her way home)
     o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); }; o.stowable = it => !!(chores && P && chores.stowable(P, it)); o.stow = it => chores.stow(P, it);      // (stow: the pot, the loaf, into her basket)      // (put down out of doors: there still, when she comes back for it)
     if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc() : A.npc;
+    if (root.Fair) o.gown = root.Fair.gown(w);      // (fair day: in the dress her mother made, and what's on it)
     // (where she comes in: the saved place, when taking the game up again; the way she came in; or the place's first)
     const saved = entry === 'saved' && save.state.at, list = A.entries === 'set' ? null : A.entries;
     let e = saved ? { at: [save.state.at[0], save.state.at[1]], yaw: save.state.at[2] } : list ? (list[entry] || list[Object.keys(list)[0]]) : null;
@@ -294,11 +296,17 @@ function create(view, ui) {
   function frame(dt) {
     if (!P) return;
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
-    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, (root.Work && root.Work.rate(w)) || RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock();      // (a shift's own pace, while one's under way)
+    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, (root.Work && root.Work.rate(w)) || (root.Fair && root.Fair.isFair(w) ? 1 : RATE)); if (cal.minute !== m0 || cal.day !== d0) refreshClock();      // (a shift's own pace, while one's under way)
       if (capacity && chores && chores.on()) capacity.tick(P, dt, (cal.day - d0) * 1440 + cal.minute - m0); }      // (worn, or rested, by the minutes gone by)
     if (capacity && chores && chores.on()) { P.tiredness = capacity.worn ? 2 : capacity.low ? 1 : 0; if (ui.capacity) ui.capacity(capacity.value); } else if (ui.capacity) ui.capacity(null);
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
     if (areaName === 'home' && root.Maren && P.npcGo) marenDay(idle);
+    // (the wood by dusk: out of it, and within the village's bounds, before the light goes; still on the path at seven, and it's owed. The
+    // village's curfew is the village's own, later)
+    if (areaName === 'wood' && chores && chores.on() && idle && cal.dark() && save.state.woodLate !== cal.day && root.Evening) {
+      save.change(s => { s.woodLate = cal.day; }, { woodLate: true }); rep.add('wilful', 1, 'in the wood after dusk');
+      if (!root.Evening.owes(w, 'wood')) root.Evening.owe(null, w, 'wood', {});
+      if (P.talk) P.talk.muse('The light’s going. I should have been out of the wood by now. Mama’s going to know.', { face: 'wince' }); refresh(); }
     if (guide) guide.update(P, dt);      // (the way to what's hers to do: js/guide.js)
     if (ui.basket) ui.basket(basketText(P));      // (her basket, by the diary, while she has it: what's in it)
     P.stage.setLight(lightFn ? lightFn() : cal.light());
@@ -314,6 +322,7 @@ function create(view, ui) {
     const away = !root.Maren.home(w), first = marenP !== P; marenP = P;
     if (first) dinnerHow = 'entered';
     if (P.npcAway !== away) { P.npcGo(away, first ? null : new V3(-10, 0, 21)); if (!away && !first) dinnerHow = 'arrived'; }
+    if (!away && idle && !P.busy && !P.npcMoving && root.Fair && root.Fair.fittingDue(w)) { P.act(() => root.Fair.fitting(P, w)); return; }      // (the fitting, from four on the Fifth day of the fair's week)
     if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) { const how = dinnerHow; P.act(() => root.Maren.dinner(P, w, how)); }
     else if (!away && idle && !P.busy && !P.npcMoving && root.Maren.at(w) === 'needle' && !(P.npcMotion && P.npcMotion.seat)) root.Maren.sitDown(P);      // (at her needlework: in the chair by the hearth)
   }
