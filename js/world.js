@@ -309,7 +309,7 @@ function create(view, ui) {
   function frame(dt) {
     if (!P) return;
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
-    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock();
+    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, (root.Work && root.Work.rate(w)) || RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock();      // (a shift's own pace, while one's under way)
       if (capacity && chores && chores.on()) capacity.tick(P, dt, (cal.day - d0) * 1440 + cal.minute - m0); }      // (worn, or rested, by the minutes gone by)
     if (capacity && chores && chores.on()) { P.tiredness = capacity.worn ? 2 : capacity.low ? 1 : 0; if (ui.capacity) ui.capacity(capacity.value); } else if (ui.capacity) ui.capacity(null);
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)

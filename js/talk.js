@@ -211,7 +211,7 @@ function create(stage, opts) {
 
   let playing = false;
   async function play(script, o) {
-    o = o || {}; playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile)
+    o = o || {}; captionOff(); playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile; a caption still up is done with, so its ending can't take the box away mid-conversation)
     // (if the last one's still handing the camera back, it's the player's: this one gives it back to them too, rather than keeping it held)
     const wasEnabled = giveBack ? (clearTimeout(giveBack), giveBack = null, true) : stage.controls.enabled;
     const mine = saved = { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: wasEnabled };

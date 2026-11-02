@@ -16,7 +16,7 @@
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
-const SHIFT_RATE = 2.5;      // (game minutes a second, in a timed shift: a quarter quicker than the day's. The bakery's whole list, done briskly, is about seventy seconds' play)
+const SHIFT_RATE = 2.5;      // (game minutes a second, in a timed shift: a quarter quicker than the day's. The bakery's whole list, done briskly, is about seventy seconds' play. A shift's own rate, where it has one: the inn's, a minute a second)
 
 // The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it. Done in any
 // order, each offered where it's done, as she comes near it (as the garden's are); after: not till that one's done.
@@ -33,7 +33,7 @@ const SHIFTS = {
   // (the inn: Mistress Abney out of the room either way, so it's Bess's, from her chair. Carrier's day, given at breakfast: Abney away to Ashby
   // till seven, and the carrier's men in at five (js/innshift.js). Offered on the day by Abney herself (short): an afternoon's tidying while
   // she turns out the rooms upstairs, back down when the time's up. out: who goes, and comes back to look it over)
-  inn: { area: 'inn', boss: 'bess', out: 'abney', errand: 'inn', away: 180, shortAway: 150, tasks: [
+  inn: { area: 'inn', boss: 'bess', out: 'abney', errand: 'inn', away: 180, shortAway: 120, rate: 1, tasks: [
     { id: 'fire', what: 'the fire', label: 'Build up the fire', place: 'fire', mins: 10, kind: 'reach' },
     { id: 'tableA', what: 'the long table at the back', label: 'Wipe down the table', place: 'tableA', mins: 8, kind: 'shape', line: 'tables' },
     { id: 'tableB', what: 'the table by the hearth', label: 'Wipe down the table', place: 'table2', mins: 8, kind: 'shape', line: 'tables' },
@@ -124,7 +124,7 @@ function attach(P, w) {
   // (the shift's clock: quicker than the day's while she's in here, talk aside; and when it's run out, the boss back)
   P.tick(dt => {
     const s = cur(); if (!s || !s.until || s.back) return;
-    if (!(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, P.busy ? SHIFT_RATE : SHIFT_RATE - (w.RATE || 2));      // (the day's own clock runs too, when she's not busy)
+    if (P.busy && !(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, sh.rate || SHIFT_RATE);      // (busy at a task, the day's own clock stands: this one runs on. Otherwise the day's runs, at the shift's rate: see rate)
     if (w.cal.minute >= s.until) due = true;
     if (due && !P.busy) { due = false; P.act(back); }
   });
@@ -242,7 +242,9 @@ function attach(P, w) {
   return { actions };
 }
 
-const api = { begin, attach, current, tasksOf, leftOf, doneOf, stashed, SHIFTS, SHIFT_RATE };
+// (the clock's rate while a shift's under way here, its boss away: js/world.js runs the day at it)
+const rate = w => { const s = current(w, w.area); return s && s.until && !s.back ? SHIFTS[s.id].rate || SHIFT_RATE : null; };
+const api = { begin, attach, current, tasksOf, leftOf, doneOf, stashed, rate, SHIFTS, SHIFT_RATE };
 root.Work = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
