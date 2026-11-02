@@ -129,11 +129,21 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 
 1. **1.1** The homecoming, the safe word, the first correction.
 2. **1.2** Agreed chores that aren't too grown: Mary's garden, small errands, curfew.
-3. **1.3** Decides whether to give Willie Winkie her blessing, after his first catch.
-4. **2.2** Hands Red the mending for the Shoe. Then Mistress Abney's daughter's confinement keeps Maren and Red busy in the village for weeks, so Hulda's silence passes unseen. Scripted, not a player choice.
-5. **2.3** Receives the forged note and sends Red without thinking through the danger.
-6. **3.1** When Holt brings Red home, Maren pours out apologies to them both. Holt says she shares the blame; she agrees and asks him to hold her to account. Red, and the player, witness it.
-7. **3.3** Stands with Rose at the end.
+3. **1.2** The fair dress (below).
+4. **1.3** Decides whether to give Willie Winkie her blessing, after his first catch.
+5. **2.2** Hands Red the mending for the Shoe. Then Mistress Abney's daughter's confinement keeps Maren and Red busy in the village for weeks, so Hulda's silence passes unseen. Scripted, not a player choice.
+6. **2.3** Receives the forged note and sends Red without thinking through the danger.
+7. **3.1** When Holt brings Red home, Maren pours out apologies to them both. Holt says she shares the blame; she agrees and asks him to hold her to account. Red, and the player, witness it.
+8. **3.3** Stands with Rose at the end.
+
+**Her day (Act 1).** It's planting time: most days Maren is out at the Hallorans' farm from after breakfast (7.30), home at 12.30 for dinner with Red, and out again till supper (6). Some days she has needlework, and works at home for a part of the day instead. Dinner is Red's midday check-in: the meal fills her capacity again, and Maren looks over her morning (the garden, the errand, anything she's seen), never correcting there, but letting her know what's coming if she doesn't put it right.
+
+**The fair dress** (1.2; the rhyme behind it, *Little Polly Flinders*, never named: the player makes the connection if they know it). Over her needlework days Maren makes Red a new dress for the spring fair: the first new thing Rose has had in years, made with her mother's time. Bess has her own story of a new frock spoilt by the hearth as a girl, and of her mother catching her; told as Bess's, not as a warning.
+  - **Fair day, on the green.** Maren has a stall: she sells flowers from Mary's garden; Hulda sells her medicines beside her. Their errands are not optional: Maren's (more flowers cut and brought from the garden, change, her dinner), Hulda's (more of the herbs Red has learnt, fetched from where they grow). Other sellers ask favours too, any of which Red may turn down to spare her capacity: Master Ferrier wants something brought from the forge (mind the soot underfoot); others need no risky path at all. Bo can't leave her flock to chase a sheep that's got out of the pen into a crop row: there's one clean way to it, and dirt by any other. A fairing brought back to Bess, who can't go.
+  - **The garden that day.** The lettuce and onion beds are one, and the cockle shells and silver bells one, each reached only from one side. With flowers cut for the stall there are gaps in the beds, where she can step in to reach across without harm, if she's careful: hurrying through the beds is the quick way, and spoils the dress and the flowers.
+  - **The dress shows it**: earth, soot, a wet or torn hem. Every shortcut is hers to take; nothing is refused.
+  - **After.** Clean: Maren's quiet pride; Bess wants every detail. A little spoiled, owned at supper: washed and mended with Maren the next morning (a needlework morning, restoring). Spoiled, or hidden: an evening correction, last thing, for spoiling her new clothes (and for the hiding, if she hid it), then the mending. No one else corrects her for it: it's Maren's dress.
+  - **Gated** on more than the day: before Bess's and Mistress Abney's lines are resolved; after the inn shift's been worked, the first of Hulda's herbs learnt, and Bo met (to be settled).
 
 ### Hulda
 
@@ -188,7 +198,7 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 
 ### Bess Abney (her daughter)
 
-Twenty-six, Mistress Abney's youngest; her older brothers and sisters have long since moved away. Slight all her life, and a little sickly as a child, which is half of why her mother hovers. She married and moved away with her husband; he died eight months ago, and she came home to the Wheatsheaf. She found she was with child soon after he died, and she sees the baby as a blessing: her mother's fear that grief will harm her, or the baby, is mostly misplaced. Near her time now, she's kept sitting all day (on the bench by the inn door, or in her chair by the hearth).
+Elizabeth (Bess) Shafto by marriage, still Bess Abney to the village. Twenty-six, Mistress Abney's youngest; her older brothers and sisters have long since moved away. Slight all her life, and a little sickly as a child, which is half of why her mother hovers. She married Robert Shafto (a bonny Bobby Shafto: the carrier's man, based in the market town, who met her at the Wheatsheaf on carrier nights and called her Curly Locks) and moved away with him; he died on the road last winter, eight months ago, and she came home to the Wheatsheaf. The carrier's men she serves knew him. She sings *Bye, Baby Bunting* to the baby. She found she was with child soon after he died, and she sees the baby as a blessing: her mother's fear that grief will harm her, or the baby, is mostly misplaced. Near her time now, she's kept sitting all day (on the bench by the inn door, or in her chair by the hearth).
 
 Fearless, wry, and a watcher ("You learn a great deal, sitting"). Practically, she's a little worried about the birth, but she wouldn't say so. She doesn't talk much about her husband. She's eight years older than Rose and remembers her as a child. She guesses, before anyone tells her, what Rose is doing in being Little Red, and treats her subtly differently once she has, without letting on that's why, until Red tells her the truth.
 
