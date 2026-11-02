@@ -167,7 +167,7 @@ function create(view, opts) {
       if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
     for (const it of W.items) if (!it.away && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it), full: !!m.carry }, p); }
-    if (!m.carry) for (const s of W.seats) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
+    if (!m.carry) for (const s of W.seats) if (!s.noSit) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;
       if (it.hangs) for (const pg of W.pegs) if (!pg.item) add({ label: 'Hang ' + it.name + ' up', run: () => putOn({ peg: pg }) }, pg.at);

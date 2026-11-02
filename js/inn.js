@@ -110,8 +110,9 @@ function build(scene) {
   for (const id of ['tableA', 'tableB', 'tableC']) { const pc = piece(id, wall), g = pc.g;
     box(g, 24, 1.4, 9, 0, 13, 0, oak); for (const sx of [-1, 1]) box(g, 1.6, 12.3, 7, sx * 10, 6.2, 0, oakDk);
     for (const sz of [-1, 1]) { box(g, 22, 1.2, 4, 0, 8.4, sz * 8, oak); for (const sx of [-1, 1]) box(g, 1.2, 7.8, 3, sx * 9, 3.9, sz * 8, oakDk);
-      world.seats.push({ name: 'the bench', at: pc.P(0, 9, sz * 8), facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool' }); }
+      world.seats.push({ name: 'the bench', at: pc.P(0, 9, sz * 8), facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool', noSit: true }); }      // (not offered: the benches are for the custom, and for sitting with Bess when she asks)
     world.obstacles.push(pc.area(-12, 12, -10, 10));
+    world.tableTops = world.tableTops || {}; world.tableTops[id] = Object.assign(pc.area(-12, 12, -4.5, 4.5), { y: 13.7 });      // (the board itself: wiped from whichever side she comes at it)
     for (let k = 0; k < 3; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, -6 + k * 6, 15, (k - 1) * 1.5, { ink: 0.04 });
     // (where the carrier's men sit, at the table by the hearth: two on the far bench, one on the near; each, where to stand to serve him)
     if (id === 'tableB') world.carrierSeats = [[-5, -1], [5, -1], [0, 1]].map(([x, sz]) => { const at = pc.P(x, 9, sz * 8), serve = pc.P(x, 0, sz * 15), look = pc.P(x, 14, sz * 6);

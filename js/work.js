@@ -100,7 +100,8 @@ function attach(P, w) {
   function actions() {
     const s = cur(); if (!s || P.busy) return [];
     if (carrying) return carrying.id === 'tea' && spots.bess ? [{ label: 'Give Bess her tea', at: spots.bess.look.clone(), run: () => giveTea() }] : [];
-    return open().map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: (byBroom(t) ? spots.broom : spots[t.place] || spots.floor).look.clone(), run: () => m.carry ? P.handsFull() : doTask(t) }));
+    const where = t => { const top = W.tableTops && W.tableTops[t.id]; return top ? new V3((top.x0 + top.x1) / 2, top.y, (top.z0 + top.z1) / 2) : (byBroom(t) ? spots.broom : spots[t.place] || spots.floor).look.clone(); };      // (a table: offered from any side of it)
+    return open().map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: where(t), run: () => m.carry ? P.handsFull() : doTask(t) }));
   }
   W.more = W.more || []; W.more.push(actions);
   // (the inn's evening: the carrier's men, served as they call, from when they come in)
@@ -136,6 +137,12 @@ function attach(P, w) {
     else { w.refresh(); if (ID === 'inn') maybeOffer(); }
   }
   async function doTask(t) {
+    const top = W.tableTops && W.tableTops[t.id];      // (a table at the inn: wiped from whichever side she's come to it, at the edge nearest her)
+    if (top) { const q = new V3(Math.max(top.x0, Math.min(top.x1, m.pos.x)), 0, Math.max(top.z0, Math.min(top.z1, m.pos.z))), out = m.pos.clone().setY(0).sub(q); if (out.lengthSq() < 0.01) out.set(0, 0, 1); out.normalize();
+      const at = P.collide(q.clone().addScaledVector(out, 6), 3.2); await m.goTo(at, Math.atan2(q.x - at.x, q.z - at.z)); q.y = top.y; const side = new V3(out.z, 0, -out.x);
+      const said = lines[t.line || t.id]; if (said) say(...said);
+      for (let k = 0; k < 3; k++) await reachAt(q.clone().addScaledVector(out, -1.5).addScaledVector(side, (k - 1) * 4), k % 2 ? 'L' : 'R', 0.6);
+      if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work'); markDone(t.id); return; }
     const sp = spots[t.place] || spots.floor; if (!byBroom(t) && t.kind !== 'tea') { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); }
     const said = lines[t.line || t.id]; if (said) say(...said);
     if (t.kind === 'tea') { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); await reachAt(sp.look); const cup = cupProp(); P.stage.scene.add(cup.obj); m.hold(cup, 'hang'); m.lookAt(null); carrying = { id: 'tea', it: cup, t }; w.refresh(); return; }
