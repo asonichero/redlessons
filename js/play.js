@@ -141,6 +141,7 @@ function create(view, opts) {
 
   // ── Things to do: whatever's nearest in front of her, of the things she could do from where she is.
   const input = { move: { x: 0, z: 0 }, run: false };
+  const tired = { level: 0 };      // (how worn she is: 0 fine, 1 low, 2 worn through (js/capacity.js))
   let doing = null, sitting = null, lying = false;
   const wp = o => o.getWorldPosition(new V3());
   const flat = v => v.clone().setY(0);
@@ -348,7 +349,8 @@ function create(view, opts) {
     // Keys move her relative to the camera.
     const cf = flat(st.controls.target.clone().sub(st.camera.position)).normalize(), cr = new V3(-cf.z, 0, cf.x);
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
-    m.update(dt, { move: mv, run: input.run && !opts.noRun && !(m.carry && m.carry.heavy) }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there; and with a heavy thing in her arms, the butt full)
+    const t = tired.level, mv2 = t ? { x: mv.x * (t > 1 ? 0.72 : 0.86), z: mv.z * (t > 1 ? 0.72 : 0.86) } : mv;      // (tired: her pace slower, and worn through, slower still, no running)
+    m.update(dt, { move: mv2, run: input.run && t < 2 && !opts.noRun && !(m.carry && m.carry.heavy) }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there; and with a heavy thing in her arms, the butt full)
     // Exits: walking into one tells the page (once).
     if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; if (opts.onExit(e) === false) exited = null; break; }
     // (the set: anything between the camera and her is cut away; only in play, with her there to be seen, not in a shot of the page's own)
@@ -389,7 +391,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { jump, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { jump, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

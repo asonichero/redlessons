@@ -141,6 +141,7 @@ function create(view, ui) {
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.
   const chores = root.Chores ? root.Chores.create(w) : null; w.chores = chores;
+  const capacity = root.Capacity ? root.Capacity.create(w) : null; w.capacity = capacity;      // (how she's holding up: js/capacity.js)
   if (ui.trust) rep.onTrust((who, n) => { const D = root.QuestData && root.QuestData.PEOPLE[who]; if (n) ui.trust(who === 'abneyDaughter' ? 'Bess' : D ? D.name : who, n); });      // (a change of trust, shown as it happens)
   const guide = root.Guide && typeof document !== 'undefined' ? root.Guide.create(w) : null;
 
@@ -272,6 +273,7 @@ function create(view, ui) {
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], P && P.flock ? P.flock.actions() : [], gateAction()); }
     if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : [], P && P.world.signpost ? [{ label: 'Read the signpost', at: P.world.signpost, run: () => P.converse(root.Story.signpost(), { shot: false, keepCamera: true }) }] : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
     if (name === 'wood') o.place = chain(o.place, P_ => { const d = P_.world.door; if (d) d.knock = () => knockAtGran(P_); });      // (her grandmother's door: knocked at, from the path)
+    if (name === 'cabin' && capacity && save.state.granRest !== cal.day) { save.change(s => { s.granRest = cal.day; }); capacity.add(15, 'her grandmother’s'); }      // (her grandmother's cabin: once a day, it fills her again)
     if (name === 'cabin' && root.Herbs) o.talk = () => root.Herbs.talk(w);      // (her grandmother: the herb errands)      // (the beech: Peter's notes, and meeting him there)
     if (name === 'holding') { o.place = chain(o.place, P_ => { P_.fowlers = root.Holding ? root.Holding.people(P_, w) : null; }); o.actions = () => (P && P.fowlers ? P.fowlers.actions() : []).concat(chores ? chores.actions(P, 'holding') : []); }      // (and the eggs, when she's come for them)
     return o;
@@ -307,7 +309,9 @@ function create(view, ui) {
   function frame(dt) {
     if (!P) return;
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
-    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock(); }
+    if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, RATE); if (cal.minute !== m0 || cal.day !== d0) refreshClock();
+      if (capacity && chores && chores.on()) capacity.tick(P, dt, (cal.day - d0) * 1440 + cal.minute - m0); }      // (worn, or rested, by the minutes gone by)
+    if (capacity && chores && chores.on()) { P.tiredness = capacity.worn ? 2 : capacity.low ? 1 : 0; if (ui.capacity) ui.capacity(capacity.value); } else if (ui.capacity) ui.capacity(null);
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
     if (guide) guide.update(P, dt);      // (the way to what's hers to do: js/guide.js)
     if (ui.basket) ui.basket(basketText(P));      // (her basket, by the diary, while she has it: what's in it)
@@ -330,7 +334,7 @@ function create(view, ui) {
   const dayKept = () => { try { const s = root.localStorage && root.localStorage.getItem(DAY_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } };
   const canRestart = () => { const d = dayKept(); return !!(d && d.day === cal.day); };
   async function restartDay() { const d = dayKept(); if (!d) return false; await fade(true, ''); save.import(d); await begin(); return true; }
-  async function morning(text) { await fade(true, text || ''); cal.sleep(); keepDay(); await begin(); }
+  async function morning(text) { await fade(true, text || ''); if (capacity && (cal.minute >= 22 * 60 || cal.minute < 5 * 60)) capacity.late(); cal.sleep(); keepDay(); await begin(); }      // (to bed past ten: tomorrow starts lower)
   async function begin() { cal.advance(30); w.breakfasted = true; await go('home', 'bed'); const P_ = P; if (!P_) return;
     const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered';
     if ((chores && chores.on()) || first) P_.act(async () => { await basketDown(P_); if (first) await P_.talkToMother({ stay: true }); else await chores.breakfast(P_); });

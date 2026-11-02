@@ -95,6 +95,7 @@ async function settle(P, w) {
   await P.wait(0.4); await P.approach();
   const now = S.owedNow(o.kind); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
   await CORRECT[o.kind](P, w, how);
+  if (w.capacity) w.capacity.add(15, 'set right');      // (held to account: and lighter for it)
   if (P !== w.P) return;
   change(w, s => { s.abed = night(w.cal); s.ate = 0; });
   if (o.kind !== 'curfew') await P.converse(S.breadAndBed(), { shot: ['red', 'mother'] });      // (the curfew's own word after says so)
@@ -113,7 +114,7 @@ function actions(P, w) {
       const m = P.motion, at = loaf.obj.position.clone().add(loaf.grip); if (P.sitting) await P.getUp();
       const front = P.collide(m.pos.clone().setY(0).lerp(at.clone().setY(0), 0.4), 3.2); if (front.distanceTo(at.clone().setY(0)) > 10) await m.goTo(P.collide(at.clone().setY(0).add(m.pos.clone().setY(0).sub(at.clone().setY(0)).setLength(7)), 3.2), Math.atan2(at.x - m.pos.x, at.z - m.pos.z));
       m.lookAt(at); for (let k = 0; k < 2; k++) { await m.reach('R', at.clone()); await m.release('R'); await m.reach('R', m.pos.clone().setY(at.y + 5).addScaledVector(new root.THREE.Vector3(Math.sin(m.yaw), 0, Math.cos(m.yaw)), 1.2)); await P.wait(0.6); await m.release('R'); }
-      m.lookAt(null); change(w, s => { s.ate = night(w.cal); }); w.cal.advance(10);
+      m.lookAt(null); change(w, s => { s.ate = night(w.cal); }); w.cal.advance(10); if (w.capacity) w.capacity.add(8, 'bread and cheese');
       await P.converse(root.Story.breadEaten(), { shot: false, keepCamera: true }); w.refresh(); } }]; }
   const B = P && P.world.basin; if (!washDue(w) || !P || P.busy || !B) return [];
   return [{ label: 'Wash for supper', at: B.at.clone(), run: async () => {
@@ -180,7 +181,7 @@ async function blessing(P, w) {
 async function supper(P, w, ctx) {
   const S = root.Story; let how = null; ctx = ctx || {};
   await P.wait(0.4); await P.approach();
-  await P.converse(S.supper({ owed: ctx.owed, yes: () => { how = 'yes'; }, little: () => { how = 'little'; } }), { shot: ['red', 'mother'] });
+  await P.converse(S.supper({ low: !!(w.capacity && w.capacity.low), owed: ctx.owed, yes: () => { how = 'yes'; }, little: () => { how = 'little'; } }), { shot: ['red', 'mother'] });
   // (and her day, caught up on: over the potatoes at the table; sat on the stool while her mother sees to the hearth; or stood, and questioned)
   const m = P.motion, mm = P.npcMotion, W = P.world, V = root.THREE.Vector3, tb = W.surfaces.find(s => s.name === 'the table'), B = W.bounds;
   let peeling = null;
@@ -194,6 +195,7 @@ async function supper(P, w, ctx) {
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
   if (peeling) await peeling.done();
+  if (w.capacity) w.capacity.add(how === 'yes' ? 10 : 15, 'supper');      // (supper, with her mother: sat still, more)
   w.cal.advance(how === 'yes' ? 40 : 20);
 }
 // The two stools, turned to face each other, a bowl of potatoes on the floor between: each with one in her hand and the knife going round it,

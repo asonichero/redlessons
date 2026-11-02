@@ -91,6 +91,10 @@ const CSS = `
 #hBasket { pointer-events: auto; width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: none; align-items: center; justify-content: center; padding: 0; }
 #hBasket.on { display: flex; } #hBasket svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hBasket:hover { background: rgba(60,40,44,0.8); }
 #hBasketCard .bl { font: 16px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0 4px; padding: 0; list-style: none; } #hBasketCard .bl li::before { content: '❧ '; color: #c9a84c; }
+/* (how she's holding up: a small upright bar by the diary, gold, dimming and reddening as she wears down) */
+#hCap { width: 12px; border-radius: 6px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); display: none; position: relative; overflow: hidden; }
+#hCap.on { display: block; } #hCap i { position: absolute; left: 2px; right: 2px; bottom: 2px; border-radius: 4px; background: #e2c26a; transition: height .6s, background .6s; }
+#hCap.low i { background: #c98a4a; } #hCap.worn i { background: #a8504a; }
 #hBasketCard .none { font: italic 15px Georgia, serif; color: #c9a88c; }
 #hQuests.on { display: block; } #hQuests div { margin: 2px 0; padding-left: 12px; text-indent: -12px; } #hQuests div::before { content: '❧ '; color: #c9a84c; font-style: normal; }
 body.talking #hTop, body.correcting #hTop { opacity: 0; pointer-events: none; }
@@ -141,7 +145,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><div id="hCap" title="How she’s holding up" aria-label="How she’s holding up"><i></i></div><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -342,6 +346,9 @@ function create(opts) {
     quests(list) { const q = $('hQuests'), esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); list = list || []; const html = list.map(t => '<div>' + esc(t) + '</div>').join('');
       if (q.innerHTML !== html) q.innerHTML = html; q.classList.toggle('on', list.length > 0); objEl.classList.remove('on'); },
     diary,
+    // (how she's holding up, 0..100; null hides it)
+    capacity(v) { const c = $('hCap'); c.classList.toggle('on', v != null); if (v == null) return; const k = Math.round(v); if (c._v === k) return; c._v = k;
+      c.firstChild.style.height = 'calc(' + k + '% - 4px)'; c.classList.toggle('low', v < 35 && v >= 18); c.classList.toggle('worn', v < 18); c.title = v < 18 ? 'Worn through' : v < 35 ? 'Flagging' : v < 70 ? 'Holding up' : 'Fresh'; },
     basket(list) { basketList = list; $('hBasket').classList.toggle('on', !!list); if (!list && basketEl.classList.contains('on')) basketCard(false); else if (basketEl.classList.contains('on')) drawBasket(); },      // (her basket, while she's carrying it: what's in it)
     clock(t, phase) { const c = $('hClock'); c.innerHTML = t ? t + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },
     show(on) { el.classList.toggle('hide', !on); if (!on) pause(false); },

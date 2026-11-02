@@ -107,6 +107,7 @@ function attach(P, w) {
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
     if (!timed) w.cal.advance(t.mins);
+    if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work');      // (a shift wears her down, task by task)
     const s0 = current(w); if (!s0) return; const last = s0.step + 1 >= tasksOf(s0).length;
     change(w, s => { s.step++; });
     if (last && timed) { if (current(w).until && !current(w).back) await back(); }      // (all done before she's back: and then she is)

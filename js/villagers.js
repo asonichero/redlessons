@@ -284,6 +284,7 @@ function attach(P, w) {
     return d.kind === 'bell' ? [{ label: 'Ring the curfew bell', at: sp.bell.look.clone(), run: () => doDare('bell') }] : [{ label: 'Knock at the Dunns’ door', at: sp.dunnsDoor.look.clone().setY(16), run: () => doDare('knock') }];
   }
   async function doDare(kind) {
+    if (w.capacity) w.capacity.add(-6, 'a dare');      // (Tom's dares: the nerve they take)
     if (kind === 'bell') await ringBell(); else await knock();
     change(s => { s.dares = (s.dares || 0) + 1; s.dare.done = true; s.dare.until = cal.minute + 60; }); if (vs().dares >= 2 && w.q.stateOf && w.q.stateOf('tom.dares') === 'offered') w.complete('tom.dares');
     w.refresh();

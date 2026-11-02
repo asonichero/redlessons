@@ -256,7 +256,7 @@ function attach(P, w) {
     await m.goTo(a, yawTo(a, b)); const side = (r.z - p.z) * (west ? 1 : -1) < 0 ? 'L' : 'R';
     m.reach(side, () => new V3(m.pos.x, 4, r.z)); m.lookAt(new V3(b.x, 2, r.z));
     await m.goTo(b, yawTo(a, b), { speed: 0.4 }); await m.release(side); m.lookAt(null);
-    change(w, g => { g.watered[r.id] = true; g.water -= 1; }); G.water(r.id, true); spend(6); await finished();
+    change(w, g => { g.watered[r.id] = true; g.water -= 1; }); G.water(r.id, true); if (w.capacity) w.capacity.add(3, 'the flower rows'); spend(6); await finished();      // (the simple rows: they settle her)
   }
   async function pull(wd, p) {
     await m.goTo(p, yawTo(p, wd)); m.lookAt(new V3(wd.x, 0, wd.z));
