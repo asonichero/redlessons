@@ -149,10 +149,9 @@ function create(view, opts) {
     for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [])) if (!a.when || a.when()) add({ label: a.label, run: a.run, full: a.full }, a.at);
     if (W.door) { const d = W.door, p = wp(d.latch); add({ label: d.knock && !d.target ? 'Knock at ' + d.name : (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }      // (knock: a door that's someone else's, opened to her from inside)
     if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
-    // (her cloak: hung up on its hook by the door, or taken down and put on)
+    // (her cloak: it stays on, only off when the story takes it (the shoe, later); if it's hung on its hook, taken down and put on)
     if (W.cloakHooks && !m.carry) { const h = W.cloakHooks;
-      if (look.outfit !== 'No cloak' && !h.redHung) add({ label: 'Hang up your cloak', run: () => hangCloak(true) }, h.peg);
-      else if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
+      if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
     for (const it of W.items) if (!it.away && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it), full: !!m.carry }, p); }
     if (!m.carry) for (const s of W.seats) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
