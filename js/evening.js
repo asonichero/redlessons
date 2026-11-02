@@ -99,7 +99,8 @@ async function settle(P, w, table) {
   const how = Object.assign({}, o.how);
   await stood(P, w, table);
   const now = S.owedNow(o.kind, how); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
-  const r = await CORRECT[o.kind](P, w, how);
+  lapAfter(r_ => AFTER[o.kind](how, r_));      // (the aftercare on her lap, still in the chair: held, or sat up)
+  const r = await CORRECT[o.kind](P, w, how); if (root.Correction) root.Correction.next = null;
   if (w.capacity) w.capacity.add(15, 'set right');      // (held to account: and lighter for it)
   if (P !== w.P) return;
   await aftercare(P, w, r, AFTER[o.kind](how, r));
@@ -117,7 +118,10 @@ async function stood(P, w, table) {
 }
 // After it, at home, always: held on her mother's lap (r: she reached tears), her face in her shoulder; or sat together on the edge of the bed.
 // lines: what's said in it.
+// (set for the correction about to be given: its aftercare played on the giver's lap, in the chair where it was given, always)
+function lapAfter(lines) { if (root.Correction) root.Correction.next = { after: (r, ctx) => (r && !r.rose && (r.tooHarsh || r.peak >= 1) && ctx && ctx.beat ? [{ run: ctx.beat }] : []).concat(lines(r)) }; }
 async function aftercare(P, w, r, lines) {
+  if (r && r.afterPlayed) return;      // (played already, on her lap, in the correction's own place)
   const V = root.THREE.Vector3, st = P.stage, talk = P.talk, held = !!(r && !r.rose && (r.tooHarsh || r.peak >= 1)), A = root.GameAudio;
   await w.fade(true);
   if (A && A.startMusic) A.startMusic({ theme: 'after' });
@@ -239,7 +243,8 @@ async function lateHome(P, w, walked) {
   await P.converse(S.curfewTalk(how), { shot: ['red', 'mother'] });
   if (P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
   await P.converse(S.owedNow('curfew', how).slice(2), { shot: ['red', 'mother'] });
-  const r = await curfewCorrect(P, w, how);
+  lapAfter(() => S.curfewAfter(how));
+  const r = await curfewCorrect(P, w, how); if (root.Correction) root.Correction.next = null;
   if (w.capacity) w.capacity.add(15, 'set right');
   if (P !== w.P) return;
   await aftercare(P, w, r, S.curfewAfter(how));

@@ -22,6 +22,7 @@
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE.Vector3;
+let nextAfter = null;      // (the next correction's aftercare, on the lap, always: { after(r, ctx) → lines })
 
 const CSS = `
 #corrUI { position: fixed; right: 76px; top: 10px; z-index: 36; display: none; flex-direction: row; align-items: center; gap: 12px; }
@@ -247,8 +248,9 @@ async function run(P, o) {
     // (js/lap.js's after): after her word, upright and dressed again; in high distress (past the edge of resistance, or too much), held close
     // as she is. Otherwise it's played in the room after, as before.
     const last = results[results.length - 1];
-    if (o.after && lap && last && last.subject === player) {
-      const kind = last.rose ? 'upright' : last.tooHarsh || last.peak >= 1 ? 'held' : null;
+    const after = o.after || (nextAfter && nextAfter.after), always = !!(o.aftercare || nextAfter); nextAfter = null;      // (nextAfter: set for the next correction by the evening's, js/evening.js: always played, on the lap)
+    if (after && lap && last && last.subject === player) {
+      const kind = last.rose ? 'upright' : last.tooHarsh || last.peak >= 1 ? 'held' : always ? 'upright' : null;      // (always: sat up on her lap, if she didn't reach tears)
       if (kind) {
         el.classList.remove('on'); hint.classList.remove('on'); await fade(true); talk.captionOff();
         lap.after(kind); const v = lap.VIEWS.after(); st.go(v.pos, v.look, 0);
@@ -259,7 +261,7 @@ async function run(P, o) {
           sitUp: async () => { await fade(true); lap.after('upright', { asIs: true }); lap.subjectRig.setExpr('teary', 60); if (talk.cast.red) talk.cast.red.rig = lap.subjectRig;
             const v2 = lap.VIEWS.after(); st.go(v2.pos, v2.look, 0); await wait(0.4); await fade(false); } };
         if (A && A.startMusic) A.startMusic({ theme: 'after' });      // (and after it, the two of them: music again, its own)
-        try { await talk.play(o.after(last, ctx), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
+        try { await talk.play(after(last, ctx), { shot: false, keepCamera: true }); } finally { if (talk.cast.red) talk.cast.red.rig = redWas; }
         afterPlayed = true;
       }
     }
@@ -287,5 +289,5 @@ async function run(P, o) {
   return Object.assign({}, first, { turns: results, afterPlayed });
 }
 
-root.Correction = { run, ui, figure, toCorner };
+root.Correction = { run, ui, figure, toCorner, set next(v) { nextAfter = v; }, get next() { return nextAfter; } };
 })(typeof window !== 'undefined' ? window : globalThis);
