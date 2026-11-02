@@ -316,11 +316,12 @@ function build(scene, opts) {
     box(g, 1, 6, 1, 7.6, 11, 1.6, oakDk, { ink: 0.04 });      // (the windlass's handle)
     for (const sz of [-1, 1]) { const rf = box(g, 18, 0.8, 7.4, 0, 17.4, sz * 3.2, plank); rf.rotation.x = sz * 0.55; }
     solid(g, new THREE.CylinderGeometry(1.4, 1.1, 2.2, 10), oakDk, 0, 7.6, 0, { ink: 0.05 }); pole(g, new V3(0, 8.6, 0), new V3(0, 12, 0), 0.06, iron, { ink: 0 });
-    world.obstacles.push({ x: wl.x, z: wl.z, r: 8 }); }
+    world.obstacles.push({ x: wl.x, z: wl.z, r: 8 }); solids.push({ x0: wl.x - 9.5, x1: wl.x + 9.5, z0: wl.z - 7, z1: wl.z + 7, top: 21, lift: true }); }      // (the camera kept out of its roof and posts: lifted over, not pulled in)
   // The lime tree: broad, old, its trunk ringed by a bench.
   const TREE = new V3(GREEN.x - 60, 0, GREEN.z - 6);
   { const g = new THREE.Group(); g.position.copy(TREE); root_.add(g); const bark = toonMap(rep(textures().oak, 2, 3));
     solid(g, new THREE.CylinderGeometry(4.2, 5.6, 46, 14), bark, 0, 23, 0, { ink: 0.14 });
+    solids.push({ x0: TREE.x - 6, x1: TREE.x + 6, z0: TREE.z - 6, z1: TREE.z + 6, top: 30, lift: true });      // (nor inside its trunk)
     for (const [a, b] of [[[0, 30, 0], [-14, 52, 6]], [[0, 34, 0], [12, 56, -8]], [[0, 38, 0], [4, 62, 14]]]) pole(g, new V3(...a), new V3(...b), 1.8, bark, { taper: 1.5 });
     const leaf = [T.mat('#5e8a3e'), T.mat('#6f9a46'), T.mat('#7aa24e')], rr = rnd(207);
     for (let k = 0; k < 9; k++) { const an = k / 9 * 6.3 + rr(), d = 10 + rr() * 12, s = 13 + rr() * 8; solid(g, T.ell(s, s * 0.7, s, 14, 10), leaf[k % 3], Math.cos(an) * d, 58 + rr() * 14, Math.sin(an) * d, { ink: 0.16, shadow: true }); }
@@ -595,9 +596,11 @@ function build(scene, opts) {
   // ── The camera, outdoors: kept out of the houses (in front of whatever's between it and her), so a wall or a roof never fills the view. ──
   const inBox = (s, p) => !(p.x < s.x0 || p.x > s.x1 || p.z < s.z0 || p.z > s.z1 || p.y > s.top);
   function keepCamera(camera, target) {
-    const t = target, c = camera.position, d = c.clone().sub(t), these = solids.filter(s => !inBox(s, t)); let hit = 1;      // (not one she's up against, under its eaves)
+    const t = target, c = camera.position, d = c.clone().sub(t), these = solids.filter(s => !s.lift && !inBox(s, t)); let hit = 1;      // (not one she's up against, under its eaves)
     for (let k = 1; k <= 24; k++) { const p = t.clone().addScaledVector(d, k / 24); if (these.some(s => inBox(s, p))) { hit = (k - 1) / 24; break; } }
     if (hit < 1) c.copy(t).addScaledVector(d, Math.max(0.12, hit));
+    // (the small things, the well and the like: never inside them, lifted over the top instead, so it isn't pulled in on her back)
+    for (const s of solids) if (s.lift && inBox(s, c)) c.y = s.top + 2;
   }
 
   // ── Light: the sky, the fog, the windows and lanterns lit from dusk, the forge's glow; the sun following her. ──
