@@ -358,7 +358,7 @@ function palette(id, look) {
       const mix = (a, b, t) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), c = k => Math.round(((x >> k) & 255) * (1 - t) + ((y >> k) & 255) * t); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
       const BLUE = '#6f90c4', sk = mix(BLUE, '#6a6a70', soot * 0.6), skd = mix(shade(BLUE, -0.22), '#5a4a32', dirt * 0.8);
       Object.assign(P, { blouse: mix(young ? shade(BLUE, 0.08) : BLUE, '#6a6a70', soot * 0.5), bodice: young ? sk : mix(shade(BLUE, -0.16), '#6a6a70', soot * 0.5), lace: young ? shade(BLUE, -0.3) : '#f2e6c4',
-        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : young ? mix('#fbf8f2', '#5a4a32', dirt) : mix(shade(BLUE, -0.25), '#4a3a28', dirt), collar: '#fbf8f2', backButtons: young ? null : '#24345e', sash: young ? '#f0c4cc' : mix(shade(BLUE, -0.42), '#4a4a50', soot * 0.5) }); }      // (both with a white frilled collar and a sash, to read young: the fair dress's a deeper blue)
+        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : mix('#fbf8f2', '#5a4a32', dirt), collar: '#fbf8f2', backButtons: young ? null : '#24345e', sash: young ? '#f0c4cc' : mix(shade(BLUE, -0.42), '#4a4a50', soot * 0.5) }); }      // (both with a white frilled collar and a sash, to read young: the fair dress's a deeper blue)
   } else if (id === 'gran') {
     const shawl = '#7d6a8c';
     Object.assign(P, { cloak: shawl, cloakDk: shade(shawl, -0.3), lining: '#e2d8c8', lace: '#c9b8d4', blouse: '#efe6d4', bodice: '#4e3e56', skirt: '#5a6444', skirtDk: '#454e34', hem: '#454e34',
@@ -699,7 +699,11 @@ function make(id, look, opts) {
     hemBand = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 28)), P.hem, { ink: 0.04 }));
     // (lifted, only the back of it goes up: the front still hangs as it did, down over her legs, its hem band along the bottom)
     skirtFront = new THREE.Group(); rig.hips.add(skirtFront);
-    { const F0 = -1.2, FL = 2.4, a = clipSrc('skirt', skinned(hug(lathe(skirtProfile, 0.9, 16, F0, FL)), P.skirt, { side: THREE.DoubleSide })), b = clipSrc('skirt', skinned(hug(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 16, F0, FL)), P.hem, { ink: 0.04 }));
+    // (round to the sides, where the roll ends; and from the middle of her front out to them, its hem rising, drawn in to her as it goes up, to
+    // meet the roll at her hips: a slant across them, not a straight fall with the roll above it)
+    const rise = g => { const pp = g.attributes.position; for (let i = 0; i < pp.count; i++) { const x = pp.getX(i), y = pp.getY(i), z = pp.getZ(i), up = ss(0.55, 1.62, Math.abs(Math.atan2(x, z))), top = 1.55;
+      if (y < top && up > 0) { const ny = lerp(y, top - (top - y) * 0.06, up), k = skirtR(Math.min(ny, 2.0)) / skirtR(y); pp.setY(i, ny); pp.setX(i, x * lerp(1, k, up)); pp.setZ(i, z * lerp(1, k, up)); } } g.computeVertexNormals(); return g; };
+    { const F0 = -1.62, FL = 3.24, a = clipSrc('skirt', skinned(hug(rise(lathe(skirtProfile, 0.9, 22, F0, FL))), P.skirt, { side: THREE.DoubleSide })), b = clipSrc('skirt', skinned(hug(rise(lathe([[skirtR(-L_ + 0.85) + 0.07, -L_ + 0.85], [skirtR(-L_) + 0.07, -L_ + 0.1], [skirtR(-L_) + 0.05, -L_ - 0.05]], 0.9, 22, F0, FL))), P.hem, { ink: 0.04 }));
       skirtFront.userData.parts = [a, b]; }
     if (P.apron && !TROUSERS) {
       const ap = []; for (const [r, y] of [[2.8, 1.9], [3.5, 0.4], [4.0, -1.5], [4.5, -4.5], [4.95, -8.0], [5.1, -9.5]]) ap.push([r, y]);
@@ -816,12 +820,18 @@ function make(id, look, opts) {
     // (shorter at the back, where it ends above the seat rather than letting the tops of the cheeks through it)
     // (its top drawn in to lie on the shirt above it, never standing off it)
     // (just outside the drawers, and drawn in at the back with them: over a lap, with the seat under it drawn in, it lies on it)
-    { const g = lathe(wide(dense([[3.5, -2.7], [3.46, -1.6], [3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3]], 18), trunkW), TD, 32), pp = g.attributes.position, top0 = CHEEK.y + CHEEK.ry + 0.25;      // (down over the groin in front; the back lifted as before, rolled up over the seat)
+    { const g = lathe(wide(dense([[3.5, -2.7], [3.46, -1.6], [3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3], [2.86, 2.9], [2.8, 3.4]], 20), trunkW), TD, 32), pp = g.attributes.position, top0 = CHEEK.y + CHEEK.ry + 0.25;      // (down over the groin in front; the back lifted as before, rolled up over the seat)
       for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i); pp.setZ(i, z * lerp(0.77, 0.7, ss(0.8, 2.3, y)) * (z < 0 ? lerp(1, K.seatBack, ss(1.2, 0.2, y)) : 1)); }
       flatWaist(g);
       // (the back lifted, rolled up over the seat: and drawn in as it goes up, to lie on him at the height it ends, never standing off in a shelf)
+      // (lifted more the further round from the front: a slant over the hips, not a step at the side)
       const TAIL = wide(dense([[3.5, -2.7], [3.46, -1.6], [3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3]], 18), trunkW), rAt = y => { for (let i = 1; i < TAIL.length; i++) if (y <= TAIL[i][1]) { const [r0, a] = TAIL[i - 1], [r1, b] = TAIL[i]; return lerp(r0, r1, (y - a) / ((b - a) || 1)); } return TAIL[TAIL.length - 1][0]; };
-      for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i), back = ss(0.55, -0.15, z / (3.4 * 0.77 * TD)); if (y < top0) { const ny = lerp(y, top0 + (y + 0.1) * 0.3, back), k = lerp(1, rAt(Math.max(ny, top0 - 0.4)) / rAt(y), back) * lerp(1, 0.96, back); pp.setY(i, ny); pp.setX(i, pp.getX(i) * k); pp.setZ(i, z * k); } }
+      for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i), back = ss(0.6, 2.4, Math.abs(Math.atan2(pp.getX(i), z))); if (y < top0) { const ny = lerp(y, top0 + (y + 0.1) * 0.3, back), k = lerp(1, rAt(Math.max(ny, top0 - 0.4)) / rAt(y), back) * lerp(1, 0.96, back); pp.setY(i, ny); pp.setX(i, pp.getX(i) * k); pp.setZ(i, z * k); } }
+      // (its top run up onto the shirt above, lying on it as it's built (tucked in at the back, for the trousers): one shirt, no shelf or gap
+      // where the tail meets it)
+      const rT = y => { for (let i = 1; i < TORSO_W.length; i++) if (y <= TORSO_W[i][1]) { const [r0, a] = TORSO_W[i - 1], [r1, b] = TORSO_W[i]; return lerp(r0, r1, (y - a) / ((b - a) || 1)); } return TORSO_W[TORSO_W.length - 1][0]; };
+      for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), w = ss(1.7, 2.6, y); if (w <= 0) continue; const x = pp.getX(i), z = pp.getZ(i), a = Math.atan2(x, z), R = rT(y) + 0.06;
+        const tz = R * 0.68 * TD * Math.cos(a) * (z < 0 && MAN && !opts.lying ? lerp(0.72, 1, ss(2.5, 3.6, y)) : 1), tx = R * Math.sin(a); pp.setX(i, lerp(x, tx, w)); pp.setZ(i, lerp(z, tz, w)); }
       g.computeVertexNormals(); shirtTail.push(skinnedOn(rig.hips, g, top, p => p.y < 0.3 ? legWeights(p) : torsoW(p), { side: THREE.DoubleSide, ink: 0.04 })); }      // (below the hips it goes with the legs, as a skirt's front does)
     // The belt, and its buckle.
     trousers.push(piece(flatWaist(backIn(lathe(wide([[3.08, 2.0], [3.14, 2.3], [3.06, 2.62]], trunkW), 0.79 * TD, 28), y => lerp(1, 0.9, ss(1.2, 2.6, y)))), P.belt, rig.hips, 0, 0, 0, { ink: 0.03 }));      // (drawn in with the trousers over a lap)

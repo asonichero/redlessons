@@ -96,7 +96,7 @@
   const FEATURES = [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips'], ['cloak', 'Cloak']];
   let syncers = { A: [], B: [] };
   // (Rose's dress, to look at: her everyday, the blue one her mother made for the fair (in either cut), or the same at the end of a careless day)
-  const DAY = { earth: 0.5, soot: 0.4, wet: 0.3 }, GOWNS = { 'Everyday': { look: {} }, 'Fair dress': { look: { gown: 'fair', spoil: {} } }, 'Fair dress, after the day': { look: { gown: 'fair', spoil: DAY } }, 'Girl’s frock': { look: { gown: 'fairYoung', spoil: {} } }, 'Girl’s frock, after the day': { look: { gown: 'fairYoung', spoil: DAY } } };      // (the fair dress in two cuts: like her mother's own, or a girl's frock)
+  const DAY = { earth: 0.5, soot: 0.4, wet: 0.3 }, GOWNS = { 'Everyday': { look: {} }, 'Fair dress': { look: { gown: 'fair', spoil: {} } }, 'Fair dress, after the day': { look: { gown: 'fair', spoil: DAY } } };
   let gown = 'Everyday', hair = 'Long'; const bodices = {};
   const HAIRS = { 'Long': {}, 'Braid': { hairStyle: 'braid' } };      // (Rose's hair, to look at: as she wears it, or in a braid like Bess's)
   const lookOf = id => (look[id] = look[id] || {});
