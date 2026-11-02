@@ -89,7 +89,7 @@ async function run(P, o) {
   for (const w of o.watchers || []) {
     const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
     const seat = w.seat && P.world.seats.find(x => x.name === w.seat);
-    if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, new V3())); f.rig.root.position.copy(at); }
+    if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, here(0, 0))); f.rig.root.position.copy(at); }      // (facing the scene, wherever it's put)
     f.rig.setExpr(w.face || 'shy'); f.until = w.until; figs.push(f);      // (until: watching up to their own turn, then off the floor and across the lap)
   }
   document.body.classList.add('correcting');

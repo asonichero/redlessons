@@ -139,7 +139,7 @@
   function presentFig() {
     if (fig) { fig.off(); lap.stageView.scene.remove(fig.rig.root); fig = null; }
     if (!present.who || !lap) return;
-    const V = THREE.Vector3, g = lap.group, sv = lap.stageView, rig = Toon.make(present.who, L.load()[present.who] || {}); sv.scene.add(rig.root); if (sv.cast) sv.cast(rig);
+    const V = THREE.Vector3, g = lap.stage, sv = lap.stageView, rig = Toon.make(present.who, L.load()[present.who] || {}); sv.scene.add(rig.root); if (sv.cast) sv.cast(rig);
     const m = Motion.create(rig, {}), W = (x, z) => g.localToWorld(new V(x, 0, z)).setY(0), gy = g.rotation.y, sc = rig.scaleW || 1;
     const seat = g.localToWorld(new V(0, 0, 2)).setY(0), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
     let at, yaw;
@@ -156,7 +156,7 @@
     else {      // (hands together: behind the back, supervising; in front, waiting)
       const k = present.as === 'supervising' ? -2.0 : 2.2, hands = s => () => m.pos.clone().add(new V(0, 10.6 * sc, 0)).addScaledVector(fw(), k * sc).addScaledVector(sd(), (s === 'L' ? 1 : -1) * 0.35 * sc);
       m.reach('L', hands('L')); m.reach('R', hands('R')); }
-    const off = lap.addTick(dt => { m.update(dt, null); if (present.as !== 'after') m.lookAt(lap.group.localToWorld(new V(0, 12, 2))); rig.tick(dt); });
+    const off = lap.addTick(dt => { m.update(dt, null); if (present.as !== 'after') m.lookAt(lap.stage.localToWorld(new V(0, 12, 2))); rig.tick(dt); });
     fig = { rig, off };
   }
   // The corrector for a figure (js/correctors.js), if they are one; their own implement, if so; and who they're taking in hand, as a subject.

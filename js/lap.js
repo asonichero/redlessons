@@ -584,7 +584,6 @@ function create(view, opts) {
     start() { if (st_) st_.start(update); },
     stop() { if (st_) st_.stop(); },
     stageView: st_,
-    group: stage,      // (the stage's own frame: the seat at its middle, the giver facing +z)
     addTick(f) { extraTicks.push(f); return () => { const i = extraTicks.indexOf(f); if (i >= 0) extraTicks.splice(i, 1); }; },
   };
   build(); update(0.016);
