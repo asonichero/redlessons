@@ -41,7 +41,7 @@
   <div class="btns" style="margin-top:8px"><button data-view="front" class="on">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="faces">Faces</button><button id="spin">Turn</button></div>
   <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Skirts, trousers</span><button data-skirt="down" class="on">On</button><button data-skirt="up">Lifted, down</button><button data-skirt="off">Off</button></div>
   <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Drawers</span><button data-drawers="up" class="on">Up</button><button data-drawers="down">Down</button><span class="sub" style="margin-left:4px">(with the skirt or trousers lifted, down or off)</span></div>
-  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Pose</span><button data-pose="stand" class="on">Standing</button><button data-pose="lap">Over the knee</button><button data-pose="contactL">Hand landing, left</button><button data-pose="contactR">Hand landing, right</button><button data-pose="soothe">Soothing</button><button data-pose="held">After: held</button><button data-pose="upright">After: upright</button><span class="sub" style="margin-left:4px">(the right one across the left one’s knee; landing and soothing, the left one’s hand held on the seat, to see where it lands: Shapes › Seat › Where the hand lands moves it; after, sat up on the lap: held close in distress, or upright after the safe word)</span></div>
+  <div class="btns" style="margin-top:6px"><span style="font-size:12px;color:#a8969a;margin-right:4px">Pose</span><button data-pose="stand" class="on">Standing</button><button data-pose="corner">Hands on head</button><button data-pose="lap">Over the knee</button><button data-pose="contactL">Hand landing, left</button><button data-pose="contactR">Hand landing, right</button><button data-pose="soothe">Soothing</button><button data-pose="held">After: held</button><button data-pose="upright">After: upright</button><span class="sub" style="margin-left:4px">(the right one across the left one’s knee; landing and soothing, the left one’s hand held on the seat, to see where it lands: Shapes › Seat › Where the hand lands moves it; after, sat up on the lap: held close in distress, or upright after the safe word)</span></div>
   <details class="who" open><summary id="nameA"></summary><div id="boxA"></div></details>
   <details class="who" open><summary id="nameB"></summary><div id="boxB"></div></details>
   <div class="btns" style="margin-top:16px"><button id="reset">Back to their own colours</button><span id="saved"></span></div>
@@ -59,6 +59,7 @@
 <script src="js/pain.js"></script>
 <script src="js/implements.js"></script>
 <script src="js/lap.js"></script>
+<script src="js/motion.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id), L = Looks, V3 = THREE.Vector3;
@@ -225,14 +226,26 @@
   const lapView = (name, ms) => { const L_ = LAPS[pose], m = L_.still ? STILLVIEW : L_.after ? AFTERVIEW : LAPVIEW, v = lap.view(m[name] || 'side'); st.go(v.pos, v.look, ms); document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); };
   document.querySelectorAll('[data-pose]').forEach(b => b.onclick = () => {
     pose = b.dataset.pose; document.querySelectorAll('[data-pose]').forEach(x => x.classList.toggle('on', x === b));
-    turn.visible = pose === 'stand'; buildLap();
+    turn.visible = pose === 'stand' || pose === 'corner'; buildLap(); for (const s of ['A', 'B']) corner(s);
     const on = document.querySelector('[data-view].on'); (LAPS[pose] ? lapView : view)(on ? on.dataset.view : 'front', 700);
   });
   // (the rest of the editor's changes reach the lap too)
   const build0 = build; build = side => { build0(side); if (lap) buildLap(); };
 
+  // (hands on head, as in the corner (js/correction.js toCorner): each figure's arms reaching to the top of her head, a little behind, on her own
+  // motion; the face shy)
+  const motions = {};
+  function corner(side) {
+    const r = rigs[side]; motions[side] = null; if (pose !== 'corner' || !r) return;
+    const m = motions[side] = Motion.create(r, {}), q = new THREE.Quaternion();
+    const top = s => () => { r.root.getWorldQuaternion(q); const h = r.headGroup.getWorldPosition(new V3()), sc = r.scaleW, sd = new V3(1, 0, 0).applyQuaternion(q), back = new V3(0, 0, -1).applyQuaternion(q);
+      return h.add(new V3(0, 1.9 * sc, 0)).addScaledVector(sd, (s === 'L' ? 1 : -1) * 0.9 * sc).addScaledVector(back, 0.35 * sc); };
+    m.reach('L', top('L')); m.reach('R', top('R')); r.setExpr('shy');
+  }
+  const build1 = build; build = side => { build1(side); corner(side); };
   build('A'); build('B'); view('front'); sync();
-  st.start(dt => { t += dt; if (lap) { lap.update(dt); return; } if (spin) turn.rotation.y += dt * 0.5; Toon.idle(rigs.A, t); Toon.idle(rigs.B, t + 2.1); rigs.A.tick(dt); rigs.B.tick(dt); });
+  st.start(dt => { t += dt; if (lap) { lap.update(dt); return; } if (spin) turn.rotation.y += dt * 0.5;
+    for (const [s, ph] of [['A', 0], ['B', 2.1]]) { const r = rigs[s], m = motions[s]; if (m) { const x = r.root.position.x, ry = r.root.rotation.y; m.update(dt, null); r.root.position.x = x; r.root.position.z = 0; r.root.rotation.y = ry; } else Toon.idle(r, t + ph); r.tick(dt); } });
   window.__rigs = rigs; window.__st = st; window.__lapEd = () => lap;
 })();
 </script>
