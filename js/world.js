@@ -139,7 +139,7 @@ function create(view, ui) {
     // step with a scene, or one the place itself handles), those here first; the diary has the rest)
     const ready = s => s.hint && ((s.scene && SCENES[s.scene]) || s.talk);
     const steps = q.offered({ where: areaName }).filter(ready).concat(q.offered().filter(ready)).map(s => s.hint);
-    const list = [...new Set((chores ? chores.objectives() : []).concat(steps))].slice(0, 4);
+    const list = [...new Set((chores ? chores.objectives() : []).concat(steps))].slice(0, root.Work && root.Work.current(w) ? 12 : 4);      // (at work: the whole list)
     if (ui.quests) ui.quests(list); else if (ui.objective) ui.objective(list[0] || '');
   }
   // Her diary: what's hers to do now (the day's: the garden, the errand, Grandmother's herb, and the evening's matters), then the steps of the
