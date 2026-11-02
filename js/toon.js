@@ -565,7 +565,7 @@ function make(id, look, opts) {
   // (a man's trunk runs straighter, with no waist drawn in; a woman's goes in at the waist and out over the bust)
   const TORSO = MAN ? [[0, 0.3], [2.9, 0.4], [2.86, 1.5], [2.74, 2.9], [2.76, 3.8], [2.9, 4.9], [3.06, 6.2], [3.14, 7.4], [3.02, 8.4], [2.36, 9.2], [1.2, 9.7], [0, 9.85]]
     : [[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]];
-  const BODICE = !MAN && S.lower !== 'gown' && S.bodice !== false, VEST = MAN && S.vest;
+  const BODICE = !MAN && S.lower !== 'gown' && S.bodice !== false && look.bodice !== false, VEST = MAN && S.vest;      // (look.bodice false: without it, in her chemise: for bed, say)
   // (where the shirt is under the vest: a waistcoat to the waist, a jerkin and a coat over the hips)
   const vestFrom = S.vest === 'waistcoat' ? 2.2 : -1.2;      // (a waistcoat ends at the belt)
   // (a man's shirt in trousers is tucked in tight at the back below the belt, so it stays inside the waistband as he bends; with the trousers
@@ -584,12 +584,12 @@ function make(id, look, opts) {
   // The bodice: laced, from the hips to under the bust.
   // (with a sash (P.sash), the band of it at the waist is the same surface in the sash's colour, painted on, nothing standing proud: the
   // bodice in three, below it, the sash, above it; each piece's ink only on its outer edge, so no line between)
-  const BODY = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW);
+  const BODY = wide(dense(P.sash ? [[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.84, 5.8], [2.62, 6.3], [2.3, 6.8]] : [[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW);      // (the fair dress: its top sinking in under the dress's surface, so there's no ledge where it ends, only the shade changing)
   const cut = (pr, y0, y1) => { const at = y => { for (let i = 1; i < pr.length; i++) if (y <= pr[i][1]) { const [r0, a] = pr[i - 1], [r1, b] = pr[i]; return [lerp(r0, r1, (y - a) / ((b - a) || 1)), y]; } return pr[pr.length - 1]; };
     return [at(y0)].concat(pr.filter(([, y]) => y > y0 && y < y1), [at(y1)]); };
   if (BODICE && !P.sash) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(BODY, 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 }));      // (flaring at the bottom over the hips, which never show through it)
-  if (BODICE && P.sash) for (const [y0, y1, col] of [[0.95, 1.95, P.bodice], [1.95, 3.35, P.sash], [3.35, 5.95, P.bodice]]) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(cut(BODY, y0, y1), 0.74 * TD, 32)), col, torsoW, { ink: 0.05 }));
-  if (BODICE) clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 }));      // its bound hem, a neat edge over the join with whatever is below
+  if (BODICE && P.sash) for (const [y0, y1, col] of [[0.95, 1.95, P.bodice], [1.95, 3.35, P.sash], [3.35, 6.8, P.bodice]]) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(cut(BODY, y0, y1), 0.74 * TD, 32)), col, torsoW, { ink: 0.05 }));
+  if (BODICE && !P.sash) clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 }));      // its bound hem, a neat edge over the join with whatever is below
   // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
   if (BODICE && !P.backButtons) { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
     // (from above the skirt's waistband to just under the bust)
