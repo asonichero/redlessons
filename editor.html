@@ -74,7 +74,7 @@
   // Each change rebuilds the character (it takes a moment, and keeps the code that builds them in one place).
   let build = function (side) {
     if (rigs[side]) turn.remove(rigs[side].root);
-    const id = who[side], r = rigs[side] = Toon.make(id, Object.assign({}, look[id] || {}, id === 'red' ? GOWNS[gown].look : {})); r.root.position.x = X[side]; r.root.rotation.y = side === 'A' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);      // (Rose's dress: shown here only; in the game, the day decides it)
+    const id = who[side], r = rigs[side] = Toon.make(id, Object.assign({}, look[id] || {}, id === 'red' ? Object.assign({}, GOWNS[gown].look, HAIRS[hair]) : {})); r.root.position.x = X[side]; r.root.rotation.y = side === 'A' ? 0.12 : -0.12; turn.add(r.root); st.cast(r);      // (Rose's dress: shown here only; in the game, the day decides it)
     r.setExpr(faces[side]); r.setDress(dressView());
   };
   const VIEWS = { front: [[0, 20, 88], [0, 15, 0]], side: [[88, 20, 0], [0, 15, 0]], back: [[0, 20, -88], [0, 15, 0]], faces: [[0, 28.5, 34], [0, 28, 0]] };
@@ -97,7 +97,8 @@
   let syncers = { A: [], B: [] };
   // (Rose's dress, to look at: her everyday, the blue one her mother made for the fair (in either cut), or the same at the end of a careless day)
   const DAY = { earth: 0.5, soot: 0.4, wet: 0.3 }, GOWNS = { 'Everyday': { look: {} }, 'Fair dress': { look: { gown: 'fair', spoil: {} } }, 'Fair dress, after the day': { look: { gown: 'fair', spoil: DAY } }, 'Girl’s frock': { look: { gown: 'fairYoung', spoil: {} } }, 'Girl’s frock, after the day': { look: { gown: 'fairYoung', spoil: DAY } } };      // (the fair dress in two cuts: like her mother's own, or a girl's frock)
-  let gown = 'Everyday';
+  let gown = 'Everyday', hair = 'Long';
+  const HAIRS = { 'Long': {}, 'Braid': { hairStyle: 'braid' } };      // (Rose's hair, to look at: as she wears it, or in a braid like Bess's)
   const lookOf = id => (look[id] = look[id] || {});
   // (the colour in force: the one set here, or their own)
   const colourOf = (id, k) => lookOf(id)[k] || (Toon.palette(id, {})[k]);
@@ -111,6 +112,10 @@
     if (id === 'red') {
       box.insertAdjacentHTML('beforeend', '<h3>Dress</h3>'); const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
       for (const g of Object.keys(GOWNS)) { const b = document.createElement('button'); b.textContent = g; b.onclick = () => { gown = g; for (const s of ['A', 'B']) if (who[s] === 'red') build(s); sync(); }; row.appendChild(b); syncers[side].push(() => b.classList.toggle('on', gown === g)); }
+    }
+    if (id === 'red') {
+      box.insertAdjacentHTML('beforeend', '<h3>Hair style</h3>'); const row = document.createElement('div'); row.className = 'btns'; box.appendChild(row);
+      for (const h of Object.keys(HAIRS)) { const b = document.createElement('button'); b.textContent = h; b.onclick = () => { hair = h; for (const s of ['A', 'B']) if (who[s] === 'red') build(s); sync(); }; row.appendChild(b); syncers[side].push(() => b.classList.toggle('on', hair === h)); }
     }
     for (const [k, name] of FEATURES) {
       if (k === 'cloak' && id !== 'red') continue;

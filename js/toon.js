@@ -977,7 +977,8 @@ function make(id, look, opts) {
   { const p = cap.attributes.position, q = new V3();
     for (let i = 0; i < p.count; i++) { q.fromBufferAttribute(p, i); const front = q.z / 2.02, line = lerp(0.15, 1.05, ss(0.25, 0.85, front)); if (front > 0.2 && q.y + 0.1 < line) { q.multiplyScalar(0.8); p.setXYZ(i, q.x, q.y, q.z); } }
     cap.computeVertexNormals(); }
-  const HAIR = S.hair || 'bun', SHORT = ['short', 'tousled', 'curly', 'tail', 'bald'].includes(HAIR) && (MAN || HAIR !== 'curly');
+  const HAIR = look.hairStyle || S.hair || 'bun',      // (look.hairStyle: another way of wearing it, to look at in the editor: Rose's in a braid, as Bess wears hers)
+    SHORT = ['short', 'tousled', 'curly', 'tail', 'bald'].includes(HAIR) && (MAN || HAIR !== 'curly');
   // (short hair has less at the back; the cap itself stays whole over the crown, so the scalp never shows through it)
   // (the hat worn: the Watchman, seated by someone's fire, or at his own door by day (opts.indoors), has taken his off with his cape)
   const HATW = S.cape && (opts.seated || opts.indoors) ? null : S.hat;
