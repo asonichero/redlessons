@@ -155,7 +155,7 @@ function surface(fn, nu, nv, outward) {
 // headScale: the head (face, hair, hood) is drawn larger than life, for bigger expressions, on a grown-up body: about 5.6 heads tall in all.
 const DIM = { hipY: 15.2, hipX: 1.55, thigh: 7.4, shin: 7.0, torsoY: 0.9, shY: 7.6, shX: 3.1, ua: 5.0, fa: 4.4, neckY: 8.15, headY: 0.9, headC: 2.0, headScale: 1.34 };
 // Each character: their size and build (multipliers on the shared proportions below), how they're dressed, their hair, and their colours.
-//   sex 'f' or 'm'; bust (0 for none); build: shoulders, chest, waist, hips, arms, legs, neck; face: jaw, nose, eyes (size), lash (0..1, how
+//   sex 'f' or 'm'; bust (0 for none); belly (0..1: with child); build: shoulders, chest, waist, hips, arms, legs, neck; face: jaw, nose, eyes (size), lash (0..1, how
 //   heavy the lashes), brow (how thick the brows), lips (how much colour). Dress: top ('blouse' or 'shirt'; sleeves 'elbow', 'long' or 'rolled';
 //   puff), bodice (laced, over the blouse), vest ('waistcoat', 'jerkin', 'coat': over the shirt), lower ('skirt', 'trousers', 'gown' to the
 //   floor), smock (a long shirt over the trousers), skirtLen, apron ('cloth', 'leather', 'white'), shawl, hat ('mob', 'nightcap', 'bakers',
@@ -171,7 +171,7 @@ const SPECS = {
     pal: { skin: '#f8d6bc', hair: '#a8784a', eyes: '#5f7f95', lips: '#c4686a', top: '#f2ece0', bodice: '#5a6a8a', skirt: '#6a7aa0', skirtDk: '#4e5c80', hem: '#4e5c80', apron: '#fbf8f2', apronDk: '#e2dcd0' } },
   abney: { name: 'Mistress Abney', age: 52, sex: 'f', scale: 1.0, bust: 1.18, waist: 1.18, hips: 1.05, hair: 'bun', grey: true, feet: 'boots', skirtLen: 13.6, apron: 'cloth', old: true,
     pal: { skin: '#f2cfb2', hair: '#5a4034', eyes: '#6a4a2a', lips: '#b06068', top: '#efe6d4', bodice: '#3a4a34', skirt: '#4a5a3e', skirtDk: '#38462e', hem: '#38462e', apron: '#ece2c8', apronDk: '#d4c8aa' } },
-  abneyDaughter: { name: 'Bess Abney', age: 26, sex: 'f', scale: 0.93, jaw: 0.9, neck: 0.85, legs: 0.85, arms: 0.8, hips: 0.86, chest: 0.85, shoulders: 0.85, bust: 0.49, waist: 0.8, hair: 'braid', feet: 'boots', skirtLen: 13.2,
+  abneyDaughter: { name: 'Bess Abney', age: 26, sex: 'f', scale: 0.93, jaw: 0.9, neck: 0.85, legs: 0.85, arms: 0.8, hips: 0.86, chest: 0.85, shoulders: 0.85, bust: 0.62, waist: 0.8, belly: 1, hair: 'braid', feet: 'boots', skirtLen: 13.2,      // (slight, always; eight months gone)
     pal: { skin: '#f4d0b4', hair: '#6a4430', eyes: '#6a4a2a', lips: '#c46a70', top: '#f4ecdc', bodice: '#5a7a9a', skirt: '#86a4c0', skirtDk: '#6a88a6', hem: '#6a88a6' } },
   agnes: { name: 'Agnes Thatcher', age: 19, sex: 'f', scale: 0.87, shoulders: 1.2, chest: 1.25, waist: 1.15, hips: 1.1, arms: 1.25, legs: 1.23, neck: 1.3, jaw: 1.05,
     seatY: -0.12, seatW: 1.2, seatH: 1.25, seatD: 1.25, bust: 1.25, hair: 'long', feet: 'boots', skirtLen: 9,      // (her shape, as set in the editor)
@@ -613,6 +613,13 @@ function make(id, look, opts) {
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
   let skirt = null, hemBand = null, apron = null, skirtFront = null;
   const waist = SKIRTED ? clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 })) : new THREE.Group();
+  // (with child, near her time (S.belly, 0..1): a rounded swell over the front of her, from under the bust to below the waist, in the gown's
+  // colour; on the hips, so it goes with her as she sits)
+  // (above her waist, the bodice laced over it; below, the skirt)
+  if (S.belly && SKIRTED) { const k = S.belly, fz = 2.72 * trunkW(1.4) * 0.75 * TD, rx = 2.72 * trunkW(1.4) * 0.9, ry = 3.4, cy = 1.0, cut = Math.acos(clamp((2.1 - cy) / ry, -1, 1));
+    const half = (t0, tl) => { const g = new THREE.SphereGeometry(1, 26, 18, 0, Math.PI * 2, t0, tl); g.scale(rx, ry, fz * 0.42 + 2.8 * k); return g; };
+    clipSrc('skirt', piece(half(cut, Math.PI - cut), P.skirt, rig.hips, 0, cy, fz * 0.52, { ink: 0.05 }));
+    piece(half(0, cut), P.bodice || P.skirtDk, rig.hips, 0, cy, fz * 0.52, { ink: 0.05 }); }
   // (standing figures have one too, for sitting down in the cottage: shown in place of the skinned skirt once they're seated, see rig.setSeated)
   // (the part under her seat isn't tilted with the lap: tilted, its front rises through the bodice, or the apron)
   const drapeG = new THREE.Group(), seatG = new THREE.Group(); rig.hips.add(drapeG, seatG); drapeG.visible = seatG.visible = !!opts.seated; let drapeShape = null;
