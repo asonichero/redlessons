@@ -226,7 +226,7 @@ async function dance(P, w, f) {
   let t = 0, on = true; const r = 4.5, spin = P.tick(dt => { if (!on) return; t += dt * 0.6; const a = t, me = c.clone().add(new V3(Math.cos(a) * r, 0, Math.sin(a) * r)), him = c.clone().add(new V3(-Math.cos(a) * r, 0, -Math.sin(a) * r));
     m.warp(me, yawTo(me, him)); P.rig.root.position.copy(me); if (peter) { peter.motion.warp(him, yawTo(him, me)); peter.rig.root.position.copy(him); } });
   m.reach('L', () => m.pos.clone().lerp(peter ? peter.motion.pos : m.pos, 0.5).setY(11)); if (peter) peter.motion.reach('R', () => peter.motion.pos.clone().lerp(m.pos, 0.5).setY(11));
-  P.camHeld = true; P.stage.go(c.clone().add(new V3(0, 18, 34)), c.clone().setY(9), 0);
+  P.camHeld = true; P.stage.go(c.clone().add(new V3(6, 24, -34)), c.clone().setY(8), 0);      // (from the stalls' side, over the dancers: the watchers stand round the other edges)
   await P.wait(0.4); await w.fade(false);
   await P.converse(S.fairDance(easy), { shot: false, keepCamera: true });
   fchange(w, s => { s.danced = true; }); w.rep.trusts('peter', easy ? 1 : 1.5);
