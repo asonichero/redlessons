@@ -57,7 +57,7 @@ function atTable(P, w, o) {
 function toWork(P, w) {
   const where = at(w), mm = P.npcMotion; if (!mm) return;
   if (where === 'farm') { if (P.npcGo) P.npcGo(true, null); return; }
-  if (where === 'needle') sitDown(P);
+  sitDown(P);      // (at her needlework, or her own work about the house: sat by the fire with it, either way)
 }
 // (at her needlework: on the chair by the hearth)
 function sitDown(P) {

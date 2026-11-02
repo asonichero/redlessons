@@ -314,7 +314,7 @@ function create(w) {
   }
   async function offer(P, who) {
     const o = OFFER[who]; let yes = false; change(c => { c.offered = Object.assign({}, c.offered, { [who]: cal.day }); });
-    await P.converse(S.shiftOffer(who, { yes: () => { yes = true; } }), { shot: ['red', who] });
+    await P.converse(S.shiftOffer(who, { fairWeek: !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), yes: () => { yes = true; } }), { shot: ['red', who] });
     if (yes && who === 'pennock' && root.Work) { root.Work.begin(w, 'bakery', { mode: 'picked', until: Math.max(OFFER.pennock.sold, cal.minute + 40) }); w.refresh(); await w.go('bakery', 'door'); return true; }      // (in, and at it: till she's sold out)
     if (yes) change(c => { c.errand = { id: o.id, state: 'accepted', by: o.by || H(E[o.id].by), short: who === 'abney' }; c.last = o.id; });
     w.refresh(); return yes;

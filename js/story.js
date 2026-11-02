@@ -683,6 +683,19 @@ const VILLAGE = {
   },
 };
 // A word with one of them. (The smith says something else once he's had her mother's pot; Willie's word depends on the bell.)
+// The fair's week (js/fair.js): everyone who works is busy getting ready, and says so. (key → a conversation; the first talk of the day)
+const FAIR_WEEK = {
+  agnes: [{ who: 'agnes', face: 'smile', listen: { red: 'smile' }, text: 'Father’s had me splitting hurdles for the pens since dawn. The whole green’s to be cleared by Fifth day. And I’ve nothing to wear, Rose, nothing.' }, { who: 'red', face: 'smile', text: 'You’ve your green.' }, { who: 'agnes', face: 'pout', text: 'Everyone’s seen my green.' }],
+  georgie: [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Miller’s got me grinding for the bakery day and night. Twice the flour, for the fair. My arms have forgotten they were ever arms.' }, { who: 'red', face: 'cheeky', text: 'Will you dance, after?' }, { who: 'georgie', face: 'bashful', text: 'If my arms come back. And if… well. If.' }],
+  tom: [{ who: 'tom', face: 'pout', listen: { red: 'cheeky' }, text: 'Every hinge and hook in the village wants seeing to before the stalls go up, and guess who’s on the bellows. No dares this week, Red. I’m too tired to be wicked.' }],
+  smith: [{ who: 'smith', face: 'stern', listen: { red: 'shy' }, text: 'Stall hooks. Hurdle pins. A spit for the Wheatsheaf. Fair week.' }],
+  bess: [{ who: 'bess', face: 'cheeky', listen: { red: 'smile' }, text: 'Mother’s turned out every room in the house for the visitors and won’t let me lift a duster. I’ve been sat here counting the cobwebs she’s missed. Eleven.' }],
+  abney: [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Fair week, Miss Rose. Every bed aired and a brew a day. If you’ve hands free of an afternoon, I’ll find them something.' }],
+  pennock: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Love! Fair week. We’re baking for the whole county and Master Pennock’s asleep on his feet. Gingerbread, Rose. Trays of it. Come and help me sell this morning’s and I’ll love you forever.' }],
+  baker: [{ who: 'baker', face: 'calm', listen: { red: 'smile' }, text: 'Up at two, Miss Rose, every night this week. The oven never goes cold. Fair week’s the best week of the year, they tell me. I wouldn’t know: I’m always asleep for it.' }],
+  peter: [{ who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'Grandad’s got me netting larks for the Wheatsheaf’s pies. For the fair.' }, { who: 'peter', face: 'bashful', text: 'Will you be at the dancing, Red? Only, I thought… I might be.' }],
+  willie: [{ who: 'willie', face: 'calm', listen: { red: 'calm' }, text: 'Fair night’s the one night the bell waits till ten, Miss Rose. Doesn’t mean I won’t be about.' }],
+};
 const villager = (key, ctx) => {
   const V = VILLAGE[key]; if (!V) return [];
   if (key === 'willie') return ctx.curfew ? pickOf(V.any, ctx.day) : V.early;
@@ -698,6 +711,7 @@ const villager = (key, ctx) => {
   if (ctx.first && V.first) return V.first;
   if (key === 'georgie' && ctx.part === 'dusk' && V.late) return V.late;
   // (the week: Lay day for the lads; Baking day at the bakery; Carrier's day at the inn; Peter down on an errand)
+  if (!ctx.today && ctx.fairWeek && FAIR_WEEK[key]) return FAIR_WEEK[key];      // (the fair's week: getting ready)
   if (!ctx.today && ctx.wd === 7 && V.lay) return V.lay;
   if (!ctx.today && ctx.wd === 6 && V.baking) return V.baking;
   if (!ctx.today && ctx.wd === 4 && V.carrier) return V.carrier;
@@ -1897,7 +1911,19 @@ const villagerTrust = (who, t, open) => {
   return { name: n, text: text + (open >= 2 ? ' Takes her in hand, as she asked.' : open >= 1 ? ' Knows what she and her mother have.' : ''), trust: t };
 };
 // Asked on the day, at the counter or the inn door: will she help this afternoon? (ctx.yes())
-const shiftOffer = (who, ctx) => who === 'pennock' ? [
+const shiftOffer = (who, ctx) => ctx.fairWeek ? (who === 'pennock' ? [
+  { who: 'pennock', face: 'smile', listen: { red: 'calm' }, text: 'Rose, love, you’re a godsend if you’ve the morning free. The clearing down, while I sell: with the fair baking, there’s twice of it. Will you?' },
+  { choose: [
+    { text: 'Of course, Mistress Pennock.', face: 'smile', then: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Bless you. The list’s on the board. Mind the gingerbread: it’s counted.' }, { run: ctx.yes }] },
+    { text: 'Not today, I’m sorry.', face: 'shy', then: [{ who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Another day this week, then, if you can. Every day, if you like.' }] },
+  ] },
+] : [
+  { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Miss Rose. Two o’clock, if you can: the rooms want airing for the fair, and Bess isn’t to lift a thing.' },
+  { choose: [
+    { text: 'Yes, Mistress Abney. Two o’clock.', face: 'smile', then: [{ run: ctx.yes }, { who: 'abney', face: 'calm', listen: { red: 'smile' }, text: 'Two. Not half past. Fair week waits for nobody.' }] },
+    { text: 'I can’t today, Mistress Abney.', face: 'shy', then: [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Then you can’t. I’ll ask again tomorrow.' }] },
+  ] },
+]) : who === 'pennock' ? [
   { who: 'pennock', face: 'smile', listen: { red: 'calm' }, text: 'Rose, love. If you’ve nothing else on: would you go through and make a start on the clearing down, while I sell this lot? A head start’s worth an hour to me.' },
   { choose: [
     { text: 'I’d be glad to, Mistress Pennock.', face: 'smile', then: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Bless you. The list’s on the board. As much as you can, love, and I’ll be in when I’m sold out.' }, { run: ctx.yes }] },
