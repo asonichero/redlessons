@@ -112,7 +112,10 @@ function build(scene) {
     for (const sz of [-1, 1]) { box(g, 22, 1.2, 4, 0, 8.4, sz * 8, oak); for (const sx of [-1, 1]) box(g, 1.2, 7.8, 3, sx * 9, 3.9, sz * 8, oakDk);
       world.seats.push({ name: 'the bench', at: pc.P(0, 9, sz * 8), facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool' }); }
     world.obstacles.push(pc.area(-12, 12, -10, 10));
-    for (let k = 0; k < 3; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, -6 + k * 6, 15, (k - 1) * 1.5, { ink: 0.04 }); }
+    for (let k = 0; k < 3; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, -6 + k * 6, 15, (k - 1) * 1.5, { ink: 0.04 });
+    // (where the carrier's men sit, at the table by the hearth: two on the far bench, one on the near; each, where to stand to serve him)
+    if (id === 'tableB') world.carrierSeats = [[-5, -1], [5, -1], [0, 1]].map(([x, sz]) => { const at = pc.P(x, 9, sz * 8), serve = pc.P(x, 0, sz * 15), look = pc.P(x, 14, sz * 6);
+      return { name: 'the bench', at, facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool', serve: { at: new V3(serve.x, 0, serve.z), look } }; }); }
   // ── The stair up to the rooms, in the back right corner.
   { const pc = piece('stair', wall), g = pc.g;
     for (let k = 0; k < 10; k++) box(g, 10, 1.2, 4, 0, 2 + k * 4, 13 - k * 2.4, oak); box(g, 1, 42, 1, -5, 21, -15, oakDk);

@@ -203,6 +203,13 @@ const SPECS = {
     pal: { skin: '#e4b48c', hair: '#c8c4bc', eyes: '#5f7f95', lips: '#a87068', top: '#e8dcc0', trousers: '#5a4a38', hat: '#6a5a44' } },
   // (the Watchman: "in his nightgown" read as his night watchman's garb, a short cape over his shoulders that leaves his arms free, set aside when
   // he sits to take someone in hand, and a tricorn hat)
+  // (the carrier's men, in at the Wheatsheaf on carrier nights: big Ned with his beard, old Amos, young Kit)
+  carrierNed: { name: 'Ned Hobb', age: 40, sex: 'm', scale: 1.1, shoulders: 1.22, chest: 1.2, waist: 1.28, hips: 1.05, arms: 1.2, neck: 1.2, jaw: 1.14, hair: 'short', beard: 'full', hat: 'felt', feet: 'boots', vest: 'jerkin', sleeves: 'long',
+    pal: { skin: '#e2b08a', hair: '#4a3020', eyes: '#5a4a3a', lips: '#a87060', top: '#c8b898', trousers: '#4a4038', vest: '#6a5034', hat: '#4a4034' } },
+  carrierAmos: { name: 'Amos Pryce', age: 64, sex: 'm', scale: 0.96, shoulders: 1.0, chest: 1.0, waist: 1.08, hips: 0.96, neck: 1.0, jaw: 1.05, hair: 'short', grey: true, beard: 'short', hat: 'felt', smock: true, feet: 'boots', old: true, sleeves: 'long',
+    pal: { skin: '#dcac88', hair: '#d0ccc4', eyes: '#5f7f95', lips: '#a06a62', top: '#d8ccb0', trousers: '#5a5040', hat: '#5a4a3a' } },
+  carrierKit: { name: 'Kit Marlow', age: 22, sex: 'm', scale: 0.96, shoulders: 1.06, chest: 1.0, waist: 0.95, hips: 0.92, arms: 1.04, neck: 1.04, jaw: 1.02, hair: 'tousled', hat: 'flatcap', feet: 'boots', sleeves: 'rolled',
+    pal: { skin: '#eec4a0', hair: '#8a5a30', eyes: '#4a6a4a', lips: '#b07a6a', top: '#e0d6c0', trousers: '#4a4a52', hat: '#5a5a4a' } },
   willie: { name: 'William Dunn', age: 42, sex: 'm', scale: 1.05, shoulders: 1.14, chest: 1.0, waist: 1.0, hips: 0.95, neck: 1.05, jaw: 1.06, hair: 'short', beard: 'stubble', hat: 'tricorn', cape: true, feet: 'boots', vest: 'waistcoat', sleeves: 'long',
     pal: { skin: '#f0caa8', hair: '#6a5040', eyes: '#4a70b0', lips: '#b07a6e', top: '#ece6da', vest: '#3a3c48', trousers: '#3a3632', boots: '#2e241c', bootsDk: '#1e1610', hat: '#29272c', cloak: '#2e3a4e', lace: '#56657c' } },
   georgie: { name: 'Georgie Dunn', age: 19, sex: 'm', scale: 0.91, shoulders: 1.04, chest: 1.0, waist: 0.95, hips: 0.92, neck: 1.04, jaw: 1.02, hair: 'tousled', hat: 'flatcap', feet: 'boots', sleeves: 'rolled', flour: true,

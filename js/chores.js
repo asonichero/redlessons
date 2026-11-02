@@ -197,7 +197,7 @@ function create(w) {
     if (e.shift && e.state === 'broken') { await P.converse(S.shiftMissed(e), { shot: false, keepCamera: true }); return; }      // (too late: they've managed without her)
     if (e.from && cal.minute < H(e.from)) { await P.converse(e.early, { shot: false, keepCamera: true }); return; }      // (too early: nobody up to answer)
     if (e.state === 'missed') { change(c => { c.errand.knocked = true; }); await P.converse(e.gone, { shot: false, keepCamera: true }); return; }      // (too late: he's gone out)
-    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short, mode: e.shift === 'bakery' ? 'errand' : null }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
+    if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short, mode: e.shift === 'bakery' || !e.short ? 'errand' : null }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }
     if (e.leave && holding(P, e.leave)) { const it = m.drop(); if (it) { it.obj.visible = false; it.panel = null; it.away = !!it.home; change(c => { c.away = Object.assign({}, c.away, { [e.leave]: cal.day }); }); } }      // (left with the smith)
     if (e.pie && P.villagers && P.villagers.summon && basketIn(P)) { await pieAtDoor(P, e); fulfilled(P, e); return; }      // (played: the knock, Master William at his door)
     if (e.pie && basketIn(P)) takeOut(basketIn(P), PIE);      // (the pie out of it, into Master William's hands)

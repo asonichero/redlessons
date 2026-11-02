@@ -1254,6 +1254,14 @@ const beechMeeting = (n, ctx) => {
 
 // ── The inn (js/inn.js): the afternoon's work, Bess calling it from her chair (js/work.js); Mistress Abney's promise (js/promise.js).
 WORK.inn = {
+  // (asked for at breakfast: Mistress Abney out till seven, and Bess to run it from her chair)
+  list: [
+    { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'There you are, pet. I’m to Ashby for the brewer, and I’ll not be back before seven. Bess has the house.' },
+    { who: 'abney', face: 'stern', listen: { red: 'shy' }, text: 'The carrier’s lot are in about five, wanting ale and stew. You’re her legs. She stays in that chair. Whatever she tells you.' },
+    { who: 'bess', face: 'cheeky', listen: { abney: 'stern' }, text: 'I’ll be good, Mother. I’ll be a cushion with a face.' },
+    { who: 'abney', face: 'calm', listen: { bess: 'cheeky' }, text: 'See you are. Seven, Miss Rose.' },
+  ],
+  // (offered on the day by Mistress Abney: an afternoon's tidying, her there)
   start: [
     { who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'There you are. Pots first, then the tables, then Bess, who’ll tell you she needs nothing. She’s lying.' },
     { who: 'bess', face: 'cheeky', listen: { red: 'smile' }, text: 'I need nothing. I’ll tell you what to do, though. I’m very good at that, sitting down.' },
@@ -1261,23 +1269,90 @@ WORK.inn = {
   pots: ['Scour them till you can see your face. Then a bit more: Mother can see a smear from the stairs.', 'cheeky'],
   tables: ['Wipe with the grain, not round and round. Round and round just moves it about.', 'calm'],
   fire: ['Two logs, crossed. Not three. Three and it roars, and then it sulks all evening.', 'calm'],
-  ale: ['From the second barrel, not the first: the first’s for the gentry. The carrier’s men can’t tell, but Mother can.', 'cheeky'],
-  suppers: ['Bowls from the left, bread from the right, and don’t let the big one with the beard talk you into seconds. He’s had seconds since Michaelmas.', 'cheeky'],
+  bowls: ['A bowl and a spoon at each place, and the loaf on the board. They’ll tear it, they always tear it.', 'calm'],
   after: ['Leave the bench by the door: one of them always sleeps it off there. Mother charges him for the bench.', 'smile'],
   tea: ['Oh, you angel. Sit a minute. No? Mother’s watching, isn’t she. She’s always watching.', 'smile'],
   sweep: ['Into the corners. The corners are where the dirt hides, and where Mother looks first.', 'calm'],
-  customers: [
-    { who: 'red', face: 'surprised', thought: true, text: 'Four of them, stamping in out of the road, smelling of horse and weather.' },
-    { who: 'abney', face: 'stern', text: 'Boots on the mat. All of you. I don’t care how far you’ve come.' },
-    { who: 'red', face: 'smile', thought: true, text: '“Miss”, and “love”, and once “pet”, from a man old enough to be my grandfather. He gave me a farthing.' },
-    { who: 'red', face: 'smile', thought: true, text: 'Nobody asked me for anything I couldn’t do. I didn’t know that could feel restful.' },
-  ],
+  waiting: [{ who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'All done, and Mother not back. Sit down before you fall down. She’ll be in any minute, and she’ll want to see you sat.' }],
+  // (the carrier's men: in at five, their orders called, their thanks)
+  inNed: 'Evening, Bess! And who’s this, then? You’ve a new girl.',
+  inBess: 'Rose Ridley, and you’ll be civil to her, Ned Hobb, or you’ll answer to me.',
+  calls: { 'ned:ale': 'Ale here, miss! I’ve a road’s worth of dust in me.', 'amos:stew': 'Is there stew, love? I could eat the horse, and he’s a good horse.', 'kit:ale': 'Ale, if you please. And one for the horse, he says.',
+    'ned:stew': 'Stew now, miss! And none of that ladle-shaking, a proper bowl.', 'amos:ale': 'Another ale for an old man, if you’re passing, pet.', 'kit:stew': 'Is there more of that stew? It smells like home.' },
+  hint: { ale: 'Ale’s from the second barrel, love, not the first. Jugs are by it.', stew: 'Stew’s in the pot on the hook. Bowls are on their table.' },
+  thanks: ['There’s a girl.', 'Bless you, pet.', 'Ta, miss.', 'Now that’s a bowl.', 'You’re quicker than Bess ever was.', 'Smells like my mother’s.', 'Here’s a farthing for your trouble. Don’t tell Mistress Abney.'],
+  // (old Amos, the evening's third order: he knew him)
+  robert: ['That’s Rob Shafto’s girl by the fire, isn’t it? We all liked Rob. Bad business, that bend by the river.', 'Rob Shafto. Her husband. I didn’t know they’d known him. Of course they knew him: he drove the cart.'],
+  // (a man kept waiting too long: Bess up out of her chair to see to it herself)
+  up: 'Oh, sit down yourself, Rose, I’ll get it. I’m not made of glass.',
+  upRed: ['She’s on her feet. Mistress Abney said, whatever she tells me. She’s on her feet.', 'Again. She’s up again, and it’s because I was slow.'],
+  // (Mistress Abney back: Bess up the once, and let go)
+  endOnce: [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Amos says Bess was up the once. Once. I’ll not make a song of once.' }],
   end: [
     { who: 'abney', face: 'calm', listen: { red: 'smile' }, text: 'That’ll do, Miss Rose. You work like your mother: quiet, and properly. I don’t say that to everyone.' },
     { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'She doesn’t say it to me.' },
     { who: 'abney', face: 'stern', text: 'You’re not supposed to be doing anything.' },
   ],
+  // (Bess's story: one piece a shift, sat with her in a lull)
+  bess: [
+    [{ who: 'bess', face: 'smile', listen: { red: 'calm' }, text: 'Sit, sit. Mother’s halfway to Ashby, and the carrier’s lot aren’t in yet. We’ve the place to ourselves.' },
+      { who: 'red', face: 'shy', text: 'Should you be in charge, Bess? Your mother said—' },
+      { who: 'bess', face: 'cheeky', listen: { red: 'shy' }, text: 'Mother said I’m not to stand. She never said I’m not to give orders.' },
+      { who: 'bess', face: 'calm', listen: { red: 'smile' }, text: 'Oh. Feel that? It kicks when there’s work being done that it can’t help with. It’ll be an Abney, this one.' }],
+    [{ who: 'bess', face: 'smile', listen: { red: 'calm' }, text: 'You used to hide under that table, you know. When your mother came in for you of an evening. Six years old, and you’d sooner be under a table at the Wheatsheaf than go home to bed.' },
+      { who: 'red', face: 'shy', text: 'I don’t remember that.' },
+      { who: 'bess', face: 'smile', listen: { red: 'shy' }, text: 'I do. I was fourteen, and I thought you were the funniest thing in the village.' },
+      { who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'They’ve all gone now. Jack’s at the mill in Ashby, Meg married over the hill, Ned went for a soldier. I was the last to go, and the first back.' }],
+    [{ who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'He drove the carrier’s cart, my Robert. Thursdays he’d come in that door shaking the rain off, and before his coat was off he’d be calling for Curly Locks.' },
+      { who: 'red', face: 'smile', text: 'Curly Locks?' },
+      { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'My hair curled, then. He said I’d never wash a dish again, once I was his. He lied about that.' },
+      { who: 'red', face: 'calm', thought: true, text: 'She laughs, and it isn’t a sad laugh. Not only.' },
+      { who: 'bess', face: 'calm', listen: { red: 'shy' }, text: 'Ice on the river road, last winter. I found out about this one a month after. Mother thinks I’m grieving myself into the grave. I’m not. It’s the best thing he ever left me.' }],
+    [{ who: 'bess', face: 'cheeky', listen: { red: 'calm' }, text: 'Mother’s sent for a woman from Ashby for when it comes. As if I’ll need more than her and a kettle.' },
+      { who: 'red', face: 'shy', text: 'Are you frightened?' },
+      { who: 'bess', face: 'calm', listen: { red: 'shy' }, text: 'Of what? Of something every woman in this village has done?' },
+      { who: 'red', face: 'shy', thought: true, text: 'She looks at the fire a little too long before she says it.' }],
+    [{ who: 'bess', face: 'concerned', listen: { red: 'calm' }, text: 'You’ve changed, you know. You used to decide everything for everyone, like a little mother. Now you let things be decided.' },
+      { who: 'red', face: 'shy', text: 'Is that bad?' },
+      { who: 'bess', face: 'smile', listen: { red: 'shy' }, text: 'It suits you. Don’t ask me how I noticed. I sit; I notice.' }],
+    [{ who: 'red', face: 'calm', thought: true, text: 'Bess hums to the baby while I sit with her. Bye, baby bunting, Daddy’s gone a-hunting. She stops after the second line, every time.' }],
+  ],
+  bessAgain: [
+    [{ who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'Sit a minute. My feet are the size of loaves, and nobody will let me look at them.' }],
+    [{ who: 'bess', face: 'cheeky', listen: { red: 'calm' }, text: 'Ned’s been sweet on Agnes Thatcher’s mother for twenty years. Don’t tell anyone. Tell everyone.' }],
+  ],
 };
+// Mistress Abney back from Ashby to an evening not seen to: the list not done (left), or Bess on her feet (up, times). confided: she's to
+// treat Red as her mother would.
+const abneyShort = (left, confided, up) => [
+  up >= 2 ? { who: 'abney', face: 'stern', listen: { red: 'shy' }, text: 'Bess was on her feet. ' + (up > 2 ? (NUM[up] || 'many')[0].toUpperCase() + (NUM[up] || 'many').slice(1) + ' times' : 'Twice') + ', Amos says, and the men left waiting.' }
+    : { who: 'abney', face: 'stern', listen: { red: 'shy' }, text: (left[0] || 'the work')[0].toUpperCase() + (left[0] || 'the work').slice(1) + (left.length > 1 ? ', and more besides,' : '') + ' not done, and me back at seven as I said.' },
+  { who: 'red', face: 'shy', text: 'I’m sorry, Mistress Abney. I couldn’t keep up.' },
+].concat(confided ? [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'You asked me to hold you to things, pet, as your mother would. So I shall. Come here.' }]
+  : [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Then you’ll keep up next time. I can’t have her lifting pots. Not now.' },
+    { who: 'red', face: 'wince', thought: true, text: 'She isn’t angry. She’s frightened. That’s worse.' }]);
+const abneyShortRed = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.35, pace: 1.3 });
+  await S.wait(0.6);
+  await S.say(M, 'When I leave you with my daughter, I need to know she’ll stay sat.', 'stern');
+  await S.step([M, 'Not up and down after the men because you dawdled at the barrels.'], 8);
+  await S.step([R, 'Yes, Mistress Abney—'], 4);
+  await S.gesture('skirt'); await S.wait(0.4);
+  S.set({ strength: 1.6, pace: 1.5 });
+  await S.step([M, 'She’s all I have left at home, pet. Her and what she’s carrying.'], 10);
+  await S.step([R, 'I know— I’m sorry—'], 4);
+  await S.smacks(6);
+  await S.say(M, 'There. Done. Up you get.', 'calm');
+  await S.wait(1.0);
+};
+const abneyShortAfter = r => r && r.rose ? [
+  { who: 'abney', face: 'concerned', listen: { red: 'shy' }, text: 'Hush, pet. It’s stopped. Sit by Bess a minute.' },
+] : [
+  { who: 'abney', face: 'calm', listen: { red: 'teary' }, text: 'Now go and sit with her a minute. She’ll want to tell you it wasn’t your fault.' },
+  { who: 'bess', face: 'smile', listen: { red: 'teary' }, text: 'It wasn’t your fault.' },
+  { who: 'abney', face: 'stern', listen: { bess: 'smile' }, text: 'It was, a little.' },
+];
 const abneyIdle = () => [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Miss Rose. Bess is by the fire, if you’ve come to see her. Don’t let her get up.' }];
 // The asking. ctx: { yes() }
 const abneyAsks = ctx => [
@@ -1309,7 +1384,7 @@ const sitWithBess = () => [
   { who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'You came. Mother said you would. She said it the way she says the sun will come up, as if she’d have words with it if it didn’t.' },
   { who: 'red', face: 'smile', text: 'I promised.' },
   { who: 'bess', face: 'calm', listen: { red: 'calm' }, text: 'Sit, then. Not on the stool: in the good chair. Mother isn’t here to see.' },
-  { who: 'red', face: 'calm', thought: true, text: 'Bess talks about the babe, and not its father. I talk about the wood, and not other things. The fire does the rest.' },
+  { who: 'red', face: 'calm', thought: true, text: 'Bess talks about the babe, and sometimes about Robert. I talk about the wood, and not other things. The fire does the rest.' },
   { who: 'bess', face: 'concerned', listen: { red: 'shy' }, text: 'You’re different lately. Not worse. Like someone who’s put something down that was heavy.' },
   { who: 'red', face: 'shy', thought: true, text: 'Everyone keeps noticing. I didn’t know it showed.' },
 ];
@@ -1769,5 +1844,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, owedNow, breadAndBed, breadEaten, curfewStern, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
+root.Story = { abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, owedNow, breadAndBed, breadEaten, curfewStern, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, lateHome, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
