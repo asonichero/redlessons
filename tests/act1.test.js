@@ -1,5 +1,6 @@
 // Act 1's end (1.3, Into the Wood): the smith's gate opens once Tom's told; Mistress Abney's once she trusts Red and has been told; and with
-// the five done (the smith's standard, Mistress Pennock's trust, Mistress Abney's taking her in hand, Holt met, the stranger met), Act 2.
+// the five done (the smith's standard, Mistress Pennock's trust, Mistress Abney's taking her in hand, Holt met, Agnes and Georgie settled),
+// Act 2, which opens on the stranger at the stream.
 const test = require('node:test'), assert = require('node:assert/strict');
 const Save = require('../js/save.js'), Calendar = require('../js/calendar.js'), Reputation = require('../js/reputation.js');
 const Quests = require('../js/quests.js'), DATA = require('../js/questdata.js'), InHand = require('../js/inhand.js'), IntoWood = require('../js/intowood.js');
@@ -12,10 +13,10 @@ function world() {
   return { save, cal, rep, q };
 }
 
-test('1.3 opens on the pie, the promise and the herbs; Holt and the stranger are due', () => {
+test('1.3 opens on the pie, the promise and the herbs; Holt is due, and not yet the stranger', () => {
   const w = world();
   assert.equal(w.q.phase(), '1.3');
-  assert.ok(IntoWood.holtDue(w)); assert.ok(IntoWood.wolfeDue(w));
+  assert.ok(IntoWood.holtDue(w)); assert.equal(IntoWood.wolfeDue(w), false);
 });
 
 test('the smith: not until Tom knows; then hers to ask, once a day', () => {
@@ -34,9 +35,11 @@ test('Mistress Abney: gated until she trusts Red and has been told', () => {
   w.rep.trusts('abney', 3); w.rep.tell('abney', 2); assert.equal(w.q.stateOf('abney.inhand'), 'offered');
 });
 
-test('the five done, and Act 1 gives way to Act 2', () => {
+test('the five done, and Act 1 gives way to Act 2, Wolfe’s meeting its first', () => {
   const w = world();
   w.rep.tell('tom', 1); w.rep.trusts('abney', 3); w.rep.tell('abney', 2);
-  for (const r of ['hulda.holt', 'holt.meet', 'wolfe.meet', 'tom.smith', 'pennock.trust', 'abney.inhand']) w.q.complete(r);
-  assert.ok(w.q.gateOpen('act1')); assert.equal(w.q.phase(), '2.1');
+  for (const r of ['hulda.holt', 'holt.meet', 'tom.smith', 'pennock.trust', 'abney.inhand']) w.q.complete(r);
+  assert.equal(w.q.gateOpen('act1'), false, 'not till Agnes and Georgie are settled'); assert.notEqual(w.q.stateOf('wolfe.meet'), 'offered', 'no stranger at the stream in Act 1');
+  w.q.complete('agnes.settled');
+  assert.ok(w.q.gateOpen('act1')); assert.equal(w.q.phase(), '2.1'); assert.equal(w.q.stateOf('wolfe.meet'), 'offered');
 });

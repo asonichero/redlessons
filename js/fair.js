@@ -7,7 +7,7 @@
 //     ready on the day. (Late, it waits on her, and her mother says so.)
 //   • Fair day: no garden, no errand, no shifts; her mother at her stall on the green all day; the fair till ten, and Red's curfew lifted. The
 //     clock runs at the inn shift's pace, a game minute a second (js/world.js).
-//     The day itself: js/fairday.js (to come).
+//     The day itself: js/fairday.js.
 //
 //   Fair.arm(w) (each morning: sets the days once the gates are met) · Fair.phase(w) → 'last' (the planting's last day) | 'week' | 'fair' |
 //   'after' (its Lay day, and First Day, the stalls coming down) | null · Fair.marenAt(w) → her mother's whereabouts this week, or null ·

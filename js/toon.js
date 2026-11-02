@@ -1401,7 +1401,9 @@ function makeChair(seatY, kind) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(hex)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
     m.add(new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, h + 0.14, d + 0.14), INKM[0])); g.add(m); boxes.push({ c: new V3(x, y, z), h: new V3(w / 2, h / 2, d / 2) }); return m; };
   const boxes = [];
-  if (kind === 'bench') { box(16, 0.9, 5.4, 0, seatY - 0.45, 0.6, wood); for (const x of [-6.5, 6.5]) box(1.2, seatY - 0.9, 4.2, x, (seatY - 0.9) / 2, 0.6, dark); }
+  if (kind === 'log') { const r = seatY / 2, m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.08, 18, 14).rotateZ(Math.PI / 2), mat('#6e5236')); m.position.set(0, r, 0.6); m.castShadow = m.receiveShadow = true;      // (a fallen trunk, across: in the wood)
+    m.add(new THREE.Mesh(hullGeo(m.geometry, 0.08), INKM[0])); g.add(m); boxes.push({ c: new V3(0, seatY / 2, 0.6), h: new V3(9, seatY / 2, r) }); }
+  else if (kind === 'bench') { box(16, 0.9, 5.4, 0, seatY - 0.45, 0.6, wood); for (const x of [-6.5, 6.5]) box(1.2, seatY - 0.9, 4.2, x, (seatY - 0.9) / 2, 0.6, dark); }
   else {
     box(9.4, 0.9, 9.2, 0, seatY - 0.45, 1.8, wood);
     for (const [x, z] of [[-4.1, -2.3], [4.1, -2.3], [-4.1, 6.0], [4.1, 6.0]]) box(0.9, seatY - 0.9, 0.9, x, (seatY - 0.9) / 2, z, dark);

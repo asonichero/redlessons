@@ -196,7 +196,8 @@ function attach(P, w) {
   function update(first) {
     const day = cal.day, min = cal.minute;
     for (const key in PEOPLE) {
-      const fs = root.FairDay ? root.FairDay.station(w, key, min) : undefined;      // (fair day: at the fair, all of them)
+      let fs = root.FairDay ? root.FairDay.station(w, key, min) : undefined;      // (fair day: at the fair, all of them)
+      if (fs === undefined && root.Agnes) fs = root.Agnes.station(w, key, min);      // (after the fair: Agnes up by the pinfold; the afternoon in the wood, the two of them gone)
       const want = (vs().away && vs().away[key] === day) || (key === 'peter' && fs === undefined && !(root.Peter && root.Peter.inVillage(w))) ? null : fs !== undefined ? fs : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
       if (f && f.scene) continue;      // (a scene has them)
       if (want && !f) spawn(key, want, !first);
@@ -233,6 +234,7 @@ function attach(P, w) {
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
       if (root.FairDay && await root.FairDay.talk(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (fair day: an errand asked, or given)
+      if (root.Agnes && await root.Agnes.talk(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (Agnes and Georgie, after the fair: js/agnes.js)
       if (root.Green && await root.Green.invite(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (of an evening, on the green: js/green.js)
       if (key === 'bess' && root.Fair && root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', key] }); w.save.flag('bess-frock', cal.day); if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (after the fitting: her own frock, as a girl)
       if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)

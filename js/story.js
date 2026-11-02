@@ -1363,7 +1363,7 @@ const granAsk = days => [
   { who: 'red', face: 'shy', text: days > 6 ? 'I… don’t know. A week? More.' : 'A few days. Four. Five?' },
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Go up and see her, soon. Out of the wood by dusk, mind. She’d never say so, but she counts the days.' },
 ];
-// ── Fair day on the green (js/fairday.js): a word with each of the fair's own people. (Her mother's and Grandmother's errands: to come.)
+// ── Fair day on the green (js/fairday.js): a word with each of the fair's own people (their errands: fairAsk, below).
 const FAIR_TALK = {
   mother: [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Look at you. Turn round. Oh, it hangs beautifully. Mind it, love: the green’s all hooves and cinders today.' }],
   gran: [{ who: 'gran', face: 'smile', listen: { red: 'smile' }, text: 'Blue! Your mother’s outdone herself. Come here and let me see you. And then go and enjoy yourself, Little Red: it’s fair day.' }],
@@ -1378,6 +1378,53 @@ const FAIR_TALK = {
   carrierKit: [{ who: 'carrierKit', face: 'bashful', listen: { red: 'cheeky' }, text: 'Is there… does Agnes Thatcher have anyone to dance with, do you know? Only asking.' }],
 };
 const fairTalk = (key, ctx) => FAIR_TALK[key] || [];
+// The dress, the first time each of them sees her in it on fair day (js/fairday.js). ctx: open (they know what being Little Red means),
+// caught (Master William's had her once after curfew), easy (Peter: he trusts her well enough not to stammer). Those who know (or half know)
+// allude; the rest are fond.
+const fairDress = (key, ctx) => {
+  const c = ctx || {};
+  switch (key) {
+    case 'pennock': return c.open ? [
+      { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'Well, look at you. A week of your mother’s evenings, that, and every stitch shows it.' },
+      { who: 'pennock', face: 'stern', listen: { red: 'shy' }, text: 'Keep it off my oven door, Little Red. I’d hate to have to tell her you’d been sitting in my cinders.' },
+    ] : [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Miss Rose! Blue suits you. Your mother’s a wonder with a needle. Here: a crumb of gingerbread, for luck. Mind it doesn’t go down the front.' }];
+    case 'baker': return [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Now there’s a dress. The wife’s been on about it all week, and she was right.' }];
+    case 'abney': return c.open ? [
+      { who: 'abney', face: 'smile', listen: { red: 'smile' }, text: 'There’s a dress with a week of evenings in it. You’re a picture, child.' },
+      { who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Your mother’ll want it home the way it left, Little Red. I know I would, in her place. And so would you, after.' },
+    ] : [{ who: 'abney', face: 'smile', listen: { red: 'smile' }, text: 'Oh, Miss Rose, you’re a picture. My Robert would have had you round the green twice in that, and Bess with you. Go and show her, if you get a minute.' }];
+    case 'smith': return c.open ? [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Hm. Blue. Stay out of my forge today, Little Red. Cinders don’t come out, and you know as well as Tom what follows them.' }]
+      : [{ who: 'smith', face: 'calm', listen: { red: 'smile' }, text: 'Hm. Smart. Your mother’s work? Keep clear of the forge in that.' }];
+    case 'tom': return c.open ? [
+      { who: 'tom', face: 'cheeky', listen: { red: 'pout' }, text: 'Ridley! All in blue! A ha’penny says it’s not blue by tea.' },
+      { who: 'tom', face: 'smile', listen: { red: 'shy' }, text: 'Not that I’d want to be you when your mother sees it if it isn’t. I’d know.' },
+    ] : [{ who: 'tom', face: 'cheeky', listen: { red: 'pout' }, text: 'Ridley! You look like a— no. You look nice, actually. Don’t tell anyone I said.' }];
+    case 'willie': return c.open ? [{ who: 'willie', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. A fine dress. Home in it clean, and by ten, and your mother and I need never discuss it.' }]
+      : c.caught ? [{ who: 'willie', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. Very fine. Ten tonight, mind: and I’ll know that blue at fifty yards.' }]
+      : [{ who: 'willie', face: 'smile', listen: { red: 'smile' }, text: 'Miss Rose. Very fine. Your mother’s work, I’ll wager. Enjoy the day.' }];
+    case 'agnes': return [
+      { who: 'agnes', face: 'surprised', listen: { red: 'smile' }, text: 'Rose! Oh, the blue! Turn round. Oh, and a bow at the back!' },
+      { who: 'agnes', face: 'smile', listen: { red: 'smile' }, text: 'I had one just like it when I was small. Blue, with a white collar; Mam made it for the Whitsun dancing. I wore it till my elbows came through, and cried when it went for rags.' },
+    ];
+    case 'georgie': return [{ who: 'georgie', face: 'bashful', listen: { red: 'smile' }, text: 'Miss— Rose. That’s a grand dress. Has Agnes seen it? She’ll want one.' }];
+    case 'peter': return c.easy ? [
+      { who: 'peter', face: 'surprised', listen: { red: 'shy' }, text: 'Red. Look at you.' },
+      { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'You look… lovely. You do. Don’t laugh. I’m not— I mean it.' },
+    ].concat(c.open ? [{ who: 'peter', face: 'bashful', listen: { red: 'smile' }, text: 'Keep it out of the pond. I’ll not be the reason it isn’t blue tonight.' }] : [])
+      : [
+      { who: 'peter', face: 'surprised', listen: { red: 'shy' }, text: 'Red. You’re… that’s… blue. It’s blue.' },
+      { who: 'red', face: 'smile', listen: { peter: 'bashful' }, text: 'It is.' },
+      { who: 'peter', face: 'bashful', listen: { red: 'smile' }, text: 'It suits— I mean you look— I have to go and see about a— Grandad. Something of Grandad’s. Sorry.' },
+      { who: 'red', face: 'smile', thought: true, text: 'He’s gone the colour of Tom’s ears. He’s not even moved.' },
+    ];
+    case 'bo': return [{ who: 'bo', face: 'smile', listen: { red: 'smile' }, text: 'Rose, you look like a bluebell! A whole one! Can I touch the collar? I’ll not mark it. My hands are clean, look.' }];
+    case 'halloran': return [{ who: 'halloran', face: 'smile', listen: { red: 'smile' }, text: 'Well now. Miss Rose, in her Sunday best and better. Your father’d have been proud to walk you down this green.' }];
+    case 'thatcherWife': return [{ who: 'thatcherWife', face: 'smile', listen: { red: 'smile' }, text: 'That collar! Your mother never bought that lace in Ashby; she’s turned it herself. Agnes, come and look at Rose’s collar.' }];
+    case 'bess': return c.open && c.frockTold ? [{ who: 'bess', face: 'smile', listen: { red: 'shy' }, text: 'And look at you. Blue. Mine was yellow. Keep yours further from the hearth than I kept mine, Little Red: you know how mine ended.' }]
+      : [{ who: 'bess', face: 'smile', listen: { red: 'smile' }, text: 'And look at you. Blue, and a sash. Turn round, so I can see the bow. Oh, Rose.' }];
+    default: return [];
+  }
+};
 // Fair day's errands (js/fairday.js): asked (ctx.yes: she'll do it, for the ones she may turn down), and given.
 const OPT = (ctx, yes, no) => [{ choose: [{ text: yes, face: 'smile', then: [{ run: ctx.yes }] }, { text: no, face: 'shy', then: [] }] }];
 const fairAsk = (id, ctx) => ({
@@ -1427,6 +1474,117 @@ const fairKiss = step => [
   [{ who: 'agnes', face: 'crying', listen: { red: 'wince' }, text: 'Don’t. Rose, don’t. Everyone saw. Everyone.' },
    { who: 'red', face: 'wince', thought: true, text: 'Her face, in front of the whole village. And him gone, as if it had been nothing to do with him.' }],
 ][step] || [];
+// ── Agnes and Georgie, after the fair (js/agnes.js).
+// (Agnes, up by the pinfold, the first time Red finds her there: heard, Red wasn't there to see it, and Tom's told the whole village)
+const agnesFound = heard => [
+  { text: 'Agnes is sitting on the pinfold wall with her back to the village, watching Bo’s ewes as if they were the most interesting thing in the world.' },
+  { who: 'red', face: 'shy', listen: { agnes: 'pout' }, text: heard ? 'Agnes. I heard. Tom’s told everyone, the toad. I wasn’t there; I wish I had been.' : 'Agnes. I’ve looked everywhere. You’ve not been at the well.' },
+  { who: 'agnes', face: 'pout', listen: { red: 'shy' }, text: 'Everyone at the well saw. Everyone at the well will want to talk about it. So I’m talking to sheep.' },
+  { who: 'agnes', face: 'sad', listen: { red: 'shy' }, text: 'He came to the door last night. His mother sent him, I’d say. I didn’t open it. What would he say? Sorry? Sorry’s a word, Rose. It took him one breath.' },
+  { who: 'red', face: 'calm', listen: { agnes: 'sad' }, text: 'What would you want, then? If you could have anything.' },
+  { who: 'agnes', face: 'sad', listen: { red: 'calm' }, text: 'I want him to feel it. What I felt, stood there with my face burning and the whole green laughing and him gone. I want him to know it, not say he does.' },
+  { who: 'agnes', face: 'pout', listen: { red: 'shy' }, text: 'And I don’t know how that could ever be. So. Sheep.' },
+];
+const agnesAway = told => [[
+  { who: 'agnes', face: 'calm', listen: { red: 'smile' }, text: told ? 'I keep thinking about what you told me. About asking for it. About the word. I don’t know, Rose. It’d have to be him that asked.' : 'Still here. The ewes don’t ask me anything. I like that in a ewe.' },
+]][0];
+// (trusting her enough, Red can tell her: what being Little Red means, and what makes it work)
+const agnesTell = ctx => [
+  { who: 'agnes', face: 'calm', listen: { red: 'shy' }, text: 'You’ve gone quiet. You’ve been quiet since spring, if I’m honest. Different. Not worse. As if you’d put something down.' },
+  { choose: [
+    { text: 'Tell her what being Little Red means.', face: 'shy', then: [
+      { who: 'red', face: 'shy', listen: { agnes: 'surprised' }, text: 'I asked Mama for something. To be held to things again, the way I was when I was small. When I let things slide, or I’m wilful, she takes me in hand. Properly.' },
+      { who: 'agnes', face: 'surprised', listen: { red: 'shy' }, text: 'Your mother— You asked her?' },
+      { who: 'red', face: 'calm', listen: { agnes: 'surprised' }, text: 'That’s the whole of it: it’s asked for. Nobody does it to you. And there’s a word, mine, and if I say it, it stops, that moment, no questions. And the after matters as much as the rest. More, some days.' },
+      { who: 'red', face: 'calm', listen: { agnes: 'calm' }, text: 'Then it’s done. Gone. Not hanging over you for weeks. It’s why I’ve been lighter.' },
+      { who: 'agnes', face: 'calm', listen: { red: 'calm' }, text: 'Asked for. A word that stops it. And the after.' },
+      { who: 'agnes', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me, Rose. I’ll not say a word to anyone. I’m only… thinking.' },
+      { run: ctx.tell } ] },
+    { text: 'Not yet.', face: 'shy', then: [{ who: 'red', face: 'shy', listen: { agnes: 'calm' }, text: 'It’s just spring. I’ll tell you one day.' }, { who: 'agnes', face: 'smile', listen: { red: 'shy' }, text: 'I’ll hold you to that.' }] },
+  ] },
+];
+// (Georgie, ashamed: Red puts it to him plainly, or leaves it)
+const georgieAshamed = ctx => [
+  { who: 'georgie', face: 'shy', listen: { red: 'calm' }, text: 'Rose. You’ll have heard what I am, then. Everyone has.' },
+  { who: 'georgie', face: 'sad', listen: { red: 'calm' }, text: 'I wasn’t thinking. The fiddle and the lanterns and her laughing, and I just— and then Tom, and I ran. I ran, Rose. I left her there. That’s worse than the kiss and I know it.' },
+  { choose: [
+    { text: 'Put it to him plainly.', face: 'calm', then: [
+      { who: 'red', face: 'calm', listen: { georgie: 'shy' }, text: 'She doesn’t want sorry, Georgie. She wants you to feel it the way she did. Stood there, small, with everyone looking.' },
+      { who: 'red', face: 'calm', listen: { georgie: 'surprised' }, text: 'If you meant it, you could ask her to hold you to account. Ask, mind: it’s yours to ask and hers to say. You’d have a word that stops it. And then it’s done, and put down.' },
+      { run: ctx.put } ] },
+    { text: 'Leave it for now.', face: 'shy', then: [{ who: 'red', face: 'shy', listen: { georgie: 'sad' }, text: 'Give her time, Georgie.' }] },
+  ] },
+];
+const georgieChooses = yes => yes ? [
+  { who: 'georgie', face: 'shy', listen: { red: 'calm' }, text: 'Hold me to account. Agnes.' },
+  { who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'That night on the watch, when I walked you home, you didn’t laugh at me once. I think I can do this if you’re there when I ask her. Will you come?' },
+] : [
+  { who: 'georgie', face: 'sad', listen: { red: 'calm' }, text: 'I can’t, Rose. I can’t ask her for that. I’ll say sorry. Properly, to her face, not through a door. That’s what I’ve got.' },
+];
+const georgieSorry = () => [
+  { who: 'georgie', face: 'sad', listen: { agnes: 'pout' }, text: 'Agnes. I’m sorry. For the kiss, that you never asked for. For running. Most for running.' },
+  { who: 'agnes', face: 'calm', listen: { georgie: 'sad' }, text: 'Thank you, Georgie.' },
+  { text: 'She means it, and it’s civil, and it isn’t enough, and all three of them know it.' },
+  { who: 'agnes', face: 'calm', listen: { red: 'shy' }, text: 'I’ll be back at the well tomorrow, Rose. I’ve hid long enough.' },
+];
+const agnesTerms = ctx => [
+  { who: 'georgie', face: 'shy', listen: { agnes: 'surprised' }, text: 'Agnes. I’m not here to say sorry. I’m here to ask you to hold me to account for it. If you will.' },
+  { who: 'agnes', face: 'surprised', listen: { georgie: 'shy' }, text: 'Hold you…' },
+  { who: 'agnes', face: 'calm', listen: { red: 'calm' }, text: 'Like Rose told me. Asked for.' },
+  { who: 'red', face: 'calm', listen: { agnes: 'calm' }, text: 'Then we’ll set it, the three of us, so nobody’s guessing. Where, first. Not the village.' },
+  { who: 'agnes', face: 'calm', listen: { red: 'calm' }, text: 'The wood. Off the herb path, by the fallen tree. Nobody comes there but you and your grandmother.' },
+  { who: 'red', face: 'calm', listen: { georgie: 'shy' }, text: 'Tomorrow, after dinner. And you need a word, Georgie. Yours. You say it, it stops, then and there.' },
+  { who: 'georgie', face: 'shy', listen: { red: 'calm' }, text: '…Millstone. It’s what I think of when I want to be still.' },
+  { who: 'agnes', face: 'shy', listen: { red: 'shy' }, text: 'And you, Rose. Will you be there? I don’t think I can, on my own. Not the first time.' },
+  { choose: [
+    { text: 'I’ll be there.', face: 'calm', then: [{ who: 'red', face: 'calm', listen: { agnes: 'shy' }, text: 'I’ll be there. Off to the side. You won’t be on your own.' }, { run: ctx.there }] },
+    { text: 'It should be the two of you.', face: 'shy', then: [{ who: 'red', face: 'shy', listen: { agnes: 'shy' }, text: 'It should be just the two of you, I think. You’ll know what to do. Tell me after, if you want.' }, { run: ctx.notThere }] },
+  ] },
+];
+const agnesWaiting = red => [{ who: 'agnes', face: 'shy', listen: { red: 'calm' }, text: red ? 'Tomorrow, after dinner. The fallen tree. I keep going hot and cold about it. You’ll come?' : 'Tomorrow, after dinner. I keep going hot and cold about it. I’ll tell you how it went.' }];
+const woodBefore = () => [
+  { text: 'Agnes and Georgie are standing a little way off the path, past the fallen tree, not looking at each other. Agnes has her father’s legget under her arm.' },
+  { who: 'agnes', face: 'shy', listen: { red: 'calm' }, text: 'You came. Good. I nearly didn’t.' },
+  { who: 'georgie', face: 'shy', listen: { red: 'calm' }, text: 'I nearly didn’t either.' },
+  { who: 'red', face: 'calm', listen: { georgie: 'shy' }, text: 'Your word, Georgie?' },
+  { who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Millstone.' },
+  { who: 'red', face: 'calm', listen: { agnes: 'shy' }, text: 'Then I’ll be over there. It’s yours, the two of you.' },
+];
+// (the correction itself: Agnes's, at his asking. Hers is the hand, and the legget to finish)
+const agnesGeorgie = async S => {
+  const M = 'corrector', R = 'subject';
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.2, pace: 1.1 });
+  await S.wait(0.8);
+  await S.say(M, 'I don’t know how to do this. I only know how it felt.', 'shy');
+  await S.step([M, 'You kissed me in front of the whole green, Georgie Dunn.', 'stern'], 8);
+  await S.step([R, 'I know— I know I did—'], 4);
+  await S.step([M, 'And I never asked you to.', 'stern'], 8);
+  await S.gesture('skirt'); await S.wait(0.5);
+  S.set({ strength: 1.4, pace: 1.3 });
+  await S.say(M, 'Everyone saw me. So.', 'stern');
+  await S.step([M, 'I stood there with my face on fire, and the lads roaring, and you’d gone.', 'stern'], 10);
+  await S.step([R, 'Agnes— ow— I’m sorry I ran—'], 5);
+  await S.step([M, 'You left me standing there!', 'stern'], 10);
+  S.set({ implement: 'legget', strength: 1.3, pace: 0.9 });
+  await S.say(M, 'Dad’s legget. Six. Then it’s done.', 'stern');
+  await S.after([R, 'One—'], 1); await S.after([R, 'Two—'], 1); await S.after([R, 'Three—'], 1);
+  await S.after([R, 'Four— I’m sorry—'], 1); await S.after([R, 'Five—'], 1); await S.after([R, 'Six.'], 1);
+  await S.say(M, 'There. That’s it. That’s all of it.', 'calm');
+};
+const agnesGeorgieAfter = rose => [
+  { text: rose ? 'He said it, and it stopped, there and then, and she had hold of him before the word was finished.' : 'After, they sit on the trunk together, his head on her shoulder, her arm round him, both of them crying and pretending not to.' },
+  { who: 'georgie', face: 'teary', listen: { agnes: 'calm' }, text: 'I felt it. I did. I’m sorry, Agnes.' },
+  { who: 'agnes', face: 'teary', listen: { georgie: 'teary' }, text: 'I know. I know you are, now. It’s done. It’s put down.' },
+  { who: 'agnes', face: 'calm', listen: { red: 'smile' }, text: 'Go on, Rose. We’re all right. Thank you. I mean it.' },
+];
+const woodLeaving = () => 'Asked for, a word, and the after. They’ll be all right.';
+// (Agnes, back at the well, the first time after: yes (and whether Red was there, or meant to be and wasn't), or no)
+const agnesBack = (how, missed, meant) => how === 'yes' ? [
+  { who: 'agnes', face: 'smile', listen: { red: 'smile' }, text: missed ? 'We waited for you a while, by the fallen tree. Then we didn’t. It’s done, Rose. It’s put down. He walked me home after, and he didn’t run.' : meant ? 'Back at the well. Everything’s just the same and nothing is. He walked me home after. Thank you, Rose.' : 'It’s done. You were right: just the two of us. He walked me home after, and he didn’t run.' },
+  { who: 'agnes', face: 'cheeky', listen: { red: 'shy' }, text: 'And now I know your secret, I’ll have yours out of you about Peter Fowler. Don’t think I won’t.' },
+] : [
+  { who: 'agnes', face: 'calm', listen: { red: 'calm' }, text: 'Back at the well. Georgie nods to me, and I nod back. It’s quieter than it was. Maybe that’s all it’ll ever be.' },
+];
 // The fair's night (js/evening.js): her mother, in from her stall, and the dress. kind: 'clean' | 'marked' (a little: ctx.own, Red owns it)
 // | 'spoilt'.
 const fairHome = (kind, ctx) => kind === 'clean' ? [
@@ -2318,5 +2476,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

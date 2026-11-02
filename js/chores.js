@@ -185,6 +185,7 @@ function create(w) {
   async function breakfast(P, o) {
     if (!on() || !P || !P.npc) return;
     if (root.Fair) root.Fair.arm(w);      // (the fair's days set, once its gates are met)
+    if (root.Agnes) root.Agnes.morning(w);      // (after the fair: the kiss heard of; the afternoon in the wood, gone by)
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
       needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay, fair: root.Fair ? root.Fair.breakfast(w) : null, fairDay: !!(root.Fair && root.Fair.isFair(w)),      // (her mother's own day: js/maren.js)
@@ -282,7 +283,7 @@ function create(w) {
     if (!b) return; m.drop(); b.obj.position.copy(m.pos.clone().setY(0).addScaledVector(f, 5.5).addScaledVector(new V3(f.z, 0, -f.x), 4)); b.obj.rotation.set(0, m.yaw, 0);
     const well = (sp && sp.at ? sp.at.clone() : m.pos.clone()).addScaledVector(f, 6).setY(10), butt = b.obj.position.clone().setY(6);
     const n = (st().fills || 0) + 1; change(c => { c.fills = n; });
-    const V = P.villagers, agnes = V && V.summon ? V.summon('agnes', 'wellSide') : null;
+    const V = P.villagers, agnes = V && V.summon && !(root.Agnes && root.Agnes.away(w)) ? V.summon('agnes', 'wellSide') : null;      // (not after the fair, till it's settled: she keeps away from the well)
     if (agnes) { const at = P.collide(m.pos.clone().setY(0).addScaledVector(new V3(f.z, 0, -f.x), -12).addScaledVector(f, 3), 3.2); await Promise.race([V.walkTo('agnes', at, Math.atan2(m.pos.x - at.x, m.pos.z - at.z)), P.wait(6)]); agnes.motion.face(Math.atan2(m.pos.x - agnes.motion.pos.x, m.pos.z - agnes.motion.pos.z)); }
     const draw = async () => { for (let k = 0; k < 3; k++) {
       m.reach('L', well.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-1.5))); await m.reach('R', well.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(1.5))); await P.wait(agnes ? 1.6 : 0.7);

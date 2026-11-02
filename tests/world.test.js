@@ -86,7 +86,7 @@ test('phases are reached in order and never lost; act gates hold', () => {
   assert.equal(q.gateOpen('act1'), false); assert.equal(q.stateOf('tom.smith'), 'gated', 'the smith only once she’s told Tom');
   rep.tell('tom'); assert.equal(q.stateOf('tom.smith'), 'offered');
   assert.equal(q.stateOf('abney.inhand'), 'gated'); rep.trusts('abney', 3); rep.tell('abney'); assert.equal(q.stateOf('abney.inhand'), 'offered');
-  for (const r of ['tom.smith', 'pennock.helps', 'pennock.pie', 'pennock.trust', 'abney.inhand', 'hulda.holt', 'holt.meet', 'wolfe.meet']) q.complete(r);
+  for (const r of ['tom.smith', 'pennock.helps', 'pennock.pie', 'pennock.trust', 'abney.inhand', 'hulda.holt', 'holt.meet', 'agnes.settled']) q.complete(r);
   assert.ok(q.gateOpen('act1')); assert.equal(q.phase(), '2.1');
   save.change(s => { s.quests.wolfe = {}; }); assert.equal(q.phase(), '2.1', 'a phase reached is kept');
 });

@@ -46,7 +46,7 @@ const s = (id, phase, title, where, who, more) => Object.assign({ id, phase, tit
 
 const lines = [
   { id: 'wolfe', name: 'Wolfe', main: true, steps: [
-    s('meet', '1.3', 'A stranger at the stream', 'wood', 'wolfe', { hint: 'Someone is by the stream.', when: { part: ['afternoon', 'evening'] } }),
+    s('meet', '2.1', 'A stranger at the stream', 'wood', 'wolfe', { hint: 'Someone is by the stream.', when: { part: ['afternoon', 'evening'] } }),      // (Act 2 begins with him)
     s('chance', '2.1', 'Chance meetings', 'wood', 'wolfe', { hint: 'He seems to be wherever she walks alone.' }),
     s('learns', '2.2', 'What he learns', 'wood', 'wolfe', { gate: 'silence' }),
     s('note', '2.3', 'A note from Grandmother', 'home', 'maren', { gate: 'note', hint: 'A note has come.' }),
@@ -110,6 +110,16 @@ const lines = [
     s('wine', '2.3', 'The wine', 'inn', 'abney'),
     s('gossip', '3.2', 'Travellers’ gossip', 'inn', 'abney'),
   ] },
+  // (Agnes and Georgie, after the fair: js/agnes.js. His kiss at the dancing; Agnes gone from the well; Red's truth told her; Georgie, ashamed,
+  // and Red putting it to him; then settled, either way: Agnes holding him to account in the wood at his asking, or his sorry, and not enough)
+  { id: 'agnes', name: 'Agnes and Georgie', steps: [
+    s('kiss', '1.2', 'Georgie’s kiss', 'village', null, { when: { flag: 'fair-kiss' } }),
+    s('found', '1.2', 'Agnes, away from the well', 'village', 'agnes', { hint: 'Agnes hasn’t been at the well since the fair. Find her.' }),
+    s('told', '1.3', 'Telling Agnes', 'village', 'agnes', { optional: true, when: { trust: 'agnes', gte: 3 } }),
+    s('georgie', '1.3', 'Georgie, ashamed', 'village', 'georgie', { hint: 'Georgie Dunn has been keeping out of everyone’s way.',
+      when: { all: [{ done: 'agnes.told' }, { trust: 'georgie', gte: 3 }, { any: [{ flag: 'georgie-walked' }, { trust: 'georgie', gte: 4 }] }, { any: [{ done: 'pennock.pie' }, { done: 'tom.smith' }, { done: 'abney.inhand' }] }] } }),
+    s('settled', '1.3', 'Settled', 'wood', 'agnes'),
+  ] },
   { id: 'holt', name: 'Holt', steps: [
     s('meet', '1.3', 'The woodsman', 'cabin', 'holt', { when: { done: 'hulda.holt' } }),
     s('work', '2.1', 'Work at the charcoal-burners’', 'charcoal', 'holt'),
@@ -148,7 +158,7 @@ const lines = [
 
 // The gates (the plan's twelve: the middle-tier figures each have their own, as Holt does). The three act gates are hard; the rest open single lines.
 const gates = [
-  { id: 'act1', name: 'Act 1 to Act 2', hard: true, requires: { all: [{ done: 'tom.smith' }, { done: 'pennock.trust' }, { done: 'abney.inhand' }, { done: 'holt.meet' }, { done: 'wolfe.meet' }] } },
+  { id: 'act1', name: 'Act 1 to Act 2', hard: true, requires: { all: [{ done: 'tom.smith' }, { done: 'pennock.trust' }, { done: 'abney.inhand' }, { done: 'holt.meet' }, { done: 'agnes.settled' }] } },      // (Agnes and Georgie settled (the fair long passed); Wolfe's meeting is Act 2's first)
   { id: 'act2', name: 'Act 2 to Act 3', hard: true, requires: { done: 'wolfe.cabin' } },
   { id: 'finale', name: 'The finale', hard: true, requires: { done: 'hulda.found' } },
   { id: 'smith', name: 'The smith takes her in hand', requires: { open: 'tom', gte: 1 } },

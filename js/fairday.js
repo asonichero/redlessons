@@ -92,7 +92,7 @@ function attach(P, w) {
   { const f = figs.miller; if (f) { let t = 0; f.motion.reach('L', () => f.rig.root.position.clone().add(new V3(Math.sin(f.motion.yaw) * 3 - Math.cos(f.motion.yaw) * 2, 15, Math.cos(f.motion.yaw) * 3 + Math.sin(f.motion.yaw) * 2)));
     f.motion.reach('R', () => { const s = Math.sin(t * 4) * 2.2, fw = new V3(Math.sin(f.motion.yaw), 0, Math.cos(f.motion.yaw)), sd = new V3(fw.z, 0, -fw.x); return f.rig.root.position.clone().addScaledVector(fw, 4).addScaledVector(sd, -1 + s).setY(14); });
     P.tick(dt => { t += dt; }); } }
-  // ── A word with any of them: their own for the day (her mother's and Grandmother's errands: js/fairday.js, to come).
+  // ── A word with any of them: the dress, the first time they see her in it; an errand, asked or given; else their own word for the day.
   const talking = { busy: false };
   function actions() {
     if (P.busy || talking.busy) return [];
@@ -148,6 +148,10 @@ function takeItem(P, w, e) { const b = bag(P); if (b) root.Chores.takeOut(b, e.i
 async function talk(P, w, key) {
   if (!root.Fair || !root.Fair.isFair(w)) return false;
   const S = root.Story, st = fstate(w), min = w.cal.minute, shot = { shot: ['red', key] };
+  // (the first time each of them sees her in the dress: a word about it, before anything else they've to say)
+  let said = false; const dress = S.fairDress && !(st.dress || {})[key] ? S.fairDress(key, dressCtx(w, key)) : [];
+  if (dress.length) { await P.converse(dress, shot); fchange(w, s => { s.dress = Object.assign({}, s.dress, { [key]: true }); }); said = true; }
+  if (said && key === 'peter' && !dressCtx(w, key).easy) return true;      // (undone by it: off to see about something of Grandad's; he'll ask her to dance when he's himself again)
   if (key === 'peter' && min >= DANCE_FROM && !st.danceAsked && !st.kissed) { await dance(P, w, P.villagers && P.villagers.here('peter')); return true; }      // (the dancing: he asks her)
   const give = ERR.find(e => e.who === key && st.have[e.id] && !st.done[e.id] && e.item);
   if (give && key !== 'thatcherWife') { await P.converse(S.fairGive(give.id), shot); takeItem(P, w, give); w.rep.trusts(key === 'mother' || key === 'gran' ? (key === 'gran' ? 'hulda' : 'maren') : key, 0.5); return true; }
@@ -157,7 +161,13 @@ async function talk(P, w, key) {
     fchange(w, s => { s.asked[ask.id] = true; if (!yes) s.no[ask.id] = true; });
     if (yes && ask.given) giveItem(P, w, ask);
     w.refresh(); return true; }
-  return false;
+  return said;
+}
+// (what they know of her: told what being Little Red means (Bess: her mother has been, with her watching); Master William's caught her once;
+// Peter, easy with her)
+function dressCtx(w, key) {
+  const rep = w.rep, open = k => !!(rep && rep.openness && rep.openness(k) >= 1);
+  return { open: key === 'bess' ? open('abney') : open(key), caught: !!(w.q && w.q.done && w.q.done('willie.first')), easy: ((w.save.state.trust || {}).peter || 0) >= 3, frockTold: !!(w.save.state.flags || {})['bess-frock'] };
 }
 // (where each is fetched, in the place she's in: an action there, while it's asked and not yet had)
 function area(P, w, name) {
@@ -179,6 +189,7 @@ function area(P, w, name) {
     if (P.npcGo) P.npcGo(true, null);      // (Mistress Abney at her ale stall, on the green)
     list.push({ label: ERR[6].label, get at() { const f = P.figure('bess'); return f ? f.motion.pos.clone().setY(14) : (W.bessChair ? W.bessChair.at.clone() : new V3()); },
       when: () => st().have.fairing && !st().done.fairing && !P.busy, run: async () => { const S = root.Story; await P.converse(S.fairGive('fairing'), { shot: ['red', 'bess'] });
+        if (!(st().dress || {}).bess) { await P.converse(S.fairDress('bess', dressCtx(w, 'bess')), { shot: ['red', 'bess'] }); fchange(w, s => { s.dress = Object.assign({}, s.dress, { bess: true }); }); }
         if (root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', 'bess'] }); w.save.flag('bess-frock', w.cal.day); }
         takeItem(P, w, ERR[6]); w.rep.trusts('bess', 1); } });
   }
@@ -235,7 +246,7 @@ async function dance(P, w, f) {
 }
 async function kiss(P, w, stop) {
   const S = root.Story, V = P.villagers; if (!V || fstate(w).kissed) { if (stop) stop(); return; }
-  fchange(w, s => { s.kissed = true; }); w.save.flag('fair-kiss', w.cal.day);
+  fchange(w, s => { s.kissed = true; }); w.save.flag('fair-kiss', w.cal.day); if (w.q.stateOf('agnes.kiss') === 'offered') w.complete('agnes.kiss');
   const ag = V.summon('agnes', 'danceEdge'), ge = V.summon('georgie', 'danceEdge'), tom = V.summon('tom', 'danceEdge2');
   const at = DANCE.clone().add(new V3(12, 0, -6)); ag.motion.warp(at, yawTo(at, DANCE)); ag.rig.root.position.copy(at);
   const gat = at.clone().add(new V3(9, 0, 4)); ge.motion.warp(gat, yawTo(gat, at)); ge.rig.root.position.copy(gat);
@@ -272,7 +283,7 @@ function objectives(w) {
   return out;
 }
 
-const api = { dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, FIDDLE, OPEN, ENDS };
+const api = { dressCtx, dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, FIDDLE, OPEN, ENDS };
 root.FairDay = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

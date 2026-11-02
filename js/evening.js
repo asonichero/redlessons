@@ -356,6 +356,7 @@ function peel(P, mo, table) {
 // ── Out after the bell, and the Watchman finds her: he walks her home (js/villagers.js has him follow her; this keeps count, and the quest).
 // (who: 'georgie', on Lay night, his father's watch: his own count, and nothing for his father's quest)
 function caught(w, who) {
+  if (who === 'georgie' && root.Fair && root.Fair.stateOf(w).day && w.cal.day >= root.Fair.stateOf(w).day) w.save.flag('georgie-walked', w.cal.day);      // (after the fair: awkward and honest, on the way)
   if (who === 'georgie') { change(w, s => { s.georgie = (s.georgie || 0) + 1; s.walking = night(w.cal); s.walkingBy = 'georgie'; }); w.refresh(); return stateOf(w).georgie; }
   change(w, s => { s.catches = (s.catches || 0) + 1; s.walking = night(w.cal); s.walkingBy = 'willie'; });
   const n = stateOf(w).catches; w.save.flag('willie-catch-' + Math.min(n, 2), w.cal.day);

@@ -86,6 +86,19 @@ const CORRECTORS = {
     stop: '{word}. That’s enough, then. I’m here. We walk when you’re ready.',
     harsh: 'Enough. Too much. I’m sorry. Up you get.',
   } },
+  // (Agnes, in 1.3: Georgie's asking, after the fair. Hers is the hand, and her father's legget from the thatch-yard)
+  agnes: { name: 'Agnes', rig: 'agnes', voice: 'agnes', implement: 'legget', minds: 'naughty', seat: 'log', lines: {
+    start: 'You asked for this. Over, then, {name}. Before I lose my nerve.',
+    skirt: 'Those down. Everyone saw me; I’ll see you.',
+    drawers: 'And those. All the way.',
+    implement: 'Dad’s legget. It dresses reed. It can dress you.',
+    during: ['Keep still.', 'In front of everyone, {name}.', 'I’m not done feeling it, so you’re not.', 'Nearly.'],
+    done: 'There. That’s it. That’s all of it.',
+    corner: 'Stand by the oak. Hands on your head. Don’t look round.',
+    after: 'Come here. Come here, you great daft lump.',
+    stop: '{word}. All right. All right, it’s stopped. I’m here.',
+    harsh: 'Enough. That’s too much. I didn’t want that. Up.',
+  } },
   motherBarrow: { name: 'Mother Barrow', rig: 'motherBarrow', voice: 'gran', implement: 'spurtle', minds: 'naughty', seat: 'chair', scots: true, lines: {
     start: 'Ma porridge, ma chair, ma bed. Ower ma knee, {name}.',
     skirt: 'Up wi’ it.',
@@ -147,6 +160,7 @@ const SUBJECTS = {
   motherBarrow: { rig: 'motherBarrow', pitch: 180, word: 'Honey', names: ['Mother'] },
   fatherBarrow: { rig: 'fatherBarrow', pitch: 120, word: 'Honey', names: ['Father'] },
   weeBarrow: { rig: 'weeBarrow', pitch: 150, word: 'Honey', names: ['wee cub', 'little cub'] },
+  georgie: { rig: 'georgie', pitch: 128, word: 'Millstone', names: ['Georgie', 'Georgie Dunn'] },      // (his own word, set with Agnes, Red there)
   peter: { rig: 'peter', pitch: 135, word: 'Meadow', names: ['Peter', 'lad'] },      // (the bonus story)
 };
 // Where a context changes the subject: at the Shoe, she's Rose, and the house's traffic lights are everyone's words (Red to stop, amber to check in).
