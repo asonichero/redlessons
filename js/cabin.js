@@ -56,7 +56,8 @@ function build(scene, opts) {
   opts = opts || {};
   const tx = tex(), root_ = new THREE.Group(); root_.userData.cabin = true; scene.add(root_);
   const logM = toonMap(tx.log), endM = toonMap(tx.ends), barkM = toonMap(tx.bark), clay = T.mat('#d8c8a6'), oakDk = T.mat('#4e3420'), stone = toonMap(tx.stone), iron = T.mat('#2e2a28');
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [] };
+  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [],
+    corr: { key: 'cabin', giver: { x: 0, z: 0, yaw: 0 } } };      // (a correction: a chair in the middle of the room (js/corrlayout.js))
   const panels = [];      // { g, test(cam) → visible }
   const panel = (p, n) => { const g = new THREE.Group(); root_.add(g); n = n.clone().normalize(); panels.push({ g, test: c => opts.outside || c.clone().sub(p).dot(n) > 2 }); return g; };
 

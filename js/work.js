@@ -228,7 +228,7 @@ function attach(P, w) {
   async function correct(said, own) {
     const who = sh.out || sh.boss, [, std, after] = (SHORT[ID] || SHORT.bakery)(S), script = own || std;
     await P.converse(said, { shot: ['red', who] });
-    const r = await root.Correction.run(P, Object.assign({ corrector: who, fade: on => w.fade(on), turns: [{ subject: 'red', script }] }, W.lap ? W.lap.bench : {}));
+    const r = await root.Correction.run(P, Object.assign({ corrector: who, fade: on => w.fade(on), turns: [{ subject: 'red', script }] }));      // (where, in the room: js/corrlayout.js)
     if (P !== w.P) return;
     await P.converse(after(r), { shot: ['red', who] });
     w.rep.settle('naughty', 0.5); if (r && r.rose) w.save.flag('rose-said', w.cal.day);

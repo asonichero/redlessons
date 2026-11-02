@@ -83,6 +83,7 @@
 <script src="js/bakery.js"></script>
 <script src="js/inn.js"></script>
 <script src="js/forge.js"></script>
+<script src="js/wood.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/pain.js"></script>
@@ -90,6 +91,7 @@
 <script src="js/lap.js"></script>
 <script src="js/mocap.js"></script>
 <script src="js/motion.js"></script>
+<script src="js/corrlayout.js"></script>
 <script src="js/correctors.js"></script>
 <script src="js/discipline.js"></script>
 <script>
@@ -111,16 +113,17 @@
   }
   // Where it's played: a room of the game's, and the place in it (the room's own seat, where it has one for it; otherwise its own chair, in
   // the middle of the room).
+  const CL = set => { const c = window.CorrLayout ? CorrLayout.get(set.world) : null; return c ? { at: c.at, seat: c.seat, hide: c.hide } : {}; };      // (each room's correction layout: js/corrlayout.js, the room editor's)
   const WHERE = {
-    cottage: { name: 'The cottage (her chair, in the middle)' },
-    cabin: { name: 'Grandmother’s cabin (the middle)', set: s => Cabin.build(s) },
-    bakeryBench: { name: 'The bakery (her bench, by the counter)', set: s => Bakery.build(s), place: set => set.world.lap.bench },
-    bakeryMiddle: { name: 'The bakery (the bench brought into the middle)', set: s => Bakery.build(s), place: set => set.world.lap.middle },
-    inn: { name: 'The inn (the middle)', set: s => Inn.build(s) },
-    forge: { name: 'The forge (the bench brought out)', set: s => Forge.build(s), place: set => set.world.lap.middle },
+    cottage: { name: 'The cottage', place: CL },
+    cabin: { name: 'Grandmother’s cabin', set: s => Cabin.build(s), place: CL },
+    bakery: { name: 'The bakery (the bench brought out)', set: s => Bakery.build(s), place: CL },
+    inn: { name: 'The inn', set: s => Inn.build(s), place: CL },
+    forge: { name: 'The forge (the bench brought out)', set: s => Forge.build(s), place: CL },
+    glade: { name: 'The wood (the fallen tree)', set: s => Wood.build(s, { glade: true }), place: CL },
   };
   let where = 'cottage'; try { where = localStorage.getItem('red-lessons:lap-where') || where; } catch (e) { /* no storage */ }
-  if (!WHERE[where]) where = 'cottage';
+  if (/^bakery/.test(where)) where = 'bakery'; if (!WHERE[where]) where = 'cottage';
   { const sel = $('where'); for (const k in WHERE) { const o = document.createElement('option'); o.value = k; o.textContent = WHERE[k].name; sel.appendChild(o); }
     sel.value = where; sel.onchange = () => { where = sel.value; try { localStorage.setItem('red-lessons:lap-where', where); } catch (e) { /* no storage */ } build(); }; }
   // Someone else present: none, or any of the cast, there as one of three: supervising (standing by the seat, watching it done), waiting
@@ -143,8 +146,10 @@
     const m = Motion.create(rig, {}), W = (x, z) => g.localToWorld(new V(x, 0, z)).setY(0), gy = g.rotation.y, sc = rig.scaleW || 1;
     const seat = g.localToWorld(new V(0, 0, 2)).setY(0), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
     let at, yaw;
-    const corner = sv.cottage && sv.cottage.world && sv.cottage.world.corners && sv.cottage.world.corners[0];
-    if (present.as === 'supervising') { at = W(-15, -9); yaw = yawTo(at, seat); rig.setExpr('calm'); }
+    const lay = window.CorrLayout && sv.cottage ? CorrLayout.get(sv.cottage.world) : null, ws = lay && lay.watchers[0];      // (the room editor's places, where it's set them)
+    const corner = lay && lay.corner ? { at: new V(lay.corner.x, 0, lay.corner.z), yaw: lay.corner.yaw } : sv.cottage && sv.cottage.world && sv.cottage.world.corners && sv.cottage.world.corners[0];
+    if (ws && present.as !== 'after') { at = new V(ws.x, 0, ws.z); yaw = yawTo(at, seat); rig.setExpr(present.as === 'waiting' ? 'shy' : 'calm'); }
+    else if (present.as === 'supervising') { at = W(-15, -9); yaw = yawTo(at, seat); rig.setExpr('calm'); }
     else if (present.as === 'waiting') { at = W(20, -5); yaw = yawTo(at, seat); rig.setExpr('shy'); }
     else { if (corner) { at = corner.at.clone(); yaw = corner.yaw; } else { at = W(-24, -22); yaw = gy + Math.PI; } rig.setExpr('teary');
       rig.setDress({ skirt: 'up', drawers: 'down', marks: { L: 0.55, R: 0.55 } }); }

@@ -83,13 +83,18 @@ async function run(P, o) {
   if (A && A.stopMusic) A.stopMusic(3);      // (no music under it)
   await fade(true);
   // The two of them as they walk about, put aside; whoever watches, set in the room; the lap scene at the middle of it.
-  const AT = o.at || { x: 0, z: 0, yaw: 0 }, here = (x, z) => new V3(x, 0, z).applyAxisAngle(new V3(0, 1, 0), AT.yaw || 0).add(new V3(AT.x, 0, AT.z));      // (a point by the scene, in its own frame)
-  const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].concat(o.hide || []).filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
-  const figs = [], cornerOf = {}, corners = (P.world.corners || []).slice();
+  // (where, in the room: the story's own place if it gives one; else the room's correction layout (js/corrlayout.js), as the room editor has it)
+  const CL = root.CorrLayout ? root.CorrLayout.get(P.world) : null, SEAT = o.seat || (CL && CL.seat), HIDE = o.hide || (CL && CL.hide) || [];
+  const AT = o.at || (CL && CL.at) || { x: 0, z: 0, yaw: 0 }, here = (x, z) => new V3(x, 0, z).applyAxisAngle(new V3(0, 1, 0), AT.yaw || 0).add(new V3(AT.x, 0, AT.z));      // (a point by the scene, in its own frame)
+  const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].concat(HIDE).filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
+  // (the corner: the layout's, if it's set one, before the room's own)
+  const figs = [], cornerOf = {}, corners = (CL && CL.corner ? [{ at: new V3(CL.corner.x, 0, CL.corner.z), yaw: CL.corner.yaw }] : []).concat(P.world.corners || []);
+  let standing = 0;      // (those watching stood, each in turn at the layout's places for watchers, where it has them)
   for (const w of o.watchers || []) {
     const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
     const seat = w.seat && P.world.seats.find(x => x.name === w.seat);
-    if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, here(0, 0))); f.rig.root.position.copy(at); }      // (facing the scene, wherever it's put)
+    const spot = !seat && CL && CL.watchers[standing] ? CL.watchers[standing] : null; if (!seat) standing++;
+    if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = spot ? new V3(spot.x, 0, spot.z) : new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, here(0, 0))); f.rig.root.position.copy(at); }      // (facing the scene, wherever it's put)
     f.rig.setExpr(w.face || 'shy'); f.until = w.until; figs.push(f);      // (until: watching up to their own turn, then off the floor and across the lap)
   }
   document.body.classList.add('correcting');
@@ -208,7 +213,7 @@ async function run(P, o) {
       // (whoever's turn it is comes out of the corner for it)
       if (cornerOf[sub.id]) { cornerOf[sub.id].remove(); corners.push(cornerOf[sub.id].corner); delete cornerOf[sub.id]; }
       if (lap) { untick(); lap.end(); st.scene.remove(lap.stage); }
-      lap = root.Correction.current = root.Lap.create(null, { external: { scene: st.scene }, looks, giver: c.rig || 'gerda', subject: sub.rig || 'red', pitch: sub.pitch, seat: o.seat });      // (current: for a look in from outside)
+      lap = root.Correction.current = root.Lap.create(null, { external: { scene: st.scene }, looks, giver: c.rig || 'gerda', subject: sub.rig || 'red', pitch: sub.pitch, seat: SEAT });      // (current: for a look in from outside)
       lap.stage.position.set(AT.x, 0, AT.z); lap.stage.rotation.y = AT.yaw || 0; lap.stage.updateMatrixWorld(true);      // (where the story puts it)
       untick = P.tick(dt => lap.update(dt));
       talk.cast[castKey] = Object.assign({ name: c.name, side: 'right', voice: c.voice, tint: '#6a3a4a', bg: '#e6d8e6' }, castWas || {}, { rig: lap.giverRig });

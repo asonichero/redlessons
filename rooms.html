@@ -33,12 +33,17 @@
   <h1>Room editor</h1>
   <div class="sub">The rooms, empty, to arrange. Click a piece to choose it, then drag it across the floor; arrows nudge it (Shift for five), Q and E turn it. Drag anywhere else to orbit; the wheel zooms. Changes are kept in this browser and used by <a href="story.html">the game</a>; the hearths, the doors, the windows, the bakery's oven and counter, the forge's hearth stay where they are. <a href="editor.html">Character editor</a> · <a href="lap.html">Correction test</a></div>
   <h3>Room</h3>
-  <select id="room"><option value="cottage">The cottage (home)</option><option value="cabin">Grandmother’s cabin</option><option value="bakery">The bakery</option><option value="inn">The inn (the Wheatsheaf)</option><option value="forge">The forge</option></select>
+  <select id="room"><option value="cottage">The cottage (home)</option><option value="cabin">Grandmother’s cabin</option><option value="bakery">The bakery</option><option value="inn">The inn (the Wheatsheaf)</option><option value="forge">The forge</option><option value="glade">The wood (the fallen tree’s glade)</option></select>
   <h3>View</h3>
   <div class="btns" id="views"></div>
   <div class="btns" style="margin-top:6px"><button id="scale">Rose, for scale</button><button id="roof">Show the roof and beams</button></div>
-  <h3>Furniture</h3>
+  <div class="btns" style="margin-top:6px"><button id="corrBtn">Correction layout</button></div>
+  <h3 id="listH">Furniture</h3>
   <div class="list" id="list"></div>
+  <div id="corrBox" style="display:none">
+    <div class="sub" id="corrNote" style="margin:6px 0"></div>
+    <div class="btns"><button id="addW">Add someone watching</button><button id="setC">Place a corner for corner time</button></div>
+  </div>
   <h3 id="selH">The piece</h3>
   <div id="sel">
     <div class="row"><span class="l">Across</span><button data-n="x" data-d="-1">−</button><input id="x" type="number" step="0.5"><button data-n="x" data-d="1">+</button></div>
@@ -60,6 +65,8 @@
 <script src="js/bakery.js"></script>
 <script src="js/inn.js"></script>
 <script src="js/forge.js"></script>
+<script src="js/wood.js"></script>
+<script src="js/corrlayout.js"></script>
 <script src="js/stage.js"></script>
 <script>
 (function () {
@@ -72,17 +79,21 @@ const ROOMS = {
   forge: { M: Forge, views: { above: [[0, 150, -16], [0, 0, -17]], door: [[0, 30, 0], [0, 6, -26]], hearth: [[-10, 30, -32], [0, 6, -8]], left: [[-42, 30, -17], [8, 6, -17]], right: [[42, 30, -17], [-8, 6, -17]] } },
   bakery: { M: Bakery, views: { above: [[0, 160, 4], [0, 0, 3]], door: [[-20, 34, 34], [0, 6, -6]], oven: [[10, 34, -28], [0, 6, 8]], left: [[-42, 34, 4], [8, 6, 2]], right: [[42, 34, 4], [-8, 6, 2]] } },
   inn: { M: Inn, views: { above: [[0, 230, 4], [0, 0, 3]], door: [[4, 38, 38], [0, 6, -10]], counter: [[0, 38, -36], [0, 6, 10]], left: [[-70, 38, 4], [12, 6, 2]], right: [[70, 38, 4], [-12, 6, 2]] } },
+  // (the glade: no furniture of its own, only its correction layout; its views round the fallen tree, set once it's built)
+  glade: { glade: true, M: { build: s => Wood.build(s, { glade: true }), layout: () => ({}), LAYOUT: {}, PIECES: {}, saveLayout() {}, resetLayout() {} }, views: { above: null, path: null, beyond: null, along: null } },
   cabin: { M: Cabin, views: { above: [[0, 150, 4], [0, 0, 3]], door: [[-10, 32, 35], [0, 6, -4]], hearth: [[-42, 34, 4], [8, 6, 2]], oak: [[34, 36, -26], [-6, 6, 8]], bed: [[42, 34, 34], [-4, 6, 0]] } },
 };
-const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', window: 'From the window side', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right' };
+const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', window: 'From the window side', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right', path: 'From the path', beyond: 'From beyond the tree', along: 'Along the tree' };
 const st = Stage.create($('view'), { room: false });
 st.controls.maxDistance = 320;
 let R = null, set = null, L = null, sel = null, figure = null;
 
 function build() {
   if (set) { st.scene.remove(set.group); set = null; }
-  L = R.M.layout(); set = R.M.build(st.scene); if (set.light) set.light(0.3);
-  overhead(); list(); select(sel && set.pieces[sel] ? sel : null); out();
+  L = R.M.layout(); set = R.M.build(st.scene); if (set.light) set.light(0.3); set.pieces = set.pieces || {};
+  if (R.glade) { const sp = set.spots.log, c = sp.at.clone().setY(0), s3 = sp.side3, d = sp.dir, at = (v, y) => c.clone().add(v).setY(y).toArray(), look = c.clone().setY(6).toArray();
+    R.views = { above: [at(new V3(0, 0, 5), 150), look], path: [at(s3.clone().multiplyScalar(-48), 30), look], beyond: [at(s3.clone().multiplyScalar(48), 30), look], along: [at(d.clone().multiplyScalar(52), 26), look] }; }
+  corrLoad(); overhead(); list(); select(sel && (corr ? corrGet(sel) : set.pieces[sel]) ? sel : null); out(); corrMarks();
 }
 // (the roof, the rafters, the beams and the wall plates: everything up at the eaves and over, put out of the way to see the floor; or shown)
 let roofOn = false;
@@ -93,14 +104,22 @@ function overhead() {
 }
 // (a piece moved or turned: its group, and the things on it, there and then; and kept)
 function place(id) {
+  if (corr) { if (!C) return; corrPlace(); corrSave(); fields(); marks(); return; }
   const pc = set.pieces[id], at = L[id]; pc.g.position.set(at.x, 0, at.z); pc.g.rotation.y = at.ry + (pc.spin || 0); pc.g.updateMatrix(); pc.g.updateMatrixWorld(true);
   delete pc.g.userData.box;      // (the cottage's: the box it's hidden inside, worked out again where it is now)
   for (const it of pc.items) { it.obj.position.copy(it.at).applyMatrix4(pc.g.matrix); it.obj.rotation.y = it.ry + at.ry; }
   R.M.saveLayout(L); flash(); out(); fields(); marks();
 }
-const moved = id => { const a = L[id], b = R.M.LAYOUT[id]; return Math.abs(a.x - b.x) > 1e-6 || Math.abs(a.z - b.z) > 1e-6 || Math.abs(a.ry - b.ry) > 1e-6; };
+const moved = id => { if (corr) return id === 'giver' ? !!C && !CLD().fixed && (Math.abs(C.giver.x - CLD().giver.x) > 1e-6 || Math.abs(C.giver.z - CLD().giver.z) > 1e-6 || Math.abs(C.giver.ry - (CLD().giver.yaw || 0)) > 1e-6) : id !== 'giver';
+  const a = L[id], b = R.M.LAYOUT[id]; return Math.abs(a.x - b.x) > 1e-6 || Math.abs(a.z - b.z) > 1e-6 || Math.abs(a.ry - b.ry) > 1e-6; };
 function list() {
   const box = $('list'); box.innerHTML = '';
+  $('listH').textContent = corr ? 'The correction' : 'Furniture'; $('corrBox').style.display = corr ? '' : 'none';
+  if (corr) { if (!C) { box.innerHTML = '<div class="sub">No correction is played in this room.</div>'; return; }
+    for (const id of corrIds()) { const b = document.createElement('button'); b.textContent = CNAME(id); b.dataset.id = id; b.onclick = () => select(sel === id ? null : id); box.appendChild(b); }
+    $('addW').disabled = C.watchers.length >= CorrLayout.MAX_WATCHERS; $('setC').textContent = C.corner ? 'Back to the room’s own corners' : 'Place a corner for corner time';
+    $('corrNote').textContent = (CLD().fixed ? 'The giver’s seat is fixed here: the fallen tree itself. ' : 'The giver’s seat: where the scene is put (its arrow, the way the giver faces). ') + 'Those watching always face it. Without places of their own, the story places them; without a corner of its own, the room’s corners are used.';
+    marks(); return; }
   for (const id in R.M.PIECES) { const b = document.createElement('button'); b.textContent = R.M.PIECES[id]; b.dataset.id = id; b.onclick = () => select(sel === id ? null : id); box.appendChild(b); }
   marks();
 }
@@ -109,22 +128,29 @@ function marks() { all('#list button').forEach(b => { b.classList.toggle('on', b
 let outline = null;
 function select(id) {
   sel = id; if (outline) { st.scene.remove(outline); outline = null; }
-  if (id) { outline = new THREE.BoxHelper(set.pieces[id].g, 0xffd060); st.scene.add(outline); }
-  $('sel').style.opacity = id ? 1 : 0.4; all('#sel input, #sel button').forEach(e => e.disabled = !id);
-  $('selH').textContent = id ? R.M.PIECES[id] : 'The piece (choose one)';
+  if (id) { outline = new THREE.BoxHelper(corr ? markers[id] : set.pieces[id].g, 0xffd060); st.scene.add(outline); }
+  const fixed = corr && id === 'giver' && CLD() && CLD().fixed;
+  $('sel').style.opacity = id && !fixed ? 1 : 0.4; all('#sel input, #sel button').forEach(e => e.disabled = !id || fixed);
+  if (corr && id && id.startsWith('w')) all('#ry, #sel [data-n="ry"]').forEach(e => e.disabled = true);      // (those watching face the seat)
+  $('selH').textContent = id ? (corr ? CNAME(id) + (fixed ? ' (fixed)' : '') : R.M.PIECES[id]) : corr ? 'The place (choose one)' : 'The piece (choose one)';
+  $('resetOne').textContent = corr && id && id !== 'giver' ? 'Take it away' : 'Back where it was';
   fields(); marks();
 }
-function fields() { if (!sel) { for (const k of ['x', 'z', 'ry']) $(k).value = ''; return; } const a = L[sel]; $('x').value = +a.x.toFixed(2); $('z').value = +a.z.toFixed(2); $('ry').value = Math.round(a.ry * 180 / Math.PI); }
-function out() { const o = {}; for (const id in L) o[id] = { x: +L[id].x.toFixed(2), z: +L[id].z.toFixed(2), ry: +L[id].ry.toFixed(4) }; $('out').value = JSON.stringify(o, null, 1); }
+function fields() { const a = sel && cur(sel); if (!a) { for (const k of ['x', 'z', 'ry']) $(k).value = ''; return; } $('x').value = +a.x.toFixed(2); $('z').value = +a.z.toFixed(2); $('ry').value = a.ry == null ? '' : Math.round(a.ry * 180 / Math.PI); }
+function out() { if (corr) { $('out').value = C ? JSON.stringify(C, (k, v) => typeof v === 'number' ? +v.toFixed(3) : v, 1) : ''; return; } const o = {}; for (const id in L) o[id] = { x: +L[id].x.toFixed(2), z: +L[id].z.toFixed(2), ry: +L[id].ry.toFixed(4) }; $('out').value = JSON.stringify(o, null, 1); }
 let flashT = 0; function flash() { $('saved').textContent = 'Kept'; clearTimeout(flashT); flashT = setTimeout(() => { $('saved').textContent = ''; }, 1200); }
-const turnBy = deg => { if (!sel) return; L[sel].ry = Math.round((L[sel].ry * 180 / Math.PI + deg) / 5) * 5 * Math.PI / 180; place(sel); };
-const nudge = (dx, dz) => { if (!sel) return; L[sel].x += dx; L[sel].z += dz; place(sel); };
+const editable = id => !!id && (!corr || !(id === 'giver' && CLD() && CLD().fixed));
+const turnBy = deg => { const a = editable(sel) && cur(sel); if (!a || a.ry == null) return; a.ry = Math.round((a.ry * 180 / Math.PI + deg) / 5) * 5 * Math.PI / 180; place(sel); };
+const nudge = (dx, dz) => { const a = editable(sel) && cur(sel); if (!a) return; a.x += dx; a.z += dz; place(sel); };
 
-for (const k of ['x', 'z']) $(k).onchange = () => { if (sel && isFinite(+$(k).value)) { L[sel][k] = +$(k).value; place(sel); } };
-$('ry').onchange = () => { if (sel && isFinite(+$('ry').value)) { L[sel].ry = +$('ry').value * Math.PI / 180; place(sel); } };
+for (const k of ['x', 'z']) $(k).onchange = () => { if (editable(sel) && isFinite(+$(k).value)) { cur(sel)[k] = +$(k).value; place(sel); } };
+$('ry').onchange = () => { const a = editable(sel) && cur(sel); if (a && a.ry != null && isFinite(+$('ry').value)) { a.ry = +$('ry').value * Math.PI / 180; place(sel); } };
 all('#sel [data-n]').forEach(b => b.onclick = () => { if (b.dataset.n === 'ry') turnBy(+b.dataset.d); else if (b.dataset.n === 'x') nudge(+b.dataset.d, 0); else nudge(0, +b.dataset.d); });
-$('resetOne').onclick = () => { if (!sel) return; L[sel] = Object.assign({}, R.M.LAYOUT[sel]); place(sel); };
-$('resetAll').onclick = () => { R.M.resetLayout(); build(); };
+$('resetOne').onclick = () => { if (!sel) return;
+  if (corr) { if (sel === 'giver') { if (!editable(sel)) return; const g = CLD().giver; C.giver = { x: g.x, z: g.z, ry: g.yaw || 0 }; } else if (sel === 'corner') C.corner = null; else C.watchers.splice(+sel.slice(1), 1);
+    const was = sel; corrSave(); corrMarks(); list(); select(was === 'giver' ? 'giver' : null); return; }
+  L[sel] = Object.assign({}, R.M.LAYOUT[sel]); place(sel); };
+$('resetAll').onclick = () => { if (corr) { const d = CLD(); if (d) CorrLayout.reset(d.key); corrLoad(); corrMarks(); list(); select(null); out(); return; } R.M.resetLayout(); build(); };
 $('copy').onclick = () => { out(); const t = $('out'); t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).catch(() => document.execCommand('copy')).finally(() => { $('saved').textContent = 'Copied'; }); };
 
 // ── Choosing and dragging, in the view: a press on a piece chooses it and drags it across the floor (the camera held still meanwhile); a press
@@ -132,16 +158,17 @@ $('copy').onclick = () => { out(); const t = $('out'); t.select(); (navigator.cl
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floor = new THREE.Plane(new V3(0, 1, 0), 0), el = st.renderer.domElement;
 const toNdc = e => { const r = el.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, st.camera); };
 const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
-function pick() { const hits = ray.intersectObjects(set.group.children, true); for (const h of hits) { if (!shown(h.object)) continue; for (let o = h.object; o; o = o.parent) if (o.userData.piece) return o.userData.piece; } return null; }
+function pick() { if (corr) { if (!mk) return null; for (const h of ray.intersectObjects(mk.children, true)) { const id = h.object.userData.cpiece; if (id && editable(id)) return id; } return null; }
+  const hits = ray.intersectObjects(set.group.children, true); for (const h of hits) { if (!shown(h.object)) continue; for (let o = h.object; o; o = o.parent) if (o.userData.piece) return o.userData.piece; } return null; }
 let drag = null, down = null;
 el.addEventListener('pointerdown', e => {
   toNdc(e); const id = pick(); down = { x: e.clientX, y: e.clientY, id };
-  if (id) { select(id); const p = ray.ray.intersectPlane(floor, new V3()); if (p) { drag = { id, off: new V3(L[id].x - p.x, 0, L[id].z - p.z), moved: false }; st.controls.enabled = false; el.setPointerCapture(e.pointerId); } }
+  if (id) { select(id); const p = ray.ray.intersectPlane(floor, new V3()); if (p) { const a = cur(id); drag = { id, off: new V3(a.x - p.x, 0, a.z - p.z), moved: false }; st.controls.enabled = false; el.setPointerCapture(e.pointerId); } }
 });
 el.addEventListener('pointermove', e => {
   if (!drag) return; toNdc(e); const p = ray.ray.intersectPlane(floor, new V3()); if (!p) return;
   const snap = v => e.altKey ? v : Math.round(v * 2) / 2;      // (to half a unit; Alt for free)
-  L[drag.id].x = snap(p.x + drag.off.x); L[drag.id].z = snap(p.z + drag.off.z); drag.moved = true; place(drag.id);
+  cur(drag.id).x = snap(p.x + drag.off.x); cur(drag.id).z = snap(p.z + drag.off.z); drag.moved = true; place(drag.id);
 });
 el.addEventListener('pointerup', e => {
   if (drag) { drag = null; st.controls.enabled = true; }
@@ -163,9 +190,55 @@ addEventListener('keydown', e => {
   if (e.code === 'Escape') select(null);
 });
 
+// ── The correction layout (js/corrlayout.js): the giver's seat (where the scene is put, and what those watching face; the glade's fixed, the
+// fallen tree itself), places for those watching (each facing the seat), and a corner for corner time. Each kept for the room as it's changed.
+let corr = false, C = null, mk = null; const markers = {}, markerRigs = [];
+const CLD = () => set && set.world && set.world.corr;
+const corrIds = () => C ? ['giver'].concat(C.watchers.map((_, i) => 'w' + i), C.corner ? ['corner'] : []) : [];
+const corrGet = id => !C ? null : id === 'giver' ? C.giver : id === 'corner' ? C.corner : C.watchers[+id.slice(1)];
+const CNAME = id => id === 'giver' ? 'The giver’s seat' : id === 'corner' ? 'Corner time' : 'Someone watching, ' + (+id.slice(1) + 1);
+const cur = id => corr ? corrGet(id) : L[id];
+function corrLoad() {
+  const d = CLD(); if (!d) { C = null; return; }
+  const g = CorrLayout.get(set.world);
+  C = { giver: { x: g.at.x, z: g.at.z, ry: g.at.yaw }, watchers: g.watchers.map(p => ({ x: p.x, z: p.z })), corner: g.corner ? { x: g.corner.x, z: g.corner.z, ry: g.corner.yaw } : null };
+}
+function corrSave() {
+  const d = CLD(); if (!d || !C) return; const r = v => +v.toFixed(3), o = { watchers: C.watchers.map(p => ({ x: r(p.x), z: r(p.z) })) };
+  if (!d.fixed) o.giver = { x: r(C.giver.x), z: r(C.giver.z), yaw: r(C.giver.ry) };
+  if (C.corner) o.corner = { x: r(C.corner.x), z: r(C.corner.z), yaw: r(C.corner.ry) };
+  CorrLayout.save(d.key, o); flash(); out();
+}
+// (the markers: the seat as the scene brings it, with an arrow the way the giver faces; Rose wherever someone's to watch, and in the corner)
+function corrMarks() {
+  if (mk) st.scene.remove(mk); mk = null; markerRigs.length = 0; for (const k in markers) delete markers[k];
+  const d = CLD(); for (const o of (d && d.hide) || []) o.visible = !corr;      // (what the room puts aside for it: put aside here too)
+  if (!corr || !C) return;
+  mk = new THREE.Group(); st.scene.add(mk);
+  const looks = Looks.load(), seat = new THREE.Group(); seat.add(Toon.makeChair(Toon.seatFor('gerda'), d.seat));
+  const ar = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4.5, 3), Toon.mat('#e0c040')); ar.rotation.x = Math.PI / 2; ar.position.set(0, 0.8, 10); seat.add(ar); mk.add(seat); markers.giver = seat;
+  const rose = () => { const f = Toon.make('red', looks.red || {}); st.cast(f); mk.add(f.root); markerRigs.push(f); return f.root; };
+  C.watchers.forEach((p, i) => { markers['w' + i] = rose(); });
+  if (C.corner) markers.corner = rose();
+  for (const id in markers) markers[id].traverse(o => { o.userData.cpiece = id; });
+  corrPlace();
+}
+function corrPlace() {
+  for (const id in markers) { const p = corrGet(id), o = markers[id]; if (!p) continue; o.position.set(p.x, 0, p.z);
+    o.rotation.y = id === 'giver' || id === 'corner' ? p.ry : Math.atan2(C.giver.x - p.x, C.giver.z - p.z); }
+}
+$('corrBtn').onclick = () => { if (R.glade) return; corr = !corr; $('corrBtn').classList.toggle('on', corr); sel = null; corrLoad(); list(); select(null); corrMarks(); out(); };
+// (someone watching: by the seat, to its side and a little forward, in the seat's own frame; the next round from the last)
+$('addW').onclick = () => { if (!C || C.watchers.length >= CorrLayout.MAX_WATCHERS) return; const g = C.giver, [ox, oz] = [[18, 12], [-18, 12], [0, -20]][C.watchers.length];
+  const c = Math.cos(g.ry), s_ = Math.sin(g.ry); C.watchers.push({ x: g.x + ox * c + oz * s_, z: g.z - ox * s_ + oz * c }); corrSave(); corrMarks(); list(); select('w' + (C.watchers.length - 1)); };
+// (a corner of its own: from the room's first, if it has one; else off from the seat. Or back to the room's own)
+$('setC').onclick = () => { if (!C) return; if (C.corner) { C.corner = null; corrSave(); corrMarks(); list(); select(null); return; }
+  const rc = set.world.corners && set.world.corners[0]; C.corner = rc ? { x: rc.at.x, z: rc.at.z, ry: rc.yaw } : { x: C.giver.x + 30, z: C.giver.z - 30, ry: Math.PI * 0.75 };
+  corrSave(); corrMarks(); list(); select('corner'); };
+
 // ── The room, its views, and Rose standing in it, for the size of things.
 function room(k) {
-  R = ROOMS[k]; sel = null; try { localStorage.setItem('red-lessons:rooms-room', k); } catch (e) { /* no storage */ } $('room').value = k;
+  R = ROOMS[k]; sel = null; if (R.glade) corr = true; $('corrBtn').classList.toggle('on', corr); $('corrBtn').disabled = !!R.glade; try { localStorage.setItem('red-lessons:rooms-room', k); } catch (e) { /* no storage */ } $('room').value = k;
   const box = $('views'); box.innerHTML = '';
   for (const v in R.views) { const b = document.createElement('button'); b.textContent = VIEWNAMES[v]; b.onclick = () => { const [p, l] = R.views[v]; st.go(new V3(...p), new V3(...l), 700); all('#views button').forEach(x => x.classList.toggle('on', x === b)); }; box.appendChild(b); }
   build(); select(null); box.children[0].click();
@@ -179,8 +252,8 @@ $('scale').onclick = () => {
 
 { let k = 'cottage'; try { k = localStorage.getItem('red-lessons:rooms-room') || k; } catch (e) { /* no storage */ } room(ROOMS[k] ? k : 'cottage'); }
 let t = 0;
-st.start(dt => { t += dt; if (set) { set.tick(dt); set.update(st.camera); } if (outline) outline.update(); if (figure) { Toon.idle(figure, t); figure.tick(dt); } });
-window.__rooms = { get set() { return set; }, get L() { return L; }, select, place, st };
+st.start(dt => { t += dt; if (set) { set.tick(dt); set.update(st.camera); } if (outline) outline.update(); if (figure) { Toon.idle(figure, t); figure.tick(dt); } for (const f of markerRigs) { Toon.idle(f, t); f.tick(dt); } });
+window.__rooms = { get set() { return set; }, get L() { return L; }, get C() { return C; }, select, place, st };
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

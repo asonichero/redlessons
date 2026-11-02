@@ -5,7 +5,7 @@
 // bench pushed under it, brought out into the room when he sits to see to Tom (and to her, once she's asked to answer to him as Tom does).
 //
 //   const f = Forge.build(scene)   → { group, update(camera), tick(dt), light(t), world, pieces }   (world as js/cottage.js's: seats, obstacles,
-//   bounds, exits, corners, lap (where he sits for a correction: js/correction.js's at, seat, hide); pieces: for the room editor, rooms.html)
+//   bounds, exits, corners, corr (where he sits for a correction: js/corrlayout.js); pieces: for the room editor, rooms.html)
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
@@ -99,7 +99,7 @@ function build(scene) {
   { const pc = piece('bench', wall), g = pc.g;
     box(g, 18, 1.4, 5.4, 0, 9.6, 0, oak); for (const sx of [-1, 1]) box(g, 1.6, 9, 4.6, sx * 7.5, 4.5, 0, oakDk);
     world.seats.push({ name: 'the bench', at: pc.P(0, 10, 0), facing: pc.ry + Math.PI, kind: 'stool' }); world.obstacles.push(pc.area(-9, 9, -2.7, 2.7));
-    world.lap = { middle: { at: { x: 0, z: RZ, yaw: 0 }, seat: 'bench', hide: [g] } }; }      // (brought out from under the workbench into the middle of the room, facing the door)
+    world.corr = { key: 'forge', giver: { x: 0, z: RZ, yaw: 0 }, seat: 'bench', hide: [g] }; }      // (brought out from under the workbench into the middle of the room, facing the door (js/corrlayout.js))
   // (the workbench under the rack: a vice, files, a row of shoes in the making)
   { const pc = piece('work', wall), g = pc.g, H = 15;
     box(g, 30, 1.6, 7, 0, H - 0.8, 0, oak); for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 1.6, H - 1.6, 1.6, sx * 13, (H - 1.6) / 2, sz * 2.4, oakDk);

@@ -146,10 +146,11 @@ async function scene(P, w, figs) {
   const Q = w.P; if (!Q) return;
   // (on the fallen tree itself: Agnes sat along it, facing the path; the trunk put aside while the scene's own stands in for it. Red on the
   // path side, off along it a way, watching)
-  const sq = spotOf(Q), d = sq.dir.clone().setY(0).normalize(), c = sq.at.clone().setY(0), yaw = Math.atan2(d.z, -d.x);
+  // (the place is the glade's own (js/wood.js's world.corr, fixed: the trunk); where Red stands, the room editor's if it's set one)
+  const sq = spotOf(Q), d = sq.dir.clone().setY(0).normalize(), c = sq.at.clone().setY(0);
   const watch = c.clone().addScaledVector(sq.side3, -14).addScaledVector(d, 16);
   await Q.wait(0.4);
-  const r = await root.Correction.run(Q, { corrector: 'agnes', fade: on => w.fade(on), seat: 'log', at: { x: c.x, z: c.z, yaw }, hide: sq.trunk || [],
+  const r = await root.Correction.run(Q, { corrector: 'agnes', fade: on => w.fade(on),
     turns: [{ subject: 'georgie', script: S.agnesGeorgie }], watchers: [{ who: 'red', at: [watch.x, watch.z], face: 'shy' }] });
   if (Q !== w.P) return;
   // (after: the two of them by the trunk, and Red going quietly)

@@ -94,10 +94,9 @@ async function inTheBakery(w) {
   const P = w.P; if (!P) return;
   await P.wait(0.6);
   await P.converse(S.pieBakery(), { shot: ['red', 'pennock'] });
-  const lapAt = P.world.lap ? P.world.lap.middle : {};      // (the bench brought out into the middle of the bakery: two of them to see to, and the corner in use)
   const r = await root.Correction.run(P, Object.assign({ corrector: 'pennock', fade: on => w.fade(on),
     turns: [{ subject: 'tom', script: S.pieTom, corner: true, cornerDress: { skirt: 'up', drawers: 'down' } }      /* (for a man, the skirt's state is his trousers') */, { subject: 'red', script: S.pieRed }],
-    watchers: [{ who: 'red', at: [-20, 18], until: 'red', face: 'shy' }], cornerTime: 6 }, lapAt));
+    watchers: [{ who: 'red', at: [-20, 18], until: 'red', face: 'shy' }], cornerTime: 6 }));      // (the bench brought out into the middle of the bakery: js/corrlayout.js)
   if (P !== w.P) return;
   await P.converse(S.pieAfter(r), { shot: ['red', 'pennock'] });
   w.rep.settle('mischievous', 0.6);

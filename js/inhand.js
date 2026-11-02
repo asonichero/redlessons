@@ -57,7 +57,7 @@ async function inTheForge(Q, w) {
   await Q.converse(S.smithIndoors(), { shot: ['red', 'smith'] });
   const r = await root.Correction.run(Q, Object.assign({ corrector: 'smith', fade: on => w.fade(on),
     turns: [{ subject: 'tom', script: S.smithTom, corner: true, cornerDress: { skirt: 'up', drawers: 'down' } }, { subject: 'red', script: S.smithRed }],
-    watchers: [{ who: 'red', at: [-24, -14], until: 'red', face: 'shy' }], cornerTime: 6 }, Q.world.lap ? Q.world.lap.middle : {}));      // (the bench brought out from under the workbench: Rose by the slack tub, watching)
+    watchers: [{ who: 'red', at: [-24, -14], until: 'red', face: 'shy' }], cornerTime: 6 }));      // (the bench brought out from under the workbench: Rose by the slack tub, watching)
   if (Q !== w.P) return;
   await Q.converse(S.smithAfter(r), { shot: ['red', 'smith'] });
   w.rep.settle('mischievous', 0.6); w.rep.settle('wilful', 0.3); w.rep.trusts('smith', 1);

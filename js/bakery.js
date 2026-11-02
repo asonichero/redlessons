@@ -106,10 +106,9 @@ function build(scene) {
   { const pc = piece('bench', wall), g = pc.g;
     box(g, 16, 1.2, 5, 0, 9, 0, toonMap(tx.oak)); for (const sx of [-1, 1]) box(g, 1.2, 8.4, 4, sx * 6.5, 4.2, 0, oakDk);
     world.seats.push({ name: 'the bench', at: pc.P(0, 9.6, 0), facing: pc.ry + Math.PI, kind: 'stool' }); world.obstacles.push(pc.area(-8, 8, -2.5, 2.5));
-    // (where Mistress Pennock sits to take someone across her knee (js/correction.js's at, seat, hide): on the bench where it stands, by the
-    // counter; or the bench brought out into the middle of the room, facing the door, when there's more than one of them to see to)
-    world.lap = { bench: { at: Object.assign(pc.P(0, 0, 0), { yaw: pc.ry + Math.PI }), seat: 'bench', hide: [g] },
-      middle: { at: { x: 0, z: (Z0 + Z1) / 2, yaw: 0 }, seat: 'bench', hide: [g] } };
+    // (where Mistress Pennock sits to take someone across her knee: the bench brought out into the middle of the room, facing the door
+    // (js/corrlayout.js; the room editor can move it))
+    world.corr = { key: 'bakery', giver: { x: 0, z: (Z0 + Z1) / 2, yaw: 0 }, seat: 'bench', hide: [g] };
   }
   // ── The broom, leaning against the front wall the far side of the door from the corner.
   { const g = W.front, x = DOOR + 10, z = Z1 - 2.2, straw = T.mat('#c8a860');
