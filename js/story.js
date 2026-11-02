@@ -1084,18 +1084,31 @@ const curfewStern = () => [{ who: 'mother', face: 'stern', listen: { red: 'shy' 
 // ── Dinner, at half past twelve (js/maren.js): her mother back from the farm, the two of them at the table; her word on the morning. Never a
 // correction there: only what she's seen, and what's to come of it if it's not put right. r: { garden ('done' | 'begun' | 'untouched' |
 // null: not Red's today), errand ({ id, state, by } | null), trodden (her flowers, today), needle ('morning' | 'afternoon' | null) }
-const dinnerCall = () => [{ who: 'mother', face: 'smile', listen: { red: 'calm' }, text: 'Dinner, love. Sit down while it’s hot. My back’s been bent over beans all morning.' }];
+// how: 'arrived' (in from the farm, and glad to find her home) or 'home' (at her needlework, and it's time).
+const dinnerCall = how => how === 'arrived' ? [
+  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'There you are! I hoped you’d be in. Plates down, love, and sit: my back’s been bent over beans all morning.' },
+] : [{ who: 'mother', face: 'smile', listen: { red: 'calm' }, text: 'That’s enough of this seam for now. Dinner, love. Plates down, and sit.' }];
+// At the table: Red's morning, as she tells it, and then her mother's word on it. r: { garden, errand: { id, state, by } | null, trodden, herb,
+// needle }
 const dinner = r => {
-  const M = (face, text, red) => ({ who: 'mother', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, text }), out = [];
-  if (r.garden === 'untouched') out.push(M('calm', 'The garden’s not been touched, I see.', 'shy'), R('shy', 'I’ll get to it, Mama.'), M('stern', 'Before dark. I’ll look when I’m home.', 'shy'));
-  else if (r.garden === 'begun') out.push(M('calm', 'You’ve made a start on the garden. Finish it this afternoon.'), R('calm', 'Yes, Mama.'));
-  else if (r.garden === 'done') out.push(M('smile', 'And the garden done already. That’s a weight off.', 'smile'));
-  if (r.trodden) out.push(M('stern', 'There’s a stem bent over in my flowers by the path. You’ll mind where you put your feet.', 'wince'), R('wince', 'Yes, Mama.'));
-  const e = r.errand && ERRANDS[r.errand.id], st = r.errand && r.errand.state;
-  if (e && st === 'accepted') out.push(M('calm', 'And you’re to ' + e.todo + (e.mind ? '. ' + e.mind : ', by ' + aloud(r.errand.by) + '. Not a minute after.')), R('calm', 'I know, Mama.'));
-  else if (e && (st === 'done' || st === 'carrying')) out.push(M('smile', 'And that’s ' + e.it + ' seen to. Good girl.', 'smile'));
-  else if (e && (st === 'broken' || st === 'missed')) out.push(M('stern', 'And ' + e.it + '? Too late for it now, isn’t it.', 'shy'), R('shy', 'Yes, Mama.'), M('calm', 'We’ll talk about it tonight.', 'shy'));
-  if (out.length < 2) out.push(M('calm', 'Eat up, then. You look like you need it.'));
+  const M = (face, text, red) => ({ who: 'mother', face, listen: { red: red || 'calm' }, text }), R = (face, text) => ({ who: 'red', face, listen: { mother: 'calm' }, text }), out = [];
+  out.push(M('smile', 'Well, then. Tell me your morning.', 'calm'));
+  // (hers first: what she's done, and not)
+  const e = r.errand && ERRANDS[r.errand.id], st = r.errand && r.errand.state, told = [];
+  if (e && (st === 'done' || st === 'carrying')) told.push('I ' + e.did + '.');
+  else if (e && st === 'accepted') told.push('I’ve still to ' + e.todo + (e.mind ? '.' : ', by ' + aloud(r.errand.by) + '.'));
+  else if (e && (st === 'broken' || st === 'missed')) told.push('I didn’t get to ' + e.it + ' in time.');
+  if (r.garden === 'done') told.push('And the garden’s done.'); else if (r.garden === 'begun') told.push('I’ve made a start on the garden.'); else if (r.garden === 'untouched') told.push('I haven’t got to the garden yet.');
+  if (r.herb) told.push('Grandmother sent me for ' + r.herb.name + '.');
+  out.push(R(told.length ? 'calm' : 'shy', told.length ? told.join(' ') : 'Nothing much yet, Mama. It’s been a quiet morning.'));
+  // (then hers: her word on each)
+  if (e && (st === 'done' || st === 'carrying')) out.push(M('smile', 'Good girl. That’s ' + e.it + ' seen to.', 'smile'));
+  else if (e && st === 'accepted') out.push(M('calm', e.mind ? e.mind : 'By ' + aloud(r.errand.by) + ', then. Not a minute after.'));
+  else if (e && (st === 'broken' || st === 'missed')) out.push(M('stern', 'No. It’s too late for it now, isn’t it. We’ll talk about it tonight.', 'shy'));
+  if (r.garden === 'untouched') out.push(M('stern', 'Before dark, mind. I’ll look when I’m home.', 'shy'));
+  else if (r.garden === 'begun') out.push(M('calm', 'Then finish it this afternoon.'));
+  if (r.trodden) out.push(M('stern', 'And there’s a stem bent over in my flowers by the path. You’ll mind where you put your feet.', 'wince'), R('wince', 'Yes, Mama.'));
+  if (r.herb) out.push(M('smile', 'Did she, now. She’s teaching you, then.', 'smile'));
   out.push(M('calm', r.needle === 'afternoon' ? 'I’ve my needlework this afternoon, so I’ll be here if you want me.' : 'And back up to the Hallorans’ for me. Supper at six.'));
   return out;
 };

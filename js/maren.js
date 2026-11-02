@@ -28,24 +28,41 @@ const dinnerDue = w => on(w) && w.cal.minute >= DINNER && w.cal.minute < BACK &&
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
 const missedDinner = w => on(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
 
-// Dinner: the two of them at the table, on the stools; her word on the morning. (→ when it's done)
-async function dinner(P, w) {
-  const S = root.Story, m = P.motion, mm = P.npcMotion, W = P.world, c = w.save.state.chores || {}, d = w.cal.day;
+// Dinner: the two of them at the table, on the stools, their plates before them; Red's account of her morning, and then her mother's word on it.
+// how: 'entered' (Red's come in at dinner time: straight to the table, under a fade), 'arrived' (Red's in already, and her mother comes in
+// from the farm, glad to find her: a word, and then the table), 'home' (her mother home anyway, at her needlework: the same, without the door).
+async function dinner(P, w, how) {
+  const S = root.Story, THREE = root.THREE, V3 = THREE.Vector3, m = P.motion, mm = P.npcMotion, W = P.world, c = w.save.state.chores || {}, d = w.cal.day;
   change(w, s => { s.dinner = d; });
   if (!mm) return;
-  const st = W.seats.filter(s => s.name === 'the stool').sort((a, b) => a.at.z - b.at.z);
-  await P.converse(S.dinnerCall(), { shot: ['red', 'mother'] });
-  if (P.sitting) await P.getUp();
-  if (st.length >= 2) await Promise.all([P.sitOn(st[0]), mm.goTo(P.collide(st[1].at.clone().setY(0).add(new root.THREE.Vector3(Math.sin(st[1].facing), 0, Math.cos(st[1].facing)).multiplyScalar(6)), 3), st[1].facing).then(() => mm.sit(st[1]))]);
-  // (what she's seen: the garden, if it's Red's today; the errand, where it stands; her flowers, if any are trodden)
+  if (how !== 'entered') { mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await P.converse(S.dinnerCall(how), { shot: ['red', 'mother'] }); }
+  // (to the table, under a fade: both sat, plates before them)
+  const st = W.seats.filter(s => s.name === 'the stool').sort((a, b) => a.at.z - b.at.z), tb = W.surfaces.find(s => s.name === 'the table'), plates = [];
+  if (w.fade) await w.fade(true);
+  if (P.sitting) { m.stand(); m.sitW = 0; P.sitting = null; }
+  if (st.length >= 2) {
+    const front = s => new V3(Math.sin(s.facing), 0, Math.cos(s.facing)), place = (mo, s) => { mo.warp(s.at.clone().setY(0).addScaledVector(front(s), 0.5), s.facing); mo.sit(s); mo.sitW = 1; };
+    place(m, st[0]); P.sitting = st[0]; place(mm, st[1]);
+    for (const s of st.slice(0, 2)) { const T = root.Toon, g = new THREE.Group(), p = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 1.8, 0.35, 16), T.mat('#e2d8c4')); g.add(p);
+      const food = new THREE.Mesh(T.ell(1.3, 0.5, 1.1, 10, 6), T.mat('#b8864a')); food.position.y = 0.4; g.add(food);
+      g.position.copy(s.at.clone().setY(tb ? tb.y + 0.2 : 13).addScaledVector(front(s), 6.5)); P.stage.scene.add(g); plates.push(g); }
+  }
+  P.stage.camera.updateMatrixWorld();
+  if (w.fade) await w.fade(false);
+  // (what there is to tell, and what she's seen: the garden, if it's Red's today; the errand, where it stands; her flowers, if any are trodden)
   const G = root.Garden, gp = G && c.day === d && !G.offToday(w) ? G.progress(w) : null, e = c.day === d && c.errand && S.ERRANDS[c.errand.id];
   const trodden = G && G.stateOf ? Object.values(G.stateOf(w).trampled || {}).some(day => day === d) : false;
-  const r = { garden: gp ? (gp.done ? 'done' : gp.begun ? 'begun' : 'untouched') : null, errand: e ? { id: c.errand.id, state: c.errand.state, by: root.Calendar.clockOf(H(e.by)) } : null, trodden, needle: needlework(d) };
+  const herb = root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null;
+  const r = { garden: gp ? (gp.done ? 'done' : gp.begun ? 'begun' : 'untouched') : null, errand: e ? { id: c.errand.id, state: c.errand.state, by: root.Calendar.clockOf(H(e.by)) } : null, trodden, herb, needle: needlework(d) };
   await P.converse(S.dinner(r), { shot: ['red', 'mother'] });
   change(w, s => { s.warned = { day: d, garden: r.garden === 'untouched' || r.garden === 'begun', errand: !!(r.errand && r.errand.state === 'accepted') }; });
   if (w.capacity) w.capacity.add(35, 'dinner');
+  // (and up from the table, under a fade, the plates cleared)
+  if (w.fade) await w.fade(true);
+  for (const g of plates) P.stage.scene.remove(g);
+  m.stand(); m.sitW = 0; P.sitting = null; mm.stand(); mm.sitW = 0;
   w.cal.advance(30);
-  await Promise.all([P.getUp(), mm.stand()]);
+  if (w.fade) await w.fade(false);
 }
 
 const api = { at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };

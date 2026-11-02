@@ -322,10 +322,14 @@ function create(view, ui) {
   }
   // Her mother's day, at home (js/maren.js): out to the farm and back by the door (straight away, as Red comes in); and dinner at half past twelve.
   let marenP = null;
+  // (dinner, how it comes about: Red come in at dinner time, straight to the table; her mother come in from the farm with Red already home;
+  // or her mother home anyway, at her needlework)
+  let dinnerHow = 'home';
   function marenDay(idle) {
     const away = !root.Maren.home(w), first = marenP !== P; marenP = P;
-    if (P.npcAway !== away) P.npcGo(away, first ? null : new V3(-10, 0, 21));
-    if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) P.act(() => root.Maren.dinner(P, w));
+    if (first) dinnerHow = 'entered';
+    if (P.npcAway !== away) { P.npcGo(away, first ? null : new V3(-10, 0, 21)); if (!away && !first) dinnerHow = 'arrived'; }
+    if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) { const how = dinnerHow; P.act(() => root.Maren.dinner(P, w, how)); }
   }
   // Her basket, for the HUD: while it's in her hands, what's in it (by name); otherwise nothing to show.
   function basketText(P_) { const b = root.Chores && P_ && P_.motion ? root.Chores.basketOf(P_) : null; return b ? (b.contents || []).slice() : null; }
