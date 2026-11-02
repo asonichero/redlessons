@@ -157,13 +157,13 @@ function create(view, opts) {
   const surfaceFree = (s, at, rad) => !W.items.some(it => it !== m.carry && !it.peg && Math.abs(it.obj.position.y - s.y) < 0.5 && flat(it.obj.position).distanceTo(flat(at)) < (it.radius + rad + 0.4));
   function options() {
     const out = [], me = flat(m.pos), f = fwd();
-    const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
+    const add = (o, p, reach) => { const d = flat(p).distanceTo(me); if (d > (reach || 24 * sc + 8)) return;      // (reach: a wider one, for a task she's sent to: offered as she comes toward it) const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
     if (talk && mm && !npcAway && mom.root.visible && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
-    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [], ...(W.more || []).map(f => f()))) if (!a.when || a.when()) add({ label: a.label, run: a.run, full: a.full }, a.at);      // (W.more: a set's actions as they stand this moment)
+    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [], ...(W.more || []).map(f => f()))) if (!a.when || a.when()) add({ label: a.label, run: a.run, full: a.full }, a.at, a.reach);      // (W.more: a set's actions as they stand this moment)
     if (W.door) { const d = W.door, p = wp(d.latch); add({ label: d.knock && !d.target ? 'Knock at ' + d.name : (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }      // (knock: a door that's someone else's, opened to her from inside)
     if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
     // (her cloak: it stays on, only off when the story takes it (the shoe, later); if it's hung on its hook, taken down and put on)

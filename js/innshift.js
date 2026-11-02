@@ -35,6 +35,8 @@ function attach(P, w, o) {
   const change = fn => w.save.change(s => { s.work.svc = s.work.svc || { arrive: 0, orders: [], up: 0, sat: 0 }; fn(s.work.svc); }, { work: true });
   const men = {}, seats = W.carrierSeats || [], spots = W.work || {};
   let carrying = null, hinted = {}, said = {};
+  const arrive = async (at, yaw) => { const to = flat(at); await Promise.race([m.goTo(to, yaw), P.wait(7)]);      // (put there, if the way's not found: never left short of it)
+    if (Math.hypot(m.pos.x - to.x, m.pos.z - to.z) > 2.5) { m.auto = null; const p = P.collide(to, 3.2); m.warp(p, yaw == null ? m.yaw : yaw); P.rig.root.position.copy(p); } };
   const say = (who, text, face) => talk && talk.cast[who] && talk.caption(who, text, { face: face || 'calm', wait: s => P.wait(s) });
   const bess = () => P.figure('bess');
 
@@ -94,7 +96,7 @@ function attach(P, w, o) {
   // with no one waiting, sit with Bess a minute.
   async function fetch(i) {
     const x = svc().orders[i], wnt = WANT[x.want], sp = spots[wnt.source];
-    await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look);
+    await arrive(sp.at, sp.yaw); m.lookAt(sp.look);
     for (let k = 0; k < 2; k++) { await m.reach('R', sp.look.clone().add(new V3((k - 0.5) * 2, 0, 0))); await P.wait(0.4); await m.release('R'); }
     m.lookAt(null);
     const it = x.want === 'ale' ? (root.Chores ? root.Chores.prop('jug') : null) : bowlProp(); if (it) { P.stage.scene.add(it.obj); m.hold(it, wnt.style); }
@@ -102,7 +104,7 @@ function attach(P, w, o) {
   }
   async function give(i) {
     const x = svc().orders[i], seat = seats[MEN.findIndex(d => d.key === x.who)], sp = seat.serve;
-    await m.goTo(P.collide(sp.at, 3.2), yawTo(sp.at, seat.at)); m.lookAt(sp.look);
+    await arrive(P.collide(sp.at, 3.2), yawTo(sp.at, seat.at)); m.lookAt(sp.look);
     await m.reach(m.carryStyle === 'front' ? 'L' : 'R', sp.look.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await m.release('L'); await m.release('R'); m.lookAt(null);
     carrying = null; change(v => { v.orders[i].state = 'served'; });
     const thanks = (lines.thanks || [])[i % Math.max(1, (lines.thanks || []).length)]; if (thanks) say(x.who, thanks, 'smile');
@@ -111,8 +113,8 @@ function attach(P, w, o) {
   function actions() {
     const s = svc(), out = [];
     if (s && due()) {
-      if (carrying) { const x = s.orders[carrying.i], seat = seats[MEN.findIndex(d => d.key === x.who)]; if (seat) out.push({ label: 'Take ' + label(x) + ' ' + WANT[x.want].give, at: seat.at.clone().setY(16), run: () => give(carrying.i) }); }
-      else for (const x of open()) { const i = s.orders.indexOf(x), wnt = WANT[x.want], sp = spots[wnt.source]; if (sp) out.push({ label: wnt.label + ' for ' + label(x), at: sp.look.clone(), run: () => m.carry ? P.handsFull() : fetch(i), full: !!m.carry }); }
+      if (carrying) { const x = s.orders[carrying.i], seat = seats[MEN.findIndex(d => d.key === x.who)]; if (seat) out.push({ label: 'Take ' + label(x) + ' ' + WANT[x.want].give, at: seat.at.clone().setY(16), reach: 45, run: () => give(carrying.i) }); }
+      else for (const x of open()) { const i = s.orders.indexOf(x), wnt = WANT[x.want], sp = spots[wnt.source]; if (sp) out.push({ label: wnt.label + ' for ' + label(x), at: sp.look.clone(), reach: 45, run: () => m.carry ? P.handsFull() : fetch(i), full: !!m.carry }); }
     }
     return out;
   }

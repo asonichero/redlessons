@@ -82,6 +82,9 @@ const SHORT = { bakery: S => [S.pennockShort, S.pennockShortRed, S.pennockShortA
 function attach(P, w) {
   const st0 = current(w, w.area); if (!st0) return null;
   const ID = st0.id, S = root.Story, sh = SHIFTS[ID], W = P.world, spots = W.work || {}, m = P.motion, talk = P.talk;
+  // (to a task's place: walked there, and if the way's not found in a few seconds, or she stops short, put there: never left a step away from it)
+  const arrive = async (at, yaw, o) => { const to = at.clone().setY(0); await Promise.race([m.goTo(to, yaw, o), P.wait(7)]);
+    if (Math.hypot(m.pos.x - to.x, m.pos.z - to.z) > 2.5) { m.auto = null; const p = P.collide(to, 3.2); m.warp(p, yaw == null ? m.yaw : yaw); P.rig.root.position.copy(p); } };
   const timed = !!st0.mode, mm = P.npcMotion, rig = P.npc, cur = () => current(w);
   let away = false, due = false, carrying = null, offers = 0, offerDue = false;
   const say = (text, face) => !(away && (sh.out || sh.boss) === sh.boss) && talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });      // (the boss gone out: not if it's the boss who's gone)
@@ -99,9 +102,9 @@ function attach(P, w) {
   const open = () => { const s = cur(); return s ? leftOf(s).filter(t => t.kind !== 'service' && (!t.after || doneOf(s).includes(t.after))) : []; };
   function actions() {
     const s = cur(); if (!s || P.busy) return [];
-    if (carrying) return carrying.id === 'tea' && spots.bess ? [{ label: 'Give Bess her tea', at: spots.bess.look.clone(), run: () => giveTea() }] : [];
+    if (carrying) return carrying.id === 'tea' && spots.bess ? [{ label: 'Give Bess her tea', at: spots.bess.look.clone(), reach: 45, run: () => giveTea() }] : [];
     const where = t => { const top = W.tableTops && W.tableTops[t.id]; return top ? new V3((top.x0 + top.x1) / 2, top.y, (top.z0 + top.z1) / 2) : (byBroom(t) ? spots.broom : spots[t.place] || spots.floor).look.clone(); };      // (a table: offered from any side of it)
-    return open().map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: where(t), run: () => m.carry ? P.handsFull() : doTask(t) }));
+    return open().map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: where(t), reach: 45, run: () => m.carry ? P.handsFull() : doTask(t) }));
   }
   W.more = W.more || []; W.more.push(actions);
   // (the inn's evening: the carrier's men, served as they call, from when they come in)
@@ -139,13 +142,13 @@ function attach(P, w) {
   async function doTask(t) {
     const top = W.tableTops && W.tableTops[t.id];      // (a table at the inn: wiped from whichever side she's come to it, at the edge nearest her)
     if (top) { const q = new V3(Math.max(top.x0, Math.min(top.x1, m.pos.x)), 0, Math.max(top.z0, Math.min(top.z1, m.pos.z))), out = m.pos.clone().setY(0).sub(q); if (out.lengthSq() < 0.01) out.set(0, 0, 1); out.normalize();
-      const at = P.collide(q.clone().addScaledVector(out, 6), 3.2); await m.goTo(at, Math.atan2(q.x - at.x, q.z - at.z)); q.y = top.y; const side = new V3(out.z, 0, -out.x);
+      const at = P.collide(q.clone().addScaledVector(out, 6), 3.2); await arrive(at, Math.atan2(q.x - at.x, q.z - at.z)); q.y = top.y; const side = new V3(out.z, 0, -out.x);
       const said = lines[t.line || t.id]; if (said) say(...said);
       for (let k = 0; k < 3; k++) await reachAt(q.clone().addScaledVector(out, -1.5).addScaledVector(side, (k - 1) * 4), k % 2 ? 'L' : 'R', 0.6);
       if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work'); markDone(t.id); return; }
-    const sp = spots[t.place] || spots.floor; if (!byBroom(t) && t.kind !== 'tea') { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); }
+    const sp = spots[t.place] || spots.floor; if (!byBroom(t) && t.kind !== 'tea') { await arrive(sp.at, sp.yaw); m.lookAt(sp.look); }
     const said = lines[t.line || t.id]; if (said) say(...said);
-    if (t.kind === 'tea') { await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); await reachAt(sp.look); const cup = cupProp(); P.stage.scene.add(cup.obj); m.hold(cup, 'hang'); m.lookAt(null); carrying = { id: 'tea', it: cup, t }; w.refresh(); return; }
+    if (t.kind === 'tea') { await arrive(sp.at, sp.yaw); m.lookAt(sp.look); await reachAt(sp.look); const cup = cupProp(); P.stage.scene.add(cup.obj); m.hold(cup, 'hang'); m.lookAt(null); carrying = { id: 'tea', it: cup, t }; w.refresh(); return; }
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
     if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work');      // (a shift wears her down, task by task)
@@ -153,7 +156,7 @@ function attach(P, w) {
   }
   async function giveTea() {
     const c = carrying, sp = spots.bess; if (!c || !sp) return;
-    await m.goTo(sp.at, sp.yaw); m.lookAt(sp.look); await m.reach('R', sp.look.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await m.release('R'); m.lookAt(null);
+    await arrive(sp.at, sp.yaw); m.lookAt(sp.look); await m.reach('R', sp.look.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await m.release('R'); m.lookAt(null);
     carrying = null; const said = lines.tea; if (said) say(...said);
     markDone('tea');
   }
@@ -176,18 +179,18 @@ function attach(P, w) {
     if (P.sitting) await P.getUp(); w.refresh();
   }
   const reachAt = async (p, side, hold) => { await m.reach(side || 'R', p); await P.wait(hold || 0.4); await m.release(side || 'R'); };
-  const peel = { take: async () => { const p = W.work.peel; await m.goTo(p.at, p.yaw); await reachAt(p.look, 'R', 0.2); (W.peel || []).forEach(o => { o.visible = false; }); const it = peelProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
-    put: async () => { const p = W.work.peel; await m.goTo(p.at, p.yaw); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); (W.peel || []).forEach(o => { o.visible = true; }); } };
+  const peel = { take: async () => { const p = W.work.peel; await arrive(p.at, p.yaw); await reachAt(p.look, 'R', 0.2); (W.peel || []).forEach(o => { o.visible = false; }); const it = peelProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
+    put: async () => { const p = W.work.peel; await arrive(p.at, p.yaw); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); (W.peel || []).forEach(o => { o.visible = true; }); } };
   // (the broom, from where it leans by the door, and back)
-  const broom = { take: async () => { const b = W.work.broom; await m.goTo(b.at, b.yaw); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = false; }); const it = broomProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
-    put: async () => { const b = W.work.broom; await m.goTo(b.at, b.yaw); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = true; }); } };
+  const broom = { take: async () => { const b = W.work.broom; await arrive(b.at, b.yaw); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = false; }); const it = broomProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
+    put: async () => { const b = W.work.broom; await arrive(b.at, b.yaw); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = true; }); } };
   const KINDS = {
     knead: async sp => { for (let k = 0; k < 4; k++) { const p = sp.look.clone().add(new V3((k % 2 ? 1.5 : -1.5), 0, 0)); await Promise.all([m.reach('L', p.clone().add(new V3(-1.2, 0, 0))), m.reach('R', p)]); await P.wait(0.5); await Promise.all([m.release('L'), m.release('R')]); } },
     shape: async sp => { for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3((k - 1) * 4, 0, 1)), k % 2 ? 'L' : 'R', 0.6); },
-    oven: async sp => { await peel.take(); await m.goTo(sp.at, sp.yaw); for (let k = 0; k < 2; k++) { await reachAt(sp.look.clone().add(new V3((k - 0.5) * 3, 0, 0)), 'R', 0.7); } await peel.put(); },
+    oven: async sp => { await peel.take(); await arrive(sp.at, sp.yaw); for (let k = 0; k < 2; k++) { await reachAt(sp.look.clone().add(new V3((k - 0.5) * 3, 0, 0)), 'R', 0.7); } await peel.put(); },
     sweep: async sp => { const c = sp.at, br = W.work.broom;
-      if (br) { await broom.take(); for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) await m.goTo(P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2), null, { speed: 0.5 }); await broom.put(); return; }      // (with the broom, where there's one)
-      for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) { const to = P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2); m.reach('R', () => m.pos.clone().add(new V3(Math.sin(m.yaw) * 5, 0.5, Math.cos(m.yaw) * 5))); await m.goTo(to, null, { speed: 0.5 }); } await m.release('R'); },
+      if (br) { await broom.take(); for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) await arrive(P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2), null, { speed: 0.5 }); await broom.put(); return; }      // (with the broom, where there's one)
+      for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) { const to = P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2); m.reach('R', () => m.pos.clone().add(new V3(Math.sin(m.yaw) * 5, 0.5, Math.cos(m.yaw) * 5))); await arrive(to, null, { speed: 0.5 }); } await m.release('R'); },
     reach: async sp => reachAt(sp.look),
   };
   // The boss back, at her hour (or as soon as it's all done, the time let go by): the list looked over, and what comes of it; then out of
