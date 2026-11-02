@@ -820,18 +820,18 @@ function make(id, look, opts) {
     // (shorter at the back, where it ends above the seat rather than letting the tops of the cheeks through it)
     // (its top drawn in to lie on the shirt above it, never standing off it)
     // (just outside the drawers, and drawn in at the back with them: over a lap, with the seat under it drawn in, it lies on it)
-    { const g = lathe(wide(dense([[3.5, -2.7], [3.46, -1.6], [3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3], [2.86, 2.9], [2.8, 3.4]], 20), trunkW), TD, 32), pp = g.attributes.position, top0 = CHEEK.y + CHEEK.ry + 0.25;      // (down over the groin in front; the back lifted as before, rolled up over the seat)
+    { const g = lathe(wide(dense([[3.5, -2.7], [3.46, -1.6], [3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3], [2.86, 2.9], [2.76, 3.8]], 22), trunkW), TD, 32), pp = g.attributes.position, top0 = CHEEK.y + CHEEK.ry + 0.25;      // (down over the groin in front; the back lifted as before, rolled up over the seat)
       for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i); pp.setZ(i, z * lerp(0.77, 0.7, ss(0.8, 2.3, y)) * (z < 0 ? lerp(1, K.seatBack, ss(1.2, 0.2, y)) : 1)); }
       flatWaist(g);
       // (the back lifted, rolled up over the seat: and drawn in as it goes up, to lie on him at the height it ends, never standing off in a shelf)
       // (lifted more the further round from the front: a slant over the hips, not a step at the side)
       const TAIL = wide(dense([[3.5, -2.7], [3.46, -1.6], [3.38, -0.1], [3.34, 0.4], [3.16, 0.85], [3.02, 1.3], [2.9, 2.3]], 18), trunkW), rAt = y => { for (let i = 1; i < TAIL.length; i++) if (y <= TAIL[i][1]) { const [r0, a] = TAIL[i - 1], [r1, b] = TAIL[i]; return lerp(r0, r1, (y - a) / ((b - a) || 1)); } return TAIL[TAIL.length - 1][0]; };
       for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), z = pp.getZ(i), back = ss(0.6, 2.4, Math.abs(Math.atan2(pp.getX(i), z))); if (y < top0) { const ny = lerp(y, top0 + (y + 0.1) * 0.3, back), k = lerp(1, rAt(Math.max(ny, top0 - 0.4)) / rAt(y), back) * lerp(1, 0.96, back); pp.setY(i, ny); pp.setX(i, pp.getX(i) * k); pp.setZ(i, z * k); } }
-      // (its top run up onto the shirt above, lying on it as it's built (tucked in at the back, for the trousers): one shirt, no shelf or gap
-      // where the tail meets it)
+      // (its top run up onto the shirt above, over the full of his back: past where the shirt's drawn in for the trousers' waistband, so with them
+      // down no hollow shows there; one shirt, no shelf or gap where the tail meets it)
       const rT = y => { for (let i = 1; i < TORSO_W.length; i++) if (y <= TORSO_W[i][1]) { const [r0, a] = TORSO_W[i - 1], [r1, b] = TORSO_W[i]; return lerp(r0, r1, (y - a) / ((b - a) || 1)); } return TORSO_W[TORSO_W.length - 1][0]; };
       for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), w = ss(1.7, 2.6, y); if (w <= 0) continue; const x = pp.getX(i), z = pp.getZ(i), a = Math.atan2(x, z), R = rT(y) + 0.06;
-        const tz = R * 0.68 * TD * Math.cos(a) * (z < 0 && MAN && !opts.lying ? lerp(0.72, 1, ss(2.5, 3.6, y)) : 1), tx = R * Math.sin(a); pp.setX(i, lerp(x, tx, w)); pp.setZ(i, lerp(z, tz, w)); }
+        const tz = R * 0.68 * TD * Math.cos(a), tx = R * Math.sin(a); pp.setX(i, lerp(x, tx, w)); pp.setZ(i, lerp(z, tz, w)); }
       g.computeVertexNormals(); shirtTail.push(skinnedOn(rig.hips, g, top, p => p.y < 0.3 ? legWeights(p) : torsoW(p), { side: THREE.DoubleSide, ink: 0.04 })); }      // (below the hips it goes with the legs, as a skirt's front does)
     // The belt, and its buckle.
     trousers.push(piece(flatWaist(backIn(lathe(wide([[3.08, 2.0], [3.14, 2.3], [3.06, 2.62]], trunkW), 0.79 * TD, 28), y => lerp(1, 0.9, ss(1.2, 2.6, y)))), P.belt, rig.hips, 0, 0, 0, { ink: 0.03 }));      // (drawn in with the trousers over a lap)
