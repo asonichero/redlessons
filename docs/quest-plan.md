@@ -267,7 +267,7 @@ Fearless, wry, and a watcher ("You learn a great deal, sitting"). Practically, s
 2. **2.x** More responsibility, building her standing as a grown woman.
 3. **3.3** The first to stand with Rose when she brings Wolfe before the village.
 
-**Bo Peep** (proposed) is Halloran's granddaughter. Her parents work the farm now that he can't, so she lives out there rather than in the village proper. The flock is hers to mind: they graze at the farm by day and are penned overnight in the village pinfold, just inside the east gate, for safety. The strays of 2.1 are hers.
+**Bo Peep** (proposed) is Halloran's granddaughter, eighteen: the youngest of the cast, and grown. Her parents work the farm now that he can't, so she lives out there rather than in the village proper. Growing up largely apart from the village, she's felt younger for longer than the others did: she looks at Rose, and the rest of them, as grown-ups, and hasn't yet accepted that she's one herself. (A mirror of Red, who is choosing to be younger than she is: Bo hasn't yet chosen to be her age. She looks up to Rose, which is why her yes to anything Rose asked of her would be hard to trust.) The flock is hers to mind: they graze at the farm by day and are penned overnight in the village pinfold, just inside the east gate, for safety. The strays of 2.1 are hers.
 
 ## Characters without quest lines
 
