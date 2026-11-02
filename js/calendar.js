@@ -6,6 +6,12 @@
 //   cal.day · cal.minute (0..1439) · cal.part ('dawn', 'morning', 'afternoon', 'evening', 'dusk', 'night') · cal.clock ('4.30 in the afternoon')
 //   cal.advance(minutes) · cal.until('morning' | 'dusk' | …, { nextDay }) · cal.sleep() (to 7 the next morning) · cal.tick(dt, rate)
 //   cal.light() → 0..1 for the stage (0 broad day, 1 night) · cal.curfew() → true after the curfew bell, until dawn · cal.dark() → dusk or night
+//   cal.weekday (1..7) · cal.dayName ('First day', … 'Carrier’s day', … 'Baking day', 'Lay day') · cal.lay (today's Lay day)
+//
+// The week: seven days, counted, as plain country folk count them; the days that mean something named for what happens on them. Day 1 of the
+// game is a First day. Carrier's day: the carrier through, and his men at the Wheatsheaf of an evening. Baking day: the Pennocks bake double,
+// for the day after. Lay day: work laid by. The forge cold, the bakery and the mill shut, no farm work but the beasts; Maren home, and nothing
+// asked of Red but the garden. On Lay night Georgie Dunn takes his father's watch.
 (function (root) {
 'use strict';
 const H = h => Math.round(h * 60);
@@ -15,6 +21,12 @@ const CURFEW = H(21), CURFEW_END = H(5.5);
 // The light through the day (0 broad day .. 1 night), between these times.
 const LIGHT = [[0, 1], [H(5), 1], [H(6), 0.6], [H(7.5), 0.2], [H(9), 0.05], [H(15), 0.05], [H(17), 0.25], [H(18.5), 0.45], [H(19.5), 0.7], [H(20.5), 0.9], [H(21.5), 1], [H(24), 1]];
 
+const WEEK = ['First day', 'Second day', 'Third day', 'Carrier’s day', 'Fifth day', 'Baking day', 'Lay day'];
+const CARRIER = 4, BAKING = 6, LAY = 7;
+const weekday = day => ((Math.max(1, day) - 1) % 7) + 1;
+const dayName = day => WEEK[weekday(day) - 1];
+// (Lay night: from the bell on Lay day till first light after; the watch Georgie's)
+const layNight = (day, min) => (weekday(day) === LAY && min >= H(21.25)) || (weekday(day) === 1 && day > 1 && min < H(5.5));
 function partAt(min) { let p = 'night'; for (const [name, at] of PARTS) if (min >= at) p = name; return p; }
 function lightAt(min) {
   for (let i = 1; i < LIGHT.length; i++) if (min <= LIGHT[i][0]) { const [a, la] = LIGHT[i - 1], [b, lb] = LIGHT[i]; return la + (lb - la) * (min - a) / Math.max(1, b - a); }
@@ -47,12 +59,14 @@ function create(save) {
     tick(dt, rate) { carry += dt * (rate == null ? 1 : rate); if (carry >= 1) { const n = Math.floor(carry); carry -= n; cal.advance(n); } },
     light: () => lightAt(S().minute),
     curfew: () => S().minute >= CURFEW || S().minute < CURFEW_END,
+    get weekday() { return weekday(S().day); }, get dayName() { return dayName(S().day); }, get lay() { return weekday(S().day) === LAY; },
+    layNight: () => layNight(S().day, S().minute),
     dark: () => ['dusk', 'night'].includes(partAt(S().minute)),
   };
   return cal;
 }
 
-const api = { create, partAt, lightAt, clockOf, PARTS, CURFEW, H };
+const api = { create, partAt, lightAt, clockOf, PARTS, CURFEW, H, WEEK, CARRIER, BAKING, LAY, weekday, dayName, layNight };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.Calendar = api;
 })(typeof window !== 'undefined' ? window : globalThis);

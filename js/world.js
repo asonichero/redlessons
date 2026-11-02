@@ -148,7 +148,7 @@ function create(view, ui) {
   // What to say she's about: the day's own (the errand, the garden), or the first step on offer here with a hint; or else, the main story's, or
   // the first begun line's, and where.
   function refresh() {
-    if (ui.clock) ui.clock('Day ' + cal.day + ' · ' + cal.clock, q.phaseOf(q.phase()));
+    if (ui.clock) ui.clock('Day ' + cal.day + ' · ' + cal.dayName + ' · ' + cal.clock, q.phaseOf(q.phase()));
     if (sceneNow && sceneNow.ownObjective) return;
     // (everything that's hers now: the day's (the errand, the garden, the evening's matters), and the steps on offer that can be played yet (a
     // step with a scene, or one the place itself handles), those here first; the diary has the rest)
@@ -166,7 +166,7 @@ function create(view, ui) {
     const people = [], tr = save.state.trust || {}, open = save.state.open || {};
     for (const who of ['hulda', 'peter', 'fowler', 'tom', 'smith', 'pennock', 'baker', 'abney', 'abneyDaughter', 'agnes', 'georgie', 'willie', 'holt'])
       if (tr[who] != null || open[who]) people.push(root.Story.villagerTrust(who, tr[who] || 0, open[who] || 0));
-    return { phase: ph, clock: 'Day ' + cal.day + ', ' + cal.clock, today, steps, people };
+    return { phase: ph, clock: 'Day ' + cal.day + ', ' + cal.dayName + ', ' + cal.clock, today, steps, people };
   }
 
   // ── Going somewhere: out of the place she's in (under a fade), the new one built, her put at the way in, and its scene, if one's on offer, played.
@@ -329,7 +329,7 @@ function create(view, ui) {
   }
   // Her basket, for the HUD: while it's in her hands, what's in it (by name); otherwise nothing to show.
   function basketText(P_) { const b = root.Chores && P_ && P_.motion ? root.Chores.basketOf(P_) : null; return b ? (b.contents || []).slice() : null; }
-  let lastClock = ''; function refreshClock() { const c = 'Day ' + cal.day + ' · ' + cal.clock; if (c !== lastClock && ui.clock) { lastClock = c; ui.clock(c, q.phaseOf(q.phase())); } }
+  let lastClock = ''; function refreshClock() { const c = 'Day ' + cal.day + ' · ' + cal.dayName + ' · ' + cal.clock; if (c !== lastClock && ui.clock) { lastClock = c; ui.clock(c, q.phaseOf(q.phase())); } }
 
   // The next morning: the night passes (under a fade), and she's up, at home.
   // (and over breakfast her mother asks what's been asked of them: js/chores.js)

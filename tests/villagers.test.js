@@ -9,17 +9,22 @@ test('Agnes: out from eight till dusk, and most often by the well', () => {
   assert.ok(well / out > 0.45 && well / out < 0.7, 'by the well ' + Math.round(100 * well / out) + '% of the day');
 });
 
-test('Georgie: at the mill all day; in the village most afternoons, not after the bell', () => {
-  let days = 0;
-  for (const d of DAYS) { for (let h = 0; h < 15; h += 0.5) assert.equal(V.station('georgie', d, H(h)), null); assert.equal(V.station('georgie', d, H(21)), null); if (V.station('georgie', d, H(18))) days++; }
-  assert.ok(days / DAYS.length > 0.55 && days / DAYS.length < 0.85, 'about on ' + days + ' of ' + DAYS.length + ' evenings');
+test('Georgie: at the mill all day; in the village most afternoons, not after the bell; on Lay day about from mid-morning, and on the watch that night', () => {
+  let days = 0, work = 0;
+  for (const d of DAYS) { const lay = V.weekday(d) === 7;
+    for (let h = 0; h < (lay ? 10 : 15); h += 0.5) if (!(V.weekday(d) === 1 && h < 5.5)) assert.equal(V.station('georgie', d, H(h)), null);
+    if (lay) { assert.ok(V.station('georgie', d, H(11))); assert.equal(V.station('georgie', d, H(21.5)).stand, 'bell'); assert.ok(V.station('georgie', d, H(23)).round); assert.equal(V.station('willie', d, H(23)), null); continue; }
+    assert.equal(V.station('georgie', d, H(21)), null); work++; if (V.station('georgie', d, H(18))) days++; }
+  assert.ok(days / work > 0.55 && days / work < 0.85, 'about on ' + days + ' of ' + work + ' evenings');
 });
 
-test('Tom: at the forge in smithing hours, but for his days off; out and about after', () => {
-  let off = 0;
-  for (const d of DAYS) { const s = V.station('tom', d, H(11)); if (s.wander) off++; else assert.equal(s.stand, 'tub');
-    assert.ok(V.station('tom', d, H(17)).wander); assert.equal(V.station('tom', d, H(22)), null); assert.equal(V.tomFree(d, H(17)), true); }
-  assert.ok(off / DAYS.length > 0.25 && off / DAYS.length < 0.45, 'days off: ' + off + ' of ' + DAYS.length);
+test('Tom: at the tub seven till three; free from noon about one working day in four; all Lay day free; out and about after', () => {
+  let slackN = 0, work = 0;
+  for (const d of DAYS) { const lay = V.weekday(d) === 7;
+    assert.equal(!!V.station('tom', d, H(11)).wander, lay);
+    if (!lay) { work++; if (V.station('tom', d, H(13)).wander) slackN++; else assert.equal(V.station('tom', d, H(14.5)).stand, 'tub'); }
+    assert.ok(V.station('tom', d, H(15.5)).wander); assert.equal(V.station('tom', d, H(22)), null); assert.equal(V.tomFree(d, H(17)), true); }
+  assert.ok(slackN / work > 0.15 && slackN / work < 0.35, 'slack afternoons: ' + slackN + ' of ' + work);
 });
 
 test('the rest keep to their work: Bess at the inn, the smith at his anvil, the Pennocks at the bakery; the Watchman only at night', () => {
@@ -27,7 +32,7 @@ test('the rest keep to their work: Bess at the inn, the smith at his anvil, the 
     const b = V.station('bess', d, H(h)); if (b) assert.equal(b.sit, 'the bench outside the inn');
     const sm = V.station('smith', d, H(h)); if (sm) assert.equal(sm.stand, 'anvil');
     for (const k of ['pennock', 'baker']) { const s = V.station(k, d, H(h)); if (s) assert.ok(['counter', 'bakeryDoor'].includes(s.stand)); }
-    const w = V.station('willie', d, H(h)); assert.equal(!!w, h >= 21.25 || h < 5.5); if (w) assert.equal(w.stand === 'bell', h >= 21.25 && h < 22);      // (by the bell from quarter past nine (he rings it at half past), his round from ten)
+    const w = V.station('willie', d, H(h)); if (V.layNight(d, H(h))) { assert.equal(w, null); continue; } assert.equal(!!w, h >= 21.25 || h < 5.5); if (w) assert.equal(w.stand === 'bell', h >= 21.25 && h < 22);      // (by the bell from quarter past nine (he rings it at half past), his round from ten)
   }
 });
 

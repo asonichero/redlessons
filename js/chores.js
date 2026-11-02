@@ -85,15 +85,20 @@ function create(w) {
     const rnd = (n => () => { n = (n * 16807) % 2147483647; return (n - 1) / 2147483646; })(((day * 2654435761) % 2147483646) + 1); rnd(); rnd();      // (mixed, and the first draws let go: a small seed's first draw is small)
     // (at first, one of each in turn, in an order that has her meet everyone, the inn's afternoon last, so that by the time Mistress Abney asks
     // her favour she's plans and friends enough to be tempted from it; then any, about one day in four none)
-    const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id));
-    if (next) return next;
+    // (the week, js/calendar.js: nothing on Lay day; the carrier's evening at the inn only on Carrier's day; the bakery's afternoon not on
+    // Baking day (the Pennocks at it themselves, all day) nor Lay day)
+    const wd = root.Calendar ? root.Calendar.weekday(day) : ((day - 1) % 7) + 1;
+    if (wd === 7) return null;
+    const fits = id => !(id === 'inn' && wd !== 4) && !(id === 'bakery' && wd === 6);
+    const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id) && fits(id));
+    if (next) return next;      // (the first of them not yet asked that suits the day: the inn's evening waits for Carrier's day, the rest go on meanwhile)
     if (((save.state.chores && save.state.chores.cans) || 0) >= CANS) return 'well';      // (five cans out of the butt since she last drew it full: the well, whatever else)
     if (rnd() < 1 / NONE_ONE_IN) return null;
     // (the shifts come round three times as often while what they lead to (Mistress Pennock's trust; Mistress Abney taking her in hand) is still
     // to come)
     const ids = Object.keys(E), last = save.state.chores && save.state.chores.last, open = r => w.q && w.q.stateOf && !['done'].includes(w.q.stateOf(r));
     const weight = id => (id === 'bakery' && open('pennock.trust')) || (id === 'inn' && open('abney.inhand')) ? 3 : 1;
-    const bag = []; for (const id of ids) if (id !== last && id !== 'well') for (let k = 0; k < weight(id); k++) bag.push(id);
+    const bag = []; for (const id of ids) if (id !== last && id !== 'well' && fits(id)) for (let k = 0; k < weight(id); k++) bag.push(id);
     return bag[Math.floor(rnd() * bag.length)];
   }
   // (something put in her hands)
@@ -141,7 +146,7 @@ function create(w) {
     if (!on() || !P || !P.npc) return;
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
-      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren,      // (her mother's own day: js/maren.js)
+      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay,      // (her mother's own day: js/maren.js)
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
     await P.wait(0.8); await P.approach();
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
@@ -269,7 +274,7 @@ function create(w) {
   // Mistress Abney, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.
   const OFFER = { pennock: { id: 'bakery', before: H('12:00'), sold: H('12:30') }, abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
   function canOffer(who) {
-    const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day) return false;
+    const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day || cal.lay) return false;      // (Lay day: no work offered)
     if (who === 'pennock') return !(e && e.id === 'bakery') && !(root.Work && root.Work.current(w));      // (any day she's not been asked for the afternoon's: and not twice)
     return !e || e.state === 'done' || e.state === 'little';
   }

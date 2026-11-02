@@ -122,7 +122,7 @@ world.tableau(cover).then(url => { if (url && $('title')) $('title').style.setPr
 { const theme = world.tableauMusic(cover), A = window.GameAudio;
   const play = () => { if (!A || !theme || !$('title')) return; A.init(); A.startMusic({ theme }); };
   play(); for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, play, { once: true, capture: true }); }
-if (saved) { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>Day ' + world.cal.day + ', ' + world.cal.clock + ' · ' + world.AREAS[world.save.state.area].name + '</small>'; $('begin').classList.remove('primary'); $('begin').textContent = 'Begin again'; }
+if (saved) { $('cont').hidden = false; $('cont').innerHTML = 'Continue<small>Day ' + world.cal.day + ', ' + world.cal.dayName + ', ' + world.cal.clock + ' · ' + world.AREAS[world.save.state.area].name + '</small>'; $('begin').classList.remove('primary'); $('begin').textContent = 'Begin again'; }
 const start = f => { if (window.GameAudio) GameAudio.init(); $('title').remove(); hud.show(true); f(); };
 $('begin').onclick = () => { if (saved && !confirm('Begin again, from the start? The game you have now will be lost.')) return; if (saved) world.save.wipe(); start(() => world.newGame()); };      // (confirmed: the saved game wiped from the browser)
 $('cont').onclick = () => start(() => world.resume());

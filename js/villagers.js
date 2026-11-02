@@ -39,27 +39,33 @@ const SEAT = { lime: 'the bench round the lime tree', inn: 'the bench outside th
 
 // Where each is, for a day and a minute: { stand: spot } · { sit: bench, n } · { wander: true } · { round: true }; or null, not out (indoors,
 // or away at work). (k: the hour's own roll, for those who move about through the day)
+// The week (js/calendar.js): on Lay day (the seventh) the forge, the bakery and the mill are shut, and Tom and Georgie are about all day; on Lay
+// night Georgie takes his father's watch. Tom's at the tub seven till three, and about one working day in four there's no work after dinner,
+// and his father lets him go at noon.
+const weekday = day => ((Math.max(1, day) - 1) % 7) + 1, LAY = 7;
+const layNight = (day, min) => (weekday(day) === LAY && min >= H('21:15')) || (weekday(day) === 1 && day > 1 && min < H('5:30'));
+const slack = day => weekday(day) !== LAY && hash(day, 4) < 0.25;
 function station(key, day, min) {
-  const h = Math.floor(min / 60), r = s => hash(day * 24 + h, s);
-  const tomOff = hash(day, 4) < 0.35;
+  const h = Math.floor(min / 60), r = s => hash(day * 24 + h, s), lay = weekday(day) === LAY;
+  if (layNight(day, min)) { if (key === 'georgie') return min >= H('22:00') || min < H('5:30') ? { round: true } : { stand: 'bell' }; if (key === 'willie') return null; }      // (Lay night: Georgie on the watch, his father abed)
   switch (key) {
     case 'agnes': { if (min < H('8:00') || min >= H('19:30')) return null; const k = r(1); return k < 0.55 ? { stand: 'wellSide' } : k < 0.7 ? { sit: SEAT.lime, n: 0 } : k < 0.8 ? { stand: 'pondSide' } : { wander: true }; }
-    case 'georgie': { const from = H('15:00') + Math.floor(hash(day, 3) * 100); if (hash(day, 2) > 0.7 || min < from || min >= H('20:45')) return null;
+    case 'georgie': { const from = lay ? H('10:00') : H('15:00') + Math.floor(hash(day, 3) * 100); if ((!lay && hash(day, 2) > 0.7) || min < from || min >= H('20:45')) return null;      // (Lay day: the mill stopped, and he's about from mid-morning)
       const k = r(5); return k < 0.35 ? { stand: 'wellNear' } : k < 0.6 ? { sit: SEAT.inn, n: 2 } : { wander: true }; }      // (some days the mill keeps him late; most, he's about after three, and somewhere he can see the well)
-    case 'tom': if (!tomOff && min >= H('7:00') && min < H('16:00')) return { stand: 'tub' };
+    case 'tom': if (!lay && min >= H('7:00') && min < (slack(day) ? H('12:00') : H('15:00'))) return { stand: 'tub' };
       return min >= H('8:00') && min < H('20:45') ? { wander: true } : null;
-    case 'smith': return min >= H('7:00') && min < H('17:00') ? { stand: 'anvil' } : null;
+    case 'smith': return !lay && min >= H('7:00') && min < H('17:00') ? { stand: 'anvil' } : null;
     case 'bess': return min >= H('9:30') && min < H('18:30') ? { sit: SEAT.inn, n: 0 } : null;
     case 'abney': return (min >= H('11:00') && min < H('13:30')) || (min >= H('17:00') && min < H('20:00')) ? { stand: 'innDoor' } : null;
-    case 'pennock': return min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;      // (the counter till the bread's sold; the clearing down inside, of an afternoon)
-    case 'baker': return min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;      // (baking from four, at the door with it till mid-morning; then to his bed)
+    case 'pennock': return !lay && min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;      // (the counter till the bread's sold; the clearing down inside, of an afternoon)
+    case 'baker': return !lay && min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;      // (baking from four, at the door with it till mid-morning; then to his bed)
     case 'peter': { if (min < H('10:00') || min >= H('18:00')) return null; const k = r(7); return k < 0.4 ? { wander: true } : k < 0.7 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (only on his days off: see update)
     case 'willie': return min >= H('22:00') || min < H('5:30') ? { round: true } : min >= H('21:15') ? { stand: 'bell' } : null;      // (out to the bell for half past nine, by it till ten, the village's curfew; then round till first light)
   }
   return null;
 }
 const same = (a, b) => !!a && !!b && a.stand === b.stand && a.sit === b.sit && a.wander === b.wander && a.round === b.round;
-// (Tom's free today, and whether he'll come and find her: about every other day he's out; from when)
+// (Tom's free now, and whether he'll come and find her)
 const tomFree = (day, min) => { const s = station('tom', day, min); return !!(s && s.wander); };
 const tomComes = day => hash(day, 9) < 0.85;      // (most of his free days, he comes looking for her)
 
@@ -107,13 +113,17 @@ function attach(P, w) {
     const glow = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffcf7a' })); glow.position.y = -2.2; g.add(glow);
     return { obj: g, name: 'the lantern', grip: new V3(0, 0.4, 0), radius: 1, keep: true, style: 'hang' }; }
 
+  // (the watch's lantern, in his hand: the Watchman's always; Georgie's, on Lay night, once he's on it)
+  function lit(f) { if (f.lantern) return; const l = lantern(); P.stage.scene.add(l.obj); f.motion.hold(l, 'hang'); f.lantern = l; }
+  // (who has the watch tonight: Master William, or on Lay night his son)
+  const watchKey = () => layNight(cal.day, cal.minute) ? 'georgie' : 'willie';
   // ── Out, and in again.
   function spawn(key, want, arriving, o) {
     const D = PEOPLE[key], rig = root.Toon.make(D.rig, looks[D.rig] || {}, o && o.indoors ? { indoors: true } : undefined);      // (o.indoors: come to their own door as they are in the house: the Watchman without his hat and cape)
     const motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, key) });
     const f = { key, rig, motion, want: null, path: null, i: 0, sat: null, held: false, wait: 0, stuck: 0 };
     figs[key] = f; P.addFigure(key, { rig, motion, cast: { name: D.name, voice: D.voice, tint: D.tint, bg: D.bg } });
-    if (key === 'willie' && !(o && o.indoors)) { const l = lantern(); P.stage.scene.add(l.obj); motion.hold(l, 'hang'); f.lantern = l; }
+    if ((key === 'willie' || (key === 'georgie' && want && (want.round || want.stand === 'bell'))) && !(o && o.indoors)) lit(f);      // (the watch's lantern: Georgie's too, on Lay night)
     const door = sp[D.door];
     if (arriving && door) { motion.warp(door.at, door.yaw + Math.PI); rig.root.position.copy(door.at); send(f, want); }
     else place(f, want);
@@ -184,11 +194,11 @@ function attach(P, w) {
   function update(first) {
     const day = cal.day, min = cal.minute;
     for (const key in PEOPLE) {
-      const want = (vs().away && vs().away[key] === day) || (key === 'peter' && !(root.Peter && root.Peter.offToday(w))) ? null : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
+      const want = (vs().away && vs().away[key] === day) || (key === 'peter' && !(root.Peter && root.Peter.inVillage(w))) ? null : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
       if (f && f.scene) continue;      // (a scene has them)
       if (want && !f) spawn(key, want, !first);
       else if (f && !want && f.want) { if (!f.held) send(f, null); }
-      else if (f && want && !same(f.want, want) && !f.held) send(f, want);
+      else if (f && want && !same(f.want, want) && !f.held) { if (key === 'georgie' && (want.round || want.stand === 'bell')) lit(f); send(f, want); }      // (Georgie, going on the watch: his father's lantern)
     }
   }
 
@@ -210,7 +220,7 @@ function attach(P, w) {
     if (!f.sat) f.motion.face(yawTo(f.motion.pos, m.pos));
   }
   async function talkTo(key) {
-    if (key === 'willie' && pastHers() && root.Evening && !root.Evening.watchman(w)) return catchHer(figs.willie);      // (past the curfew he holds her to, he's not there to chat)
+    if (key === watchKey() && pastHers(key) && root.Evening && !root.Evening.watchman(w)) return catchHer(figs[key]);      // (past the curfew he holds her to, he's not there to chat)
     const f = figs[key]; if (!f) return; hold(f);
     try {
       await meet(f);
@@ -225,7 +235,7 @@ function attach(P, w) {
         if (!sit) { change(s => { s.met[key] = true; }); return; }
         const seat = seats(SEAT.inn).sort((a, b) => a.at.distanceTo(f.motion.pos) - b.at.distanceTo(f.motion.pos))[0]; if (seat) await P.sitOn(seat); }
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
-      const ctx = { pieTaken: !!(root.Pie && root.Pie.stateOf(w).tries > 0), part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone, tomAtTub: !!((station('tom', cal.day, cal.minute) || {}).stand === 'tub'),
+      const ctx = { wd: weekday(cal.day), pieTaken: !!(root.Pie && root.Pie.stateOf(w).tries > 0), part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone, tomAtTub: !!((station('tom', cal.day, cal.minute) || {}).stand === 'tub'),
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });
@@ -333,36 +343,37 @@ function attach(P, w) {
   // ── The Watchman, on his round after the bell: if he sees her out, he stops her, and walks her home (a few steps behind her; the meadow
   // gate shut to her while he does). At her door, js/evening.js has him hand her over.
   // (the village's curfew is ten, the bell at half past nine its fair warning; hers is nine, which he knows only once her mother's told him (her
-  // word with him at the well, js/evening.js's blessing): till then he leaves her be till ten)
+  // word with him, js/evening.js's blessing): till then he leaves her be till ten. Georgie, on Lay night, never knows it: ten, for him)
   const knowsHers = () => (save.state.flags || {})['willie-knows-curfew'] != null;
-  const pastHers = () => { const min = cal.minute; return min < H('5:30') || min >= (knowsHers() ? H('21:00') : H('22:00')); };
+  const pastHers = key => { const min = cal.minute; return min < H('5:30') || min >= (key !== 'georgie' && knowsHers() ? H('21:00') : H('22:00')); };
   function willieWatch() {
-    const f = figs.willie; if (!f || !f.want || f.follow || f.held || f.scene || !root.Evening || root.Evening.watchman(w) || P.busy) return;
-    if (!pastHers()) return;
+    const key = watchKey(), f = figs[key]; if (!f || !f.want || f.follow || f.held || f.scene || !root.Evening || root.Evening.watchman(w) || P.busy) return;
+    if (!pastHers(key) || !(f.want.round || f.want.stand === 'bell')) return;
     const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < 110) P.act(() => catchHer(f));
   }
   // (half past nine: the bell, three strokes, rung by him)
   let rung = 0;
   function bellWatch() {
-    const f = figs.willie, min = cal.minute; if (!f || rung === cal.day || min < H('21:30') || min > H('21:50') || !f.want || !f.want.stand || f.path || f.motion.auto) return;
+    const f = figs[watchKey()], min = cal.minute; if (!f || rung === cal.day || min < H('21:30') || min > H('21:50') || !f.want || !f.want.stand || f.path || f.motion.auto) return;
     rung = cal.day; const b = sp.bell, m = f.motion;
     (async () => { for (let k = 0; k < 3; k++) { await m.reach('R', b.look.clone().add(new V3(0, -4, 0))); const A = root.GameAudio; if (A && A.curfewBell) A.curfewBell(1, 1); await P.wait(0.6); await m.release('R'); await P.wait(0.3); } })();
   }
-  // Seen: he calls to her to stop where she is, and comes to her; then the two of them to her door, him a few steps behind.
+  // Seen: he calls to her to stop where she is, and comes to her; then the two of them to her door, him a few steps behind. (Georgie, on Lay
+  // night: the same, awkwardly)
   async function catchHer(f) {
     if (!f) return; hold(f); f.scene = {};
-    const n = root.Evening.caught(w), m = P.motion;
+    const who = f.key, n = root.Evening.caught(w, who), m = P.motion, G = who === 'georgie';
     try {
       f.motion.face(yawTo(f.motion.pos, m.pos));
-      await P.converse(S.willieCalls(n), { shot: false, keepCamera: true });
+      await P.converse(G ? S.georgieCalls(n) : S.willieCalls(n), { shot: false, keepCamera: true });
       await m.face(yawTo(m.pos, f.motion.pos));
       const near = P.collide(flat(m.pos).add(flat(f.motion.pos).sub(flat(m.pos)).setLength(14)), 3.2);
-      await Promise.race([walkTo('willie', near, yawTo(near, m.pos), 0.8), P.wait(20)]); f.path = null; f.motion.auto = null; f.motion.face(yawTo(f.motion.pos, m.pos));
-      await P.converse(S.willieCatch(n), { shot: ['red', 'willie'] }); }
+      await Promise.race([walkTo(who, near, yawTo(near, m.pos), 0.8), P.wait(20)]); f.path = null; f.motion.auto = null; f.motion.face(yawTo(f.motion.pos, m.pos));
+      await P.converse(G ? S.georgieCatch(n) : S.willieCatch(n), { shot: ['red', who] }); }
     finally { f.scene = null; f.held = false; f.follow = true; f.path = null; }
   }
   if (W.gate) W.gate.barred = () => !!(root.Evening && root.Evening.watchman(w));
-  if (root.Evening && root.Evening.watchman(w) && cal.curfew()) { const f0 = () => figs.willie; setTimeout(() => { const f = f0(); if (f) f.follow = true; }, 0); }      // (still walking her home, as she comes back out)
+  if (root.Evening && root.Evening.watchman(w) && cal.curfew()) { const f0 = () => figs[root.Evening.stateOf(w).walkingBy || 'willie']; setTimeout(() => { const f = f0(); if (f) f.follow = true; }, 0); }      // (still walking her home, as she comes back out)
 
   // ── The evening of Mistress Abney's promise, about five: whoever comes to find her (js/promise.js), fetched out if they're not about, and
   // walked to her; then let go again.
@@ -394,7 +405,7 @@ function attach(P, w) {
   return { dareObjective, actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };
 }
 
-const api = { attach, station, PEOPLE, tomFree, tomComes, hash };
+const api = { attach, station, PEOPLE, tomFree, tomComes, hash, layNight, weekday, slack };
 root.Villagers = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -12,7 +12,8 @@
 //
 //   Peter.visited(w) · .letIn(w) · .fowlerAtGate(w) · .awaiting(w) · .atHolding(P, w) (the gate, the first time) · .firstTalk / .sendHome (js/holding.js:
 //   Peter, the first time) · Peter.wood(P, w)
-//   (the beech: the note, the meeting) · Peter.offToday(w) → his day off in the village, or not · Peter.stateOf(w)
+//   (the beech: the note, the meeting) · Peter.offToday(w) → his day off (Lay day) · Peter.inVillage(w) → in the village now (his day off, or an
+//   errand at midday) · Peter.stateOf(w)
 // Kept in the save (state.peter): { letIn (a day: Master Fowler's let her in), visited (a day), noted (the day of the last note read), meet: { day, at }, met: n, missed: n, owed (a word
 // about a missed meeting, next time) }.
 (function (root) {
@@ -25,8 +26,11 @@ const WAITS = 60;      // (minutes he waits at the beech)
 const stateOf = w => w.save.state.peter || (w.save.state.peter = { visited: 0, noted: 0, meet: null, met: 0, missed: 0, owed: false });
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.peter); }, { peter: true });
 const visited = w => !!stateOf(w).visited;
-// (his day off in the village: about one in four, once she's been to the Fowlers')
-const offToday = w => visited(w) && hash(w.cal.day, 21) < 0.25 && !(w.chores && w.chores.pick && w.chores.pick(w.cal.day) === 'eggs');      // (never the day she's sent for the eggs)
+// (his day off in the village: Lay day, once she's been to the Fowlers'. The birds and his grandfather's leg keep him at home the rest of the
+// week; but about one working day in four he's sent down to the village at midday (birds for the inn, thread), and is about for an hour)
+const offToday = w => visited(w) && ((w.cal.day - 1) % 7) + 1 === 7;
+const errandToday = w => visited(w) && !offToday(w) && hash(w.cal.day, 21) < 0.25 && !(w.chores && w.chores.pick && w.chores.pick(w.cal.day) === 'eggs');      // (never the day she's sent for the eggs)
+const inVillage = w => offToday(w) || (errandToday(w) && w.cal.minute >= H('11:00') && w.cal.minute < H('12:30'));
 // Whether there's a note in the beech today: every few days (the third day since the last she read, or sometimes the second), from the
 // day after the first visit, and not on his days off.
 function noteToday(w) {
@@ -165,7 +169,7 @@ async function notices(P, w) {
 function lapse(w) { const st = stateOf(w); if (st.meet && (st.meet.day < w.cal.day || w.cal.minute >= st.meet.at + WAITS)) change(w, s => { s.meet = null; s.missed++; s.owed = true; }); }
 function objective(w) { lapse(w); const mt = stateOf(w).meet; return mt && mt.day === w.cal.day && w.cal.minute < mt.at + WAITS ? 'Peter, at the old beech, at ' + root.Calendar.clockOf(mt.at).replace(/ in the (morning|afternoon|evening)| at night/, '') + '.' : null; }
 
-const api = { notices, lapse, visited, letIn, fowlerAtGate, awaiting, atHolding, firstTalk, sendHome, wood, offToday, noteToday, meetAt, objective, stateOf, hash, WAITS };
+const api = { errandToday, inVillage, notices, lapse, visited, letIn, fowlerAtGate, awaiting, atHolding, firstTalk, sendHome, wood, offToday, noteToday, meetAt, objective, stateOf, hash, WAITS };
 root.Peter = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

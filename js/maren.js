@@ -12,14 +12,14 @@ const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m |
 const OUT = H('08:00'), DINNER = H('12:30'), BACK = H('13:30'), HOME = H('17:30');
 function hash(day, k) { let h = (day * 2654435761 + k * 40503) | 0; h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
 // (about one day in four, needlework: at home for the morning, or the afternoon)
-const needlework = day => { const r = hash(day, 7); return r < 0.13 ? 'morning' : r < 0.26 ? 'afternoon' : null; };
+const needlework = day => { if (((day - 1) % 7) + 1 === 7) return null; const r = hash(day, 7); return r < 0.13 ? 'morning' : r < 0.26 ? 'afternoon' : null; };
 const stateOf = w => w.save.state.maren || (w.save.state.maren = { dinner: 0, warned: {} });
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.maren); }, { maren: true });
 // (only once the days are agreed: before that, she's home, as the first chapter has her)
 const on = w => !!(w.chores && w.chores.on());
 function at(w) {
   const m = w.cal.minute, n = needlework(w.cal.day);
-  if (!on(w) || m < OUT || m >= HOME || (m >= DINNER && m < BACK)) return 'home';
+  if (!on(w) || (w.cal.lay) || m < OUT || m >= HOME || (m >= DINNER && m < BACK)) return 'home';      // (Lay day: home all day)
   if ((n === 'morning' && m < DINNER) || (n === 'afternoon' && m >= BACK)) return 'needle';
   return 'farm';
 }

@@ -437,12 +437,13 @@ const ERRANDS = {
 const breakfast = (errand, ctx) => {
   const hello = { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'There. Bowls done, and you fed. Now then.' };
   // (her own day: out at the farm, or needlework at home for the morning or the afternoon (ctx.needle))
-  const away = ctx.needle === 'morning' ? 'I’ve needlework this morning, so I’m home till dinner, then up at the Hallorans’ after.' : ctx.needle === 'afternoon' ? 'I’m up at the Hallorans’ this morning, and home with my needlework this afternoon.' : 'I’m up at the Hallorans’ all day, setting the beans. I’ll be home for dinner at half past twelve, and so will you.';
+  const away = ctx.lay ? 'It’s Lay day, so no Hallorans’ for me, and nothing for you but the garden. Even the fields get a rest.' : ctx.needle === 'morning' ? 'I’ve needlework this morning, so I’m home till dinner, then up at the Hallorans’ after.' : ctx.needle === 'afternoon' ? 'I’m up at the Hallorans’ this morning, and home with my needlework this afternoon.' : 'I’m up at the Hallorans’ all day, setting the beans. I’ll be home for dinner at half past twelve, and so will you.';
   const mine = ctx.agreed ? [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: away }] : [];
   // (the garden: hers today, or her mother's: ctx.garden 'maren' (she has the time) or 'after' (the day after a correction for it))
   const garden = ctx.garden === 'after' ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Leave the garden to me today. I’ll set my flowers straight myself.' }]
     : ctx.garden === 'maren' ? [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'And the garden’s mine today: I’ll see to it before I go up. You needn’t go near it.' }]
     : ctx.rained ? [{ who: 'mother', face: 'calm', text: 'It rained in the night, so the flowers won’t want watering. Just the weeds and the beds.' }] : [];
+  if (!errand && ctx.lay) return [hello].concat(mine, garden);      // (Lay day: said already)
   if (!errand) return [hello].concat(mine, garden, [{ who: 'mother', face: 'calm', text: ctx.garden ? 'And nobody’s asked anything of us. The day’s your own.' : 'Nobody’s asked anything of us today. The garden, and then the day’s your own.' }]);
   // (not asked: given. Her yes is how she's been lately: a sulk, a grin, or meek)
   const t = ctx.temper, by = ctx.byText;
@@ -529,6 +530,8 @@ const VILLAGE = {
         { who: 'red', face: 'cheeky', text: 'Agnes says a great deal about everybody, Georgie.' }, { who: 'georgie', face: 'pout', text: 'That’s no help at all.' }],
     ],
     again: [{ who: 'georgie', face: 'smile', text: 'Still here. The green’s not going anywhere, and nor am I.' }],
+    lay: [{ who: 'georgie', face: 'bashful', listen: { red: 'calm' }, text: 'No mill today. I don’t know what to do with my hands. Agnes said I could hold hers. She was joking. Was she joking?' },
+      { who: 'red', face: 'cheeky', text: 'Ask her, Georgie.' }, { who: 'georgie', face: 'pout', text: 'I can’t ask her that.' }],
     late: [{ who: 'georgie', face: 'concerned', listen: { red: 'shy' }, text: 'Nearly the bell. I’d not be out when Father comes round, Rose. Not even you.' }],
   },
   tom: {
@@ -545,6 +548,8 @@ const VILLAGE = {
         { who: 'red', face: 'smile', text: 'I always am.' }],
     ],
     again: [{ who: 'tom', face: 'cheeky', text: 'Can’t keep away, can you?' }],
+    lay: [{ who: 'tom', face: 'cheeky', listen: { red: 'smile' }, text: 'Lay day, Ridley! Forge cold, Father asleep in his chair, and the whole day ours.' },
+      { who: 'red', face: 'cheeky', text: 'Ours?' }, { who: 'tom', face: 'smile', text: 'Well. Mine. You can borrow some.' }],
   },
   smith: {
     any: [
@@ -565,6 +570,7 @@ const VILLAGE = {
     again: [{ who: 'bess', face: 'smile', text: 'Still here. Still sitting. Still growing.' }],
   },
   abney: {
+    carrier: [{ who: 'abney', face: 'calm', listen: { red: 'calm' }, text: 'Carrier’s day. I’ll have the yard full of horses and the house full of men by five, and Bess wanting to wait on them all.' }],
     any: [
       [{ who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Miss Rose. Your mother keeping well?' }, { who: 'red', face: 'calm', text: 'Yes, Mistress Abney.' },
         { who: 'abney', face: 'calm', text: 'And you?' }, { text: 'She waits for the answer, as if it might be a different one.' }],
@@ -573,6 +579,7 @@ const VILLAGE = {
     ],
   },
   pennock: {
+    baking: [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Baking day, love! Double of everything for tomorrow. Don’t lean on anything, it’s all still warm.' }],
     any: [
       [{ who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'Rose, love! Look at you. Growing like a weed, and twice as pretty.' }, { who: 'red', face: 'bashful', text: 'Mistress Pennock…' },
         { who: 'pennock', face: 'smile', text: 'Don’t you “Mistress Pennock” me. I fed you crusts over this counter when you were knee-high.' }],
@@ -582,6 +589,7 @@ const VILLAGE = {
     ],
   },
   baker: {
+    baking: [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Baking day, Miss Rose: double of everything, and I’ve been at it since three. Lay day’s bread doesn’t bake itself.' }],
     any: [
       [{ who: 'baker', face: 'smile', listen: { red: 'smile' }, text: 'Morning, Miss Rose. Oven’s hot and the dough’s up: all’s well with the world.' }],
       [{ who: 'baker', face: 'calm', listen: { red: 'calm' }, text: 'Tell the missus I’ve gone for flour, if she asks. And if she doesn’t ask, I’ve still gone for flour.' }],
@@ -594,6 +602,9 @@ const VILLAGE = {
       [{ who: 'peter', face: 'pout', listen: { red: 'cheeky' }, text: 'If you see Tom, I’m not here. He’s been at the Peter Piper again.' }],
     ],
     again: [{ who: 'peter', face: 'smile', text: 'Still here. Still not buying more thread.' }],
+    lay: [{ who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Grandad says the birds can keep their own Lay day. So here I am, with nothing to mend.' },
+      { who: 'red', face: 'smile', text: 'What will you do with it?' }, { who: 'peter', face: 'bashful', text: 'I hadn’t thought. This, maybe.' }],
+    down: [{ who: 'peter', face: 'calm', listen: { red: 'smile' }, text: 'Red! Birds for Mistress Abney, and Grandad wants thread. I’ve an hour, if I’m quick about the thread.' }],
   },
   willie: {
     any: [
@@ -618,6 +629,11 @@ const villager = (key, ctx) => {
     { who: 'abney', face: 'calm', listen: { red: 'shy' }, text: 'Well. You’ve said it to my face, and that’s something. Don’t make me need you again and find you wanting.' }];
   if (ctx.first && V.first) return V.first;
   if (key === 'georgie' && ctx.part === 'dusk' && V.late) return V.late;
+  // (the week: Lay day for the lads; Baking day at the bakery; Carrier's day at the inn; Peter down on an errand)
+  if (!ctx.today && ctx.wd === 7 && V.lay) return V.lay;
+  if (!ctx.today && ctx.wd === 6 && V.baking) return V.baking;
+  if (!ctx.today && ctx.wd === 4 && V.carrier) return V.carrier;
+  if (!ctx.today && key === 'peter' && ctx.wd !== 7 && V.down) return V.down;
   if (ctx.today && V.again) return V.again;
   const said = pickOf(V.any, ctx.day + (ctx.today ? 1 : 0));
   if (key === 'smith' && !ctx.tomAtTub && /at the tub/.test(said.map(l => l.text).join(' '))) return V.off;      // (Tom's day off, or done at the tub: not at it)
@@ -975,6 +991,22 @@ const willieCatch = n => n > 1 ? [
   { who: 'red', face: 'shy', text: 'Sir— I lost track of the time. I’m going home now.' },
   { who: 'willie', face: 'calm', listen: { red: 'shy' }, text: 'You are. And I’ll walk with you, to your mother’s door. After you, Miss Rose.' },
 ];
+// Lay night: Georgie on his father's watch, finding her out past ten. He grew up with her; he isn't sure of her hour, nor of himself.
+const georgieCalls = n => [{ who: 'georgie', face: 'concerned', listen: { red: 'wince' }, text: n > 1 ? 'Rose! Not again. Rose, stop, please.' : 'Rose? Rose! Is that— it’s past ten. You oughtn’t— stop there, will you?' }];
+const georgieCatch = n => n > 1 ? [
+  { who: 'georgie', face: 'pout', listen: { red: 'shy' }, text: 'You know I have to. It’s Father’s lantern. If he found out I’d let you by…' },
+  { who: 'red', face: 'shy', text: 'I know, Georgie. Go on, then.' },
+  { who: 'georgie', face: 'bashful', listen: { red: 'shy' }, text: 'After you. Sorry. Again.' },
+] : [
+  { who: 'georgie', face: 'bashful', listen: { red: 'surprised' }, text: 'I’m to walk you home. That’s what Father does, so. I’m sorry. I am.' },
+  { who: 'red', face: 'cheeky', text: 'Georgie Dunn, you’re enjoying this.' },
+  { who: 'georgie', face: 'pout', listen: { red: 'cheeky' }, text: 'I’m not! I’m really not. Just… walk, would you? Before anyone sees.' },
+];
+const georgieBrings = n => [
+  { who: 'georgie', face: 'bashful', listen: { mother: 'stern' }, text: 'Evening, Mistress Ridley. I’ve— I’m on the watch tonight, for Father. I found Rose out. Past ten.' },
+  { who: 'mother', face: 'stern', listen: { georgie: 'bashful' }, text: 'Thank you, Georgie. I’ll see to her.' },
+  { who: 'georgie', face: 'shy', listen: { mother: 'calm' }, text: n > 1 ? 'I won’t tell Father. Not this time either. Goodnight, Mistress.' : 'I won’t tell Father. If that’s— I mean. Goodnight, Mistress. Rose.' },
+];
 // At her door: he hands her over.
 const willieBrings = n => [
   { who: 'willie', face: 'calm', listen: { mother: 'stern' }, text: n > 1 ? 'Evening, Mistress Ridley. Miss Rose again, I’m afraid. On the green, past the bell.' : 'Evening, Mistress Ridley. I found Miss Rose out on the green, past the bell. I’ve walked her home.' },
@@ -983,7 +1015,7 @@ const willieBrings = n => [
   ];
 // Home after the bell. (how.willie: brought home)
 const curfewTalk = how => [
-  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: how.willie ? 'Brought home by the Watchman. Like a stray off the green.' : 'Do you know what time it is, Little Red? Because the bell does.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: how.by === 'georgie' ? 'Brought home by Georgie Dunn. Georgie, Little Red, who you used to make eat worms.' : how.willie ? 'Brought home by the Watchman. Like a stray off the green.' : 'Do you know what time it is, Little Red? Because the bell does.' },
   { who: 'red', face: 'shy', text: 'I’m sorry, Mama. I didn’t mean to be so late.' },
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Nine o’clock, and not a minute past it. You agreed it, at this table.' },
 ];
@@ -999,7 +1031,7 @@ const curfewCorrection = async (S, how) => {
   await S.step([M, 'I sat here with the lamp, and listened for the latch, and it didn’t come.'], 10);
   await S.step([R, 'I’m sorry— ow— I’m sorry—'], 4);
   if (how.willie) {
-    await S.step([M, 'And William Dunn walking you to my door, with half the street’s shutters open to watch.'], 10);
+    await S.step([M, how.by === 'georgie' ? 'And Georgie Dunn, on his father’s watch, walking you to my door. He could barely look at me.' : 'And William Dunn walking you to my door, with half the street’s shutters open to watch.'], 10);
     await S.step([R, 'Mama, please—'], 4);
     await S.smacks(8);
   }
@@ -1012,7 +1044,8 @@ const curfewCorrection = async (S, how) => {
 const curfewAfter = how => [
   { who: 'mother', face: 'calm', listen: { red: 'teary' }, text: 'There’s bread and cheese on the board, and then bed. Straight to bed.' },
   { who: 'red', face: 'shy', text: 'Yes, Mama.' },
-].concat(how.willie ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And you’ll thank Master William when you see him. He could have left you to the dark.' }] : []);
+].concat(how.by === 'georgie' ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And you’ll go easy on Georgie, when you see him. He did right, and it cost him.' }]
+  : how.willie ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And you’ll thank Master William when you see him. He could have left you to the dark.' }] : []);
 // What someone else has already dealt with (c: { what, by }): a reprieve. how: 'heard' (they told her), 'reported' (Red just did), 'late' (she
 // heard of it in the village, Red having kept it back).
 const DEALT = { pie: 'the pie', dare: 'the dare with Tom', abney: 'what you asked of her', shift: 'the work left undone' };
@@ -1851,5 +1884,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, owedNow, breadAndBed, breadEaten, curfewStern, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, owedNow, breadAndBed, breadEaten, curfewStern, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

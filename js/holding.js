@@ -191,7 +191,7 @@ function people(P, w) {
   }
   let think = 0;
   const at = k => { const Pt = root.Peter, t = PEOPLE[k].at(w.cal.minute);
-    if (k === 'peter' && Pt && Pt.offToday(w)) return null;      // (Peter's day off: in the village)
+    if (k === 'peter' && Pt && Pt.inVillage(w)) return null;      // (Peter's day off, or down in the village on an errand)
     if (k === 'fowler' && t && Pt && Pt.fowlerAtGate(w)) return 'gate';      // (the first time she comes: he's at the gate)
     return t; };
   const update = () => { for (const k in PEOPLE) if (!figs[k] || !figs[k].held) place(k, at(k));

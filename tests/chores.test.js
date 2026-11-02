@@ -21,10 +21,13 @@ test('nothing until the chores are agreed', () => {
   assert.equal(chores.on(), false); assert.equal(chores.objective(), null); assert.equal(chores.journalLine(), null);
 });
 
-test('at first, each errand in turn: eggs, the pot, the bakery, the jug, the Dunns, the inn, the well, the bread', () => {
-  const { chores, save } = world(), order = [];
-  for (let d = 3; d < 20; d++) { const id = chores.pick(d); if (!id || order.includes(id)) break; order.push(id); save.change(s => { s.chores = s.chores || {}; s.chores.asked = (s.chores.asked || []).concat(id); }); }
-  assert.deepEqual(order, ['eggs', 'pot', 'bakery', 'jug', 'dunns', 'inn', 'well', 'bread']);
+test('at first, each errand in turn, as the week allows: nothing on Lay day, the inn only on Carrier\'s day, the bakery not on Baking day', () => {
+  const { chores, save } = world(), order = [], wd = d => ((d - 1) % 7) + 1;
+  for (let d = 3; d < 30 && order.length < 8; d++) { const id = chores.pick(d); if (wd(d) === 7) { assert.equal(id, null); continue; } if (!id) continue;
+    if (id === 'inn') assert.equal(wd(d), 4); if (id === 'bakery') assert.notEqual(wd(d), 6);
+    order.push(id); save.change(s => { s.chores = s.chores || {}; s.chores.asked = (s.chores.asked || []).concat(id); }); }
+  assert.deepEqual(order.slice().sort(), ['bakery', 'bread', 'dunns', 'eggs', 'inn', 'jug', 'pot', 'well']);
+  assert.deepEqual(order.slice(0, 3), ['eggs', 'pot', 'bakery'], 'in their order, but for the inn waiting on its day: ' + order.join(', '));
 });
 
 test('the well comes round again after five cans from the garden butt, and not before', () => {
@@ -32,7 +35,7 @@ test('the well comes round again after five cans from the garden butt, and not b
   save.change(s => { s.chores = s.chores || { day: 0, garden: false, errand: null, refusals: [], missed: 0 }; s.chores.asked = Object.keys(chores.ERRANDS); });
   for (let d = 2; d < 120; d++) assert.notEqual(chores.pick(d), 'well');
   for (let k = 0; k < 5; k++) chores.canFilled();
-  assert.equal(chores.pick(7), 'well'); assert.equal(chores.pick(8), 'well');
+  assert.equal(chores.pick(8), 'well'); assert.equal(chores.pick(9), 'well'); assert.equal(chores.pick(7), null, 'but not on Lay day');
 });
 
 test('most days something is asked, never the same two days running', () => {

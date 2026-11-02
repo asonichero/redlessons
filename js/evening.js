@@ -34,7 +34,7 @@ const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.evening); }, { e
 // Someone else has corrected her (by: their key; informs: they'll tell her mother themselves).
 function record(w, o) { change(w, s => { s.corrected.push({ id: o.what + '-' + w.cal.day, what: o.what, by: o.by, day: w.cal.day, informs: !!o.informs, known: false, raised: false }); }); }
 const watchman = w => stateOf(w).walking === night(w.cal) ? 'walking' : null;
-const objective = w => watchman(w) ? 'Home, with Master William at your heels.' : washDue(w) ? 'Wash at the dresser, when you’re ready for supper.' : abed(w) ? 'Bed, when you’re ready.' : null;
+const objective = w => watchman(w) ? (stateOf(w).walkingBy === 'georgie' ? 'Home, with Georgie Dunn at your heels.' : 'Home, with Master William at your heels.') : washDue(w) ? 'Wash at the dresser, when you’re ready for supper.' : abed(w) ? 'Bed, when you’re ready.' : null;
 
 async function home(P, w, o) {
   o = o || {};
@@ -54,7 +54,7 @@ async function home(P, w, o) {
     change(w, s => { s.done = night(cal); });
     // (what's come home with her first: brought by the Watchman, or in late; what others have dealt with)
     if (walked) await brought(P, w);
-    if (late || walked) { await curfew(P, w, { willie: walked }); change(w, s => { s.curfewed = night(cal); }); }
+    if (late || walked) { await curfew(P, w, { willie: walked, by: walked ? st.walkingBy || 'willie' : null }); change(w, s => { s.curfewed = night(cal); }); }      // (by: who brought her: the Watchman, or Georgie)
     await raise(P, w);      // (what she's to be set right for, said now)
     await reprieves(P, w);
     if (excused) { await P.wait(0.4); await P.approach(); await P.converse(S.excusedHome(), { shot: ['red', 'mother'] }); }
@@ -128,13 +128,15 @@ const curfewNudge = w => (washDue(w) || abed(w)) && w.cal.minute >= H('21:00');
 async function nudge(P, w) { await P.converse(w && abed(w) ? root.Story.curfewStern() : root.Story.curfewNudge(), { shot: ['red', 'mother'] }); }
 
 // ── The Watchman at the door: he hands her over, and goes back to his round.
+// (Georgie, on Lay night: the same, awkwardly, and he'll not tell his father)
+const WATCH = { willie: { name: 'Master William', voice: 'willie', tint: '#2a3a4a', bg: '#d8dde4' }, georgie: { name: 'Georgie', voice: 'georgie', tint: '#6a6a5a', bg: '#e8e6dc' } };
 async function brought(P, w) {
-  const S = root.Story, n = stateOf(w).catches, C = root.Correction, looks = root.Looks && root.Looks.load ? root.Looks.load() : {};
-  const f = C.figure(P, 'willie', looks.willie), at = P.collide(P.motion.pos.clone().add(new root.THREE.Vector3(6, 0, 10)), 3.6);
+  const S = root.Story, st = stateOf(w), who = st.walkingBy === 'georgie' ? 'georgie' : 'willie', n = who === 'georgie' ? st.georgie : st.catches, C = root.Correction, looks = root.Looks && root.Looks.load ? root.Looks.load() : {};
+  const f = C.figure(P, who, looks[who]), at = P.collide(P.motion.pos.clone().add(new root.THREE.Vector3(6, 0, 10)), 3.6);
   f.m.warp(at, Math.atan2(P.npcMotion.pos.x - at.x, P.npcMotion.pos.z - at.z)); f.rig.root.position.copy(at);
-  P.talk.cast.willie = { rig: f.rig, name: 'Master William', side: 'right', voice: 'willie', tint: '#2a3a4a', bg: '#d8dde4' };
-  try { await P.wait(0.5); await P.converse(S.willieBrings(n), { shot: ['willie', 'mother'] }); }
-  finally { f.remove(); delete P.talk.cast.willie; }
+  P.talk.cast[who] = Object.assign({ rig: f.rig, side: 'right' }, WATCH[who]);
+  try { await P.wait(0.5); await P.converse(who === 'georgie' ? S.georgieBrings(n) : S.willieBrings(n), { shot: [who, 'mother'] }); }
+  finally { f.remove(); delete P.talk.cast[who]; }
   change(w, s => { s.walking = 0; });
 }
 // ── Home after the bell: what her mother says to it, and the correction owed, for the evening's end. (how.willie: the Watchman brought her)
@@ -143,7 +145,7 @@ async function curfew(P, w, how) {
   await P.wait(0.4); await P.approach();
   w.rep.add('wilful', 1, how.willie ? 'out after the curfew bell, and brought home by the Watchman' : 'home after the curfew bell');
   await P.converse(S.curfewTalk(how), { shot: ['red', 'mother'] });
-  await owe(P, w, 'curfew', { willie: !!how.willie });
+  await owe(P, w, 'curfew', { willie: !!how.willie, by: how.by || null });
 }
 async function curfewCorrect(P, w, how) {
   const S = root.Story;
@@ -231,8 +233,10 @@ async function peel(P) {
 }
 
 // ── Out after the bell, and the Watchman finds her: he walks her home (js/villagers.js has him follow her; this keeps count, and the quest).
-function caught(w) {
-  change(w, s => { s.catches = (s.catches || 0) + 1; s.walking = night(w.cal); });
+// (who: 'georgie', on Lay night, his father's watch: his own count, and nothing for his father's quest)
+function caught(w, who) {
+  if (who === 'georgie') { change(w, s => { s.georgie = (s.georgie || 0) + 1; s.walking = night(w.cal); s.walkingBy = 'georgie'; }); w.refresh(); return stateOf(w).georgie; }
+  change(w, s => { s.catches = (s.catches || 0) + 1; s.walking = night(w.cal); s.walkingBy = 'willie'; });
   const n = stateOf(w).catches; w.save.flag('willie-catch-' + Math.min(n, 2), w.cal.day);
   if (w.q.stateOf && w.q.stateOf('willie.first') === 'offered') w.complete('willie.first');
   w.refresh(); return n;

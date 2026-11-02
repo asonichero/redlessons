@@ -12,11 +12,11 @@ test('nothing of his until she\'s been to the Fowlers\'', () => {
   for (let d = 2; d < 40; d++) { const w = world(d); assert.equal(Peter.offToday(w), false); assert.equal(Peter.noteToday(w), false); }
 });
 
-test('after: a day off about one day in four; a note every few days (never the day of the visit, nor on his day off)', () => {
-  let off = 0, notes = 0; const st = { visited: 5, noted: 0 };
+test('after: Lay day off, and an errand to the village about one working day in four; a note every few days (never the day of the visit, nor on his day off)', () => {
+  let off = 0, notes = 0, errands = 0; const st = { visited: 5, noted: 0 };
   for (let d = 6; d < 206; d++) { const w = world(d); w.save.state.peter = Object.assign({ meet: null, met: 0, missed: 0, owed: false }, st);
-    if (Peter.offToday(w)) off++; if (Peter.noteToday(w)) { notes++; assert.equal(Peter.offToday(w), false); st.noted = d; } }
-  assert.ok(off > 30 && off < 75, 'days off: ' + off + ' of 200');
+    if (Peter.offToday(w)) { off++; assert.equal((d - 1) % 7 + 1, 7); } if (Peter.errandToday(w)) errands++; if (Peter.noteToday(w)) { notes++; assert.equal(Peter.offToday(w), false); st.noted = d; } }
+  assert.ok(off >= 28 && off <= 29, 'Lay days off: ' + off + ' of 200'); assert.ok(errands > 25 && errands < 65, 'errands: ' + errands);
   assert.ok(notes > 40 && notes < 90, 'notes: ' + notes + ' in 200 days');
   const w = world(5); w.save.state.peter = { visited: 5, noted: 0, meet: null, met: 0, missed: 0, owed: false }; assert.equal(Peter.noteToday(w), false, 'not the day of the visit');
 });
