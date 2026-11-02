@@ -105,7 +105,18 @@ function create(rig, opts) {
   const after = (test, fn) => new Promise(res => m.cbs.push({ test, res: () => { if (fn) fn(); res(); } }));
 
   // ── Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  m.goTo = (pos, yaw, o) => { m.auto = { pos: pos.clone().setY(0), yaw, run: !!(o && o.run), speed: o && o.speed || 1 }; return after(() => !m.auto); };      // (o.speed: a share of her walk, for a slow one)
+  // (a way there: straight, if nothing's between; else round, by a corner point where both legs are clear, so she walks round what's in the
+  // way rather than grinding along it. Only where there's something to be kept out of: opts.collide)
+  const clearLine = (a, b, r) => { const d = b.distanceTo(a), n = Math.max(2, Math.ceil(d / 2.5)); for (let k = 1; k < n; k++) { const p = a.clone().lerp(b, k / n); if (opts.collide(p, r).distanceTo(p) > 0.6) return false; } return true; };
+  function plan(from, to) {
+    if (!opts.collide) return [to]; const r = 3.0 * sc, f = from.clone().setY(0); if (clearLine(f, to, r)) return [to];
+    let best = null; const mid = f.clone().lerp(to, 0.5);
+    for (const c of [to, mid]) for (const rad of [8, 14, 22, 32]) { for (let k = 0; k < 16; k++) { const an = k / 16 * Math.PI * 2, q = c.clone().add(new V3(Math.cos(an) * rad * sc, 0, Math.sin(an) * rad * sc));
+      if (opts.collide(q, r).distanceTo(q) > 0.6 || !clearLine(f, q, r) || !clearLine(q, to, r)) continue; const len = f.distanceTo(q) + q.distanceTo(to); if (!best || len < best.len) best = { q, len }; } if (best) break; }
+    return best ? [best.q, to] : [to];
+  }
+  m.goTo = (pos, yaw, o) => { const to = pos.clone().setY(0), pts = plan(m.pos, to);
+    m.auto = { pos: pts[0], yaw: pts.length > 1 ? null : yaw, rest: pts.slice(1), end: to, endYaw: yaw, replans: 0, run: !!(o && o.run), speed: o && o.speed || 1 }; return after(() => !m.auto); };      // (o.speed: a share of her walk, for a slow one)
   m.face = yaw => { if (m.seat) return Promise.resolve(); m.faceYaw = yaw;      // (seated, she faces the way the seat does)
     return after(() => Math.abs(angDiff(m.yaw, yaw)) < 0.05 && m.speed < 0.5); };
   m.reach = (side, target) => { const h = m.hands[side]; h.target = target; h.want = 1; return after(() => h.w > 0.97); };
@@ -132,8 +143,12 @@ function create(rig, opts) {
       // Walking there, slowing as she comes up to it; once there (or if she can get no nearer: something's in the way) she stays, and turns.
       const a = m.auto, to = a.pos.clone().sub(m.pos).setY(0), dist = to.length();
       a.t = (a.t || 0) + dt; if (a.best == null || dist < a.best - 0.3 * sc) { a.best = dist; a.bestT = a.t; }
+      const via = a.rest && a.rest.length > 0;      // (on her way round: a corner point, passed without slowing)
+      if (via && dist < 2.5 * sc) { a.pos = a.rest.shift(); a.yaw = a.rest.length ? null : a.endYaw; a.best = null; a.t = 0; return locomote(dt, input); }
+      // (held up on the way, something unforeseen in it: a fresh way round from here, a couple of times; then she stays where she's got to)
+      if (!a.there && a.t - a.bestT > 1.2 && a.replans < 2 && a.end && opts.collide) { a.replans++; const pts = plan(m.pos, a.end); a.pos = pts[0]; a.rest = pts.slice(1); a.yaw = a.rest.length ? null : a.endYaw; a.best = null; a.t = 0; return locomote(dt, input); }
       if (!a.there && (dist < 0.7 * sc || a.t - a.bestT > 1.2)) a.there = true;
-      if (!a.there) { dir = to.normalize(); mag = clamp(dist / (5 * sc), 0.3, 1) * a.speed; run = a.run && dist > 12 * sc; }
+      if (!a.there) { dir = to.normalize(); mag = (via ? 1 : clamp(dist / (5 * sc), 0.3, 1)) * a.speed; run = a.run && (via || dist > 12 * sc); }
       else { mag = 0; if (a.yaw != null) m.faceYaw = a.yaw; if (m.speed < 1 && (a.yaw == null || Math.abs(angDiff(m.yaw, a.yaw)) < 0.06)) m.auto = null; }
     }
     if (mag > 0.01) dir.normalize(); else mag = 0;
