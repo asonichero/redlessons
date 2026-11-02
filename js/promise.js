@@ -96,9 +96,8 @@ async function evening(P, w) {
 async function correct(P, w, how) {
   const S = root.Story;
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.promiseCorrection(Sc, how) }], fade: on => w.fade(on) });
-  if (P !== w.P) return true;
-  await P.converse(S.promiseAfter(), { shot: ['red', 'mother'] });
   w.rep.settle('naughty', 0.6); if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+  return r;
 }
 
 const api = { wants, ask, tempter, tempt, inn, evening, correct, objective, excused, lapse, stateOf, FROM, LATE, BACK };

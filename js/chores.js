@@ -184,10 +184,9 @@ function create(w) {
   // The maintenance correction itself, when the evening comes to it: and after it, she's set right.
   async function maintenance(P, w_, how) {
     const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.maintenanceCorrection(Sc, how) }], fade: on_ => w.fade(on_) });
-    if (P !== w.P) return;
-    await P.converse(S.afterMaintenance(r), { shot: ['red', 'mother'] });
     settled();
     if (r && r.rose) save.flag('rose-said', cal.day);
+    return r;
   }
 
   // (after it: her wilfulness settled, and the count of refusals begun again)

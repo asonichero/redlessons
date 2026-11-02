@@ -378,10 +378,9 @@ async function correct(P, w, how) {
   await P.converse(S.gardenTakeInHand(how), { shot: ['red', 'mother'] });
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.gardenCorrection(Sc, how) }], fade: on => w.fade(on) });
   change(w, s => { s.rest = w.cal.day + 1; });      // (tomorrow she sees to the garden herself, and sets her flowers straight)
-  if (P !== w.P) return;
-  await P.converse(S.afterGarden(how), { shot: ['red', 'mother'] });
   w.rep.settle('naughty', 0.6);
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+  return r;
 }
 
 const api = { build, attach, boots, progress, progressText, evening, correct, plan, offToday, lookDue, ROWS, PATHS, inside, stateOf, hash };

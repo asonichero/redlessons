@@ -136,10 +136,9 @@ async function evening(P, w, force) {
 async function correct(P, w, how) {
   const S = root.Story;
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.pieMaren(Sc, how) }], fade: on => w.fade(on) });
-  if (P !== w.P) return;
-  await P.converse(S.pieMarenAfter(how), { shot: ['red', 'mother'] });
   w.rep.settle('mischievous', 0.6); if (how.withheld) w.rep.settle('naughty', 0.6);
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
+  return r;
 }
 
 const api = { ready, dare, evening, correct, objective, stateOf, AGAIN_AFTER };
