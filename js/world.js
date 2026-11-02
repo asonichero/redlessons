@@ -336,7 +336,8 @@ function create(view, ui) {
   // fade, and the day's begun)
   async function begin() { cal.advance(30); w.breakfasted = true; const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered', sit = (chores && chores.on()) || first;
     let table = null; await go('home', 'bed', { ready: P_ => { if (sit && root.Maren) table = root.Maren.atTable(P_, w, { plates: true }); } }); const P_ = P; if (!P_) return;
-    if (sit) P_.act(async () => { if (first) await P_.talkToMother({ seated: true }); else await chores.breakfast(P_, { seated: true });
+    const start = fn => { if (P !== P_) return; if (P_.busy) { setTimeout(() => start(fn), 120); return; } P_.act(fn); };      // (after the night's own action has let go: from bed, it's still running)
+    if (sit) start(async () => { if (first) await P_.talkToMother({ seated: true }); else await chores.breakfast(P_, { seated: true });
       if (table) { await fade(true); table.up(); if (root.Maren) root.Maren.toWork(P_, w); await fade(false); } });
   }
 
