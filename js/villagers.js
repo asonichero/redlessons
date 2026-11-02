@@ -232,6 +232,7 @@ function attach(P, w) {
       if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
+      if (root.FairDay && await root.FairDay.talk(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (fair day: an errand asked, or given)
       if (root.Green && await root.Green.invite(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (of an evening, on the green: js/green.js)
       if (key === 'bess' && root.Fair && root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', key] }); w.save.flag('bess-frock', cal.day); if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (after the fitting: her own frock, as a girl)
       if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)

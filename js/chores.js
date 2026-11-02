@@ -399,6 +399,7 @@ function create(w) {
   function objectives() {
     if (!on()) return [];
     const out = [], e = errand(), c = st();
+    if (root.FairDay) out.push(...root.FairDay.objectives(w));      // (fair day: the day's errands)
     for (const M of [root.Fair, root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     if (root.Maren && cal.minute >= H('11:30') && cal.minute < root.Maren.BACK && root.Maren.stateOf(w).dinner !== cal.day) out.push('Home for dinner with Mama, at half past twelve.');      // (she's back from the farm for it)

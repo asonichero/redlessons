@@ -32,6 +32,7 @@ const EXTRA = [
   { key: 'thatcher', rig: 'thatcher', name: 'Master Thatcher', voice: 'smith', tint: '#5a4a34', bg: '#e6e0d0', at: new V3(84, 0, 34), face: new V3(60, 0, 40) },
   { key: 'halloran', rig: 'halloran', name: 'Master Halloran', voice: 'baker', tint: '#5a4a38', bg: '#e8e0cc', at: new V3(96, 0, 46), face: new V3(70, 0, 40) },
   { key: 'boFather', rig: 'boFather', name: 'Young Master Halloran', voice: 'smith', tint: '#4e4232', bg: '#e4dccc', at: new V3(104, 0, 38), face: new V3(80, 0, 40) },
+  { key: 'bo', rig: 'bo', name: 'Bo', voice: 'bo', tint: '#8a5a6a', bg: '#f2e4ea', at: new V3(90, 0, 40), face: new V3(60, 0, 30) },
   { key: 'boMother', rig: 'boMother', name: 'Mistress Halloran', voice: 'pennock', tint: '#8a5a6a', bg: '#f0e2e8', at: new V3(100, 0, 54), face: new V3(80, 0, 40) },
   { key: 'carrierNed', rig: 'carrierNed', name: 'Ned', voice: 'smith', tint: '#5a4a34', bg: '#e8e0d0', at: new V3(66, 0, -22), face: new V3(60, 0, -42) },
   { key: 'carrierAmos', rig: 'carrierAmos', name: 'Old Amos', voice: 'baker', tint: '#5a5040', bg: '#e6e2d6', at: new V3(74, 0, -20), face: new V3(60, 0, -42) },
@@ -97,11 +98,12 @@ function attach(P, w) {
     if (P.busy || talking.busy) return [];
     const out = [];
     for (const k in figs) { const f = figs[k]; out.push({ label: 'Talk to ' + (k === 'mother' ? 'Mama' : f.D.name), at: f.motion.pos.clone().setY(16), run: async () => { talking.busy = true;
-      try { const m = P.motion; await m.face(yawTo(m.pos, f.motion.pos)); f.motion.face(yawTo(f.motion.pos, m.pos)); await P.converse(S.fairTalk(k, { day: w.cal.day, minute: w.cal.minute }), { shot: ['red', k] }); f.motion.face(yawTo(f.motion.pos, f.D.face || new V3(f.motion.pos.x, 0, ROW_Z + 20))); }
+      try { const m = P.motion; await m.face(yawTo(m.pos, f.motion.pos)); f.motion.face(yawTo(f.motion.pos, m.pos)); if (!(await talk(P, w, k))) await P.converse(S.fairTalk(k, { day: w.cal.day, minute: w.cal.minute }), { shot: ['red', k] }); f.motion.face(yawTo(f.motion.pos, f.D.face || new V3(f.motion.pos.x, 0, ROW_Z + 20))); }
       finally { talking.busy = false; } } }); }
     return out;
   }
   W.more = W.more || []; W.more.push(actions);
+  ewe(P, w);
   return { actions, figs };
 }
 // A villager's place on fair day: everyone at the fair, from when it opens till ten (null before it, and after: in their doors).
@@ -124,7 +126,98 @@ function station(w, key, min) {
   }
 }
 
-const api = { attach, station, STALLS, DANCE, FIDDLE, OPEN, ENDS };
+// ── The day's errands: asked by someone, fetched from somewhere (into her basket), and given to whoever asked. Her mother's and Grandmother's
+// come as the day goes on, and aren't hers to refuse; the traders' favours she may turn down (each wants something of her, and some a risky
+// way to it). { id, who (asks, and is given it), from (the minute it's asked from, at the soonest), item (in her basket), area (where it's
+// fetched), label (there), must (not to be refused) }
+const ERR = [
+  { id: 'flowers', who: 'mother', from: H('08:30'), item: 'the cut flowers', area: 'village', label: 'Cut flowers for Mama’s stall', must: true },
+  { id: 'purse', who: 'mother', from: H('11:00'), item: 'Mama’s purse', area: 'home', label: 'Take Mama’s purse', must: true },
+  { id: 'dinner', who: 'mother', from: H('12:30'), item: 'Mama’s dinner', area: 'home', label: 'Take Mama’s bread and cheese', must: true },
+  { id: 'yarrow', who: 'gran', from: H('13:30'), item: 'the yarrow', area: 'wood', label: 'Pick yarrow for Grandmother', must: true },
+  { id: 'hooks', who: 'smith', from: H('09:00'), item: 'the stall hooks', area: 'forge', label: 'Take the stall hooks off the bench' },
+  { id: 'ewe', who: 'bo', from: H('10:00'), area: 'village', label: 'Lead the ewe back to the pens' },
+  { id: 'fairing', who: 'thatcherWife', from: H('10:00'), item: 'a ribbon for Bess', area: 'inn', label: 'Give Bess her fairing', given: true },      // (given: she has it as she's asked)
+];
+const fstate = w => { const s = w.save.state.fairday; if (s && s.day === w.cal.day) return s; return (w.save.state.fairday = { day: w.cal.day, asked: {}, have: {}, done: {}, no: {} }); };
+const fchange = (w, fn) => w.save.change(s => { fstate(w); fn(s.fairday); }, { fairday: true });
+const bag = P => root.Chores && root.Chores.basketOf(P);
+function giveItem(P, w, e) { const b = bag(P); if (b) root.Chores.putIn(b, e.item); fchange(w, s => { s.have[e.id] = true; }); w.refresh(); }
+function takeItem(P, w, e) { const b = bag(P); if (b) root.Chores.takeOut(b, e.item); fchange(w, s => { s.done[e.id] = true; s.have[e.id] = false; }); w.refresh(); }
+// (what someone has to say, errands first: something to give them; something to ask)
+async function talk(P, w, key) {
+  if (!root.Fair || !root.Fair.isFair(w)) return false;
+  const S = root.Story, st = fstate(w), min = w.cal.minute, shot = { shot: ['red', key] };
+  const give = ERR.find(e => e.who === key && st.have[e.id] && !st.done[e.id] && e.item);
+  if (give && key !== 'thatcherWife') { await P.converse(S.fairGive(give.id), shot); takeItem(P, w, give); w.rep.trusts(key === 'mother' || key === 'gran' ? (key === 'gran' ? 'hulda' : 'maren') : key, 0.5); return true; }
+  const ask = ERR.find(e => e.who === key && !st.asked[e.id] && !st.done[e.id] && min >= e.from && !(e.id === 'dinner' && !st.done.purse));
+  if (ask) { let yes = !!ask.must;
+    await P.converse(S.fairAsk(ask.id, { yes: () => { yes = true; } }), shot);
+    fchange(w, s => { s.asked[ask.id] = true; if (!yes) s.no[ask.id] = true; });
+    if (yes && ask.given) giveItem(P, w, ask);
+    w.refresh(); return true; }
+  return false;
+}
+// (where each is fetched, in the place she's in: an action there, while it's asked and not yet had)
+function area(P, w, name) {
+  if (!root.Fair || !root.Fair.isFair(w)) return;
+  const W = P.world, st = () => fstate(w), open = e => st().asked[e.id] && !st().no[e.id] && !st().have[e.id] && !st().done[e.id];
+  const act = (e, at, run) => ({ label: e.label, at, run, when: () => open(e) && !P.busy });
+  const list = (W.actions = W.actions || []);
+  if (name === 'home') {
+    const ch = W.chest, tb = W.surfaces.find(s => s.name === 'the table');
+    if (ch) list.push(act(ERR[1], ch.front.clone().setY(8), async () => { await P.useChest(); await P.wait(0.4); await P.useChest(); giveItem(P, w, ERR[1]); }));
+    if (tb) list.push(act(ERR[2], new V3((tb.x0 + tb.x1) / 2, tb.y + 2, (tb.z0 + tb.z1) / 2), async () => { giveItem(P, w, ERR[2]); if (P.talk) P.talk.muse('Bread and cheese, wrapped in a cloth. And the last of the cider, in the little jug.', { face: 'smile' }); }));
+    if (P.npcGo) P.npcGo(true, null);      // (her mother at her stall all day)
+  }
+  if (name === 'village' && root.Garden) { const G = root.Garden, r = G.ROWS.find(q => q.id === 'maids'), at = new V3((G.RX0 + G.RX1) / 2, 3, r.z);
+    list.push(act(ERR[0], at, async () => { await P.motion.goTo(P.collide(new V3(at.x, 0, r.stand), 3.2), Math.PI); for (let k = 0; k < 3; k++) { await P.motion.reach('R', at.clone().add(new V3((k - 1) * 3, -1, 0))); await P.wait(0.3); await P.motion.release('R'); } giveItem(P, w, ERR[0]); })); }      // (from the path beside the maids)
+  if (name === 'forge') { const at = new V3(26, 9, -26); list.push(act(ERR[4], at, async () => { await P.motion.goTo(P.collide(new V3(26, 0, -18), 3.2), Math.PI); giveItem(P, w, ERR[4]); })); }
+  if (name === 'wood' && W.herbs && W.herbs.yarrow) list.push(act(ERR[3], W.herbs.yarrow.clone().setY(2), async () => { await P.motion.goTo(P.collide(W.herbs.yarrow.clone().add(new V3(4, 0, 3)), 3.2), null); await P.motion.reach('R', W.herbs.yarrow.clone().setY(1)); await P.motion.release('R'); giveItem(P, w, ERR[3]); }));
+  if (name === 'inn') {
+    if (P.npcGo) P.npcGo(true, null);      // (Mistress Abney at her ale stall, on the green)
+    list.push({ label: ERR[6].label, get at() { const f = P.figure('bess'); return f ? f.motion.pos.clone().setY(14) : (W.bessChair ? W.bessChair.at.clone() : new V3()); },
+      when: () => st().have.fairing && !st().done.fairing && !P.busy, run: async () => { const S = root.Story; await P.converse(S.fairGive('fairing'), { shot: ['red', 'bess'] });
+        if (root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', 'bess'] }); w.save.flag('bess-frock', w.cal.day); }
+        takeItem(P, w, ERR[6]); w.rep.trusts('bess', 1); } });
+  }
+  watch(P, w, name);
+}
+// ── The dress, as she goes: the earth of a bed she cuts across (her mother's garden: the beds, not the paths); the forge's soot, by its
+// hearth; the pond's edge, wet. Each once, where it happens (and seen on her straight away).
+function watch(P, w, name) {
+  const G = root.Garden, m = P.motion, been = {}; let since = 0;
+  const mark = (k, kind, n, thought) => { if (been[k]) return; been[k] = true; root.Fair.spoil(w, kind, n); if (P.setGown) P.setGown(root.Fair.gown(w)); if (P.talk) P.talk.muse(thought, { face: 'wince' }); };
+  P.tick(dt => {
+    if ((since += dt) < 0.2) return; since = 0; const p = m.pos;
+    if (name === 'village' && G && G.inside(p) && !m.auto) { const r = G.ROWS.find(q => Math.abs(p.z - q.z) < 3 && p.x > G.RX0 && p.x < G.RX1); if (r) mark('bed-' + r.id, 'earth', 0.25, 'Earth on my hem. In the blue. Oh, no.'); }
+    if (name === 'village' && P.world.spots.pondSide) { const c = P.world.spots.pondSide.look; if (Math.hypot(p.x - c.x, p.z - c.z) < 21) mark('pond', 'wet', 0.4, 'The hem’s in the pond. Wet through, and green with it.'); }
+    if (name === 'forge' && Math.hypot(p.x + 26, p.z + 12) < 15) mark('soot', 'soot', 0.4, 'Soot. All up the skirt. Mama said, cinders.');
+  });
+}
+// ── The ewe: out of the pens and into her mother's cabbages; Bo's to mind the rest. Led back by the paths, it's clean; across the beds, earth.
+function ewe(P, w) {
+  if (!root.Fair || !root.Fair.isFair(w)) return null;
+  const st = fstate(w); if (!st.asked.ewe || st.no.ewe || st.done.ewe) return null;
+  const T = root.Toon, g = new THREE.Group(), wool = T.mat('#f2ece0'), face = T.mat('#3a3430');
+  const body = new THREE.Mesh(T.ell(3.4, 2.6, 4.6, 10, 8), wool); body.position.y = 4; body.add(new THREE.Mesh(T.hullGeo(body.geometry, 0.08), T.INKM[0])); g.add(body);
+  const head = new THREE.Mesh(T.ell(1.2, 1.4, 1.8, 8, 6), face); head.position.set(0, 5, 4.6); g.add(head);
+  for (const [x, z] of [[-1.6, 2.4], [1.6, 2.4], [-1.6, -2.4], [1.6, -2.4]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.35, 3.4, 6), face); l.position.set(x, 1.7, z); g.add(l); }
+  const at = new V3(-300, 0, -420); g.position.copy(at); g.rotation.y = 1.2; P.stage.scene.add(g);
+  const W = P.world; (W.actions = W.actions || []).push({ label: ERR[5].label, get at() { return g.position.clone().setY(6); }, when: () => !fstate(w).done.ewe && !P.busy,
+    run: async () => { const S = root.Story; await P.converse(S.fairEwe(), { shot: false, keepCamera: true }); await w.fade(true); g.visible = false; fchange(w, s => { s.done.ewe = true; }); w.cal.advance(15); await w.fade(false); w.rep.trusts('bo', 1); if (P.talk) P.talk.muse('Back in the pen, and Bo’s face. She looked at me like I’d hung the moon.', { face: 'smile' }); w.refresh(); } });
+  return g;
+}
+// What's hers to do today, for the objectives.
+function objectives(w) {
+  if (!root.Fair || !root.Fair.isFair(w)) return [];
+  const st = fstate(w), out = [], WHO = { mother: 'Mama', gran: 'Grandmother', smith: 'Master Ferrier', bo: 'Bo', thatcherWife: 'Mistress Thatcher' };
+  for (const e of ERR) { if (!st.asked[e.id] || st.no[e.id] || st.done[e.id]) continue;
+    out.push(e.id === 'ewe' ? 'Bo’s ewe, in Mama’s cabbages: lead it back to the pens.' : e.id === 'fairing' ? 'Take Bess her fairing, at the Wheatsheaf.' : st.have[e.id] ? 'Give ' + WHO[e.who] + ' ' + e.item + '.' : e.label + (e.area === 'home' ? ', at home.' : e.area === 'forge' ? ', in the forge.' : e.area === 'wood' ? ', in the meadow by the wood.' : '.')); }
+  return out;
+}
+
+const api = { attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, FIDDLE, OPEN, ENDS };
 root.FairDay = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

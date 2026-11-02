@@ -385,7 +385,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { build, attach, boots, progress, progressText, evening, correct, plan, offToday, lookDue, ROWS, PATHS, inside, stateOf, hash };
+const api = { build, attach, boots, progress, progressText, evening, correct, plan, offToday, lookDue, ROWS, PATHS, RX0, RX1, inside, stateOf, hash };
 root.Garden = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

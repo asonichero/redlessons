@@ -180,6 +180,7 @@ function create(view, ui) {
       if (opts.place) opts.place(P);
       if (A.dress) A.dress(P, w);
       if (chores) chores.dress(P, held);      // (whatever she's carrying, still in her hands)
+      if (root.FairDay) root.FairDay.area(P, w, name);      // (fair day: where the day's errands are fetched, and the dress's marks)
       if (how && how.ready) how.ready(P);      // (a scene's own arrangement, before the fade lifts: breakfast at the table)
       P.tick(dt => frame(dt));
       { const Au = root.GameAudio; if (Au && Au.startMusic && A.music) Au.startMusic({ theme: (sc && sc.music) || A.music }); }      // (each place its own music; a scene can have its own)
@@ -262,7 +263,7 @@ function create(view, ui) {
       o.doorGuard = () => chores && chores.forgot(P) ? chores.remind(P) : root.Evening && root.Evening.curfewNudge(w) ? root.Evening.nudge(P, w) : null;      // (going to open the door for the eggs with no basket: her mother calls her back, and it stays shut; after nine, with supper to come, the curfew)
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
-    if (name === 'village') { o.place = chain(o.place, P_ => { P_.fairDay = root.FairDay ? root.FairDay.attach(P_, w) : null; P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; P_.flock = root.Flock ? root.Flock.attach(P_, w) : null; });
+    if (name === 'village') { o.place = chain(o.place, P_ => { P_.fairDay = root.FairDay ? root.FairDay.attach(P_, w) : null; P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; P_.flock = root.Flock && !(root.Fair && root.Fair.isFair(w)) ? root.Flock.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], P && P.flock ? P.flock.actions() : [], gateAction()); }
     if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : [], P && P.world.signpost ? [{ label: 'Read the signpost', at: P.world.signpost, run: () => P.converse(root.Story.signpost(), { shot: false, keepCamera: true }) }] : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
     if (name === 'wood') o.place = chain(o.place, P_ => { const d = P_.world.door; if (d) d.knock = () => knockAtGran(P_); });      // (her grandmother's door: knocked at, from the path)
