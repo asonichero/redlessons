@@ -108,7 +108,7 @@ function build(scene) {
     world.seats.push({ name: 'the bench', at: pc.P(0, 9.6, 0), facing: pc.ry + Math.PI, kind: 'stool' }); world.obstacles.push(pc.area(-8, 8, -2.5, 2.5));
     // (where Mistress Pennock sits to take someone across her knee: the bench brought out into the middle of the room, facing the door
     // (js/corrlayout.js; the room editor can move it))
-    world.corr = { key: 'bakery', giver: { x: 0, z: (Z0 + Z1) / 2, yaw: 0 }, seat: 'bench', hide: [g] };
+    world.corr = { key: 'bakery', giver: { x: 0, z: 3, yaw: 0 }, seat: 'bench', hide: [g], watchers: [{ x: -30, z: 20 }, { x: 32, z: 24 }], corner: { x: 38, z: -16, yaw: -3.927 } };
   }
   // ── The broom, leaning against the front wall the far side of the door from the corner.
   { const g = W.front, x = DOOR + 10, z = Z1 - 2.2, straw = T.mat('#c8a860');

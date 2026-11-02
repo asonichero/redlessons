@@ -170,7 +170,7 @@ function build(scene, opts) {
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null,
     // (corners clear enough to stand in, facing into them: the back right, past the chest; the front right, past the logs by the hearth)
     corners: [{ at: new V3(X1 - 5, 0, Z0 + 5), yaw: Math.atan2(1, -1) }, { at: new V3(X1 - 5, 0, Z1 - 5), yaw: Math.atan2(1, 1) }],
-    corr: { key: 'cottage', giver: { x: 0, z: 0, yaw: 0 } } };      // (a correction: her chair brought into the middle of the room (js/corrlayout.js))
+    corr: { key: 'cottage', giver: { x: 0, z: 0, yaw: 0 }, watchers: [{ x: 40, z: 20 }, { x: -24.5, z: 26.5 }], corner: { x: 21.5, z: -26.5, yaw: 3.142 } } };      // (a correction: her chair brought into the middle of the room (js/corrlayout.js))
   // A panel: a group, a point on it, and the way into the room from it.
   // A piece of furniture: its own group on a wall's panel, hidden (with what's on it) while the camera is inside it or within a few units of it,
   // so it never fills the view.

@@ -4,6 +4,13 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const mem = {}; globalThis.localStorage = { getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; } };
 const CL = require('../js/corrlayout.js');
 
+test('the room’s own places for watchers and its corner, until the editor changes them (a corner taken away stays away)', () => {
+  const room = { corr: { key: 'inn', giver: { x: 0, z: 4, yaw: 0 }, watchers: [{ x: 26.5, z: 29.5 }, { x: -51, z: 6 }], corner: { x: -34, z: -30, yaw: 3.142 } } };
+  assert.deepEqual(CL.get(room).watchers, [{ x: 26.5, z: 29.5 }, { x: -51, z: 6 }]); assert.deepEqual(CL.get(room).corner, { x: -34, z: -30, yaw: 3.142 });
+  CL.save('inn', { watchers: [{ x: 1, z: 1 }], corner: null }); assert.deepEqual(CL.get(room).watchers, [{ x: 1, z: 1 }]); assert.equal(CL.get(room).corner, null);
+  CL.reset('inn'); assert.equal(CL.get(room).watchers.length, 2);
+});
+
 test('the room’s own seat, until the editor moves it; the glade’s never moves', () => {
   const room = { corr: { key: 'bakery', giver: { x: 0, z: 3, yaw: 0 }, seat: 'bench', hide: ['the bench'] } };
   assert.deepEqual(CL.get(room).at, { x: 0, z: 3, yaw: 0 }); assert.equal(CL.get(room).seat, 'bench'); assert.deepEqual(CL.get(room).watchers, []); assert.equal(CL.get(room).corner, null);

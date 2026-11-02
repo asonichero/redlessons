@@ -13,7 +13,7 @@
 //   const r = await Correction.run(play, {
 //     corrector: 'maren', context, player: 'red', fade: (on, text) => …,
 //     turns: [{ subject: 'red', tier: 'light', implement: true | 'id', implementFrom, corner: true, cornerDress: { skirt: 'up' } }, …],
-//     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z], until: 'red' }],      (who: a rig; seated on a seat of the room, or standing; until: watching till that subject's own turn)
+//     watchers: [{ who: 'gran', seat: 'the stool' } | { who: 'red', at: [x, z] | spot: n, until: 'red' }],      (stood with neither: the room's places for watchers in order, js/corrlayout.js; who: a rig; seated on a seat of the room, or standing; until: watching till that subject's own turn)
 //     cornerTime: 20, after: r => script,      (and where: at: { x, z, yaw } (the scene's place in the room, the giver's seat there, facing yaw; the middle by
 //     default), seat: 'bench' (a bench rather than a chair), hide: [the room's own things, put aside while it's played: the bench brought out]) })      (seconds, at the end, for those in the corner; after: the story's lines for after the player's
 //     own turn, played on the giver's lap: see run's end)      (a turn's script: the story's own correction as a dialogue: see scripted())
@@ -89,11 +89,14 @@ async function run(P, o) {
   const walkers = [P.rig.root, P.npc && P.npc.root, P.world.chair].concat(HIDE).filter(Boolean); walkers.forEach(r => { r.visible = false; });      // (and the room's own chair: the scene brings its own)
   // (the corner: the layout's, if it's set one, before the room's own)
   const figs = [], cornerOf = {}, corners = (CL && CL.corner ? [{ at: new V3(CL.corner.x, 0, CL.corner.z), yaw: CL.corner.yaw }] : []).concat(P.world.corners || []);
-  let standing = 0;      // (those watching stood, each in turn at the layout's places for watchers, where it has them)
+  // (those watching, stood: where the scene says (at, or spot: a place of the layout's by number); else the layout's places in order, the first
+  // not taken)
+  const taken = new Set((o.watchers || []).filter(w => typeof w.spot === 'number').map(w => w.spot));
+  const nextSpot = () => { if (!CL) return null; for (let i = 0; i < CL.watchers.length; i++) if (!taken.has(i)) { taken.add(i); return CL.watchers[i]; } return null; };
   for (const w of o.watchers || []) {
     const sp = Cs.SUBJECTS[w.who] || {}, rid = w.rig || sp.rig || (w.who === 'gran' || w.who === 'hulda' ? 'gran' : w.who === 'maren' ? 'gerda' : 'red'), f = figure(P, rid, looks[rid]);
     const seat = w.seat && P.world.seats.find(x => x.name === w.seat);
-    const spot = !seat && CL && CL.watchers[standing] ? CL.watchers[standing] : null; if (!seat) standing++;
+    const spot = seat || w.at ? null : typeof w.spot === 'number' && CL && CL.watchers[w.spot] ? CL.watchers[w.spot] : nextSpot();
     if (seat) { f.m.sit(seat); f.m.sitW = 1; } else { const at = spot ? new V3(spot.x, 0, spot.z) : new V3(w.at ? w.at[0] : -24, 0, w.at ? w.at[1] : 18); f.m.warp(at, yawTo(at, here(0, 0))); f.rig.root.position.copy(at); }      // (facing the scene, wherever it's put)
     f.rig.setExpr(w.face || 'shy'); f.until = w.until; figs.push(f);      // (until: watching up to their own turn, then off the floor and across the lap)
   }

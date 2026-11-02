@@ -206,7 +206,7 @@ function corrLoad() {
 function corrSave() {
   const d = CLD(); if (!d || !C) return; const r = v => +v.toFixed(3), o = { watchers: C.watchers.map(p => ({ x: r(p.x), z: r(p.z) })) };
   if (!d.fixed) o.giver = { x: r(C.giver.x), z: r(C.giver.z), yaw: r(C.giver.ry) };
-  if (C.corner) o.corner = { x: r(C.corner.x), z: r(C.corner.z), yaw: r(C.corner.ry) };
+  o.corner = C.corner ? { x: r(C.corner.x), z: r(C.corner.z), yaw: r(C.corner.ry) } : null;      // (taken away: none, not the room's own)
   CorrLayout.save(d.key, o); flash(); out();
 }
 // (the markers: the seat as the scene brings it, with an arrow the way the giver faces; Rose wherever someone's to watch, and in the corner)

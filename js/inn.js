@@ -25,7 +25,7 @@ function build(scene) {
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [],
     // (corners clear enough to stand in: the front left, past the hearth; the front right, by the window)
     corners: [{ at: new V3(X0 + 5, 0, Z1 - 5), yaw: Math.atan2(-1, 1) }, { at: new V3(X1 - 5, 0, Z1 - 5), yaw: Math.atan2(1, 1) }],
-    corr: { key: 'inn', giver: { x: 0, z: 0, yaw: 0 } } };      // (a correction: a chair in the middle of the taproom (js/corrlayout.js))
+    corr: { key: 'inn', giver: { x: 0, z: 4, yaw: 0 }, watchers: [{ x: 26.5, z: 29.5 }, { x: -51, z: 6 }, { x: -42, z: 33.5 }], corner: { x: -34, z: -30, yaw: 3.142 } } };      // (a correction: a chair in the middle of the taproom (js/corrlayout.js))
   const panels = [], panel = (p, n) => { const g = new THREE.Group(); root_.add(g); panels.push({ g, p, n: n.normalize() }); return g; };
 
   // ── The floor: wide boards, worn. The walls: daub, a stone footing, the oak frame; beams low across under the rooms above.
