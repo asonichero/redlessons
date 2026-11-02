@@ -11,7 +11,8 @@
 // The week: seven days, counted, as plain country folk count them; the days that mean something named for what happens on them. Day 1 of the
 // game is a First day. Carrier's day: the carrier through, and his men at the Wheatsheaf of an evening. Baking day: the Pennocks bake double,
 // for the day after. Lay day: work laid by. The forge cold, the bakery and the mill shut, no farm work but the beasts; Maren home, and nothing
-// asked of Red but the garden. On Lay night Georgie Dunn takes his father's watch.
+// asked of Red but the garden. Lay night is its eve (Baking day's night, into Lay morning): Georgie Dunn takes his father's watch, the mill
+// being shut the day after, so he can sleep it off.
 (function (root) {
 'use strict';
 const H = h => Math.round(h * 60);
@@ -25,8 +26,8 @@ const WEEK = ['First day', 'Second day', 'Third day', 'Carrier’s day', 'Fifth 
 const CARRIER = 4, BAKING = 6, LAY = 7;
 const weekday = day => ((Math.max(1, day) - 1) % 7) + 1;
 const dayName = day => WEEK[weekday(day) - 1];
-// (Lay night: from the bell on Lay day till first light after; the watch Georgie's)
-const layNight = (day, min) => (weekday(day) === LAY && min >= H(21.25)) || (weekday(day) === 1 && day > 1 && min < H(5.5));
+// (Lay night: Lay day's eve, from the bell on Baking day till first light on Lay day; the watch Georgie's)
+const layNight = (day, min) => (weekday(day) === BAKING && min >= H(21.25)) || (weekday(day) === LAY && min < H(5.5));
 function partAt(min) { let p = 'night'; for (const [name, at] of PARTS) if (min >= at) p = name; return p; }
 function lightAt(min) {
   for (let i = 1; i < LIGHT.length; i++) if (min <= LIGHT[i][0]) { const [a, la] = LIGHT[i - 1], [b, lb] = LIGHT[i]; return la + (lb - la) * (min - a) / Math.max(1, b - a); }

@@ -41,16 +41,16 @@ const SEAT = { lime: 'the bench round the lime tree', inn: 'the bench outside th
 // or away at work). (k: the hour's own roll, for those who move about through the day)
 // The week (js/calendar.js): on Lay day (the seventh) the forge, the bakery and the mill are shut, and Tom and Georgie are about all day; on Lay
 // night Georgie takes his father's watch. Tom's at the tub seven till three, and about one working day in four there's no work after dinner,
-// and his father lets him go at noon.
+// and his father lets him go at noon. Lay night is Lay day's eve: Georgie on the watch, and sleeping it off on Lay morning.
 const weekday = day => ((Math.max(1, day) - 1) % 7) + 1, LAY = 7;
-const layNight = (day, min) => (weekday(day) === LAY && min >= H('21:15')) || (weekday(day) === 1 && day > 1 && min < H('5:30'));
+const layNight = (day, min) => (weekday(day) === 6 && min >= H('21:15')) || (weekday(day) === LAY && min < H('5:30'));
 const slack = day => weekday(day) !== LAY && hash(day, 4) < 0.25;
 function station(key, day, min) {
   const h = Math.floor(min / 60), r = s => hash(day * 24 + h, s), lay = weekday(day) === LAY;
   if (layNight(day, min)) { if (key === 'georgie') return min >= H('22:00') || min < H('5:30') ? { round: true } : { stand: 'bell' }; if (key === 'willie') return null; }      // (Lay night: Georgie on the watch, his father abed)
   switch (key) {
     case 'agnes': { if (min < H('8:00') || min >= H('19:30')) return null; const k = r(1); return k < 0.55 ? { stand: 'wellSide' } : k < 0.7 ? { sit: SEAT.lime, n: 0 } : k < 0.8 ? { stand: 'pondSide' } : { wander: true }; }
-    case 'georgie': { const from = lay ? H('10:00') : H('15:00') + Math.floor(hash(day, 3) * 100); if ((!lay && hash(day, 2) > 0.7) || min < from || min >= H('20:45')) return null;      // (Lay day: the mill stopped, and he's about from mid-morning)
+    case 'georgie': { const from = lay ? H('14:00') : H('15:00') + Math.floor(hash(day, 3) * 100); if ((!lay && hash(day, 2) > 0.7) || min < from || min >= H('20:45')) return null;      // (Lay day: the mill stopped, and he's about once he's slept off the watch)
       const k = r(5); return k < 0.35 ? { stand: 'wellNear' } : k < 0.6 ? { sit: SEAT.inn, n: 2 } : { wander: true }; }      // (some days the mill keeps him late; most, he's about after three, and somewhere he can see the well)
     case 'tom': if (!lay && min >= H('7:00') && min < (slack(day) ? H('12:00') : H('15:00'))) return { stand: 'tub' };
       return min >= H('8:00') && min < H('20:45') ? { wander: true } : null;
