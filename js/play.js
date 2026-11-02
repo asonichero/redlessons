@@ -157,7 +157,7 @@ function create(view, opts) {
   const surfaceFree = (s, at, rad) => !W.items.some(it => it !== m.carry && !it.peg && Math.abs(it.obj.position.y - s.y) < 0.5 && flat(it.obj.position).distanceTo(flat(at)) < (it.radius + rad + 0.4));
   function options() {
     const out = [], me = flat(m.pos), f = fwd();
-    const add = (o, p, reach) => { const d = flat(p).distanceTo(me); if (d > (reach || 24 * sc + 8)) return;      // (reach: a wider one, for a task she's sent to: offered as she comes toward it) const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
+    const add = (o, p, reach) => { const d = flat(p).distanceTo(me); if (d > (reach || 24 * sc + 8)) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };      // (reach: a wider one, for a task she's sent to: offered as she comes toward it)
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
     if (talk && mm && !npcAway && mom.root.visible && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
