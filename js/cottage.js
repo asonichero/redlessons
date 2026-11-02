@@ -156,9 +156,9 @@ const nearWall = (W, floor, X0, X1, Z0, Z1, reach) => at => { const d = [[at.x -
 // The cottage's furniture and its places. (The hearth, the door and the window are the walls'.)
 const PIECES = { rug: 'The rug', bed: 'The bed nook', chair: 'Her chair (for corrections)', chest: 'The chest', dresser: 'The dresser (under the window by the door)', hooks: 'The cloak hooks (by the door)', pegs: 'The peg rail (herbs and baskets)', table: 'The trestle table', stoolA: 'A stool (by the window end)', stoolB: 'A stool (by the hearth end)' };
 const ROOM = roomLayout('red-lessons:room:cottage', {
-  rug: { x: -1, z: 4, ry: 0 }, bed: { x: -42.5, z: Z0 + 12, ry: 0 }, dresser: { x: X0 + 5.8, z: 6, ry: Math.PI / 2 },
-  chest: { x: 26, z: Z0 + 6.5, ry: 0 }, pegs: { x: -2, z: Z0 + 0.9, ry: 0 }, chair: { x: -18.6, z: -27, ry: Math.PI / 2 }, hooks: { x: -46, z: Z1 - 0.9, ry: Math.PI },      // (just clear of the steps, so she can stand at them)
-  table: { x: 38, z: 2, ry: 0 }, stoolA: { x: 26, z: -7, ry: -Math.PI / 2 }, stoolB: { x: 27, z: 13, ry: -Math.PI / 2 },
+  rug: { x: -1, z: 4, ry: 0 }, bed: { x: -42.5, z: -24, ry: 0 }, dresser: { x: -57.2, z: 6, ry: Math.PI / 2 },
+  chest: { x: 38, z: 36, ry: Math.PI }, pegs: { x: -2, z: -35.1, ry: 0 }, chair: { x: -18.6, z: -27, ry: Math.PI / 2 }, hooks: { x: -46, z: 43.1, ry: Math.PI },      // (just clear of the steps, so she can stand at them)
+  table: { x: 35, z: -10.5, ry: 0 }, stoolA: { x: 24, z: -10, ry: -Math.PI / 2 }, stoolB: { x: 48, z: -10, ry: -Math.PI / 2 },      // (the stools at either end of the table, facing across it)
 });
 
 // ── The room ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

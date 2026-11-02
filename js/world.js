@@ -85,7 +85,7 @@ const AREAS = {
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
-    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); if (w.breakfasted) { w.breakfasted = false; atPegs(P); } },
+    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); w.breakfasted = false; },
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
     exits: { 'the door': { area: 'village', entry: 'home' } },      // (out of her door into the village)
   },
@@ -104,22 +104,6 @@ async function knockAtGran(P) {
   try { await P.converse(root.Story.granCallsIn(), { shot: false, keepCamera: true }); } finally { if (was) P.talk.cast.gran = was; else delete P.talk.cast.gran; }
   d.target = 1; await P.wait(0.9); P.camHeld = false;
   P.exitBy('the cabin');
-}
-// The morning, as it opens (js/world.js's morning): Red at the peg rail, reaching a basket down for the day, her mother at the dresser with the
-// bowls.
-function atPegs(P) {
-  const W = P.world, m = P.motion, mm = P.npcMotion, V = THREE.Vector3, it = W.items.find(x => x.kind === 'basket' && x.peg);
-  if (it) { const at = P.collide(it.peg.at.clone().setY(0).add(new V(0, 0, 8)), 3.4); m.warp(at, Math.PI); P.rig.root.position.copy(m.pos); }
-  if (mm && W.pail) { const at = P.collide(W.pail.clone().setY(0).add(new V(8, 0, 2)), 3.4); mm.warp(at, Math.atan2(W.pail.x - at.x, W.pail.z - at.z)); }
-}
-async function basketDown(P) {
-  const m = P.motion, mm = P.npcMotion, W = P.world, V = THREE.Vector3, it = W.items.find(x => x.kind === 'basket' && x.peg);
-  let going = null;
-  if (mm && W.pail) { const p = W.pail.clone(); for (let k = 0; k < 2; k++) { await mm.reach('R', p.clone().add(new V(0, 1.5 - k, 0))); await P.wait(0.4); await mm.release('R'); }      // (the last of the water tipped out of the bowls)
-    const to = P.collide(m.pos.clone().setY(0).add(new V(10, 0, 12)), 3.4); going = mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)); }
-  if (it && !m.carry) await P.take(it);      // (a basket off its peg, for the day)
-  if (going) await going;
-  if (mm) { await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); }
 }
 function create(view, ui) {
   ui = ui || {};
@@ -177,7 +161,7 @@ function create(view, ui) {
       const step = q.offered({ where: name }).find(s => s.scene && SCENES[s.scene]);
       const sc = step ? SCENES[step.scene] : null;
       await fade(true, sc && sc.establish ? '' : A.name);
-      const held = P && chores ? chores.carried(P) || (root.Work && root.Work.stashed(w)) : null;      // (what's in her hands, to be in them still; or her basket, set by while she worked)
+      const held = P && chores ? chores.through(chores.carried(P) || (root.Work && root.Work.stashed(w)), areaName, name) : null;      // (what's in her hands, to be in them still; her basket set by indoors, and back in her hand coming out: js/chores.js)
       if (P) { P.dispose(); P = null; }
       if (backdrop) { backdrop.dispose(); backdrop = null; }      // (the title's tableau)
       // (a scene can open on an establishing shot: another place seen from outside, without her, the camera easing in; then a fade, and the scene)
@@ -189,6 +173,7 @@ function create(view, ui) {
       if (opts.place) opts.place(P);
       if (A.dress) A.dress(P, w);
       if (chores) chores.dress(P, held);      // (whatever she's carrying, still in her hands)
+      if (how && how.ready) how.ready(P);      // (a scene's own arrangement, before the fade lifts: breakfast at the table)
       P.tick(dt => frame(dt));
       { const Au = root.GameAudio; if (Au && Au.startMusic && A.music) Au.startMusic({ theme: (sc && sc.music) || A.music }); }      // (each place its own music; a scene can have its own)
       save.change(s => { s.area = name; }, { area: name });
@@ -337,8 +322,7 @@ function create(view, ui) {
 
   // The next morning: the night passes (under a fade), and she's up, at home.
   // (and over breakfast her mother asks what's been asked of them: js/chores.js)
-  // (breakfast eaten, under the fade: the day opens on her taking a basket down from the pegs as her mother comes back from the dresser, the
-  // bowls tipped and rinsed in the pail; then the day's asking, or, the first morning, what's to be hers to do)
+  // (the day opens at breakfast, the two of them at the table: her mother's word for the day, or, the first morning, what's to be hers to do)
   // (breakfast over at half past seven)
   // (the day as it began, kept: the save as it was when the night was over, for "Restart the day")
   const DAY_KEY = 'red-lessons:day-start';
@@ -347,9 +331,12 @@ function create(view, ui) {
   const canRestart = () => { const d = dayKept(); return !!(d && d.day === cal.day); };
   async function restartDay() { const d = dayKept(); if (!d) return false; await fade(true, ''); save.import(d); await begin(); return true; }
   async function morning(text) { await fade(true, text || ''); if (capacity && (cal.minute >= 22 * 60 || cal.minute < 5 * 60)) capacity.late(); cal.sleep(); keepDay(); await begin(); }      // (to bed past ten: tomorrow starts lower)
-  async function begin() { cal.advance(30); w.breakfasted = true; await go('home', 'bed'); const P_ = P; if (!P_) return;
-    const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered';
-    if ((chores && chores.on()) || first) P_.act(async () => { await basketDown(P_); if (first) await P_.talkToMother({ stay: true }); else await chores.breakfast(P_); });
+  // (the day opens at breakfast: the two of them at the table, across it from each other, and her mother's word for the day; then up, under a
+  // fade, and the day's begun)
+  async function begin() { cal.advance(30); w.breakfasted = true; const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered', sit = (chores && chores.on()) || first;
+    let table = null; await go('home', 'bed', { ready: P_ => { if (sit && root.Maren) table = root.Maren.atTable(P_, w, { plates: true }); } }); const P_ = P; if (!P_) return;
+    if (sit) P_.act(async () => { if (first) await P_.talkToMother({ seated: true }); else await chores.breakfast(P_, { seated: true });
+      if (table) { await fade(true); table.up(); await fade(false); } });
   }
 
   // ── Starting.

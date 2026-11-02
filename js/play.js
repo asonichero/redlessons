@@ -166,8 +166,8 @@ function create(view, opts) {
     if (W.cloakHooks && !m.carry) { const h = W.cloakHooks;
       if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
-    for (const it of W.items) if (!it.away && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it), full: !!m.carry }, p); }
-    if (!m.carry) for (const s of W.seats) if (!s.noSit) add({ label: (s.kind === 'bed' ? 'Sit on ' : 'Sit on ') + s.name, run: () => sitOn(s) }, s.at);
+    for (const it of W.items) if (!it.away && !it.fixed && it !== m.carry) { const p = it.obj.position.clone().add(it.grip); add({ label: 'Take ' + it.name, run: m.carry ? () => handsFull() : () => take(it), full: !!m.carry }, p); }
+    if (!m.carry) { for (const s of W.seats) if (!s.noSit) add({ label: 'Sit on ' + s.name, run: () => sitOn(s) }, s.at); }
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;
       if (it.hangs) for (const pg of W.pegs) if (!pg.item) add({ label: 'Hang ' + it.name + ' up', run: () => putOn({ peg: pg }) }, pg.at);
@@ -326,7 +326,7 @@ function create(view, opts) {
   // (the player starting it: they stay where they are, and turn to each other; a scene starting it brings her over: see approach)
   async function faceEachOther() { m.face(yawTo(m.pos, mm.pos)); mm.face(yawTo(mm.pos, m.pos)); await wait(0.5); }
   async function talkToMother(how) {
-    const meet = () => how && how.stay ? faceEachOther() : approach();
+    const meet = () => how && how.seated ? Promise.resolve() : how && how.stay ? faceEachOther() : approach();      // (seated: at the table already, across it from her)
     if (opts.talk) { const script = opts.talk(); if (!script || !script.length) return; await meet(); talk.cast.red.rig = rig; const picks = await talk.play(script); if (opts.after) await opts.after('talk', picks); return; }      // (nothing to say: nothing played, rather than an empty box)
     if (!NPC || NPC.key !== 'mother') return;      // (the homecoming is her mother's, and no one else's)
     // (she came home in her grandmother's cloak)

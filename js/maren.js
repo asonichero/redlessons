@@ -28,6 +28,24 @@ const dinnerDue = w => on(w) && w.cal.minute >= DINNER && w.cal.minute < BACK &&
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
 const missedDinner = w => on(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
 
+// The two of them at the table, sat on the stools at either end of it, facing each other across it (at once: under a fade); plates before them
+// (o.plates), or a bowl of potatoes between them and one in each hand (o.peel: supper). → up(): stood again, and the table cleared.
+function atTable(P, w, o) {
+  o = o || {}; const THREE = root.THREE, V3 = THREE.Vector3, T = root.Toon, m = P.motion, mm = P.npcMotion, W = P.world;
+  const st = W.seats.filter(s => s.name === 'the stool'), tb = W.surfaces.find(s => s.name === 'the table'); if (st.length < 2 || !tb || !mm) return { up: () => {} };
+  const mid = new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2), [a, b] = st.slice().sort((p, q) => p.at.x - q.at.x || p.at.z - q.at.z);
+  const facing = s => Math.atan2(mid.x - s.at.x, mid.z - s.at.z), things = [];
+  const place = (mo, s) => { const seat = Object.assign({}, s, { facing: facing(s) }); mo.warp(s.at.clone().setY(0).addScaledVector(new V3(Math.sin(seat.facing), 0, Math.cos(seat.facing)), 0.5), seat.facing); mo.sit(seat); mo.sitW = 1; return seat; };
+  if (P.sitting) { m.stand(); m.sitW = 0; } if (mm.seat) { mm.stand(); mm.sitW = 0; }
+  if (w.chores && w.chores.setBy) w.chores.setBy(P);      // (her basket set by while they sit: back in her hand when she goes out)
+  P.sitting = place(m, a); place(mm, b);
+  const on = (geo, col, x, y, z) => { const g = new THREE.Mesh(geo, T.mat(col)); g.position.set(x, y, z); g.add(new THREE.Mesh(T.hullGeo(geo, 0.05), T.INKM[0])); P.stage.scene.add(g); things.push(g); return g; };
+  for (const s of [a, b]) { const f = new V3(Math.sin(facing(s)), 0, Math.cos(facing(s))), p = s.at.clone().setY(tb.y + 0.2).addScaledVector(f, 7);
+    if (o.plates) { on(new THREE.CylinderGeometry(2.2, 1.8, 0.35, 16), '#e2d8c4', p.x, p.y, p.z); on(T.ell(1.3, 0.5, 1.1, 10, 6), '#b8864a', p.x, p.y + 0.4, p.z); } }
+  if (o.peel) { const bowl = on(new THREE.LatheGeometry([[0.01, 0], [2.6, 0.2], [3.4, 1.6], [3.6, 2]].map(([r, h]) => new THREE.Vector2(r, h)), 14), '#a87a4a', mid.x, tb.y + 0.1, mid.z); bowl.material.side = THREE.DoubleSide;
+    for (let k = 0; k < 6; k++) on(new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.9, 1), '#c8a066', mid.x + Math.cos(k) * 1.6, tb.y + 1.7 + (k % 2) * 0.4, mid.z + Math.sin(k) * 1.6); }
+  return { seats: [a, b], mid, top: tb.y, up() { for (const g of things) P.stage.scene.remove(g); if (P.sitting) { m.stand(); m.sitW = 0; P.sitting = null; } if (mm.seat) { mm.stand(); mm.sitW = 0; } } };
+}
 // Dinner: the two of them at the table, on the stools, their plates before them; Red's account of her morning, and then her mother's word on it.
 // how: 'entered' (Red's come in at dinner time: straight to the table, under a fade), 'arrived' (Red's in already, and her mother comes in
 // from the farm, glad to find her: a word, and then the table), 'home' (her mother home anyway, at her needlework: the same, without the door).
@@ -37,16 +55,8 @@ async function dinner(P, w, how) {
   if (!mm) return;
   if (how !== 'entered') { mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await P.converse(S.dinnerCall(how), { shot: ['red', 'mother'] }); }
   // (to the table, under a fade: both sat, plates before them)
-  const st = W.seats.filter(s => s.name === 'the stool').sort((a, b) => a.at.z - b.at.z), tb = W.surfaces.find(s => s.name === 'the table'), plates = [];
   if (w.fade) await w.fade(true);
-  if (P.sitting) { m.stand(); m.sitW = 0; P.sitting = null; }
-  if (st.length >= 2) {
-    const front = s => new V3(Math.sin(s.facing), 0, Math.cos(s.facing)), place = (mo, s) => { mo.warp(s.at.clone().setY(0).addScaledVector(front(s), 0.5), s.facing); mo.sit(s); mo.sitW = 1; };
-    place(m, st[0]); P.sitting = st[0]; place(mm, st[1]);
-    for (const s of st.slice(0, 2)) { const T = root.Toon, g = new THREE.Group(), p = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 1.8, 0.35, 16), T.mat('#e2d8c4')); g.add(p);
-      const food = new THREE.Mesh(T.ell(1.3, 0.5, 1.1, 10, 6), T.mat('#b8864a')); food.position.y = 0.4; g.add(food);
-      g.position.copy(s.at.clone().setY(tb ? tb.y + 0.2 : 13).addScaledVector(front(s), 6.5)); P.stage.scene.add(g); plates.push(g); }
-  }
+  const table = atTable(P, w, { plates: true });
   P.stage.camera.updateMatrixWorld();
   if (w.fade) await w.fade(false);
   // (what there is to tell, and what she's seen: the garden, if it's Red's today; the errand, where it stands; her flowers, if any are trodden)
@@ -59,13 +69,12 @@ async function dinner(P, w, how) {
   if (w.capacity) w.capacity.add(35, 'dinner');
   // (and up from the table, under a fade, the plates cleared)
   if (w.fade) await w.fade(true);
-  for (const g of plates) P.stage.scene.remove(g);
-  m.stand(); m.sitW = 0; P.sitting = null; mm.stand(); mm.sitW = 0;
+  table.up();
   w.cal.advance(30);
   if (w.fade) await w.fade(false);
 }
 
-const api = { at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
+const api = { atTable, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
 root.Maren = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

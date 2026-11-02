@@ -69,13 +69,17 @@ function fill(it, on) {
 function putIn(b, what) { if (!b) return; b.contents = (b.contents || []).filter(x => x !== what).concat(what); fill(b, true); b.keep = false; }
 function takeOut(b, what) { if (!b) return; b.contents = what == null ? [] : (b.contents || []).filter(x => x !== what); fill(b, b.contents.length > 0); }
 const PIE = 'Mama’s pie';
-const basketOf = P => { const it = P && P.motion.carry; return it && it.kind === 'basket' ? it : null; };
+// (her basket: in her hand, out of doors, and at home or at her grandmother's; set by in the places of work (the inn, the bakery, the forge),
+// and at home when they sit down to the table (P.bag: see through, setBy and dress); what's in it there still hers to give)
+const basketOf = P => { const it = P && P.motion.carry; return it && it.kind === 'basket' ? it : P && P.bag || null; };
+// (the places indoors, where her basket is set by while she's in them)
+const INSIDE = ['inn', 'bakery', 'forge'], SETBY = ['home', 'inn', 'bakery', 'forge'];      // (INSIDE: set by as she goes in; SETBY: where it can be set by at all)
 
 function create(w) {
   const S = root.Story, save = w.save, cal = w.cal, rep = w.rep;
   const E = S.ERRANDS;
   // (the day's state, begun afresh each day)
-  const st = () => { const c = save.state.chores || (save.state.chores = { day: 0, garden: false, errand: null, refusals: [], missed: 0 }); if (c.day !== cal.day) { c.day = cal.day; c.garden = !!(root.Garden && root.Garden.offToday(w)); c.errand = null; c.left = []; } return c; };      // (left: what she's put down out of doors today, and where)      // (some days her mother has the garden: js/garden.js)
+  const st = () => { const c = save.state.chores || (save.state.chores = { day: 0, garden: false, errand: null, refusals: [], missed: 0 }); if (c.day !== cal.day) { c.day = cal.day; c.garden = !!(root.Garden && root.Garden.offToday(w)); c.errand = null; c.left = []; c.bag = { kind: 'basket', contents: [], at: 'home' }; } return c; };      // (left: what she's put down out of doors today, and where)      // (some days her mother has the garden: js/garden.js)
   const change = fn => save.change(s => { st(); fn(s.chores); }, { chores: true });
   const on = () => w.q.done('maren.chores');      // (once they're agreed)
   const errand = () => { const e = st().errand; return e && E[e.id] ? Object.assign({ key: e.id }, E[e.id], e) : null; };
@@ -105,20 +109,32 @@ function create(w) {
   const hand = (P, kind, o) => { const p = prop(kind, o); P.stage.scene.add(p.obj); P.motion.hold(p, p.style); return p; };
   // What's in her hands as she leaves a place, to be in them still in the next (carried); and put back in them there (regive): at home, a
   // basket is one of the cottage's own, off its peg; anywhere else, one like it (not to be set down away from home).
-  const basketIn = P => { const it = P && P.motion.carry; return it && it.kind === 'basket' ? it : null; };
+  const basketIn = basketOf;
   const holding = (P, kind) => { const it = P && P.motion.carry; return it && it.kind === kind ? it : null; };
   function carried(P) { const it = P && P.motion.carry; return it && it.kind ? { kind: it.kind, full: !!it.full, contents: it.contents ? it.contents.slice() : undefined } : null; }
+  // Her basket: going in to a place of work, it's set by (where she's gone in); at home, set by when they sit to the table (setBy); coming out
+  // of there, it's in her hand again. Each morning it's set by at home, so it goes out with her (Mama's pie in it, the day it's wanted).
+  // → what she has in her hands in the place she's going
+  function through(held, from, to) {
+    const c = st();
+    if (INSIDE.includes(to)) { if (held && held.kind === 'basket') { change(x => { x.bag = { kind: 'basket', contents: (held.contents || []).slice(), at: to }; }); return null; } return held; }
+    const bag = c.bag; if (held || !bag || bag.at !== from) return held;
+    const e = errand(), contents = (bag.contents || []).slice();
+    if (from === 'home' && e && e.pie && e.state === 'accepted' && !contents.includes(PIE)) { contents.push(PIE); change(x => { x.pieIn = cal.day; }); }      // (Mama's pie, put in it under a cloth)
+    change(x => { x.bag = null; }); return { kind: 'basket', contents, full: contents.length > 0 };
+  }
+  // (at home, sitting down to the table: her basket set by, till she goes out again)
+  function setBy(P) { const it = P && P.motion.carry; if (!it || it.kind !== 'basket') return; const bag = { kind: 'basket', contents: (it.contents || []).slice(), at: w.area };
+    change(x => { x.bag = bag; }); P.motion.drop(); P.stage.scene.remove(it.obj); P.bag = st().bag; }
   function regive(P, d) {
     const W = P.world;
-    if (d.kind === 'basket' && W.pegs && W.pegs.length) { const it = W.items.find(x => x.kind === 'basket' && x.peg);
-      if (it) { it.peg.item = null; it.peg = null; it.panel = null; P.motion.hold(it, 'hang'); it.contents = (d.contents || []).slice(); fill(it, it.contents.length > 0); it.keep = false; return; } }
     if (d.kind === 'pot' || d.kind === 'butt') { const it = W.items.find(x => x.kind === d.kind && !x.away);      // (home with it: the cottage's own, in her arms)
       if (it) { it.panel = null; P.motion.hold(it, 'front'); fill(it, d.full); it.keep = !!d.full; return; } }
     const it = hand(P, d.kind, { empty: (d.kind === 'basket' || d.kind === 'butt') && !d.full, contents: d.contents }); if (d.kind === 'butt') it.keep = !!d.full;
   }
   // (the pot, gone to the smith: not in the house till it's mended, the next day)
   // (and her basket not on its peg, while she's left it somewhere out of doors)
-  const away = (P) => { const W = P && P.world, a = st().away, out = basketLeft(); if (!W || !W.items) return; for (const it of W.items) { if (it.home) it.away = !!(a && a[it.kind] === cal.day); if (it.kind === 'basket' && it.peg) it.away = !!out; } };
+  const away = (P) => { const W = P && P.world, a = st().away; if (!W || !W.items) return; for (const it of W.items) { if (it.home) it.away = !!(a && a[it.kind] === cal.day); if (it.kind === 'basket' && it.peg) it.fixed = true; } };      // (the baskets on the pegs: the cottage's, not to be taken)
   // Out of doors, what she puts down stays where she put it, the rest of the day (and is there when she comes back for it); at home, it's
   // the cottage's own. (The next morning, it's all back where it lives.)
   let leftN = 0;
@@ -128,12 +144,12 @@ function create(w) {
   function pickedUp(P, it) { if (!it || !it.leftId) return; const id = it.leftId; it.leftId = null; change(c => { c.left = (c.left || []).filter(l => l.id !== id); }); w.refresh(); }
   const basketLeft = () => (st().left || []).find(l => l.kind === 'basket') || null;
   // (where her basket is, when she hasn't it: on its peg, or where she put it down; → { area, at } for the guide, or null in her hands)
-  function basketWhere(P) { if (basketOf(P)) return null; const l = basketLeft(); return l ? { area: l.area, at: new V3(l.x, 0, l.z) } : { area: 'home', peg: true }; }
+  function basketWhere(P) { if (basketOf(P)) return null; const l = basketLeft(); if (l) return { area: l.area, at: new V3(l.x, 0, l.z) }; const b = st().bag; return b ? { area: b.at, peg: b.at === 'home' } : null; }
   // (going to collect something that wants her basket, without it: she remembers where it is, and can't till she has it)
   async function noBasket(P) { const l = basketLeft(); await P.converse(S.basketLeft(l ? l.area : null, l && l.area === w.area), { shot: false, keepCamera: true }); }
   // (an errand that wants a thing of hers (a basket for what's fetched; the pot for the forge; the little butt for the well), and she hasn't it in
   // her hands as she goes out of the door: her mother calls after her)
-  const has = (P, e) => !e.needs || !!holding(P, e.needs) && !(e.pie && !(holding(P, e.needs).contents || []).includes(PIE));
+  const has = (P, e) => { if (!e.needs) return true; const it = e.needs === 'basket' ? basketOf(P) : holding(P, e.needs); return !!it && !(e.pie && !(it.contents || []).includes(PIE)); };
   const forgot = P => { const e = errand(); return !!(e && e.needs && e.state === 'accepted' && !has(P, e) && !(e.needs === 'basket' && !holding(P, 'basket') && basketLeft())); };      // (her basket left out of doors: not to be kept in for it, but let go and fetch it)
   async function remind(P) { const e = errand(), it = P.motion.carry, need = e ? (e.pie ? 'pie' : e.needs) : 'basket';
     if (P.npcAway) { if (P.talk) P.talk.muse(S.needThought(need), { face: 'calm' }); return; }      // (her mother out at the farm: she remembers for herself)
@@ -142,13 +158,13 @@ function create(w) {
   const temper = () => { let best = null, v = 1; for (const k of ['wilful', 'mischievous', 'naughty']) if (rep.stat(k) > v) { v = rep.stat(k); best = k; } return best; };
 
   // ── Breakfast: the asking. (Played at home, the morning she wakes: js/world.js's morning.)
-  async function breakfast(P) {
+  async function breakfast(P, o) {
     if (!on() || !P || !P.npc) return;
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
       needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay,      // (her mother's own day: js/maren.js)
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
-    await P.wait(0.8); await P.approach();
+    await P.wait(0.8); if (!(o && o.seated)) await P.approach();      // (seated: across the table from her already)
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
     w.refresh();
@@ -186,9 +202,9 @@ function create(w) {
       const early = e && e.shift && e.state === 'accepted' && cal.minute < e.by - SHIFT_SLACK;      // (a shift: not before a quarter of an hour before its time)
       if (e && !early && (e.state === 'accepted' || (e.state === 'broken' && e.shift) || e.state === 'working' || (e.state === 'missed' && e.gone && !e.knocked)) && sp[e.place] && (e.state === 'working' || e.state === 'missed' || has(P, e) || e.needs === 'basket')) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
-    if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc && !P.npcAway) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
+    if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npc && !P.npcAway) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     // (her mother out at the farm: left on the table for her, and the errand's done)
-    else if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npcAway) { const tb = P.world.surfaces.find(s => s.name === 'the table');
+    else if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npcAway) { const tb = P.world.surfaces.find(s => s.name === 'the table');
       if (tb) out.push({ label: 'Leave ' + (e.carryName || NAME[e.carry]) + ' on the table for Mama', at: new V3((tb.x0 + tb.x1) / 2, tb.y + 2, (tb.z0 + tb.z1) / 2), run: () => leaveHome(P, e, tb) }); }
     return out;
   }
@@ -311,7 +327,7 @@ function create(w) {
   // supper at six.
   function marenTalk(P) {
     const e = errand(), c = st(), out = [];
-    if (e && e.state === 'carrying' && P.motion.carry) out.push({ run: () => handOver(P, e) }, e.back);
+    if (e && e.state === 'carrying' && (P.motion.carry || basketOf(P))) out.push({ run: () => handOver(P, e) }, e.back);
     else if (e && e.state === 'missed' && !e.told) { const b = basketIn(P); if (b) takeOut(b, PIE); out.push(...S.marenMissed(e, { told: () => change(cc => { cc.errand.told = true; }) })); }      // (the pie still in the basket)
     else if (e && (e.state === 'accepted' || e.state === 'broken') && !e.told) out.push(...S.marenReminds(e, clock(e.by), e.state === 'broken', () => change(cc => { cc.errand.told = true; })));      // (broken: said once, and done with)
     else if (e && e.state === 'done' && !e.told) out.push(...S.marenAsks(e, { told: () => change(cc => { cc.errand.told = true; }) }));
@@ -325,6 +341,7 @@ function create(w) {
   function dress(P, held) {
     if (P && root.Garden) root.Garden.boots(P, w);      // (petals still on her boots, from her mother's flowers)
     if (P && held && !P.motion.carry) regive(P, held);      // (whatever she had in her hands, still in them)
+    if (P) { const b = st().bag; P.bag = b && b.at === w.area && SETBY.includes(w.area) ? b : null; }      // (her basket, set by in here)
     away(P);
     if (P && w.area !== 'home') for (const l of st().left || []) if (l.area === w.area) {      // (what she put down here, where she put it)
       const it = prop(l.kind, { empty: !l.full, contents: l.contents }); it.keep = false; it.leftId = l.id; it.obj.position.set(l.x, 0, l.z); P.stage.scene.add(it.obj); P.world.items.push(it); }
@@ -336,8 +353,7 @@ function create(w) {
   function tick(P) {
     if (!on()) return;
     const e = errand(), c = st();
-    { const b = e && e.pie && e.state === 'accepted' && w.area === 'home' && basketIn(P);      // (a basket taken down, for the Dunns: her mother puts the pie in it, under a cloth)
-      if (b && !(b.contents || []).includes(PIE)) { putIn(b, PIE); if (P.talk) P.talk.muse(P.npcAway ? 'Mama’s left the pie on the table for me. Into my basket, under its cloth.' : 'Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }
+    { const c0 = st(); if (c0.pieIn === cal.day && w.area !== 'home' && P.talk) { change(x => { x.pieIn = -1; }); P.talk.muse('Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }      // (put in as she went out of the door)
     if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : e.fails ? 0 : GRACE)) {      // (a shift has a quarter of an hour's grace; an errand, its half hour, unspoken; the Dunns' pie, none: he's gone out)
       change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); slid('a promise let slide: ' + e.title.toLowerCase()); if (root.Maren && root.Maren.warned(w, 'errand')) rep.add('wilful', 0.5, 'after Mama’s word at dinner');      // (fails: past its time, it can't be done at all)
       if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third in a week: her mother will set her right, this evening)
@@ -377,9 +393,9 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
-root.Chores = { create, prop, putIn, takeOut, basketOf, PIE };
+root.Chores = { create, prop, putIn, takeOut, basketOf, PIE, INSIDE };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.Chores;
 })(typeof window !== 'undefined' ? window : globalThis);
