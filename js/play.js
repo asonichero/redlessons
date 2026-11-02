@@ -108,7 +108,8 @@ function create(view, opts) {
   const correcting = () => typeof document !== 'undefined' && document.body.classList.contains('correcting');      // (a correction: the camera the player's, within the room)
   // (in a correction, slid along the floor toward the anchor it's nearer than its usual least: so it's let be that near, or the controls would
   // push it back out, under the floor)
-  st.afterControls = () => { st.controls.maxPolarAngle = correcting() ? UNDER : LEVEL; st.controls.minDistance = correcting() ? 3 : 14; if (!opts.camFree && (correcting() || (!camHeld && !(talk && talk.playing))) && !st.moving && st.controls.enabled) { inRoom(); aboveGround(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
+  st.afterControls = () => { st.controls.maxPolarAngle = correcting() ? UNDER : LEVEL; st.controls.minDistance = correcting() ? 3 : 14; st.controls.enablePan = correcting(); st.controls.screenSpacePanning = true;      // (in a correction, the camera's centre dragged about too, as in the editors: right-drag, or two fingers)
+    if (!opts.camFree && (correcting() || (!camHeld && !(talk && talk.playing))) && !st.moving && st.controls.enabled) { inRoom(); aboveGround(); if (st.cottage && st.cottage.keepCamera) st.cottage.keepCamera(st.camera, st.controls.target); } };      // (outdoors, a set can keep it out of its buildings: the village's)      // (after the controls' own easing, last thing before it's drawn)
   // (its three distances from the anchor, across the floor and up: near, medium (the usual), far. Outdoors, from her, scaled to her; indoors,
   // from the middle of the room, medium holding the whole room)
   // (camZ: where it is between them, 0..2, set by the camera button or the wheel to one of the three, by a pinch anywhere between)

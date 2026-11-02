@@ -216,7 +216,7 @@ async function run(P, o) {
       // (the stop button: the player's own word, on their own turn; amber beside it where the house has traffic lights)
       const mine = sub.id === player; stopBtn.hidden = !mine; amberBtn.hidden = !(mine && sub.lights);
       stopBtn.querySelector('span').textContent = sub.word.toUpperCase();
-      hint.textContent = mine ? (sub.lights ? 'Red stops it, at any moment; amber checks in: the buttons, or R and A.' : 'Her name stops it, at any moment: the sign, or R.') : '';
+      hint.textContent = (mine ? (sub.lights ? 'Red stops it, at any moment; amber checks in: the buttons, or R and A. ' : 'Her name stops it, at any moment: the sign, or R. ') : '') + 'Drag to look round; right-drag, or two fingers, to move the view.';
       await wait(0.3); await fade(false);
       el.classList.add('on'); if (mine && i === 0) { hint.classList.add('on'); setTimeout(() => hint.classList.remove('on'), 7000); }
       const r = t.script ? await scripted(t.script, lap, c, sub, castKey) : await root.Discipline.run(lap, t.tier || 'light', {
