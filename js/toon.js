@@ -358,7 +358,7 @@ function palette(id, look) {
       const mix = (a, b, t) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), c = k => Math.round(((x >> k) & 255) * (1 - t) + ((y >> k) & 255) * t); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
       const BLUE = '#6f90c4', sk = mix(BLUE, '#6a6a70', soot * 0.6), skd = mix(shade(BLUE, -0.22), '#5a4a32', dirt * 0.8);
       Object.assign(P, { blouse: mix(young ? shade(BLUE, 0.08) : BLUE, '#6a6a70', soot * 0.5), bodice: young ? sk : mix(shade(BLUE, -0.16), '#6a6a70', soot * 0.5), lace: young ? shade(BLUE, -0.3) : '#f2e6c4',
-        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : young ? mix('#fbf8f2', '#5a4a32', dirt) : mix(shade(BLUE, -0.25), '#4a3a28', dirt), collar: '#fbf8f2', sash: young ? '#f0c4cc' : mix(shade(BLUE, -0.42), '#4a4a50', soot * 0.5) }); }      // (both with a white frilled collar and a sash, to read young: the fair dress's a deeper blue)
+        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : young ? mix('#fbf8f2', '#5a4a32', dirt) : mix(shade(BLUE, -0.25), '#4a3a28', dirt), collar: '#fbf8f2', backButtons: young ? null : '#24345e', sash: young ? '#f0c4cc' : mix(shade(BLUE, -0.42), '#4a4a50', soot * 0.5) }); }      // (both with a white frilled collar and a sash, to read young: the fair dress's a deeper blue)
   } else if (id === 'gran') {
     const shawl = '#7d6a8c';
     Object.assign(P, { cloak: shawl, cloakDk: shade(shawl, -0.3), lining: '#e2d8c8', lace: '#c9b8d4', blouse: '#efe6d4', bodice: '#4e3e56', skirt: '#5a6444', skirtDk: '#454e34', hem: '#454e34',
@@ -582,22 +582,35 @@ function make(id, look, opts) {
     else { piece(new THREE.BoxGeometry(0.3, 7.6, 0.12), shade(P.vest, -0.3), rig.torso, 0, 4.2 - D.torsoY, zAt(4.2), { ink: 0 }); }
   }
   // The bodice: laced, from the hips to under the bust.
-  if (BODICE) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 }));      // (flaring at the bottom over the hips, which never show through it)
+  // (with a sash (P.sash), the band of it at the waist is the same surface in the sash's colour, painted on, nothing standing proud: the
+  // bodice in three, below it, the sash, above it; each piece's ink only on its outer edge, so no line between)
+  const BODY = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW);
+  const cut = (pr, y0, y1) => { const at = y => { for (let i = 1; i < pr.length; i++) if (y <= pr[i][1]) { const [r0, a] = pr[i - 1], [r1, b] = pr[i]; return [lerp(r0, r1, (y - a) / ((b - a) || 1)), y]; } return pr[pr.length - 1]; };
+    return [at(y0)].concat(pr.filter(([, y]) => y > y0 && y < y1), [at(y1)]); };
+  if (BODICE && !P.sash) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(BODY, 0.74 * TD, 32)), P.bodice, torsoW, { ink: 0.05 }));      // (flaring at the bottom over the hips, which never show through it)
+  if (BODICE && P.sash) for (const [y0, y1, col] of [[0.95, 2.3, P.bodice], [2.3, 3.0, P.sash], [3.0, 5.95, P.bodice]]) clipSrc('bodice', skinnedOn(rig.hips, bust(lathe(cut(BODY, y0, y1), 0.74 * TD, 32)), col, torsoW, { ink: 0.05 }));
   if (BODICE) clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.12, 0.7], [3.24, 0.96], [3.02, 1.28]], trunkW), 0.75 * TD, 32), shade(P.bodice, -0.25), torsoW, { ink: 0.035 }));      // its bound hem, a neat edge over the join with whatever is below
   // The lacing down its front, crossed, set on the bodice's surface (its radius at each height, as built).
-  if (BODICE) { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
+  if (BODICE && !P.backButtons) { const BOD = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW), rAt = y => { for (let i = 1; i < BOD.length; i++) if (BOD[i][1] >= y) return lerp(BOD[i - 1][0], BOD[i][0], (y - BOD[i - 1][1]) / (BOD[i][1] - BOD[i - 1][1] || 1)); return BOD[BOD.length - 1][0]; };
     // (from above the skirt's waistband to just under the bust)
     for (let i = 0; i < 4; i++) { const yh = 2.95 + i * 0.78, z = rAt(yh) * 0.74 * TD + 0.06;
       for (const sx of [-1, 1]) piece(new THREE.BoxGeometry(0.95, 0.14, 0.1), P.lace, rig.torso, 0, yh - D.torsoY, z, { rot: [0, 0, sx * 0.55], ink: 0 });
       for (const sx of [-1, 1]) piece(new THREE.SphereGeometry(0.09, 8, 6), shade(P.lace, -0.3), rig.torso, sx * 0.42, yh - D.torsoY, z - 0.02, { ink: 0 }); } }
+  // (the fair dress: no lacing, but a row of dark buttons up the back, from the sash to the collar, on the cloth's surface)
+  if (P.backButtons) { const TOR = wide(TORSO, trunkW), rIn = (pr, y) => { for (let i = 1; i < pr.length; i++) if (y <= pr[i][1]) { const [r0, a] = pr[i - 1], [r1, b] = pr[i]; return lerp(r0, r1, (y - a) / ((b - a) || 1)); } return pr[pr.length - 1][0]; };
+    const BOD2 = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW);
+    for (let y = 3.25; y <= 8.3; y += 0.72) { const z = y < 5.9 ? rIn(BOD2, y) * 0.74 * TD : rIn(TOR, y) * 0.68 * TD;
+      piece(new THREE.SphereGeometry(0.17, 8, 6).scale(1, 1, 0.6), P.backButtons, rig.torso, 0, y - D.torsoY, -z - 0.05, { ink: 0.02 }); } }
   // The neck: from inside the shoulders up into the head, bending with both.
   skinnedOn(rig.neck, lathe(wide([[0.7, -1.1], [0.68, -0.3], [0.64, 0.6], [0.62, 1.6]], K.neckGirth), 1, 16), P.skin, p => { const t = ss(0.1, -0.7, p.y), h = ss(0.6, 1.3, p.y); return [[rig.torso, t], [rig.head, h * (1 - t)], [rig.neck, (1 - t) * (1 - h)]]; });
   piece(lathe(wide([[1.25, -0.25], [1.4, 0.1], [1.15, 0.3]], Math.max(K.neckGirth, 0.9)), 0.78, 18), P.collar || P.blouse, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.04 });   // the collar
   if (P.collar) { const cg = lathe(wide(dense([[3.18, 8.0], [3.08, 8.4], [2.5, 9.15], [1.36, 9.66], [1.3, 9.72]], 12), trunkW), 0.7 * TD, 48), cp = cg.attributes.position;
     for (let i = 0; i < cp.count; i++) { const x = cp.getX(i), y = cp.getY(i), z = cp.getZ(i), a = Math.atan2(x, z), cut = 0.75 * Math.exp(-((a / 0.3) ** 2)); if (y < 9.6) cp.setY(i, y + cut * (9.6 - y) / 1.6); }      // (a notch at the front: the two rounded lobes of a Peter Pan collar)
     cg.computeVertexNormals(); skinnedOn(rig.hips, cg, P.collar, torsoW, { ink: 0.03, side: THREE.DoubleSide }); }      // (a frilled collar, lying over the shoulders and the top of the chest, just outside the dress)
-  if (P.sash) { clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.0, 2.25], [3.06, 2.6], [3.0, 2.95]], trunkW), 0.76 * TD, 32), P.sash, torsoW, { ink: 0.03 }));      // (and a sash at her waist, tied in a bow behind)
-    for (const sx of [-1, 1]) piece(ell(0.9, 0.5, 0.35, 10, 8), P.sash, rig.hips, sx * 0.7, 2.6, -(0.76 * TD * 3.0) - 0.1, { rot: [0, 0, sx * 0.4], ink: 0.03 }); }
+  if (P.sash) { const bz = -(0.74 * TD * 2.45) - 0.25;      // (the sash's bow, tied behind: the one part of it that stands out)
+    for (const sx of [-1, 1]) piece(ell(0.95, 0.55, 0.3, 10, 8), P.sash, rig.hips, sx * 0.75, 2.65, bz, { rot: [0, 0, sx * 0.45], ink: 0.03 });
+    piece(ell(0.35, 0.35, 0.3, 8, 6), P.sash, rig.hips, 0, 2.65, bz + 0.05, { ink: 0.03 });
+    for (const sx of [-1, 1]) piece(ell(0.28, 1.1, 0.12, 6, 6), P.sash, rig.hips, sx * 0.35, 1.6, bz + 0.1, { rot: [0, 0, sx * 0.15], ink: 0.03 }); }      // (its tails)
 
   // ── Arms: a full sleeve to the elbow (puffed at the shoulder for her), bare forearms, soft hands. ──
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
