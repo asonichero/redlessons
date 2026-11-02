@@ -565,13 +565,18 @@ function make(id, look, opts) {
   // (a man's trunk runs straighter, with no waist drawn in; a woman's goes in at the waist and out over the bust)
   const TORSO = MAN ? [[0, 0.3], [2.9, 0.4], [2.86, 1.5], [2.74, 2.9], [2.76, 3.8], [2.9, 4.9], [3.06, 6.2], [3.14, 7.4], [3.02, 8.4], [2.36, 9.2], [1.2, 9.7], [0, 9.85]]
     : [[0, 0.3], [2.9, 0.4], [2.75, 1.5], [2.38, 2.9], [2.32, 3.8], [2.55, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]];
-  const BODICE = !MAN && S.lower !== 'gown' && S.bodice !== false && look.bodice !== false, VEST = MAN && S.vest;      // (look.bodice false: without it, in her chemise: for bed, say)
+  const BODICE = !MAN && S.lower !== 'gown' && S.bodice !== false && look.bodice !== false && !(look.gown === 'fair' || look.gown === 'fairYoung'), VEST = MAN && S.vest;      // (look.bodice false: without it, in her chemise: for bed, say)
   // (where the shirt is under the vest: a waistcoat to the waist, a jerkin and a coat over the hips)
   const vestFrom = S.vest === 'waistcoat' ? 2.2 : -1.2;      // (a waistcoat ends at the belt)
   // (a man's shirt in trousers is tucked in tight at the back below the belt, so it stays inside the waistband as he bends; with the trousers
   // down, the tail hanging over the drawers covers it)
   const tucked = g => MAN && !opts.lying && (S.lower || 'trousers') === 'trousers' ? backIn(g, y => lerp(0.72, 1, ss(2.5, 3.6, y))) : g;      // (across a lap, level: see underShirt)
-  skinnedOn(rig.hips, tucked(bust(lathe(wide(dense(TORSO, 44), trunkW), 0.68 * TD, 32))), top, torsoW, BODICE ? { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] } : VEST ? { cover: p => [cc('vest'), ss(8.6, 8.2, p.y) * ss(vestFrom - 0.2, vestFrom + 0.2, p.y), 'bodice'] } : {});   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
+  // (a profile cut between two heights, its ends where the cut falls)
+  const cutPr = (pr, y0, y1) => { const at = y => { for (let i = 1; i < pr.length; i++) if (y <= pr[i][1]) { const [r0, a] = pr[i - 1], [r1, b] = pr[i]; return [lerp(r0, r1, (y - a) / ((b - a) || 1)), y]; } return pr[pr.length - 1]; };
+    return [at(y0)].concat(pr.filter(([, y]) => y > y0 && y < y1), [at(y1)]); };
+  const TORSO_W = wide(dense(TORSO, 44), trunkW), SASH = P.sash && !BODICE ? [2.45, 3.85] : null;      // (the fair dress: its sash painted round the waist, the same surface in its colour)
+  if (SASH) for (const [y0, y1, col] of [[TORSO_W[0][1], SASH[0], top], [SASH[0], SASH[1], P.sash], [SASH[1], TORSO_W[TORSO_W.length - 1][1], top]]) skinnedOn(rig.hips, tucked(bust(lathe(cutPr(TORSO_W, y0, y1), 0.68 * TD, 32))), col, torsoW, {});
+  else skinnedOn(rig.hips, tucked(bust(lathe(TORSO_W, 0.68 * TD, 32))), top, torsoW, BODICE ? { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] } : VEST ? { cover: p => [cc('vest'), ss(8.6, 8.2, p.y) * ss(vestFrom - 0.2, vestFrom + 0.2, p.y), 'bodice'] } : {});   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
   // A man's vest: a waistcoat (buttoned, to the waist), a leather jerkin (laced, over the hips), or a long coat (over the hips, its tails to the knee).
   if (VEST) {
     const vp = TORSO.filter(([r, y]) => y >= vestFrom - 0.1 && y <= 8.6).map(([r, y]) => [r + 0.14, y]); vp.unshift([TORSO[1][0] + 0.16, vestFrom]); if (vestFrom < 0) vp.unshift([3.2, vestFrom - 0.05]);
@@ -599,7 +604,7 @@ function make(id, look, opts) {
   // (the fair dress: no lacing, but a row of dark buttons up the back, from the sash to the collar, on the cloth's surface)
   if (P.backButtons) { const TOR = wide(TORSO, trunkW), rIn = (pr, y) => { for (let i = 1; i < pr.length; i++) if (y <= pr[i][1]) { const [r0, a] = pr[i - 1], [r1, b] = pr[i]; return lerp(r0, r1, (y - a) / ((b - a) || 1)); } return pr[pr.length - 1][0]; };
     const BOD2 = wide(dense([[3.2, 0.95], [3.08, 1.25], [2.86, 1.6], [2.47, 2.9], [2.4, 3.8], [2.64, 4.9], [2.9, 5.8], [2.7, 5.95]], 26), trunkW);
-    for (let y = 3.65; y <= 8.3; y += 0.72) { const z = y < 5.9 ? rIn(BOD2, y) * 0.74 * TD : rIn(TOR, y) * 0.68 * TD;
+    for (let y = BODICE ? 3.65 : 4.15; y <= 8.3; y += 0.72) { const z = BODICE && y < 5.9 ? rIn(BOD2, y) * 0.74 * TD : rIn(TOR, y) * 0.68 * TD;
       piece(new THREE.SphereGeometry(0.17, 8, 6).scale(1, 1, 0.6), P.backButtons, rig.torso, 0, y - D.torsoY, -z - 0.05, { ink: 0.02 }); } }
   // The neck: from inside the shoulders up into the head, bending with both.
   skinnedOn(rig.neck, lathe(wide([[0.7, -1.1], [0.68, -0.3], [0.64, 0.6], [0.62, 1.6]], K.neckGirth), 1, 16), P.skin, p => { const t = ss(0.1, -0.7, p.y), h = ss(0.6, 1.3, p.y); return [[rig.torso, t], [rig.head, h * (1 - t)], [rig.neck, (1 - t) * (1 - h)]]; });
@@ -607,8 +612,8 @@ function make(id, look, opts) {
   if (P.collar) { const cg = lathe(wide(dense([[3.18, 8.0], [3.08, 8.4], [2.5, 9.15], [1.36, 9.66], [1.3, 9.72]], 12), trunkW), 0.7 * TD, 48), cp = cg.attributes.position;
     for (let i = 0; i < cp.count; i++) { const x = cp.getX(i), y = cp.getY(i), z = cp.getZ(i), a = Math.atan2(x, z), cut = 0.75 * Math.exp(-((a / 0.3) ** 2)); if (y < 9.6) cp.setY(i, y + cut * (9.6 - y) / 1.6); }      // (a notch at the front: the two rounded lobes of a Peter Pan collar)
     cg.computeVertexNormals(); skinnedOn(rig.hips, cg, P.collar, torsoW, { ink: 0.03, side: THREE.DoubleSide }); }      // (a frilled collar, lying over the shoulders and the top of the chest, just outside the dress)
-  if (P.sash) { const bz = -(0.74 * TD * 2.45) - 0.25;      // (the sash's bow, tied behind: the one part of it that stands out)
-    const by = 2.7 - D.torsoY;      // (on the torso, so it goes with her as she bends: its loops' tops level with the sash's top edge)
+  if (P.sash) { const bz = BODICE ? -(0.74 * TD * 2.45) - 0.25 : -(cutPr(TORSO_W, 3.2, 3.21)[0][0] * 0.68 * TD) - 0.2;      // (the sash's bow, tied behind: the one part of it that stands out)
+    const by = (BODICE ? 2.7 : 3.2) - D.torsoY;      // (on the torso, so it goes with her as she bends: its loops' tops level with the sash's top edge)
     for (const sx of [-1, 1]) piece(ell(0.95, 0.55, 0.3, 10, 8), P.sash, rig.torso, sx * 0.75, by, bz, { rot: [0, 0, sx * 0.45], ink: 0.03 });
     piece(ell(0.35, 0.35, 0.3, 8, 6), P.sash, rig.torso, 0, by, bz + 0.05, { ink: 0.03 });
     for (const sx of [-1, 1]) piece(ell(0.28, 1.1, 0.12, 6, 6), P.sash, rig.torso, sx * 0.35, by - 1.05, bz + 0.1, { rot: [0, 0, sx * 0.15], ink: 0.03 }); }      // (its tails)
@@ -664,10 +669,12 @@ function make(id, look, opts) {
   const GOWN_LEN = { fair: 13.4, fairYoung: 10.2 }, L_ = S.smock ? 5 : GOWN_LEN[look.gown] || S.skirtLen || 12;      // (Rose's fair dresses: to the ankle, as her mother's; or the girl's frock, to mid-calf)
   if (S.smock) { P.skirt = top; P.skirtDk = shade(top, -0.12); P.hem = shade(top, -0.12); }
   const SW = y => (y > 0.6 ? trunkW(y) : K.hipWidth) * (y < 0 ? lerp(1, K.skirtFull, ss(0, -4, y)) : 1);       // (it widens with the hips, and flares with its fullness)
-  const skirtProfile = wide([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]], SW);
+  const skirtProfile = wide(((look.gown === 'fair' || look.gown === 'fairYoung') ? [[1.95, 2.95], [2.3, 2.5]] : []).concat([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]]), SW);      // (the fair dresses: its top tucked in under the dress at the waist, no gap where they meet)
   const skirtR = y => { const pr = skirtProfile; for (let i = 1; i < pr.length; i++) if (y >= pr[i][1]) { const [r0, y0] = pr[i - 1], [r1, y1] = pr[i]; return lerp(r0, r1, (y - y0) / (y1 - y0)); } return pr[pr.length - 1][0]; };
   let skirt = null, hemBand = null, apron = null, skirtFront = null;
-  const waist = SKIRTED ? clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 })) : new THREE.Group();
+  // (in her chemise, the bodice off (look.bodice false): its skirt, to the middle of her thighs, over the drawers; under any skirt that's on)
+  if (!MAN && look.bodice === false) clipSrc('skirt', skinned(lathe(wide([[2.45, 2.7], [3.1, 1.0], [3.6, -0.8], [3.85, -2.6], [3.9, -2.95]], SW), 0.9, 28), top, { ink: 0.04 }));
+  const waist = SKIRTED && !(look.gown === 'fair' || look.gown === 'fairYoung') ? clipSrc('skirt', piece(lathe(wide([[2.72, 1.55], [2.78, 2.15], [2.66, 2.5]], trunkW), 0.75 * TD, 22), P.skirtDk, rig.hips, 0, 0, 0, { ink: 0.04 })) : new THREE.Group();
   // (with child, near her time (S.belly, 0..1): a rounded swell over the front of her, from under the bust to below the waist, in the gown's
   // colour; on the hips, so it goes with her as she sits)
   // (above her waist, the bodice laced over it; below, the skirt)
