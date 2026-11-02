@@ -41,7 +41,7 @@ async function home(P, w, o) {
   const cal = w.cal, S = root.Story, st = stateOf(w), excused = !!(root.AbneyPromise && root.AbneyPromise.excused(w)), late = cal.curfew() && !excused, walked = !!watchman(w);      // (excused: walked home by Mistress Abney, after sitting with Bess)
   if (!P || !P.npc) return;
   // (before six, and not late: only what can't wait)
-  if (!o.bed && !late && !walked && cal.minute < H('18:00')) { if (root.Pie) await root.Pie.evening(P, w); return; }
+  if (!o.bed && !late && !walked && cal.minute < H('18:00')) { if (root.Pie && !P.npcAway) await root.Pie.evening(P, w); return; }      // (her mother in: out at the farm, it waits)
   if (abed(w) && !o.bed) {      // (back in, after a correction and slipping out before nine: late now, and it's the curfew too, there and then)
     if (late && st.curfewed !== night(cal)) { change(w, s => { s.curfewed = night(cal); }); await curfew(P, w, {}); await settle(P, w); }
     return;
@@ -190,7 +190,7 @@ async function supper(P, w, ctx) {
     const hearth = B ? P.collide(new V(-2, 0, B.z1 - 20), 3.2) : null;
     await Promise.all([stool ? P.sitOn(stool) : null, hearth ? mm.goTo(hearth, 0) : null]); }
   const c = w.save.state.chores || {}, e = c.errand && root.Story.ERRANDS[c.errand.id], fl = w.save.state.flags || {}, d = w.cal.day;
-  const day = { owed: !!ctx.owed, errand: e && c.day === d ? { title: e.title, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d && !(root.Garden && root.Garden.offToday(w)) ? !!c.garden : null,      // (her mother's garden today: nothing for Red to say of it)
+  const day = { owed: !!ctx.owed, noDinner: !!(root.Maren && root.Maren.stateOf(w).dinner !== w.cal.day && w.chores && w.chores.on()), errand: e && c.day === d ? { title: e.title, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d && !(root.Garden && root.Garden.offToday(w)) ? !!c.garden : null,      // (her mother's garden today: nothing for Red to say of it)
    
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });

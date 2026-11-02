@@ -139,6 +139,7 @@ function create(w) {
     if (!on() || !P || !P.npc) return;
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
+      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren,      // (her mother's own day: js/maren.js)
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
     await P.wait(0.8); await P.approach();
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
@@ -178,7 +179,10 @@ function create(w) {
       const early = e && e.shift && e.state === 'accepted' && cal.minute < e.by - SHIFT_SLACK;      // (a shift: not before a quarter of an hour before its time)
       if (e && !early && (e.state === 'accepted' || (e.state === 'broken' && e.shift) || e.state === 'working' || (e.state === 'missed' && e.gone && !e.knocked)) && sp[e.place] && (e.state === 'working' || e.state === 'missed' || has(P, e) || e.needs === 'basket')) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
-    if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
+    if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npc && !P.npcAway) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
+    // (her mother out at the farm: left on the table for her, and the errand's done)
+    else if (area === 'home' && e && e.state === 'carrying' && m.carry && P.npcAway) { const tb = P.world.surfaces.find(s => s.name === 'the table');
+      if (tb) out.push({ label: 'Leave ' + (e.carryName || NAME[e.carry]) + ' on the table for Mama', at: new V3((tb.x0 + tb.x1) / 2, tb.y + 2, (tb.z0 + tb.z1) / 2), run: () => leaveHome(P, e, tb) }); }
     return out;
   }
   // The garden: its work done (js/garden.js plays it), it's tended for the day.
@@ -281,6 +285,11 @@ function create(w) {
     change(c => { c.errand.state = 'done'; c.errand.short = !!(o && o.short); }); w.refresh();
   }
   // Home with it: handed to her mother, and her word for it.
+  async function leaveHome(P, e, tb) {
+    const m = P.motion, mid = new V3((tb.x0 + tb.x1) / 2, 0, (tb.z0 + tb.z1) / 2), at = P.collide(mid.clone().add(m.pos.clone().setY(0).sub(mid).setLength(9)), 3.2);
+    await m.goTo(at, Math.atan2(mid.x - at.x, mid.z - at.z)); await m.reach('R', mid.clone().setY(tb.y + 2)); await P.wait(0.3); await m.release('R');
+    handOver(P, e); if (P.talk) P.talk.muse(S.leftForMama(e.key), { face: 'calm' });
+  }
   async function giveHome(P, e) { await P.approach(9); await P.converse(marenTalk(P), { shot: ['red', 'mother'] }); }
   // (what she's brought, out of her hands and her mother's: and the errand's done)
   function handOver(P, e) {
@@ -323,13 +332,14 @@ function create(w) {
     { const b = e && e.pie && e.state === 'accepted' && w.area === 'home' && basketIn(P);      // (a basket taken down, for the Dunns: her mother puts the pie in it, under a cloth)
       if (b && !(b.contents || []).includes(PIE)) { putIn(b, PIE); if (P.talk) P.talk.muse('Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }
     if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : e.fails ? 0 : GRACE)) {      // (a shift has a quarter of an hour's grace; an errand, its half hour, unspoken; the Dunns' pie, none: he's gone out)
-      change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); slid('a promise let slide: ' + e.title.toLowerCase());      // (fails: past its time, it can't be done at all)
+      change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); slid('a promise let slide: ' + e.title.toLowerCase()); if (root.Maren && root.Maren.warned(w, 'errand')) rep.add('wilful', 0.5, 'after Mama’s word at dinner');      // (fails: past its time, it can't be done at all)
       if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third in a week: her mother will set her right, this evening)
       if (P && P.talk) for (const [face, text] of S.broken(e.title)) P.talk.muse(text, { face });
       w.refresh();
     }
     if (!c.garden && c.missed !== cal.day && cal.minute >= H('19:00')) {
       change(cc => { cc.missed = cal.day; }); rep.add('naughty', 0.5, 'Mama’s garden left untended');
+      if (root.Maren && root.Maren.warned(w, 'garden')) rep.add('wilful', 0.5, 'the garden left, after Mama’s word at dinner');      // (she was told)
       if (P && P.talk) P.talk.muse('The garden. I never went near it today.', { face: 'wince' });
     }
   }
@@ -340,6 +350,7 @@ function create(w) {
     const out = [], e = errand(), c = st();
     for (const M of [root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
+    if (root.Maren && cal.minute >= H('11:30') && cal.minute < root.Maren.BACK && root.Maren.stateOf(w).dinner !== cal.day) out.push('Home for dinner with Mama, at half past twelve.');      // (she's back from the farm for it)
     const k = root.Work && root.Work.current(w), t = k && (e || k.mode === 'picked') && root.Work.tasksOf(k)[k.step];
     if (t) out.push((e ? e.title : 'Mistress Pennock’s list') + ': ' + t.label[0].toLowerCase() + t.label.slice(1) + (k.until && !k.back ? ' (she’s back at ' + clock(k.until) + ')' : '') + '.');      // (at work: the task in hand; a timed one, when she's back)
     else if (e && e.state === 'accepted') out.push(e.title + (e.shift ? ': at ' + clock(e.by) + ', give or take a quarter of an hour' : e.from ? ': after ' + clock(H(e.from)) + ', before ' + clock(e.by) : ': begin by ' + clock(e.by)) + (e.needs && w.P && !has(w.P, e) && (w.area === 'home' || e.needs === 'basket') ? ' (' + (w.P.motion.carry && !holding(w.P, e.needs) ? 'put ' + w.P.motion.carry.name + ' down; ' : '') + (e.needs === 'basket' && basketLeft() ? 'your basket’s where you left it' : WHERE[e.needs]) + ')' : '') + '.');

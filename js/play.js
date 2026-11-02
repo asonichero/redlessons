@@ -155,7 +155,7 @@ function create(view, opts) {
     const out = [], me = flat(m.pos), f = fwd();
     const add = (o, p) => { const d = flat(p).distanceTo(me); if (d > 24 * sc + 8) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };
     if (lying) return [{ label: 'Get up', run: getUp, score: 0 }];
-    if (talk && mm && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
+    if (talk && mm && !npcAway && !sitting && opts.talk !== null) add({ label: 'Talk to ' + NPC.name, run: () => talkToMother({ stay: true }) }, mm.pos.clone().setY(18));
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
@@ -174,6 +174,16 @@ function create(view, opts) {
       if (W.chest && W.chest.open > 0.9) add({ label: 'Put ' + it.name + ' in the chest', run: () => putOn({ inChest: true }) }, W.chest.front);
     }
     return out.sort((a, b) => a.score - b.score);
+  }
+  // (her mother out, at the farm: walked to the door and gone, and back in by it, to her place. door: where inside the door to go to, or come from)
+  let npcAway = false, npcMoving = null;
+  function npcGo(away, door) {
+    if (!mom || away === npcAway) return; npcAway = away;
+    const run = async () => {
+      if (away) { if (door) { mm.auto = null; await Promise.race([mm.goTo(collide(door.clone(), 3.6, 'npc'), null), wait(8)]); } if (npcAway) { mom.root.visible = false; mm.warp(new V3(0, 0, -900), 0); } }
+      else { const home = new V3(NPC.at[0], 0, NPC.at[1]); mom.root.visible = true; if (door) { mm.warp(collide(door.clone(), 3.6, 'npc'), Math.PI); mom.root.position.copy(mm.pos); await Promise.race([mm.goTo(home, NPC.yaw), wait(10)]); } else { mm.warp(home, NPC.yaw); mom.root.position.copy(home); } }
+    };
+    npcMoving = run().then(() => { npcMoving = null; });
   }
   const busy = () => !!doing || !!m.auto || !!(talk && talk.playing);
   // Run one action: nothing else starts until it's done; moving off isn't possible while she's about it (the keys wait).
@@ -391,7 +401,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { jump, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { jump, get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

@@ -135,6 +135,8 @@ The village's people keep to their days. Where each is, is worked out from the d
 
 Each can be talked to (*Talk to Agnes*, and so on): a word by the time of day, something else if they've talked already today, and a little trust the first time each day. Peter Fowler's days off in the village come after the first visit to the Fowlers'. They walk the lanes and paths as a net of points (the shortest way, cutting corners where it's clear); those too far from the camera to make out aren't drawn.
 
+**Her mother's day.** It's planting time, so most days Maren is out at the Hallorans' farm: she walks out of the door after breakfast, is home for dinner at half past twelve, out again from half past one, and home for good at half past five. About one day in four she has needlework, and stays home for the morning or the afternoon instead (she says which at breakfast). While she's out, there's no one to talk to at home, and what Red brings back is left on the table for her (the errand's done all the same). **Dinner**: if Red's home at half past twelve, they eat together at the table; it fills her capacity again, and her mother looks over her morning (the garden, the errand, a trodden stem by the path), never correcting there, but saying what she's seen. What she's warned of and still finds undone that evening is wilful as well. Not home for dinner, and her mother mentions it at supper.
+
 **Her mother in the day** (talking to her before six): whatever Red's brought home is given first, and the errand's done (the eggs out of the basket, the basket hers to hang up again); or, an errand with nothing to bring, she asks how it went, and Red says (fine; Tom kept her talking; harder than she thought); or, still to do, a reminder of it, and the time (late: it's not too late); or a word about nothing much (the Thatchers' hens, the Hallorans' mending, a sprig of rosemary on the step from Grandmother). Then the garden, if it's not done ("the garden won't tend itself"), or supper at six.
 
 ## Evenings at home (`js/evening.js`)
@@ -287,6 +289,8 @@ Views: front, side, back, faces, or turning. Changes are saved in the browser st
 | `docs/quest-plan.md`, `docs/build-plan.md` | The story's quest lines by phase; what they need from the code, and the milestones |
 | `js/cabin.js` | Her grandmother's log cabin round the great oak |
 | `js/wood.js` | The wood: the path, the trees, the spots, the stream, the meadow and its gate, the failing light |
+| `js/maren.js` | Maren's day (Act 1): out at the farm, needlework days at home, dinner at half past twelve and her word on the morning |
+| `js/capacity.js` | How she's holding up: the day's capacity, worn and restored, and the meter by the diary |
 | `js/chores.js` | The days: Mama's garden, the errands given over breakfast, promises kept or let slide (wilful), the maintenance correction (three in a week) |
 | `js/garden.js` | Mama's garden: the rows of flowers and vegetables, the day's weeds, watering and jobs, trampled flowers and petals on her boots, her mother's look round at dusk and what comes of it |
 | `js/evening.js` | Evenings at home: the Watchman bringing her home, the curfew, reprieves for what others have dealt with, supper, and bed |

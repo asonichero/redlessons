@@ -313,11 +313,19 @@ function create(view, ui) {
       if (capacity && chores && chores.on()) capacity.tick(P, dt, (cal.day - d0) * 1440 + cal.minute - m0); }      // (worn, or rested, by the minutes gone by)
     if (capacity && chores && chores.on()) { P.tiredness = capacity.worn ? 2 : capacity.low ? 1 : 0; if (ui.capacity) ui.capacity(capacity.value); } else if (ui.capacity) ui.capacity(null);
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
+    if (areaName === 'home' && root.Maren && P.npcGo) marenDay(idle);
     if (guide) guide.update(P, dt);      // (the way to what's hers to do: js/guide.js)
     if (ui.basket) ui.basket(basketText(P));      // (her basket, by the diary, while she has it: what's in it)
     P.stage.setLight(lightFn ? lightFn() : cal.light());
     { const Au = root.GameAudio; if (Au && Au.musicTheme === 'wood' && Au.nodes.musicFilter) Au.nodes.musicFilter.frequency.value = 2200 - 1400 * cal.light(); }      // (the wood's music darkening with the light)
     if ((sinceSave += dt) > 3 && idle) { sinceSave = 0; const m = P.motion; save.change(s => { s.at = [Math.round(m.pos.x * 10) / 10, Math.round(m.pos.z * 10) / 10, Math.round(m.yaw * 100) / 100]; }, { at: true }); }
+  }
+  // Her mother's day, at home (js/maren.js): out to the farm and back by the door (straight away, as Red comes in); and dinner at half past twelve.
+  let marenP = null;
+  function marenDay(idle) {
+    const away = !root.Maren.home(w), first = marenP !== P; marenP = P;
+    if (P.npcAway !== away) P.npcGo(away, first ? null : new V3(-10, 0, 21));
+    if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) P.act(() => root.Maren.dinner(P, w));
   }
   // Her basket, for the HUD: while it's in her hands, what's in it (by name); otherwise nothing to show.
   function basketText(P_) { const b = root.Chores && P_ && P_.motion ? root.Chores.basketOf(P_) : null; return b ? (b.contents || []).slice() : null; }
