@@ -209,6 +209,17 @@ const SPECS = {
   // (the Watchman: "in his nightgown" read as his night watchman's garb, a short cape over his shoulders that leaves his arms free, set aside when
   // he sits to take someone in hand, and a tricorn hat)
   // (the carrier's men, in at the Wheatsheaf on carrier nights: big Ned with his beard, old Amos, young Kit)
+  // (the fair's: the Miller, Georgie's master and the fiddler; Agnes's mother and father; Bo's, who work the Hallorans' farm now)
+  miller: { name: 'the Miller', age: 54, sex: 'm', scale: 1.04, shoulders: 1.1, chest: 1.14, waist: 1.3, hips: 1.08, arms: 1.12, neck: 1.12, jaw: 1.1, hair: 'short', grey: true, beard: 'short', hat: 'felt', feet: 'boots', apron: 'white', sleeves: 'rolled',
+    pal: { skin: '#f0c8a8', hair: '#bcb4a8', eyes: '#5a6a72', lips: '#b07068', top: '#f0ece2', trousers: '#7a7468', apron: '#f4f0e6', apronDk: '#dcd6c8', hat: '#e8e2d4' } },
+  thatcher: { name: 'Master Thatcher', age: 48, sex: 'm', scale: 1.06, shoulders: 1.14, chest: 1.1, waist: 1.12, hips: 1.0, arms: 1.18, neck: 1.1, jaw: 1.08, hair: 'short', beard: 'short', smock: true, feet: 'boots', sleeves: 'long',
+    pal: { skin: '#e6b892', hair: '#c89a50', eyes: '#4a70b0', lips: '#a87060', top: '#ddd0b0', trousers: '#5a4a34' } },
+  thatcherWife: { name: 'Mistress Thatcher', age: 45, sex: 'f', scale: 0.92, bust: 1.15, waist: 1.15, hips: 1.08, hair: 'bun', hat: 'mob', apron: 'cloth', feet: 'boots', skirtLen: 13, sleeves: 'elbow',
+    pal: { skin: '#f8dcc4', hair: '#d8b060', eyes: '#4a70b0', lips: '#c87078', top: '#f6eedc', bodice: '#6a8a4a', skirt: '#8aa060', skirtDk: '#6a8048', hem: '#6a8048', apron: '#f0e6cc', apronDk: '#d8ccae', hat: '#fbf6ec' } },
+  boFather: { name: 'Master Halloran (young)', age: 42, sex: 'm', scale: 1.02, shoulders: 1.12, chest: 1.08, waist: 1.08, hips: 0.98, arms: 1.15, neck: 1.08, jaw: 1.06, hair: 'short', beard: 'short', hat: 'felt', smock: true, feet: 'boots', sleeves: 'long',
+    pal: { skin: '#e4b48c', hair: '#8a5a32', eyes: '#5a8ac0', lips: '#a87068', top: '#e0d4b8', trousers: '#4e4232', hat: '#5a4a38' } },
+  boMother: { name: 'Mistress Halloran', age: 40, sex: 'f', scale: 0.9, bust: 1.1, waist: 1.1, hips: 1.05, hair: 'bun', hat: 'mob', apron: 'cloth', feet: 'boots', skirtLen: 12.5, sleeves: 'rolled',
+    pal: { skin: '#fbe2d0', hair: '#e8c070', eyes: '#5a8ac0', lips: '#d87880', top: '#fbf4e4', bodice: '#8a5a6a', skirt: '#a87a8a', skirtDk: '#8a5e6e', hem: '#8a5e6e', apron: '#f2e8d0', apronDk: '#dacdb0', hat: '#fbf6ec' } },
   carrierNed: { name: 'Ned Hobb', age: 40, sex: 'm', scale: 1.1, shoulders: 1.22, chest: 1.2, waist: 1.28, hips: 1.05, arms: 1.2, neck: 1.2, jaw: 1.14, hair: 'short', beard: 'full', hat: 'felt', feet: 'boots', vest: 'jerkin', sleeves: 'long',
     pal: { skin: '#e2b08a', hair: '#4a3020', eyes: '#5a4a3a', lips: '#a87060', top: '#c8b898', trousers: '#4a4038', vest: '#6a5034', hat: '#4a4034' } },
   carrierAmos: { name: 'Amos Pryce', age: 64, sex: 'm', scale: 0.96, shoulders: 1.0, chest: 1.0, waist: 1.08, hips: 0.96, neck: 1.0, jaw: 1.05, hair: 'short', grey: true, beard: 'short', hat: 'felt', smock: true, feet: 'boots', old: true, sleeves: 'long',

@@ -196,7 +196,8 @@ function attach(P, w) {
   function update(first) {
     const day = cal.day, min = cal.minute;
     for (const key in PEOPLE) {
-      const want = (vs().away && vs().away[key] === day) || (key === 'peter' && !(root.Peter && root.Peter.inVillage(w))) ? null : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
+      const fs = root.FairDay ? root.FairDay.station(w, key, min) : undefined;      // (fair day: at the fair, all of them)
+      const want = (vs().away && vs().away[key] === day) || (key === 'peter' && fs === undefined && !(root.Peter && root.Peter.inVillage(w))) ? null : fs !== undefined ? fs : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
       if (f && f.scene) continue;      // (a scene has them)
       if (want && !f) spawn(key, want, !first);
       else if (f && !want && f.want) { if (!f.held) send(f, null); }
