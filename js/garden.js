@@ -19,22 +19,24 @@
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h = Math.imul(h ^ (h >>> 16), 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
 
-// ── The plot: fenced, its gate on the west side by the cottage. Rows run east and west, flowers and vegetables in turn, with a path between each
-// two and a headland down either side; the water butt in the south-east corner, the can at its foot.
-const X0 = -344, X1 = -214, Z0 = -514, Z1 = -384, RX0 = -331, RX1 = -227;
+// ── The plot: fenced, its gate on the west side by the cottage. Rows run east and west: nearest the house and the potting bench, the onions and
+// the cabbages back to back in one wide bed (each worked from its own side: the onions from the path by the house, the cabbages from the one
+// beyond); then the pretty maids, the cockle shells, the silver bells and the beans, each in a thin bed of its own, a path between each two;
+// a headland down either side; the water butt in the north-east corner, the can at its foot.
+const X0 = -344, X1 = -248, Z0 = -504, Z1 = -384, RX0 = -331, RX1 = -261;
 const ROWS = [
-  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -414 },
-  { id: 'onions', kind: 'veg', name: 'the onions', z: -431, job: 'Hoe between the onions' },
-  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -448 },
-  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -465, job: 'Pick the caterpillars off the cabbages' },
-  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -482 },
-  { id: 'beans', kind: 'veg', name: 'the beans', z: -499, job: 'Tie the beans up their poles' },
+  { id: 'onions', kind: 'veg', name: 'the onions', z: -414, stand: -406, job: 'Hoe between the onions' },      // (stand: worked only from this side)
+  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -420, stand: -426.5, job: 'Pick the caterpillars off the cabbages' },
+  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -437 },
+  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -454 },
+  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -471 },
+  { id: 'beans', kind: 'veg', name: 'the beans', z: -488, job: 'Tie the beans up their poles' },
 ];
-const PATHS = [-397, -422.5, -439.5, -456.5, -473.5, -490.5, -508],      // (paths between the rows wide enough to walk without brushing the beds; the one by the house wide, for the bench)
-      HEAD = [-338.5, -219.5];
-const BUTT = V3 ? new V3(-219, 0, -389) : null, CAN = V3 ? new V3(-226, 0, -390) : null;
+const PATHS = [-397, -428.5, -445.5, -462.5, -479.5, -496.5],      // (paths between the beds wide enough to walk without brushing them; the one by the house wide, for the bench)
+      HEAD = [-338.5, -253.5];
+const BUTT = V3 ? new V3(-253, 0, -389) : null, CAN = V3 ? new V3(-260, 0, -390) : null;
 const BENCH = { x: -296, z: -388.5, w: 18, d: 4, y: 8 }, GATE = { x: X0, z: -397 };      // (the potting bench along the fence by the house: the trowel on it, room for a basket; the gate, from the path by the cottage)      // (no THREE under node's tests: the plan and the state only)
-const PER_ROW = 24, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
+const PER_ROW = 16, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
 const FLOWERS = ROWS.filter(r => r.kind === 'flowers');
 const inside = p => p.x > X0 && p.x < X1 && p.z > Z0 && p.z < Z1;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
@@ -188,7 +190,7 @@ function attach(P, w) {
   const S = root.Story, cal = w.cal, rep = w.rep, m = P.motion, T = root.Toon;
   const flat = p => new V3(p.x, 0, p.z), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
   // (the path nearest her beside a row, at x: where she stands to work at it)
-  const pathBeside = (row, x) => { const r = ROWS.find(q => q.id === row), ps = PATHS.filter(z => Math.abs(z - r.z) < 15), z = ps.sort((a, b) => Math.abs(a - m.pos.z) - Math.abs(b - m.pos.z))[0]; return new V3(Math.min(RX1 - 1, Math.max(RX0 + 1, x)), 0, z); };
+  const pathBeside = (row, x) => { const r = ROWS.find(q => q.id === row), ps = r.stand != null ? [r.stand] : PATHS.filter(z => Math.abs(z - r.z) < 15), z = ps.sort((a, b) => Math.abs(a - m.pos.z) - Math.abs(b - m.pos.z))[0]; return new V3(Math.min(RX1 - 1, Math.max(RX0 + 1, x)), 0, z); };      // (stand: the wide bed's rows, each from its own side)
   const near = (p, d) => flat(m.pos).distanceTo(p) < (d || 14);
   // The weeds, as they are today.
   const weeds = plan(cal.day).weeds.map((wd, i) => { const g = new THREE.Group(); g.position.set(wd.x, 0.5, wd.z);
