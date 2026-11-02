@@ -95,12 +95,14 @@ async function fitting(P, w) {
 const gown = w => isFair(w) ? { kind: 'fair', spoil: Object.assign({}, stateOf(w).spoil) } : null;
 // (something on the dress: earth, soot, wet, tear (0..1 each, adding))
 function spoil(w, kind, n) { change(w, x => { x.spoil = x.spoil || {}; x.spoil[kind] = Math.min(1, (x.spoil[kind] || 0) + (n == null ? 0.4 : n)); }); }
+// (Bess's story of her frock: once Red's been fitted, before the fair, or at it (with the fairing): not yet told)
+const frockDue = w => { const s = stateOf(w), fl = w.save.state.flags || {}; return !fl['bess-frock'] && !!s.fitted && (phase(w) === 'week' || phase(w) === 'fair'); };
 function objective(w) {
   if (phase(w) === 'week' && w.cal.day === fitDay(w) && stateOf(w).fitted !== w.cal.day) return w.cal.minute < FIT ? 'Home by four, for Mama to fit the dress.' : 'Home: Mama’s waiting to fit the dress.';
   return null;
 }
 
-const api = { arm, gatesMet, phase, isFair, marenAt, curfewLifted, breakfast, fittingDue, fitting, gown, spoil, objective, sessions, fitDay, stateOf, FIT, ENDS };
+const api = { frockDue, arm, gatesMet, phase, isFair, marenAt, curfewLifted, breakfast, fittingDue, fitting, gown, spoil, objective, sessions, fitDay, stateOf, FIT, ENDS };
 root.Fair = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
