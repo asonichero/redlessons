@@ -285,7 +285,8 @@ function build(scene, opts) {
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);
   // (a correction in the glade: on the fallen tree itself, along it, facing the path; the trunk put aside while the scene's own stands in
   // for it. Fixed: the one giver's seat that stays where it is (js/corrlayout.js))
-  if (GLADE) { const s = spots.log, d = s.dir.clone().setY(0).normalize(); world.corr = { key: 'glade', giver: { x: s.at.x, z: s.at.z, yaw: Math.atan2(d.z, -d.x) }, seat: 'log', hide: s.trunk, fixed: true }; }
+  if (GLADE) { const s = spots.log, d = s.dir.clone().setY(0).normalize(); world.corr = { key: 'glade', giver: { x: s.at.x, z: s.at.z, yaw: Math.atan2(d.z, -d.x) }, seat: 'log', hide: s.trunk, fixed: true,
+    watchers: [{ x: -1.5, z: 897.5 }], corner: { x: 30.5, z: 896.5, yaw: 2.094 } }; }      // (its places, as set in the room editor)
 
   // ── Light: the sky through the leaves, the fog closing in, the village windows lighting up, the sun's shadows following her.
   let api = null;

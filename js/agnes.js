@@ -146,12 +146,11 @@ async function scene(P, w, figs) {
   const Q = w.P; if (!Q) return;
   // (on the fallen tree itself: Agnes sat along it, facing the path; the trunk put aside while the scene's own stands in for it. Red on the
   // path side, off along it a way, watching)
-  // (the place is the glade's own (js/wood.js's world.corr, fixed: the trunk); where Red stands, the room editor's if it's set one)
+  // (the place is the glade's own (js/wood.js's world.corr, fixed: the trunk), and where Red stands)
   const sq = spotOf(Q), d = sq.dir.clone().setY(0).normalize(), c = sq.at.clone().setY(0);
-  const watch = c.clone().addScaledVector(sq.side3, -14).addScaledVector(d, 16);
   await Q.wait(0.4);
   const r = await root.Correction.run(Q, { corrector: 'agnes', fade: on => w.fade(on),
-    turns: [{ subject: 'georgie', script: S.agnesGeorgie }], watchers: [{ who: 'red', at: [watch.x, watch.z], face: 'shy' }] });
+    turns: [{ subject: 'georgie', script: S.agnesGeorgie }], watchers: [{ who: 'red', face: 'shy' }] });      // (Red at the glade's first place for it)
   if (Q !== w.P) return;
   // (after: the two of them by the trunk, and Red going quietly)
   const a = c.clone().addScaledVector(d, -2.5).addScaledVector(sq.side3, 3.5), g = c.clone().addScaledVector(d, 2.5).addScaledVector(sq.side3, 3.5), two = { agnes: make(Q, 'agnes', a, yawTo(a, g)), georgie: make(Q, 'georgie', g, yawTo(g, a)) };
