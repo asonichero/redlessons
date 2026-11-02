@@ -91,15 +91,20 @@ if (vCovA > 0.002) {
   return m;
 }
 // Draw each live figure's outer layers as depth, kind by kind. Called by the stage before each frame is drawn.
-const _sz = new THREE.Vector2();
+const _sz = new THREE.Vector2(), _pv = new THREE.Matrix4(), _fr = new THREE.Frustum(), _sp = new THREE.Sphere();
 function clipPass(renderer, scene, camera) {
   renderer.getDrawingBufferSize(_sz); const w = Math.max(1, _sz.x), h = Math.max(1, _sz.y);
   const inScene = o => { for (; o; o = o.parent) if (o === scene) return true; return false; };
   const bg = scene.background, mask = camera.layers.mask, auto = renderer.shadowMap.autoUpdate, rt0 = renderer.getRenderTarget(), cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
   scene.background = null; renderer.shadowMap.autoUpdate = false; renderer.setClearColor(0xffffff, 1);
+  // (the scene's places brought up to date once, here, rather than by each pass; and the camera's view, to leave out who isn't in it)
+  scene.updateMatrixWorld(); camera.updateMatrixWorld(); _pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _fr.setFromProjectionMatrix(_pv);
   for (const rig of LIVE) {
     if (!inScene(rig.root)) { if (!rig.root.parent) { LIVE.delete(rig); for (const t of rig.clipRT) t.dispose(); } continue; }
     rig.clipU.uClipRes.value.copy(_sz);
+    // (off the screen: nothing of theirs is drawn, so nothing to clip; their masks left empty)
+    rig.root.getWorldPosition(_sp.center); _sp.radius = 26 * (rig.scaleW || 1);
+    if (!rig.root.visible || !_fr.intersectsSphere(_sp)) { for (let k = 0; k < 4; k++) rig.clipU['uClip' + k].value = WHITE; continue; }
     for (let k = 0; k < 4; k++) {
       const list = rig.clipSrc[k].filter(m => { for (let o = m; o; o = o.parent) if (!o.visible) return false; return true; });
       const rt = rig.clipRT[k], U = rig.clipU['uClip' + k];
@@ -107,7 +112,7 @@ function clipPass(renderer, scene, camera) {
       if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
       const L = 1 + ((rig.clipId * 4 + k) % 31), saved = list.map(m => m.material);
       list.forEach(m => { m.layers.enable(L); m.material = DEPTHM[m.isSkinnedMesh ? 1 : 0]; });
-      camera.layers.set(L); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, camera);
+      camera.layers.set(L); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(rig.root, camera);      // (only the figure: their own layers, and nothing else in the scene walked through)
       list.forEach((m, i) => { m.layers.disable(L); m.material = saved[i]; });
       U.value = rt.texture;
     }

@@ -9,8 +9,10 @@ const THREE = root.THREE, T = root.Toon, srgb = h => new THREE.Color(h).convertS
 
 function create(view, opts) {
   opts = opts || {};
-  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-  renderer.outputEncoding = THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(2, root.devicePixelRatio || 1));
+  // (the drawing buffer isn't kept between frames: the one picture taken of it (a save's backdrop) is read as it's drawn; and no finer than one and
+  // a half pixels to the point, which on the sharpest screens is near half the pixels of two, and hard to tell apart)
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.outputEncoding = THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(1.5, root.devicePixelRatio || 1));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   view.appendChild(renderer.domElement);
   const scene = new THREE.Scene(); scene.background = new THREE.Color(srgb('#2a1f1c'));
@@ -23,7 +25,8 @@ function create(view, opts) {
   // Light: a warm sky and a bounce off the floor, and the sun through the window, which casts the shadows.
   const hemi = new THREE.HemisphereLight(srgb('#fff4e4'), srgb('#8a6448'), 0.62); scene.add(hemi);
   const sun = new THREE.DirectionalLight(srgb('#fff0d8'), 0.72); sun.position.set(-30, 60, 40); sun.castShadow = true;
-  sun.shadow.mapSize.set(4096, 4096); Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 260 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.06; sun.shadow.radius = 3;
+  sun.shadow.mapSize.set(2048, 2048);      // (soft-edged as they are, a quarter the texels of 4096 shows no difference at this size of figure)
+  Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 260 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.06; sun.shadow.radius = 3;
   scene.add(sun); scene.add(sun.target);
   // The set: the cottage, unless the page brings its own (opts.set: scene → { group, update(camera), tick(dt), world }), or none.
   const cottage = opts.set ? opts.set(scene) : opts.room !== false && root.Cottage ? root.Cottage.build(scene) : null;
