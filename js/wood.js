@@ -291,7 +291,8 @@ function build(scene, opts) {
     if (cabin && cabin.light) cabin.light(t);
   }
   function follow(pos, dt, camera, at) {
-    if (!api) return; if (!GLADE) occlude(api.camera.position, pos);      // (the glade's own: update, below) if (cabin && cabin.cut) cabin.cut(api.camera.position, at, dt);      // (and the cabin, if it's in the way of her; at: null, nothing's cut)
+    if (!api) return; if (!GLADE) occlude(api.camera.position, pos);      // (the glade does its own: update, below)
+    if (cabin && cabin.cut) cabin.cut(api.camera.position, at, dt);      // (and the cabin, if it's in the way of her; at: null, nothing's cut)
     const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();      // (the sun's shadows following her)
   }
   let clock = 0;
