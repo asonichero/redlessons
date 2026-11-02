@@ -103,7 +103,7 @@ function create(stage, opts) {
 
   // ── The camera: side on to the two of them, far enough back to hold both, a little above, their heads in the upper part of the view (the
   // box covers the lower). It eases there, and back to where it was after. ──
-  let saved = null, giveBack = null;      // (giveBack: the camera's handing back after the last conversation, still to come)
+  let saved = null, giveBack = null, handing = null;      // (handing: the view to give back, held a moment after a conversation ends, in case another follows straight on)      // (giveBack: the camera's handing back after the last conversation, still to come)
   function settle(names, ms) {
     const rigs = names.map(n => cast[n] && cast[n].rig).filter(Boolean); if (!rigs.length) return;
     const heads = rigs.map(r => r.headGroup.getWorldPosition(new V3())), mid = heads.reduce((a, b) => a.add(b), new V3()).divideScalar(heads.length);
@@ -213,8 +213,9 @@ function create(stage, opts) {
   async function play(script, o) {
     o = o || {}; captionOff(); playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile; a caption still up is done with, so its ending can't take the box away mid-conversation)
     // (if the last one's still handing the camera back, it's the player's: this one gives it back to them too, rather than keeping it held)
+    const follows = !!(giveBack && handing);      // (straight on from the last: the camera stays where it is, and the player's view is the one from before that)
     const wasEnabled = giveBack ? (clearTimeout(giveBack), giveBack = null, true) : stage.controls.enabled;
-    const mine = saved = { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: wasEnabled };
+    const mine = saved = follows ? handing : { pos: stage.camera.position.clone(), look: stage.controls.target.clone(), enabled: wasEnabled }; handing = null;
     stage.controls.enabled = false;
     if (o.shot !== false) settle(o.shot || Object.keys(cast));      // (shot: false, the camera's left where the scene has put it)
     const runList = async list => {
@@ -235,7 +236,7 @@ function create(stage, opts) {
     finally {
       el.classList.remove('on', 'thought'); portrait = null; playing = false; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
       for (const k in cast) relax(k, o.hold || 9000); unlook();
-      if (o.keepCamera) stage.controls.enabled = mine.enabled; else { stage.go(mine.pos, mine.look, 900); giveBack = setTimeout(() => { giveBack = null; stage.controls.enabled = mine.enabled; }, 950); }
+      if (o.keepCamera && !follows) stage.controls.enabled = mine.enabled; else { handing = mine; giveBack = setTimeout(() => { handing = null; stage.go(mine.pos, mine.look, 900); giveBack = setTimeout(() => { giveBack = null; stage.controls.enabled = mine.enabled; }, 950); }, 900); }      // (held a moment: another conversation straight after carries on from here)
     }
     return picks;
   }
