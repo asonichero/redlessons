@@ -134,7 +134,11 @@ function lathe(profile, depth, seg, phi0, phiLen) {
   const pr = profile.slice().sort((a, b) => a[1] - b[1]);
   const g = new THREE.LatheGeometry(pr.map(([r, y]) => new V2(Math.max(0.001, r), y)), seg || 22, phi0 || 0, phiLen || Math.PI * 2);
   if (depth != null && depth !== 1) g.scale(1, 1, depth);
-  g.computeVertexNormals(); return g;
+  g.computeVertexNormals();
+  // (all the way round: its first edge and its last lie on each other (at the front), but each had its own normal, and showed as a seam, a slit
+  // down the front of every skirt, in the shading and the ink round it: the two made one)
+  if (!(phiLen < Math.PI * 2 - 1e-6)) { const n = g.attributes.normal, ps = g.attributes.position, k = pr.length, S0 = seg || 22, v = new V3(); for (let j = 0; j < k; j++) { const a = j, b = S0 * k + j; ps.setXYZ(b, ps.getX(a), ps.getY(a), ps.getZ(a)); v.set(n.getX(a) + n.getX(b), n.getY(a) + n.getY(b), n.getZ(a) + n.getZ(b)).normalize(); n.setXYZ(a, v.x, v.y, v.z); n.setXYZ(b, v.x, v.y, v.z); } n.needsUpdate = true; }
+  return g;
 }
 // A profile resampled to n rows (linearly, by height), so a lathe made from it has rows enough to be sculpted.
 function dense(profile, n) {
@@ -347,14 +351,14 @@ function palette(id, look) {
      
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
     // (the fair dress her mother made, in one of two cuts (look.gown): 'fair', like her mother's own fine one, to the ankle: forget-me-not blue
-    // from collar to hem, the bodice a subtler shade of it, laced in cream; or 'fairYoung', a girl's frock: blue all through, sleeves and all, a white frilled
+    // from collar to hem, the bodice a subtler shade of it, laced in cream, a white frilled collar and a deep blue sash; or 'fairYoung', a girl's frock: blue all through, sleeves and all, a white frilled
     // collar, and a pale pink sash at the waist. And what the day's put on it: earth and a wet hem darken it from the bottom, soot greys it, a
     // tear shows the petticoat's white at the hem)
     if (l.gown === 'fair' || l.gown === 'fairYoung') { const sp = l.spoil || {}, dirt = Math.min(1, (sp.earth || 0) + (sp.wet || 0) * 0.6), soot = Math.min(1, sp.soot || 0), young = l.gown === 'fairYoung';
       const mix = (a, b, t) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), c = k => Math.round(((x >> k) & 255) * (1 - t) + ((y >> k) & 255) * t); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
       const BLUE = '#6f90c4', sk = mix(BLUE, '#6a6a70', soot * 0.6), skd = mix(shade(BLUE, -0.22), '#5a4a32', dirt * 0.8);
       Object.assign(P, { blouse: mix(young ? shade(BLUE, 0.08) : BLUE, '#6a6a70', soot * 0.5), bodice: young ? sk : mix(shade(BLUE, -0.16), '#6a6a70', soot * 0.5), lace: young ? shade(BLUE, -0.3) : '#f2e6c4',
-        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : young ? mix('#fbf8f2', '#5a4a32', dirt) : mix(shade(BLUE, -0.25), '#4a3a28', dirt), collar: young ? '#fbf8f2' : null, sash: young ? '#f0c4cc' : null }); }
+        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : young ? mix('#fbf8f2', '#5a4a32', dirt) : mix(shade(BLUE, -0.25), '#4a3a28', dirt), collar: '#fbf8f2', sash: young ? '#f0c4cc' : mix(shade(BLUE, -0.42), '#4a4a50', soot * 0.5) }); }      // (both with a white frilled collar and a sash, to read young: the fair dress's a deeper blue)
   } else if (id === 'gran') {
     const shawl = '#7d6a8c';
     Object.assign(P, { cloak: shawl, cloakDk: shade(shawl, -0.3), lining: '#e2d8c8', lace: '#c9b8d4', blouse: '#efe6d4', bodice: '#4e3e56', skirt: '#5a6444', skirtDk: '#454e34', hem: '#454e34',
@@ -589,7 +593,9 @@ function make(id, look, opts) {
   // The neck: from inside the shoulders up into the head, bending with both.
   skinnedOn(rig.neck, lathe(wide([[0.7, -1.1], [0.68, -0.3], [0.64, 0.6], [0.62, 1.6]], K.neckGirth), 1, 16), P.skin, p => { const t = ss(0.1, -0.7, p.y), h = ss(0.6, 1.3, p.y); return [[rig.torso, t], [rig.head, h * (1 - t)], [rig.neck, (1 - t) * (1 - h)]]; });
   piece(lathe(wide([[1.25, -0.25], [1.4, 0.1], [1.15, 0.3]], Math.max(K.neckGirth, 0.9)), 0.78, 18), P.collar || P.blouse, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.04 });   // the collar
-  if (P.collar) piece(lathe(wide([[1.3, -0.45], [1.75, -0.6], [1.95, -0.75], [1.4, -0.3]], Math.max(K.neckGirth, 0.9)), 0.82, 20), P.collar, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.03, side: THREE.DoubleSide });      // (the girl's frock: a frilled collar, wide over the shoulders)
+  if (P.collar) { const cg = lathe(wide(dense([[3.18, 8.0], [3.08, 8.4], [2.5, 9.15], [1.36, 9.66], [1.3, 9.72]], 12), trunkW), 0.7 * TD, 48), cp = cg.attributes.position;
+    for (let i = 0; i < cp.count; i++) { const x = cp.getX(i), y = cp.getY(i), z = cp.getZ(i), a = Math.atan2(x, z), cut = 0.75 * Math.exp(-((a / 0.3) ** 2)); if (y < 9.6) cp.setY(i, y + cut * (9.6 - y) / 1.6); }      // (a notch at the front: the two rounded lobes of a Peter Pan collar)
+    cg.computeVertexNormals(); skinnedOn(rig.hips, cg, P.collar, torsoW, { ink: 0.03, side: THREE.DoubleSide }); }      // (a frilled collar, lying over the shoulders and the top of the chest, just outside the dress)
   if (P.sash) { clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.0, 2.25], [3.06, 2.6], [3.0, 2.95]], trunkW), 0.76 * TD, 32), P.sash, torsoW, { ink: 0.03 }));      // (and a sash at her waist, tied in a bow behind)
     for (const sx of [-1, 1]) piece(ell(0.9, 0.5, 0.35, 10, 8), P.sash, rig.hips, sx * 0.7, 2.6, -(0.76 * TD * 3.0) - 0.1, { rot: [0, 0, sx * 0.4], ink: 0.03 }); }
 
