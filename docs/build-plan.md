@@ -51,10 +51,10 @@ Rose, Maren and Hulda exist. Twenty more figures are needed (all now built in `j
 | Abney's daughter | 1.1 | Sat up with; her confinement in 2.2 | No |
 | Old Halloran | 1.1 | Farmer; Rose's quests | No |
 | Willie Winkie (William Dunn) | 1.3 | The Watchman, on his rounds at night; Georgie's father. "In his nightgown" is read as his night watchman's garb: a short cape that leaves his arms free, and a tricorn hat. Red thinks of him as Master William, from when she and Georgie were close as children, and calls him Sir, for his office | Yes, from his second catch: Red alone, agreed with her and her mother, at her own hearth with her own slipper |
-| Georgie Dunn | 1.1 | The miller's lad, apprenticed at the mill; village colour; the Watchman's son | No |
-| Agnes Thatcher | 1.1 | Village colour, a confidante | No |
+| Georgie Dunn | 1.1 | The miller's apprentice, grown; the Watchman's son; Georgie Porgie (never named): the kiss at the fair, and Agnes holding him to account after, in the wood | By Agnes, his own yes (1.3) |
+| Agnes Thatcher | 1.1 | At the well; Red's confidante once told; holds Georgie to account after the fair | No (she's the one who gives) |
 | Holt | 1.3 | The Woodsman | Yes, after his trust gate |
-| Wolfe | 1.3 | The antagonist | No |
+| Wolfe | 2.1 | The antagonist | No |
 | Mother Barrow | 2.1 | The Barrows | Yes, at the trespass |
 | Father Barrow | 2.1 | The Barrows | No; corrects the others |
 | Wee Barrow | 2.1 | The Barrows; the household's little (Mother and Father call him their wee cub, or little cub) | No |
@@ -94,7 +94,7 @@ Act 1 playable end to end comes first, because it needs almost every system. Act
 1. **Foundations.** World and scene manager, save state, calendar and day/night, quest and gate engine, reputation and openness. Chapter one runs inside the new world rather than as its own page.
 2. **Correction, generalised.** Corrector profiles, any subject across the lap, two in a queue, witnessed scenes, safe words per context. Tests for each.
 3. **The village.** Lanes and green, the bakery, inn and forge, the garden, the Fowlers' smallholding. Peter and his grandfather, Tom, the smith, Mistress Pennock, Mistress Abney, Halloran, Georgie and Agnes.
-4. **Act 1 playable.** Every Act 1 step from the quest plan, Willie Winkie's first catch, Holt and Wolfe's first meetings, and the gate into Act 2.
+4. **Act 1 playable.** Every Act 1 step from the quest plan, the spring fair, Willie Winkie's first catch, Holt's first meeting, and the gate into Act 2 (which opens on Wolfe's first meeting).
 5. **Act 2.** The opened-out wood, the charcoal-burners', the Barrows, the Shoe, Wolfe's hidden disclosure, the confinement, and the errand to the cabin.
 6. **Act 3.** Holt and Maren, the search with a lead from every finished figure, Hulda's hiding place, the trap, and the gathering where Rose speaks.
 7. **Polish.** Performance on phones, the installable app, balancing the stats and the pain model across correctors.
