@@ -40,7 +40,7 @@ async function dinner(P, w) {
   // (what she's seen: the garden, if it's Red's today; the errand, where it stands; her flowers, if any are trodden)
   const G = root.Garden, gp = G && c.day === d && !G.offToday(w) ? G.progress(w) : null, e = c.day === d && c.errand && S.ERRANDS[c.errand.id];
   const trodden = G && G.stateOf ? Object.values(G.stateOf(w).trampled || {}).some(day => day === d) : false;
-  const r = { garden: gp ? (gp.done ? 'done' : gp.begun ? 'begun' : 'untouched') : null, errand: e ? { title: e.title, state: c.errand.state, by: root.Calendar.clockOf(H(e.by)) } : null, trodden, needle: needlework(d) };
+  const r = { garden: gp ? (gp.done ? 'done' : gp.begun ? 'begun' : 'untouched') : null, errand: e ? { id: c.errand.id, state: c.errand.state, by: root.Calendar.clockOf(H(e.by)) } : null, trodden, needle: needlework(d) };
   await P.converse(S.dinner(r), { shot: ['red', 'mother'] });
   change(w, s => { s.warned = { day: d, garden: r.garden === 'untouched' || r.garden === 'begun', errand: !!(r.errand && r.errand.state === 'accepted') }; });
   if (w.capacity) w.capacity.add(35, 'dinner');

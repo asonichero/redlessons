@@ -117,7 +117,7 @@ async function evening(P, w, force) {
   if (p.day === cal.day && p.told === null) {
     let told = null;
     await P.wait(0.6); await P.approach();
-    await P.converse(S.pieHome({ tell: () => { told = true; }, keep: () => { told = false; } }), { shot: ['red', 'mother'] });
+    await P.converse(S.pieHome({ early: cal.minute < H('18:00'), tell: () => { told = true; }, keep: () => { told = false; } }), { shot: ['red', 'mother'] });
     if (told) { change(w, s => { s.pending = null; }); await root.Evening.owe(P, w, 'pie', { withheld: false }); return true; }      // (seen to at the evening's end: js/evening.js)
     change(w, s => { s.pending.told = false; });
     return false;

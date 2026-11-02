@@ -98,7 +98,7 @@ async function settle(P, w) {
   if (w.capacity) w.capacity.add(15, 'set right');      // (held to account: and lighter for it)
   if (P !== w.P) return;
   change(w, s => { s.abed = night(w.cal); s.ate = 0; });
-  if (o.kind !== 'curfew') await P.converse(S.breadAndBed(), { shot: ['red', 'mother'] });      // (the curfew's own word after says so)
+  if (o.kind !== 'curfew' && o.kind !== 'maintenance') await P.converse(S.breadAndBed(), { shot: ['red', 'mother'] });      // (the curfew's and the maintenance's own words after say so)
   w.refresh();
 }
 // After an evening correction: the night's her own, in the house: the bread and cheese on the board if she wants it, and the bed when she
@@ -181,21 +181,21 @@ async function blessing(P, w) {
 async function supper(P, w, ctx) {
   const S = root.Story; let how = null; ctx = ctx || {};
   await P.wait(0.4); await P.approach();
-  await P.converse(S.supper({ low: !!(w.capacity && w.capacity.low), owed: ctx.owed, yes: () => { how = 'yes'; }, little: () => { how = 'little'; } }), { shot: ['red', 'mother'] });
+  await P.converse(S.supper({ low: !!(w.capacity && w.capacity.low), owed: ctx.owed, late: ctx.late ? () => { how = 'late'; } : null, yes: () => { how = 'yes'; }, little: () => { how = 'little'; } }), { shot: ['red', 'mother'] });
   // (and her day, caught up on: over the potatoes at the table; sat on the stool while her mother sees to the hearth; or stood, and questioned)
   const m = P.motion, mm = P.npcMotion, W = P.world, V = root.THREE.Vector3, tb = W.surfaces.find(s => s.name === 'the table'), B = W.bounds;
   let peeling = null;
   if (how === 'yes') peeling = await peel(P);
-  else if (how === 'little') { const stool = W.seats.filter(s => s.name === 'the stool').sort((p, q) => (B ? Math.abs(q.at.z - B.z1) - Math.abs(p.at.z - B.z1) : 0))[0];
+  else if (how === 'little' || how === 'late') { const stool = W.seats.filter(s => s.name === 'the stool').sort((p, q) => (B ? Math.abs(q.at.z - B.z1) - Math.abs(p.at.z - B.z1) : 0))[0];
     const hearth = B ? P.collide(new V(-2, 0, B.z1 - 20), 3.2) : null;
     await Promise.all([stool ? P.sitOn(stool) : null, hearth ? mm.goTo(hearth, 0) : null]); }
   const c = w.save.state.chores || {}, e = c.errand && root.Story.ERRANDS[c.errand.id], fl = w.save.state.flags || {}, d = w.cal.day;
-  const day = { owed: !!ctx.owed, noDinner: !!(root.Maren && root.Maren.stateOf(w).dinner !== w.cal.day && w.chores && w.chores.on()), errand: e && c.day === d ? { title: e.title, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d && !(root.Garden && root.Garden.offToday(w)) ? !!c.garden : null,      // (her mother's garden today: nothing for Red to say of it)
+  const day = { owed: !!ctx.owed, noDinner: !!(root.Maren && root.Maren.stateOf(w).dinner !== w.cal.day && w.chores && w.chores.on()), late: !!ctx.late, dusk: w.cal.minute >= H('19:00'), errand: e && c.day === d ? { id: c.errand.id, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d && !(root.Garden && root.Garden.offToday(w)) ? !!c.garden : null,      // (her mother's garden today: nothing for Red to say of it)
    
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
   if (peeling) await peeling.done();
-  if (w.capacity) w.capacity.add(how === 'yes' ? 10 : 15, 'supper');      // (supper, with her mother: sat still, more)
+  if (w.capacity) w.capacity.add(how === 'late' ? 4 : how === 'yes' ? 10 : 15, 'supper');      // (supper, with her mother: sat still, more; late, it's long since eaten)
   w.cal.advance(how === 'yes' ? 40 : 20);
 }
 // The two stools, turned to face each other, a bowl of potatoes on the floor between: each with one in her hand and the knife going round it,

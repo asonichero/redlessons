@@ -130,7 +130,9 @@ function create(w) {
   // her hands as she goes out of the door: her mother calls after her)
   const has = (P, e) => !e.needs || !!holding(P, e.needs) && !(e.pie && !(holding(P, e.needs).contents || []).includes(PIE));
   const forgot = P => { const e = errand(); return !!(e && e.needs && e.state === 'accepted' && !has(P, e) && !(e.needs === 'basket' && !holding(P, 'basket') && basketLeft())); };      // (her basket left out of doors: not to be kept in for it, but let go and fetch it)
-  async function remind(P) { const e = errand(), it = P.motion.carry; await P.converse(S.needReminder(e ? (e.pie ? 'pie' : e.needs) : 'basket', it ? it.kind : null), { shot: ['red', 'mother'] }); }
+  async function remind(P) { const e = errand(), it = P.motion.carry, need = e ? (e.pie ? 'pie' : e.needs) : 'basket';
+    if (P.npcAway) { if (P.talk) P.talk.muse(S.needThought(need), { face: 'calm' }); return; }      // (her mother out at the farm: she remembers for herself)
+    await P.converse(S.needReminder(need, it ? it.kind : null), { shot: ['red', 'mother'] }); }
   // What she's most known for lately, to colour how she says yes or no.
   const temper = () => { let best = null, v = 1; for (const k of ['wilful', 'mischievous', 'naughty']) if (rep.stat(k) > v) { v = rep.stat(k); best = k; } return best; };
 
@@ -330,11 +332,11 @@ function create(w) {
     if (!on()) return;
     const e = errand(), c = st();
     { const b = e && e.pie && e.state === 'accepted' && w.area === 'home' && basketIn(P);      // (a basket taken down, for the Dunns: her mother puts the pie in it, under a cloth)
-      if (b && !(b.contents || []).includes(PIE)) { putIn(b, PIE); if (P.talk) P.talk.muse('Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }
+      if (b && !(b.contents || []).includes(PIE)) { putIn(b, PIE); if (P.talk) P.talk.muse(P.npcAway ? 'Mama’s left the pie on the table for me. Into my basket, under its cloth.' : 'Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }
     if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : e.fails ? 0 : GRACE)) {      // (a shift has a quarter of an hour's grace; an errand, its half hour, unspoken; the Dunns' pie, none: he's gone out)
       change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); slid('a promise let slide: ' + e.title.toLowerCase()); if (root.Maren && root.Maren.warned(w, 'errand')) rep.add('wilful', 0.5, 'after Mama’s word at dinner');      // (fails: past its time, it can't be done at all)
       if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third in a week: her mother will set her right, this evening)
-      if (P && P.talk) for (const [face, text] of S.broken(e.title)) P.talk.muse(text, { face });
+      if (P && P.talk) for (const [face, text] of S.broken(e)) P.talk.muse(text, { face });
       w.refresh();
     }
     if (!c.garden && c.missed !== cal.day && cal.minute >= H('19:00')) {
