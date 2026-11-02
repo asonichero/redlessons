@@ -263,21 +263,21 @@ function create(view, opts) {
   }
   function armPose(name) {
     const impl = implOf(st.implement), reach = impl.at ? 0.5 + impl.at : 0.85, half = impl.at ? impl.half : 0.28;
-    const nIn = intoSkin(), dir = new V3(0.75, 0, 0.66);
+    const nIn = intoSkin(), dir = by(0.75, 0, 0.66);      // (by: in the stage's own frame, turned with it wherever the scene's put)
     if (name === 'raised') {
       const sh = world(gerda.armR), sc = gerda.scaleW;
-      return { W: sh.add(new V3(-2.0, 4.0, 1.6).multiplyScalar(sc)), q: basis(new V3(0.15, -0.55, 1).normalize().multiplyScalar(gerda.palm.R), new V3(-0.2, -1, -0.3)), pole: new V3(-0.75, 0.1, -0.6) };
+      return { W: sh.add(by(-2.0, 4.0, 1.6).multiplyScalar(sc)), q: basis(by(0.15, -0.55, 1).normalize().multiplyScalar(gerda.palm.R), by(-0.2, -1, -0.3)), pole: by(-0.75, 0.1, -0.6) };
     }
-    if (name === 'rest') { const Tp = crown('C').p.addScaledVector(nIn, -HOVER); return Object.assign(handOn(Tp, nIn, dir, reach, half), { pole: new V3(-0.6, -0.45, -0.5) }); }
+    if (name === 'rest') { const Tp = crown('C').p.addScaledVector(nIn, -HOVER); return Object.assign(handOn(Tp, nIn, dir, reach, half), { pole: by(-0.6, -0.45, -0.5) }); }
     const side = st.swing ? st.swing.side : 'C', c = crown(side);
-    return Object.assign(handOn(c.p, c.n, dir, reach, half), { pole: new V3(-0.6, -0.3, -0.5) });
+    return Object.assign(handOn(c.p, c.n, dir, reach, half), { pole: by(-0.6, -0.3, -0.5) });
   }
   // ── The giver's hand at something other than a smack: lifting the skirt from the backs of the knees to the waist; drawing the drawers down
   // from the waist to the thighs; and soothing, the palm laid flat on each cheek in slow circles. (The change of clothes happens as the hand
   // passes.) With an implement in hand, it's passed to the other hand for soothing, and back after.
   const GEST = { skirt: 2.2, drawers: 2.0, soothe: 5.5 };
   function gesturePose(gs) {
-    const u = clamp(gs.t / gs.dur, 0, 1), blend = ss(0, 0.2, u) * (1 - ss(0.82, 1, u)), nIn = intoSkin(), dir = new V3(0.75, 0, 0.66), sc = red.scaleW;
+    const u = clamp(gs.t / gs.dur, 0, 1), blend = ss(0, 0.2, u) * (1 - ss(0.82, 1, u)), nIn = intoSkin(), dir = by(0.75, 0, 0.66), sc = red.scaleW;
     const thighs = world(red.kneeL).lerp(world(red.kneeR), 0.5).lerp(world(red.hips), 0.25), waist = world(red.hips).addScaledVector(nIn, -2.4 * sc);
     let Tp;
     if (gs.kind === 'skirt') Tp = thighs.clone().lerp(waist, ss(0.2, 0.75, u)).addScaledVector(nIn, -2.2 * sc);
@@ -330,12 +330,12 @@ function create(view, opts) {
     const nBack = new V3(0, 0, 1).applyQuaternion(red.torso.getWorldQuaternion(new Q())).normalize();
     // (holding the implement in it, for a while: the forearm laid across her back, the hand on her far side, the implement in it; eased there)
     st.acrossW = lerp(st.acrossW || 0, st.swap ? 1 : 0, 1 - Math.exp(-(st.dt || 0.016) * 6));
-    const lh = (() => { const d = new V3(0, 0, 1).addScaledVector(nBack, -nBack.z).normalize(); return { W: world(red.upperBack).addScaledVector(nBack, -0.28 * g.scaleW).addScaledVector(d, (-0.85 + 3.2 * st.acrossW) * g.scaleW).add(new V3(0, -1.2 * st.acrossW * g.scaleW, 0)), q: basis(nBack.clone().multiplyScalar(g.palm.L), d.clone().negate()) }; })();
-    armIK(g, 'L', lh.W, new V3(0.55, -0.5 + 0.4 * st.acrossW, -0.45 - 0.4 * st.acrossW)); setWorldQuat(g.handL, lh.q);
+    const lh = (() => { const z = by(0, 0, 1), d = z.clone().addScaledVector(nBack, -z.dot(nBack)).normalize(); return { W: world(red.upperBack).addScaledVector(nBack, -0.28 * g.scaleW).addScaledVector(d, (-0.85 + 3.2 * st.acrossW) * g.scaleW).add(new V3(0, -1.2 * st.acrossW * g.scaleW, 0)), q: basis(nBack.clone().multiplyScalar(g.palm.L), d.clone().negate()) }; })();
+    armIK(g, 'L', lh.W, by(0.55, -0.5 + 0.4 * st.acrossW, -0.45 - 0.4 * st.acrossW)); setWorldQuat(g.handL, lh.q);
     // Right arm: between two of its poses; down through an arc that swings out and over, so the hand comes in from above.
     const A = armPose(ph.from), B = ph.from === ph.to ? A : armPose(ph.to), e = ph.e;
     let W = A.W.clone().lerp(B.W, e), q = A.q.clone().slerp(B.q, e), pole = A.pole.clone().lerp(B.pole, e).normalize();
-    if (ph.arc) W.add(new V3(-0.6, 1.6, -0.2).multiplyScalar(4 * e * (1 - e) * g.scaleW));
+    if (ph.arc) W.add(by(-0.6, 1.6, -0.2).multiplyScalar(4 * e * (1 - e) * g.scaleW));
     // (a gesture of the hand: easing in from where it rests, along its path, and back)
     if (st.gesture) { const G = gesturePose(st.gesture), b = G.blend; W.lerp(G.W, b); q.slerp(G.q, b); }
     armIK(g, 'R', W, pole);
@@ -471,7 +471,7 @@ function create(view, opts) {
       // (the left arm across her back, its hand flat on her far shoulder blade; the right round her waist, its hand on her far hip)
       L_ = handFlat(g, 'L', world(r.upperBack).addScaledVector(far, 1.7 * rs).addScaledVector(up, -0.6 * rs), back.clone().negate(), far.clone().add(up.clone().multiplyScalar(0.3)));
       R_ = handFlat(g, 'R', world(r.hips).addScaledVector(far, 2.4 * rs).add(new V3(0, 4.2 * rs, 0)).addScaledVector(back, 0.4 * rs), far.clone().negate(), back);      // (at her waist, so the forearm passes over her thighs, not through them)
-      armIK(g, 'L', L_.W, new V3(0.7, -0.5, -0.6)); armIK(g, 'R', R_.W, new V3(-0.8, -0.6, 0.2));
+      armIK(g, 'L', L_.W, by(0.7, -0.5, -0.6)); armIK(g, 'R', R_.W, by(-0.8, -0.6, 0.2));
     } else {
       // (the left hand flat in the small of her back; the right resting on her far knee)
       L_ = handFlat(g, 'L', world(r.hips).add(new V3(0, 3.2 * rs, 0)).addScaledVector(back, 2.0 * rs), back.clone().negate(), up);
@@ -486,7 +486,7 @@ function create(view, opts) {
       armIK(g, 'R', Wr, elb0.clone().sub(sh.clone().lerp(Wr, 0.5)).normalize());
       const d = Wr.clone().sub(world(g.elbowR)).setY(0).normalize();      // (the fingers on in the forearm's line, level, over the knee)
       R_ = { W: Wr, q: basis(new V3(0, -1, 0).multiplyScalar(g.palm.R), d.clone().negate()) };
-      armIK(g, 'L', L_.W, new V3(0.8, -0.6, -0.4));
+      armIK(g, 'L', L_.W, by(0.8, -0.6, -0.4));
     }
     setWorldQuat(g.handL, L_.q); setWorldQuat(g.handR, R_.q);
   }

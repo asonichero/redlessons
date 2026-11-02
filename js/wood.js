@@ -90,7 +90,7 @@ function build(scene, opts) {
   // (near the path the trees are tall, their crowns high over her head and the camera's; the pines, which branch low, keep further off)
   const tree = (x, z, big) => {
     const near = !big, t = near ? r() * 0.72 : r(), h = (big ? 52 : 64) + r() * 24;
-    cur = { x, z, r: t < 0.72 ? 3.5 : 10, parts: [], hidden: false }; trees.push(cur);
+    cur = { x, z, r: t < 0.72 ? 3.5 : 10, cr: t < 0.5 ? 24 : t < 0.72 ? 9 : 10, parts: [], hidden: false }; trees.push(cur);      // (cr: how far its crown reaches out from the trunk)
     if (t < 0.5) {      // (oak or beech)
       const tw = 1.8 + r() * 1.4; put(trunk, x, 0, z, tw, h * 0.7, tw, r() * 6);
       for (let k = 0; k < 3; k++) { const a = r() * 6.3, d = 3 + r() * 5, s = 10 + r() * 7; put(leaves[(k + Math.floor(r() * 4)) % 4], x + Math.cos(a) * d, h * (0.72 + 0.14 * k) + r() * 4, z + Math.sin(a) * d, s, s * 0.72, s, r() * 6); }
@@ -147,8 +147,8 @@ function build(scene, opts) {
       if (Math.abs(t.x - at.x) > 140 || Math.abs(t.z - at.z) > 140) { if (!t.hidden) continue; }
       const u = clamp(((t.x - ax) * bx + (t.z - az) * bz) / L2, 0, 1), dx = t.x - (ax + bx * u), dz = t.z - (az + bz * u);
       const vx = t.x - ax, vz = t.z - az, d = vx * fx + vz * fz, side = Math.abs(vx * fz - vz * fx);
-      const inBand = lim > 0 && d > 0 && d < dT - 3 && (side - t.r) < lim * d;      // (nearer than her, and across the middle of the frame)
-      const hide = inBand || (u > 0 && u < 0.97 && dx * dx + dz * dz < (t.r + 2.5) ** 2) || vx * vx + vz * vz < (t.r + 6) ** 2 || (!!clearR && (t.x - at.x) ** 2 + (t.z - at.z) ** 2 < (clearR + t.r) ** 2);
+      const inBand = lim > 0 && d + t.cr > 0 && d - t.cr < dT - 3 && (side - t.cr) < lim * Math.max(d, 1);      // (its crown nearer than her, and reaching into the middle of the frame: trunk and crown as one)
+      const hide = inBand || (u > 0 && u < 0.97 && dx * dx + dz * dz < (t.r + 2.5) ** 2) || vx * vx + vz * vz < (t.r + 6) ** 2 || (!!clearR && (t.x - at.x) ** 2 + (t.z - at.z) ** 2 < (clearR + t.cr) ** 2);
       if (hide === t.hidden) continue; t.hidden = hide;
       for (const [k, i] of t.parts) { const mm = hide ? ZERO : k.list[i]; k.mesh.setMatrixAt(i, mm); k.hull.setMatrixAt(i, mm); dirty.add(k); }
     }
