@@ -94,8 +94,8 @@
   // The panel for each of them: an outfit row (where they have outfits), a colour row per feature, and their face.
   const FEATURES = [['skin', 'Skin'], ['hair', 'Hair'], ['eyes', 'Eyes'], ['lips', 'Lips'], ['cloak', 'Cloak']];
   let syncers = { A: [], B: [] };
-  // (Rose's dress, to look at: her everyday, the blue one her mother made for the fair, or the same at the end of a careless day)
-  const GOWNS = { 'Everyday': { look: {} }, 'Fair dress': { look: { gown: 'fair', spoil: {} } }, 'Fair dress, after the day': { look: { gown: 'fair', spoil: { earth: 0.5, soot: 0.4, wet: 0.3 } } } };
+  // (Rose's dress, to look at: her everyday, the blue one her mother made for the fair (in either cut), or the same at the end of a careless day)
+  const DAY = { earth: 0.5, soot: 0.4, wet: 0.3 }, GOWNS = { 'Everyday': { look: {} }, 'Fair dress': { look: { gown: 'fair', spoil: {} } }, 'Fair dress, after the day': { look: { gown: 'fair', spoil: DAY } }, 'Girl’s frock': { look: { gown: 'fairYoung', spoil: {} } }, 'Girl’s frock, after the day': { look: { gown: 'fairYoung', spoil: DAY } } };      // (the fair dress in two cuts: like her mother's own, or a girl's frock)
   let gown = 'Everyday';
   const lookOf = id => (look[id] = look[id] || {});
   // (the colour in force: the one set here, or their own)

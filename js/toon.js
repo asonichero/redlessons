@@ -346,12 +346,15 @@ function palette(id, look) {
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: cloak, skirtDk: shade(cloak, -0.3),      // (her skirt the red of her cloak)
      
       hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
-    // (the fair dress her mother made: forget-me-not blue, a dark blue bodice laced in cream; and what the day's put on it: earth and a wet hem
-    // darken it from the bottom, soot greys it, a tear shows the petticoat's white at the hem)
-    if (l.gown === 'fair') { const sp = l.spoil || {}, dirt = Math.min(1, (sp.earth || 0) + (sp.wet || 0) * 0.6), soot = Math.min(1, sp.soot || 0);
+    // (the fair dress her mother made, in one of two cuts (look.gown): 'fair', like her mother's own fine one, to the ankle: forget-me-not blue
+    // from collar to hem, the bodice a subtler shade of it, laced in cream; or 'fairYoung', a girl's frock: blue all through, sleeves and all, a white frilled
+    // collar, and a pale pink sash at the waist. And what the day's put on it: earth and a wet hem darken it from the bottom, soot greys it, a
+    // tear shows the petticoat's white at the hem)
+    if (l.gown === 'fair' || l.gown === 'fairYoung') { const sp = l.spoil || {}, dirt = Math.min(1, (sp.earth || 0) + (sp.wet || 0) * 0.6), soot = Math.min(1, sp.soot || 0), young = l.gown === 'fairYoung';
       const mix = (a, b, t) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), c = k => Math.round(((x >> k) & 255) * (1 - t) + ((y >> k) & 255) * t); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
-      const sk = mix('#7898c8', '#6a6a70', soot * 0.6), skd = mix(shade('#7898c8', -0.25), '#5a4a32', dirt * 0.8);
-      Object.assign(P, { blouse: mix('#faf4e6', '#9a9690', soot * 0.5), bodice: '#2c3a62', lace: '#f2e6c4', skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : mix('#f2e6c4', '#5a4a32', dirt) }); }
+      const BLUE = '#6f90c4', sk = mix(BLUE, '#6a6a70', soot * 0.6), skd = mix(shade(BLUE, -0.22), '#5a4a32', dirt * 0.8);
+      Object.assign(P, { blouse: mix(young ? shade(BLUE, 0.08) : BLUE, '#6a6a70', soot * 0.5), bodice: young ? sk : mix(shade(BLUE, -0.16), '#6a6a70', soot * 0.5), lace: young ? shade(BLUE, -0.3) : '#f2e6c4',
+        skirt: sk, skirtDk: skd, hem: sp.tear ? '#fbf8f2' : young ? mix('#fbf8f2', '#5a4a32', dirt) : mix(shade(BLUE, -0.25), '#4a3a28', dirt), collar: young ? '#fbf8f2' : null, sash: young ? '#f0c4cc' : null }); }
   } else if (id === 'gran') {
     const shawl = '#7d6a8c';
     Object.assign(P, { cloak: shawl, cloakDk: shade(shawl, -0.3), lining: '#e2d8c8', lace: '#c9b8d4', blouse: '#efe6d4', bodice: '#4e3e56', skirt: '#5a6444', skirtDk: '#454e34', hem: '#454e34',
@@ -585,7 +588,10 @@ function make(id, look, opts) {
       for (const sx of [-1, 1]) piece(new THREE.SphereGeometry(0.09, 8, 6), shade(P.lace, -0.3), rig.torso, sx * 0.42, yh - D.torsoY, z - 0.02, { ink: 0 }); } }
   // The neck: from inside the shoulders up into the head, bending with both.
   skinnedOn(rig.neck, lathe(wide([[0.7, -1.1], [0.68, -0.3], [0.64, 0.6], [0.62, 1.6]], K.neckGirth), 1, 16), P.skin, p => { const t = ss(0.1, -0.7, p.y), h = ss(0.6, 1.3, p.y); return [[rig.torso, t], [rig.head, h * (1 - t)], [rig.neck, (1 - t) * (1 - h)]]; });
-  piece(lathe(wide([[1.25, -0.25], [1.4, 0.1], [1.15, 0.3]], Math.max(K.neckGirth, 0.9)), 0.78, 18), P.blouse, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.04 });   // the collar
+  piece(lathe(wide([[1.25, -0.25], [1.4, 0.1], [1.15, 0.3]], Math.max(K.neckGirth, 0.9)), 0.78, 18), P.collar || P.blouse, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.04 });   // the collar
+  if (P.collar) piece(lathe(wide([[1.3, -0.45], [1.75, -0.6], [1.95, -0.75], [1.4, -0.3]], Math.max(K.neckGirth, 0.9)), 0.82, 20), P.collar, rig.torso, 0, D.neckY - 0.35, 0, { ink: 0.03, side: THREE.DoubleSide });      // (the girl's frock: a frilled collar, wide over the shoulders)
+  if (P.sash) { clipSrc('bodice', skinnedOn(rig.hips, lathe(wide([[3.0, 2.25], [3.06, 2.6], [3.0, 2.95]], trunkW), 0.76 * TD, 32), P.sash, torsoW, { ink: 0.03 }));      // (and a sash at her waist, tied in a bow behind)
+    for (const sx of [-1, 1]) piece(ell(0.9, 0.5, 0.35, 10, 8), P.sash, rig.hips, sx * 0.7, 2.6, -(0.76 * TD * 3.0) - 0.1, { rot: [0, 0, sx * 0.4], ink: 0.03 }); }
 
   // ── Arms: a full sleeve to the elbow (puffed at the shoulder for her), bare forearms, soft hands. ──
   for (const [s, sx] of [['L', 1], ['R', -1]]) {
@@ -635,7 +641,7 @@ function make(id, look, opts) {
   // ── The skirt (skinned to the legs), a band at its hem, Gerda's apron; her drawers, the skirt gathered up, the drawers down at her knees. ──
   // What's worn below: a skirt, a gown to the floor, or trousers (with a smock over them, for some).
   const LOWER = S.lower || (MAN ? 'trousers' : 'skirt'), TROUSERS = LOWER === 'trousers', SKIRTED = !TROUSERS || !!S.smock;
-  const L_ = S.smock ? 5 : S.skirtLen || 12;
+  const GOWN_LEN = { fair: 13.4, fairYoung: 10.2 }, L_ = S.smock ? 5 : GOWN_LEN[look.gown] || S.skirtLen || 12;      // (Rose's fair dresses: to the ankle, as her mother's; or the girl's frock, to mid-calf)
   if (S.smock) { P.skirt = top; P.skirtDk = shade(top, -0.12); P.hem = shade(top, -0.12); }
   const SW = y => (y > 0.6 ? trunkW(y) : K.hipWidth) * (y < 0 ? lerp(1, K.skirtFull, ss(0, -4, y)) : 1);       // (it widens with the hips, and flares with its fullness)
   const skirtProfile = wide([[2.66, 2.1], [3.45, 0.6], [4.05, -0.8], [4.4, -3], [4.9, -6.5], [5.3, -L_ + 0.7], [5.4, -L_]], SW);
@@ -1112,7 +1118,7 @@ function make(id, look, opts) {
   // long skirt, round the knees and down the shins.
   const XA = new V3(1, 0, 0);
   const inSkirt = (rest, now) => {
-    if (!(opts.seated || seatedNow)) return rest.y < 2.1 && rest.y > -S.skirtLen + 0.3;
+    if (!(opts.seated || seatedNow)) return rest.y < 2.1 && rest.y > -L_ + 0.3;
     const q = now.clone().applyAxisAngle(XA, -drapeG.rotation.x), Sh = drapeShape;
     if (q.y > -3 && q.y < 2.1 && q.z < -1.2) return true;                                         // (the seat)
     if (q.z > -1.5 && q.z < -1.5 + Sh.lapL - 0.35 && q.y > -0.1 - 2.3 * K.legGirth - 0.8) return true;      // (the lap)
