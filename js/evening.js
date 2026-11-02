@@ -23,7 +23,7 @@
 //   Evening.watchman(w) → 'walking' when he's bringing her home tonight · Evening.owe(P, w, kind, how) (a correction of her mother's, for
 //   the evening's end: kind 'curfew' | 'pie' | 'promise' | 'garden') · Evening.owes(w)
 // Kept in the save: state.evening = { done (the night's key), corrected: [{ id, what, by, day, informs, known, raised }], catches,
-// owed: [{ kind, how, day, wont }] }.
+// owed: [{ kind, how, day, raised }] }.
 (function (root) {
 'use strict';
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
@@ -55,6 +55,7 @@ async function home(P, w, o) {
     // (what's come home with her first: brought by the Watchman, or in late; what others have dealt with)
     if (walked) await brought(P, w);
     if (late || walked) { await curfew(P, w, { willie: walked }); change(w, s => { s.curfewed = night(cal); }); }
+    await raise(P, w);      // (what she's to be set right for, said now)
     await reprieves(P, w);
     if (excused) { await P.wait(0.4); await P.approach(); await P.converse(S.excusedHome(), { shot: ['red', 'mother'] }); }
     // (what her mother's heard or found, if nothing's owed already tonight: the rest waits)
@@ -72,21 +73,28 @@ async function home(P, w, o) {
   if (P === w.P) await w.morning();
 }
 // ── A correction of her mother's, owed: raised now, and seen to at the evening's end (told so, in a line). Not twice for the same.
-const owes = w => (stateOf(w).owed || []).length > 0;
+const owes = (w, kind) => (stateOf(w).owed || []).some(o => !kind || o.kind === kind);
+// (P null: owed out of her hearing, the maintenance correction as the third promise slides: raised when she's home, before supper)
 async function owe(P, w, kind, how) {
-  change(w, s => { s.owed = (s.owed || []).concat({ kind, how: how || {}, day: w.cal.day }); });
+  change(w, s => { s.owed = (s.owed || []).concat({ kind, how: how || {}, day: w.cal.day, raised: !!P }); });
   if (P && root.Story.owedLater) await P.converse(root.Story.owedLater(kind, w.cal.minute < H('18:00')), { shot: ['red', 'mother'] });
 }
+async function raise(P, w) {
+  for (const o of (stateOf(w).owed || []).filter(x => !x.raised)) {
+    await P.wait(0.4); await P.approach(); await P.converse(root.Story.owedRaise(o.kind), { shot: ['red', 'mother'] });
+    change(w, s => { const x = s.owed.find(y => y === o || (y.kind === o.kind && y.day === o.day)); if (x) x.raised = true; });
+  }
+}
 // The evening's last: the first correction owed (with a "won't" at supper on top of it, if there was one), then bed.
-const CORRECT = { curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how) };
+const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how) };
 async function settle(P, w) {
-  const o = (stateOf(w).owed || [])[0], S = root.Story; if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); return; }
-  change(w, s => { s.owed = s.owed.slice(1); });
-  const how = Object.assign({}, o.how, o.wont ? { also: Sc => S.wontToo(Sc) } : null);
+  // (setting her right covers the bell too, if that's owed as well tonight: the rest waits)
+  const list = stateOf(w).owed || [], o = list.find(x => x.kind === 'maintenance') || list[0], S = root.Story; if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); return; }
+  change(w, s => { s.owed = s.owed.filter(x => !(x.kind === o.kind && x.day === o.day) && !(o.kind === 'maintenance' && x.kind === 'curfew')); });
+  const how = Object.assign({}, o.how);
   await P.wait(0.4); await P.approach();
-  const now = S.owedNow(o.kind, !!o.wont); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
+  const now = S.owedNow(o.kind); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
   await CORRECT[o.kind](P, w, how);
-  if (o.wont) w.rep.settle('wilful', 0.6);
   if (P !== w.P) return;
   change(w, s => { s.abed = night(w.cal); s.ate = 0; });
   if (o.kind !== 'curfew') await P.converse(S.breadAndBed(), { shot: ['red', 'mother'] });      // (the curfew's own word after says so)
@@ -168,13 +176,11 @@ async function blessing(P, w) {
   w.complete('maren.willie');
 }
 // ── Nothing owed: will she help with supper?
-// (ctx.owed: a correction coming after, which colours it; a "won't" then is added to it, rather than counted toward the week's three)
+// (ctx.owed: a correction coming after, which colours it)
 async function supper(P, w, ctx) {
   const S = root.Story; let how = null; ctx = ctx || {};
   await P.wait(0.4); await P.approach();
-  await P.converse(S.supper({ owed: ctx.owed, yes: () => { how = 'yes'; }, little: () => { how = 'little'; }, wont: () => { how = 'wont'; } }), { shot: ['red', 'mother'] });
-  if (how === 'wont' && ctx.owed) { w.rep.add('wilful', 1, 'refusing to help with supper, with a correction already coming'); change(w, s => { s.owed[0].wont = true; }); }
-  else if (how === 'wont' && w.chores) w.chores.wont('refusing to help with supper');
+  await P.converse(S.supper({ owed: ctx.owed, yes: () => { how = 'yes'; }, little: () => { how = 'little'; } }), { shot: ['red', 'mother'] });
   // (and her day, caught up on: over the potatoes at the table; sat on the stool while her mother sees to the hearth; or stood, and questioned)
   const m = P.motion, mm = P.npcMotion, W = P.world, V = root.THREE.Vector3, tb = W.surfaces.find(s => s.name === 'the table'), B = W.bounds;
   let peeling = null;

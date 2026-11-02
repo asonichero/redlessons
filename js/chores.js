@@ -1,9 +1,10 @@
 // Little Red’s Lessons — the days: Mama's garden each morning, and on most days an errand, asked of her over breakfast (docs/quest-plan.md,
 // Days and errands). Once the chores are agreed with her mother (the maren.chores step), each morning:
 //
-//   • Over breakfast her mother says what's been asked of them, if anything, and asks Red if she'll do it. Yes is a promise: it must be begun
-//     by its time. An honest no (she can't be anybody's today) costs nothing. A "won't" is wilful; three of those in a week, and her mother
-//     gives her a maintenance correction there and then, which sets her right (her wilfulness settled, the count begun again).
+//   • Over breakfast her mother gives her the day's errand, if there is one: not asked, given (Red's handed the deciding back to her mother).
+//     Red's yes is a promise: it must be begun by its time. Let slide past its half hour's grace, it's wilful; three of those in a week, and
+//     her mother gives her a maintenance correction that evening, last thing, which sets her right (her wilfulness settled, the count begun
+//     again).
 //   • The garden's hers every day, any time before dusk (js/garden.js: the weeds, the flowers watered, the vegetables tended); left
 //     untended, it's a little broken promise.
 //   • An errand's work is done where it's asked for (the well, the bakery, the forge…), and some things are carried home to her mother after.
@@ -138,11 +139,10 @@ function create(w) {
     if (!on() || !P || !P.npc) return;
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
-      yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); }, little: async () => { answer(id, 'little'); }, wont: async () => { answer(id, 'wont'); } };
+      yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
     await P.wait(0.8); await P.approach();
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
-    if (due()) await maintenance(P);
     w.refresh();
   }
   // Her answer to the day's errand: 'yes' (a promise, to begin by its time), 'little' (an honest no: nothing against her), 'wont' (wilful, and
@@ -152,14 +152,14 @@ function create(w) {
     if (how === 'wont') rep.add('wilful', 1, 'refusing an errand');
     change(c => { c.errand = { id, state: how === 'yes' ? 'accepted' : how, by }; c.last = id; if (how === 'wont') c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); });
   }
-  // Another "won't", not an errand (refusing to help with supper): wilful, and counted with the errands' toward the week's three.
-  const wont = why => { rep.add('wilful', 1, why); change(c => { c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); }); };
-  // (three "won't"s within the week: a maintenance correction is due)
+  // A promise let slide (an errand broken, or missed): wilful, and counted toward the week's three. (refusals: the days of them, kept so)
+  const slid = why => { rep.add('wilful', 1, why); change(c => { c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); }); };
+  const wont = slid;      // (the old name)
+  // (three let slide within the week: a maintenance correction is due, at the evening's end: js/evening.js)
   const due = () => (st().refusals || []).filter(d => d > cal.day - 7).length >= 3;
-  // The third "won't" in a week: her mother takes her in hand, there and then; and after it, she's set right.
-  async function maintenance(P) {
-    await P.converse(S.enough(), { shot: ['red', 'mother'] });
-    const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: S.maintenanceCorrection }], fade: on_ => w.fade(on_) });
+  // The maintenance correction itself, when the evening comes to it: and after it, she's set right.
+  async function maintenance(P, w_, how) {
+    const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.maintenanceCorrection(Sc, how) }], fade: on_ => w.fade(on_) });
     if (P !== w.P) return;
     await P.converse(S.afterMaintenance(r), { shot: ['red', 'mother'] });
     settled();
@@ -323,7 +323,8 @@ function create(w) {
     { const b = e && e.pie && e.state === 'accepted' && w.area === 'home' && basketIn(P);      // (a basket taken down, for the Dunns: her mother puts the pie in it, under a cloth)
       if (b && !(b.contents || []).includes(PIE)) { putIn(b, PIE); if (P.talk) P.talk.muse('Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }
     if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : e.fails ? 0 : GRACE)) {      // (a shift has a quarter of an hour's grace; an errand, its half hour, unspoken; the Dunns' pie, none: he's gone out)
-      change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); rep.add('naughty', 1, 'a broken promise: ' + e.title.toLowerCase());      // (fails: past its time, it can't be done at all)
+      change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); slid('a promise let slide: ' + e.title.toLowerCase());      // (fails: past its time, it can't be done at all)
+      if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third in a week: her mother will set her right, this evening)
       if (P && P.talk) for (const [face, text] of S.broken(e.title)) P.talk.muse(text, { face });
       w.refresh();
     }
@@ -358,7 +359,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, PIE };

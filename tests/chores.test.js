@@ -44,39 +44,33 @@ test('most days something is asked, never the same two days running', () => {
   assert.equal(chores.pick(5), chores.pick(5));
 });
 
-test('yes is a promise: begun in time, kept; a half hour past it, unspoken; after that broken (naughty), and too late', () => {
+test('yes is a promise: begun in time, kept; a half hour past it, unspoken; after that let slide (wilful), and too late', () => {
   const { chores, cal, rep } = world(); const id = 'bread', by = 11 * 60;
   chores.answer(id, 'yes');
   assert.match(chores.objective(), /^Bread from the bakery: begin by 11/);
   cal.advance(by - cal.minute); chores.tick(null); assert.match(chores.objective(), /begin by/, 'on the hour, not yet late');
-  cal.advance(30); chores.tick(null); assert.match(chores.objective(), /begin by/, 'within its grace: nothing said'); assert.equal(rep.stat('naughty'), 0);
+  cal.advance(30); chores.tick(null); assert.match(chores.objective(), /begin by/, 'within its grace: nothing said'); assert.equal(rep.stat('wilful'), 0);
   cal.advance(1); chores.tick(null);
-  assert.ok(!/Bread/.test(chores.objectives().join(' ')), 'too late: off the list'); assert.equal(rep.stat('naughty'), 1);
+  assert.ok(!/Bread/.test(chores.objectives().join(' ')), 'too late: off the list'); assert.equal(rep.stat('wilful'), 1);
   assert.equal(chores.owes(id), false, 'and not to be done');
-  chores.tick(null); assert.equal(rep.stat('naughty'), 1, 'broken once, not every moment after');
+  chores.tick(null); assert.equal(rep.stat('wilful'), 1, 'let slide once, not every moment after');
 });
 
-test('an honest no costs nothing; a "won\'t" is wilful', () => {
-  const { chores, rep } = world();
-  chores.answer('well', 'little'); assert.equal(rep.stat('wilful'), 0); assert.equal(chores.due(), false);
-  assert.match(chores.journalLine().step.title, /not today \(honestly\)/);
-  chores.answer('well', 'wont'); assert.equal(rep.stat('wilful'), 1); assert.match(chores.journalLine().step.title, /refused/);
-});
-
-test('three "won\'t"s within a week bring the maintenance correction, which sets her right', () => {
-  const { chores, cal, rep } = world();
-  chores.answer('well', 'wont'); morning(cal); morning(cal);
-  chores.answer('bread', 'wont'); assert.equal(chores.due(), false);
-  morning(cal); chores.answer('jug', 'little'); assert.equal(chores.due(), false, 'an honest no doesn\'t count');
-  morning(cal); chores.answer('pot', 'wont'); assert.equal(chores.due(), true);
+test('three promises let slide within a week bring the maintenance correction, which sets her right', () => {
+  const { chores, cal, rep } = world(), by = id => { const [h, m] = chores.ERRANDS[id].by.split(':').map(Number); return h * 60 + m; };
+  const let_ = id => { chores.answer(id, 'yes'); cal.advance(by(id) + 31 - cal.minute); chores.tick(null); };
+  let_('bread'); morning(cal); morning(cal);
+  let_('jug'); assert.equal(chores.due(), false);
+  morning(cal); let_('pot'); assert.equal(chores.due(), true);
   chores.settled(); assert.equal(chores.due(), false); assert.equal(rep.stat('wilful'), 0, 'her wilfulness settled');
 });
 
-test('refusals more than a week apart don\'t add up', () => {
-  const { chores, cal } = world();
-  chores.answer('well', 'wont'); for (let i = 0; i < 4; i++) morning(cal);
-  chores.answer('bread', 'wont'); for (let i = 0; i < 4; i++) morning(cal);
-  chores.answer('pot', 'wont'); assert.equal(chores.due(), false, 'the first has dropped out of the week');
+test('promises let slide more than a week apart don\'t add up', () => {
+  const { chores, cal } = world(), by = id => { const [h, m] = chores.ERRANDS[id].by.split(':').map(Number); return h * 60 + m; };
+  const let_ = id => { chores.answer(id, 'yes'); cal.advance(by(id) + 31 - cal.minute); chores.tick(null); };
+  let_('bread'); for (let i = 0; i < 4; i++) morning(cal);
+  let_('jug'); for (let i = 0; i < 4; i++) morning(cal);
+  let_('pot'); assert.equal(chores.due(), false, 'the first has dropped out of the week');
 });
 
 test('the garden: hers each day, a little broken promise if it\'s left till dusk', () => {
