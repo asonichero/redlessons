@@ -333,7 +333,7 @@ function build(scene, opts) {
 
   // ── Her chair, the plain one she sits on to take someone in hand, kept under the peg rail, its back to the foot of the bed. (The correction sets
   // its own in the middle of the room, and puts this one out of sight meanwhile: world.chair.)
-  { const pc = piece('chair', wall), seatY = T.seatFor('gerda'), ch = T.makeChair(seatY); pc.g.add(ch); world.chair = pc.g;
+  { const pc = piece('chair', wall), seatY = T.seatFor('gerda'), ch = T.makeChair(seatY); pc.g.add(ch); world.chair = ch;      // (the chair itself, not its piece: the piece is shown and hidden with its wall each frame)
     world.seats.push({ name: 'the chair', at: pc.P(0, seatY, 1.8), facing: pc.ry, kind: 'chair' }); world.obstacles.push(pc.area(-4.7, 4.7, -3.2, 6.6)); }
 
   // ── The cloak hooks, on the hearth's wall by the door: three pegs on a short board, lower than the basket rail, where Red reaches them easily and
