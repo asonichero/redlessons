@@ -143,7 +143,9 @@ function create(view, opts) {
 
   // ── Things to do: whatever's nearest in front of her, of the things she could do from where she is.
   const input = { move: { x: 0, z: 0 }, run: false };
-  const tired = { level: 0 };      // (how worn she is: 0 fine, 1 low, 2 worn through (js/capacity.js))
+  const tired = { level: 0 };
+  let encumbered = null;      // (when she last thought why she can't run)
+  const loadThought = it => it.kind === 'butt' ? 'Not with the butt full. Run, and half of it’s down my skirt.' : it.kind === 'basket' && (it.contents || []).includes('the pot') ? 'Not with the pot in my basket. It’d have my arm out of its socket.' : 'Not carrying ' + (it.name || 'this') + '. I’ll walk.';      // (how worn she is: 0 fine, 1 low, 2 worn through (js/capacity.js))
   let doing = null, sitting = null, lying = false;
   const wp = o => o.getWorldPosition(new V3());
   const flat = v => v.clone().setY(0);
@@ -361,7 +363,10 @@ function create(view, opts) {
     const cf = flat(st.controls.target.clone().sub(st.camera.position)).normalize(), cr = new V3(-cf.z, 0, cf.x);
     const mv = busy() ? { x: 0, z: 0 } : { x: cf.x * input.move.z + cr.x * input.move.x, z: cf.z * input.move.z + cr.z * input.move.x };
     const t = tired.level, mv2 = t ? { x: mv.x * (t > 1 ? 0.72 : 0.86), z: mv.z * (t > 1 ? 0.72 : 0.86) } : mv;      // (tired: her pace slower, and worn through, slower still, no running)
-    m.update(dt, { move: mv2, run: input.run && t < 2 && !opts.noRun && !(m.carry && m.carry.heavy) }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there; and with a heavy thing in her arms, the butt full)
+    const heavy = !!(m.carry && m.carry.heavy);
+    // (trying to run with something heavy: she says to herself what's stopping her, now and again)
+    if (input.run && heavy && t < 2 && !opts.noRun && (mv.x || mv.z) && !busy() && talk && clock - (encumbered || -99) > 25) { encumbered = clock; talk.muse(loadThought(m.carry), { face: 'wince' }); }
+    m.update(dt, { move: mv2, run: input.run && t < 2 && !opts.noRun && !heavy }); rig.tick(dt); if (mm) { mm.update(dt, null); mom.tick(dt); }      // (opts.noRun: walking only, there; and with a heavy thing in her arms, the butt full)
     // Exits: walking into one tells the page (once).
     if (opts.onExit && !exited) for (const e of W.exits) if ((!e.when || e.when()) && flat(m.pos).distanceTo(flat(e.at)) < e.r) { exited = e; if (opts.onExit(e) === false) exited = null; break; }
     // (the set: anything between the camera and her is cut away; only in play, with her there to be seen, not in a shot of the page's own)
