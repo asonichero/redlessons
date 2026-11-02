@@ -51,6 +51,11 @@ const AREAS = {
     entries: 'set',      // (the wood gives its own: from the cabin, from the village end)
     exits: { 'the village': { area: 'village', entry: 'wood' }, 'the cabin': { area: 'cabin', entry: 'door' }, 'the Fowlers’': { area: 'holding', entry: 'lane' } },
   },
+  // The fallen tree's clearing alone (js/wood.js's glade): a small set for a scene played there, cheap to draw (js/agnes.js).
+  glade: {
+    name: 'The wood', music: 'wood', set: s => root.Wood.build(s, { glade: true }), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
+    entries: 'set', exits: {},
+  },
   // The village (js/village.js): the green, the inn, the bakery, the forge, the cottages; her own door, and the lane back to the wood.
   village: {
     name: 'The village', music: 'village', set: s => root.Village.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
@@ -362,7 +367,7 @@ function create(view, ui) {
 
   // ── Starting.
   async function newGame() { save.reset(); await go('cabin', 'chapter'); }
-  async function resume() { const a = save.state.area && AREAS[save.state.area] ? save.state.area : 'home'; await go(a, 'saved'); }
+  async function resume() { const a = save.state.area && AREAS[save.state.area] ? save.state.area : 'home'; if (a === 'glade') return go('wood', 'log'); await go(a, 'saved'); }      // (the glade's only a scene's: back on the path by the fallen tree)
   // (a new game from a later point of chapter one: what came before it counted as done)
   async function startAt(where) {
     save.reset();

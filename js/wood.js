@@ -7,6 +7,8 @@
 //   const wood = Wood.build(scene)   → { group, update, tick, light(t, stage), follow(pos), world, progress(pos) → 0..1, path, spots }
 //   world.constrain(p, r) keeps her on the path (and round the cabin at the start), and in the meadow within its hedges; world.gate: the
 //   meadow gate (js/world.js offers to go through it, to the village).
+//   Wood.build(scene, { glade: true }): the fallen tree's clearing only (the trees within reach of it, no cabin, no meadow): a small set for a
+//   scene played there (js/agnes.js), cheap to draw, with room round it for the camera. Its entry 'log' (in the whole wood too): by the trunk.
 (function (root) {
 'use strict';
 const THREE = root.THREE, T = root.Toon, V3 = THREE.Vector3;
@@ -61,7 +63,8 @@ function build(scene, opts) {
     const m = new THREE.Mesh(g, toonMap(dirtT)); m.receiveShadow = true; root_.add(m); }
 
   // ── Her grandmother's cabin, behind her at the start, under its oak.
-  const cabin = root.Cabin ? root.Cabin.build(root_, { outside: true }) : null;
+  const GLADE = !!opts.glade;
+  const cabin = root.Cabin && !GLADE ? root.Cabin.build(root_, { outside: true }) : null;
   if (cabin) { const c = new THREE.PerspectiveCamera(); c.position.set(0, 40, 200); c.updateMatrixWorld(); cabin.update(c); }      // (all of it shows, from outside)
 
   // ── Trees, as instanced shapes (with their outlines): broad oaks and beeches (a trunk and three masses of leaves), white birches (slender,
@@ -120,6 +123,11 @@ function build(scene, opts) {
   cur = null;
   // (the crowns cast no shadow, so the path isn't sunk in it; the trunks do)
   const crowns = new Set([...leaves, birchLeaf, ...pines]);
+  // (the glade alone: only what stands within reach of the fallen tree; the rest of the wood never drawn)
+  if (GLADE) { const c = spots.log.at, keep = mm => Math.hypot(mm.elements[12] - c.x, mm.elements[14] - c.z) < 150;
+    for (const t of trees) t.parts = t.parts.filter(([k, i]) => keep(k.list[i]));
+    for (const k of inst) { const map = new Map(), kept = []; k.list.forEach((mm, i) => { if (keep(mm)) { map.set(i, kept.length); kept.push(mm); } }); k.list = kept; k.remap = map; }
+    for (const t of trees) t.parts = t.parts.map(([k, i]) => [k, k.remap.get(i)]); }
   for (const k of inst) {
     if (!k.list.length) continue;
     const m = new THREE.InstancedMesh(k.geo, k.mat, k.list.length); k.list.forEach((mm, i) => m.setMatrixAt(i, mm)); m.castShadow = !crowns.has(k); m.receiveShadow = true; root_.add(m);
@@ -171,8 +179,8 @@ function build(scene, opts) {
     s.reach = t.clone().addScaledVector(face, 3.6).setY(16); s.label = 'Look at the carving'; }
   // The fallen tree: an old trunk lying across the clearing, moss on its back, its broken end in the air.
   { const s = spots.log, a = s.at.clone().addScaledVector(s.dir, -9), b = s.at.clone().addScaledVector(s.dir, 9);
-    pole(root_, a.clone().setY(2.6), b.clone().setY(3.4), 2.6, toonMap(barkT), { taper: 1.15, ink: 0.12 });
-    solid(root_, T.ell(5, 0.8, 1.8), T.mat('#6a8a3a'), s.at.x, 5.6, s.at.z, { rot: [0, Math.atan2(s.dir.x, s.dir.z), 0], ink: 0.04 });
+    s.trunk = [pole(root_, a.clone().setY(2.6), b.clone().setY(3.4), 2.6, toonMap(barkT), { taper: 1.15, ink: 0.12 }),
+      solid(root_, T.ell(5, 0.8, 1.8), T.mat('#6a8a3a'), s.at.x, 5.6, s.at.z, { rot: [0, Math.atan2(s.dir.x, s.dir.z), 0], ink: 0.04 })];      // (trunk: put aside while a scene's own seat stands in for it)
     s.seat = { name: 'the fallen tree', at: s.at.clone().addScaledVector(s.side3, -2.6).setY(5.4), facing: Math.atan2(-s.side3.x, -s.side3.z), kind: 'stool' };
     s.label = 'Sit on the fallen tree'; }
 
@@ -266,7 +274,7 @@ function build(scene, opts) {
   const inAt = gate.at.clone().add(new V3(0, 0, -8));      // (in at the meadow gate, it behind her, facing across the meadow to the wood)
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: cabin && cabin.world ? cabin.world.door : null, chest: null, constrain, bounds: null, gate, herbs, signpost,
     exits: [{ name: 'the village', get at() { return gate.beyond; }, r: 6, when: () => gate.open > 0.6 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5, when: () => !cabin || cabin.world.door.open > 0.6 }, { name: 'the Fowlers’', at: new V3(MX + 22, 0, FORK.z), r: 9 }],
-    entries: { cabin: { at: [-12, 52], yaw: 0 }, village: { at: [inAt.x, inAt.z], yaw: Math.PI }, fowlers: { at: [MX - 4, FORK.z - 2], yaw: -Math.PI / 2 } } };      // (fowlers: back along the fork's lane, toward the meadow)
+    entries: { cabin: { at: [-12, 52], yaw: 0 }, village: { at: [inAt.x, inAt.z], yaw: Math.PI }, fowlers: { at: [MX - 4, FORK.z - 2], yaw: -Math.PI / 2 }, log: { at: [spots.log.at.x - spots.log.side3.x * 8, spots.log.at.z - spots.log.side3.z * 8], yaw: Math.atan2(spots.log.side3.x, spots.log.side3.z) } } };      // (log: by the fallen tree, facing it)      // (fowlers: back along the fork's lane, toward the meadow)
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);
 
   // ── Light: the sky through the leaves, the fog closing in, the village windows lighting up, the sun's shadows following her.
@@ -290,6 +298,10 @@ function build(scene, opts) {
     gate.open += (gate.target - gate.open) * (1 - Math.exp(-dt * 4)); gate.pivot.rotation.y = gate.swing * gate.open;
     for (const p of smoke) { const k = (clock * 0.08 + p.ph) % 1; p.m.position.copy(p.base).add(new V3(k * 4, k * 26, 0)); p.m.scale.setScalar(0.6 + k * 1.6); p.m.material.opacity = 0.45 * (1 - k); }
   }
+  // (the glade: everything else of the wood that's far from the fallen tree, left out; the ground and the path, long as they are, stay)
+  if (GLADE) { root_.updateMatrixWorld(true); const c = spots.log.at;
+    for (const o of root_.children.slice()) { if (o.isInstancedMesh) continue; const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) continue; const s = b.getBoundingSphere(new THREE.Sphere());
+      if (s.radius < 300 && Math.hypot(s.center.x - c.x, s.center.z - c.z) > 170) root_.remove(o); } }
   return { group: root_, update() {}, tick, light, follow, world, progress, path: { curve, S, N, LEN, nearest, widthAt }, spots, cabin };
 }
 

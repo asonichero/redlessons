@@ -13,7 +13,7 @@
 //
 //   Agnes.morning(w) (each morning: the kiss, heard of if she didn't see it) · Agnes.station(w, key, min) (js/villagers.js: where Agnes is,
 //   and where she and Georgie aren't, the afternoon in the wood) · Agnes.talk(P, w, key) (js/villagers.js: → true when it was this line's talk)
-//   · Agnes.wood(P, w) (the wood: the two of them by the fallen tree) · Agnes.away(w) · Agnes.woodDue(w)
+//   · Agnes.wood(P, w) (the wood: the two of them by the fallen tree; the correction in the glade) · Agnes.away(w) · Agnes.woodDue(w)
 // Kept in the save: state.agnes = { terms: { day (the afternoon it's to be), red (she'll be there) }, settled: 'yes' | 'no', said (the day
 // Agnes was last talked to at the pinfold), back (Agnes's word at the well, after, said) }; flags 'fair-kiss' (and 'fair-kiss-heard': it was
 // told her, not seen), 'georgie-walked' (Georgie walked her home on a Lay night after the fair).
@@ -112,52 +112,60 @@ async function terms(P, w, yes) {
   V.letGo('agnes'); V.letGo('georgie'); w.refresh();
 }
 
-// ── The wood, the afternoon agreed: the two of them by the fallen tree, off the herb path. Coming near, Red's with them; Agnes on the trunk,
-// Georgie over her knee, Red standing a little off, watching; then the after, the two of them, and Red leaves them to it.
+// ── The wood, the afternoon agreed: the two of them by the fallen tree, off the herb path. Coming near, Red's with them; then (under a fade,
+// into the glade alone: js/wood.js's small set of the fallen tree's clearing, cheap to draw, room round it for the camera) Agnes on the
+// trunk, Georgie over her knee, Red standing a little off, watching; then the after, the two of them, and Red leaves them to it.
+const CAST = { agnes: { name: 'Agnes', voice: 'agnes', tint: '#7a5a2a', bg: '#efe4cc' }, georgie: { name: 'Georgie', voice: 'georgie', tint: '#6a6a5a', bg: '#e8e6dc' } };
+// (where, by the fallen tree: off the path beyond it, and the way along it)
+const placeOf = sp => ({ place: sp.at.clone().addScaledVector(sp.side3, 12).setY(0), along: sp.dir.clone().setY(0).normalize() });      // (just past the trunk, waiting on her)
+function make(P, key, at, yaw) {
+  const looks = root.Looks && root.Looks.load ? root.Looks.load() : {}, rig = root.Toon.make(key, looks[key] || {}), motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, key) });
+  motion.warp(at, yaw); rig.root.position.copy(at); P.addFigure(key, { rig, motion, cast: CAST[key] });
+  let gone = false; P.tick(dt => { if (gone) return; motion.update(dt, null); rig.tick(dt); });
+  return { rig, motion, remove() { if (gone) return; gone = true; P.removeFigure(key); } };
+}
+const spotOf = P => P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots.log;
 function wood(P, w) {
-  const sp = P.stage.cottage && P.stage.cottage.spots && P.stage.cottage.spots.log; if (!sp) return null;
+  const sp = spotOf(P); if (!sp) return null;
+  const { place, along } = placeOf(sp);
   let figs = null, begun = false;
-  const looks = root.Looks && root.Looks.load ? root.Looks.load() : {};
-  const CAST = { agnes: { name: 'Agnes', voice: 'agnes', tint: '#7a5a2a', bg: '#efe4cc' }, georgie: { name: 'Georgie', voice: 'georgie', tint: '#6a6a5a', bg: '#e8e6dc' } };
-  // (off the path, beyond the fallen tree: the two of them standing there, waiting on her)
-  const place = sp.at.clone().addScaledVector(sp.side3, 14).setY(0), along = sp.dir.clone().setY(0).normalize();
-  function make(key, at, yaw) {
-    const rig = root.Toon.make(key, looks[key] || {}), motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, key) });
-    motion.warp(at, yaw); rig.root.position.copy(at); P.addFigure(key, { rig, motion, cast: CAST[key] });
-    let gone = false; P.tick(dt => { if (gone) return; motion.update(dt, null); rig.tick(dt); });
-    return { rig, motion, remove() { gone = true; P.removeFigure(key); } };
-  }
   P.tick(() => {
     const due = woodDue(w) && !begun;
-    if (due && !figs) { const a = place.clone().addScaledVector(along, -4), g = place.clone().addScaledVector(along, 4); figs = { agnes: make('agnes', a, yawTo(a, g)), georgie: make('georgie', g, yawTo(g, a)) }; }
+    if (due && !figs) { const a = place.clone().addScaledVector(along, -4), g = place.clone().addScaledVector(along, 4); figs = { agnes: make(P, 'agnes', a, yawTo(a, g)), georgie: make(P, 'georgie', g, yawTo(g, a)) }; }
     if (!due && figs && !begun) { figs.agnes.remove(); figs.georgie.remove(); figs = null; }
-    if (figs && !begun && !P.busy && P.motion.pos.distanceTo(place) < 50) { begun = true; P.act(scene); }
+    if (figs && !begun && !P.busy && P.motion.pos.distanceTo(place) < 50) { begun = true; P.act(() => scene(P, w, figs)); }
   });
-  async function scene() {
-    const S = root.Story, m = P.motion;
-    const at = P.collide(place.clone().addScaledVector(sp.side3, -12), 3.2); await m.goTo(at, yawTo(at, place));
-    await P.converse(S.woodBefore(), { shot: ['agnes', 'georgie'] });
-    figs.agnes.remove(); figs.georgie.remove();
-    const yaw = yawTo(place, at), fw = new V3(Math.sin(yaw), 0, Math.cos(yaw)), sd = new V3(fw.z, 0, -fw.x), watch = place.clone().addScaledVector(fw, 16).addScaledVector(sd, 12);
-    const r = await root.Correction.run(P, { corrector: 'agnes', fade: on => w.fade(on), seat: 'log', at: { x: place.x, z: place.z, yaw },
-      turns: [{ subject: 'georgie', script: S.agnesGeorgie }], watchers: [{ who: 'red', at: [watch.x, watch.z], face: 'shy' }] });
-    // (after: the two of them on the trunk, and Red going quietly)
-    const a = place.clone().addScaledVector(sd, -2.5), g = place.clone().addScaledVector(sd, 2.5);
-    figs = { agnes: make('agnes', a, yawTo(a, g)), georgie: make('georgie', g, yawTo(g, a)) };
-    const back = P.collide(place.clone().addScaledVector(fw, 15), 3.2); m.warp(back, yawTo(back, place)); P.rig.root.position.copy(back);
-    figs.georgie.rig.setExpr('teary', 30);
-    await P.converse(S.agnesGeorgieAfter(r && r.rose), { shot: ['agnes', 'georgie'] });
-    change(w, s => { s.settled = 'yes'; s.missed = false; });
-    w.rep.trusts('agnes', 1); w.rep.trusts('georgie', 1); settle(w);
-    w.cal.advance(45);
-    const off = P.collide(m.pos.clone().addScaledVector(fw, 30), 3.2); await Promise.race([m.goTo(off, null), P.wait(4)]);
-    if (P.talk) P.talk.muse(S.woodLeaving(), { face: 'calm' });
-    const f = figs; P.wait(20).then(() => { f.agnes.remove(); f.georgie.remove(); });
-  }
-  return { scene };
+  return { due: () => woodDue(w) };
+}
+async function scene(P, w, figs) {
+  const S = root.Story, m = P.motion, sp = spotOf(P), { place } = placeOf(sp);
+  const at = P.collide(sp.at.clone().addScaledVector(sp.side3, -9).setY(0), 3.2); await m.goTo(at, yawTo(at, place));      // (the path side of the trunk, the two of them beyond it)
+  await P.converse(S.woodBefore(), { shot: ['agnes', 'georgie'] });
+  // (into the glade: the clearing alone)
+  await w.go('glade', 'log');
+  const Q = w.P; if (!Q) return;
+  // (on the fallen tree itself: Agnes sat along it, facing the path; the trunk put aside while the scene's own stands in for it. Red on the
+  // path side, off along it a way, watching)
+  const sq = spotOf(Q), d = sq.dir.clone().setY(0).normalize(), c = sq.at.clone().setY(0), yaw = Math.atan2(d.z, -d.x);
+  const watch = c.clone().addScaledVector(sq.side3, -14).addScaledVector(d, 16);
+  await Q.wait(0.4);
+  const r = await root.Correction.run(Q, { corrector: 'agnes', fade: on => w.fade(on), seat: 'log', at: { x: c.x, z: c.z, yaw }, hide: sq.trunk || [],
+    turns: [{ subject: 'georgie', script: S.agnesGeorgie }], watchers: [{ who: 'red', at: [watch.x, watch.z], face: 'shy' }] });
+  if (Q !== w.P) return;
+  // (after: the two of them by the trunk, and Red going quietly)
+  const a = c.clone().addScaledVector(d, -2.5).addScaledVector(sq.side3, 3.5), g = c.clone().addScaledVector(d, 2.5).addScaledVector(sq.side3, 3.5), two = { agnes: make(Q, 'agnes', a, yawTo(a, g)), georgie: make(Q, 'georgie', g, yawTo(g, a)) };
+  const back = Q.collide(c.clone().addScaledVector(sq.side3, -14), 3.2); Q.motion.warp(back, yawTo(back, c)); Q.rig.root.position.copy(back);
+  two.georgie.rig.setExpr('teary', 30);
+  await Q.converse(S.agnesGeorgieAfter(r && r.rose), { shot: ['agnes', 'georgie'] });
+  change(w, s => { s.settled = 'yes'; s.missed = false; });
+  w.rep.trusts('agnes', 1); w.rep.trusts('georgie', 1); settle(w);
+  w.cal.advance(45);
+  // (and back to the path, by the fallen tree, the two of them left to themselves)
+  await w.go('wood', 'log');
+  if (w.P && w.P.talk) w.P.talk.muse(S.woodLeaving(), { face: 'calm' });
 }
 
-const api = { morning, station, talk, wood, away, woodDue, stateOf, FROM, UNTIL };
+const api = { morning, station, talk, wood, scene, away, woodDue, stateOf, FROM, UNTIL };
 root.Agnes = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
