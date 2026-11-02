@@ -186,6 +186,15 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 5. **2.3** Supplies the wine.
 6. **3.2** Called back: travellers' gossip; Wolfe may have lodged there.
 
+### Bess Abney (her daughter)
+
+Twenty-six, Mistress Abney's youngest; her older brothers and sisters have long since moved away. Slight all her life, and a little sickly as a child, which is half of why her mother hovers. She married and moved away with her husband; he died eight months ago, and she came home to the Wheatsheaf. She found she was with child soon after he died, and she sees the baby as a blessing: her mother's fear that grief will harm her, or the baby, is mostly misplaced. Near her time now, she's kept sitting all day (on the bench by the inn door, or in her chair by the hearth).
+
+Fearless, wry, and a watcher ("You learn a great deal, sitting"). Practically, she's a little worried about the birth, but she wouldn't say so. She doesn't talk much about her husband. She's eight years older than Rose and remembers her as a child. She guesses, before anyone tells her, what Rose is doing in being Little Red, and treats her subtly differently once she has, without letting on that's why, until Red tells her the truth.
+
+1. **1.2** On her bench and at the inn: company, if Red sits with her (only sitting brings her trust). The inn's shifts are hers to run from her chair while her mother's out; in their lulls, her story comes out a piece at a time. Abney's promise: the evening by the fire with her.
+2. **2.2** Her confinement (see Mistress Abney).
+
 ### Holt (the Woodsman)
 
 1. **1.3** Introduced at Hulda's.
