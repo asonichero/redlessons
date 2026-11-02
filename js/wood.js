@@ -134,14 +134,21 @@ function build(scene, opts) {
     const h = new THREE.InstancedMesh(T.hullGeo(k.geo, k.ink), T.INKM[0], k.list.length); k.list.forEach((mm, i) => h.setMatrixAt(i, mm)); root_.add(h);
     k.mesh = m; k.hull = h;
   }
-  // A tree standing between the camera and her (or right by the camera) isn't drawn while it's there.
-  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
-  function occlude(cam, at, clearR) {      // (clearR: and every tree within that of it, too)
-    const ax = cam.x, az = cam.z, bx = at.x - ax, bz = at.z - az, L2 = bx * bx + bz * bz || 1, dirty = new Set();
+  // A tree standing between the camera and her isn't drawn while it's there: any nearer the camera than she is and in the middle three
+  // quarters of the frame's width (as a room's walls are, the near ones put out of the way), or right by the camera. camera: the camera itself
+  // (its direction and field of view), or only its position (then just the trees on the line to her).
+  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0), FWD = new V3(), BAND = 0.75;
+  function occlude(camera, at, clearR) {      // (clearR: and every tree within that of her, too)
+    const cam = camera.isCamera ? camera.position : camera, ax = cam.x, az = cam.z, bx = at.x - ax, bz = at.z - az, L2 = bx * bx + bz * bz || 1, dirty = new Set();
+    let fx = 0, fz = 0, lim = 0, dT = 0;      // (the camera's way across the ground, how wide the band is, and how far she is along it)
+    if (camera.isCamera) { camera.getWorldDirection(FWD); const h = Math.hypot(FWD.x, FWD.z);
+      if (h > 0.25) { fx = FWD.x / h; fz = FWD.z / h; lim = BAND * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.aspect; dT = bx * fx + bz * fz; } }
     for (const t of trees) {
       if (Math.abs(t.x - at.x) > 140 || Math.abs(t.z - at.z) > 140) { if (!t.hidden) continue; }
       const u = clamp(((t.x - ax) * bx + (t.z - az) * bz) / L2, 0, 1), dx = t.x - (ax + bx * u), dz = t.z - (az + bz * u);
-      const hide = (u > 0 && u < 0.97 && dx * dx + dz * dz < (t.r + 2.5) ** 2) || (t.x - ax) ** 2 + (t.z - az) ** 2 < (t.r + 6) ** 2 || (!!clearR && (t.x - at.x) ** 2 + (t.z - at.z) ** 2 < (clearR + t.r) ** 2);
+      const vx = t.x - ax, vz = t.z - az, d = vx * fx + vz * fz, side = Math.abs(vx * fz - vz * fx);
+      const inBand = lim > 0 && d > 0 && d < dT - 3 && (side - t.r) < lim * d;      // (nearer than her, and across the middle of the frame)
+      const hide = inBand || (u > 0 && u < 0.97 && dx * dx + dz * dz < (t.r + 2.5) ** 2) || vx * vx + vz * vz < (t.r + 6) ** 2 || (!!clearR && (t.x - at.x) ** 2 + (t.z - at.z) ** 2 < (clearR + t.r) ** 2);
       if (hide === t.hidden) continue; t.hidden = hide;
       for (const [k, i] of t.parts) { const mm = hide ? ZERO : k.list[i]; k.mesh.setMatrixAt(i, mm); k.hull.setMatrixAt(i, mm); dirty.add(k); }
     }
@@ -291,7 +298,7 @@ function build(scene, opts) {
     if (cabin && cabin.light) cabin.light(t);
   }
   function follow(pos, dt, camera, at) {
-    if (!api) return; if (!GLADE) occlude(api.camera.position, pos);      // (the glade does its own: update, below)
+    if (!api) return; if (!GLADE) occlude(api.camera.position, pos);      // (walking: only the trees on the line to her. The glade, for a correction, clears the frame: update, below)
     if (cabin && cabin.cut) cabin.cut(api.camera.position, at, dt);      // (and the cabin, if it's in the way of her; at: null, nothing's cut)
     const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();      // (the sun's shadows following her)
   }
@@ -308,7 +315,7 @@ function build(scene, opts) {
       if (s.radius < 300 && Math.hypot(s.center.x - c.x, s.center.z - c.z) > 170) root_.remove(o); } }
   // (the glade, as a room's walls are: whatever tree stands between the camera and the fallen tree, or right by the camera, isn't drawn while
   // it's there; every frame, wherever the camera's been taken: in a correction, in the room editor)
-  const update = GLADE ? camera => occlude(camera.position, spots.log.at, camera.position.y > 70 ? 40 : 0) : () => {};      // (from high over it, the crowns round it too)
+  const update = GLADE ? camera => occlude(camera, spots.log.at, camera.position.y > 70 ? 40 : 0) : () => {};      // (from high over it, the crowns round it too)
   return { group: root_, update, tick, light, follow, world, progress, path: { curve, S, N, LEN, nearest, widthAt }, spots, cabin };
 }
 

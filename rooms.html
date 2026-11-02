@@ -43,6 +43,7 @@
   <div id="corrBox" style="display:none">
     <div class="sub" id="corrNote" style="margin:6px 0"></div>
     <div class="btns"><button id="addW">Add someone watching</button><button id="setC">Place a corner for corner time</button></div>
+    <div class="btns" style="margin-top:6px"><button id="showLap">Show the correction (Mama and Rose)</button></div>
   </div>
   <h3 id="selH">The piece</h3>
   <div id="sel">
@@ -68,6 +69,9 @@
 <script src="js/wood.js"></script>
 <script src="js/corrlayout.js"></script>
 <script src="js/stage.js"></script>
+<script src="js/pain.js"></script>
+<script src="js/implements.js"></script>
+<script src="js/lap.js"></script>
 <script>
 (function () {
 'use strict';
@@ -213,7 +217,7 @@ function corrSave() {
 function corrMarks() {
   if (mk) st.scene.remove(mk); mk = null; markerRigs.length = 0; for (const k in markers) delete markers[k];
   const d = CLD(); for (const o of (d && d.hide) || []) o.visible = !corr;      // (what the room puts aside for it: put aside here too)
-  if (!corr || !C) return;
+  if (!corr || !C) { lapShow(); return; }
   mk = new THREE.Group(); st.scene.add(mk);
   const looks = Looks.load(), seat = new THREE.Group(); seat.add(Toon.makeChair(Toon.seatFor('gerda'), d.seat));
   const ar = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4.5, 3), Toon.mat('#e0c040')); ar.rotation.x = Math.PI / 2; ar.position.set(0, 0.8, 10); seat.add(ar); mk.add(seat); markers.giver = seat;
@@ -221,9 +225,21 @@ function corrMarks() {
   C.watchers.forEach((p, i) => { markers['w' + i] = rose(); });
   if (C.corner) markers.corner = rose();
   for (const id in markers) markers[id].traverse(o => { o.userData.cpiece = id; });
+  corrPlace(); lapShow();
+}
+// (the correction itself, shown at the seat: her mother on it, Rose across her lap, as the scene puts them; the seat's own marker hidden under it)
+let lapOn = false, lapShown = null;
+function lapShow() {
+  if (lapShown) { lapShown.end(); st.scene.remove(lapShown.stage); lapShown = null; }
+  const d = CLD(), on = lapOn && corr && C && d; $('showLap').classList.toggle('on', !!on);
+  if (markers.giver) markers.giver.children[0].visible = !on;
+  if (!on) return;
+  lapShown = Lap.create(null, { external: { scene: st.scene }, looks: Looks.load(), giver: 'gerda', subject: 'red', seat: d.seat });
   corrPlace();
 }
+$('showLap').onclick = () => { lapOn = !lapOn; lapShow(); };
 function corrPlace() {
+  if (lapShown && C) { lapShown.stage.position.set(C.giver.x, 0, C.giver.z); lapShown.stage.rotation.y = C.giver.ry; lapShown.stage.updateMatrixWorld(true); }
   for (const id in markers) { const p = corrGet(id), o = markers[id]; if (!p) continue; o.position.set(p.x, 0, p.z);
     o.rotation.y = id === 'giver' || id === 'corner' ? p.ry : Math.atan2(C.giver.x - p.x, C.giver.z - p.z); }
 }
@@ -252,7 +268,7 @@ $('scale').onclick = () => {
 
 { let k = 'cottage'; try { k = localStorage.getItem('red-lessons:rooms-room') || k; } catch (e) { /* no storage */ } room(ROOMS[k] ? k : 'cottage'); }
 let t = 0;
-st.start(dt => { t += dt; if (set) { set.tick(dt); set.update(st.camera); } if (outline) outline.update(); if (figure) { Toon.idle(figure, t); figure.tick(dt); } for (const f of markerRigs) { Toon.idle(f, t); f.tick(dt); } });
+st.start(dt => { t += dt; if (set) { set.tick(dt); set.update(st.camera); } if (outline) outline.update(); if (figure) { Toon.idle(figure, t); figure.tick(dt); } for (const f of markerRigs) { Toon.idle(f, t); f.tick(dt); } if (lapShown) lapShown.update(dt); });
 window.__rooms = { get set() { return set; }, get L() { return L; }, get C() { return C; }, select, place, st };
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
