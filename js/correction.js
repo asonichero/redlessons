@@ -141,14 +141,14 @@ async function run(P, o) {
     // (slowly across to it, rubbing her left cheek with her left hand: a moment's respite, and she makes the most of it)
     const rub = () => { const p = r.rear.L.getWorldPosition(new V3()), back = new V3(-Math.sin(m.yaw), 0, -Math.cos(m.yaw)), t = performance.now() / 1000;
       return p.addScaledVector(back, 0.9 * r.scaleW).add(new V3(0, Math.sin(t * 5) * 0.5 * r.scaleW, 0)); };
-    const ch = P.world.chest, at = P.collide(ch.front.clone().add(new V3(0, 0, 6)).setY(0), 3.4);
+    const ch = P.world.chest, cn = ch.normal || new V3(0, 0, 1), at = P.collide(ch.front.clone().addScaledVector(cn, 6).setY(0), 3.4);      // (cn: out of the chest's front)
     // (round her mother and the chair, not through them: by a point beside them, on whichever side the way passes, if it passes near)
     const around = async (to, yaw, o3) => { const a = flat(m.pos), d = flat(to).sub(a), c = flat(gp), R = 16 * G.scaleW;
       const t = clamp(c.clone().sub(a).dot(d) / (d.lengthSq() || 1), 0, 1), near = a.clone().addScaledVector(d, t);
       if (t > 0.05 && t < 0.95 && near.distanceTo(c) < R) { let side = near.clone().sub(c); if (side.lengthSq() < 1e-3) side.set(-d.z, 0, d.x); side.setLength(R);
         await m.goTo(P.collide(c.clone().add(side), 3.4), null, o3); }
       await m.goTo(to, yaw, o3); };
-    m.reach('L', rub); await around(at, Math.PI, { speed: 0.42 }); await m.release('L');      // (and back to the chest's lid, to open it)
+    m.reach('L', rub); await around(at, Math.atan2(-cn.x, -cn.z), { speed: 0.42 }); await m.release('L');      // (and back to the chest's lid, to open it)
     await P.useChest();
     // (in her left hand: held out on her mother's right, toward the camera at her shoulder)
     const brush = root.Implements ? root.Implements.model(id, r.palm ? r.palm.L : -1) : null; if (brush) { brush.position.y = -0.5; r.handL.add(brush); }

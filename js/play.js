@@ -234,9 +234,9 @@ function create(view, opts) {
   // Out by one of the place's exits, by name (a door opened, a gate gone through): as if she'd walked into it.
   function exitBy(name) { const ex = W.exits.find(e => e.name === name); if (!ex || exited || !opts.onExit) return false; exited = ex; if (opts.onExit(ex) === false) { exited = null; return false; } return true; }      // (onExit → false: not let out, after all)
   async function useChest() {
-    const c = W.chest, s = standFor(c.front, new V3(0, 0, 1), 5.5);
+    const c = W.chest, n = c.normal || new V3(0, 0, 1), side = new V3(-n.z, 0, n.x), s = standFor(c.front, n, 5.5);      // (n: out of its front, however it's turned)
     await m.goTo(s.at, s.yaw);
-    m.lookAt(() => wp(c.grip)); await m.reach('R', () => wp(c.grip).add(new V3(0, 0.4, 0.4))); m.reach('L', () => wp(c.grip).add(new V3(2.4, 0.4, 0.4)));
+    m.lookAt(() => wp(c.grip)); await m.reach('R', () => wp(c.grip).add(new V3(0, 0.4, 0).addScaledVector(n, 0.4))); m.reach('L', () => wp(c.grip).add(new V3(0, 0.4, 0).addScaledVector(n, 0.4)).addScaledVector(side, 2.4));
     c.target = c.target ? 0 : 1; await wait(0.7); m.release('L'); await m.release('R'); m.lookAt(null);
   }
   // Her cloak off and onto its hook (off: true), or down from it and on: she goes to the hooks, reaches up to the peg, and it's done.
@@ -287,7 +287,7 @@ function create(view, opts) {
     const it = m.carry; let p, s;
     if (where.peg) { p = where.peg.at.clone(); s = standFor(p, new V3(0, 0, 1), 7.5); }
     else if (where.surface) { p = where.at.clone(); s = approachFor(p); }
-    else if (where.inChest) { const c = W.chest; p = new V3(c.front.x + (W.items.filter(x => x.inChest).length % 3 - 1) * 5, 8.6, c.front.z - 4.5); s = standFor(c.front, new V3(0, 0, 1), 7.5); }
+    else if (where.inChest) { const c = W.chest, n = c.normal || new V3(0, 0, 1), side = new V3(-n.z, 0, n.x); p = c.front.clone().setY(8.6).addScaledVector(n, -4.5).addScaledVector(side, (W.items.filter(x => x.inChest).length % 3 - 1) * 5); s = standFor(c.front, n, 7.5); }
     else {
       // On the floor in front of her, or, if that's in the way of something, to one side (she turns to it).
       for (const da of [0, 0.8, -0.8, 1.6, -1.6, 2.4, -2.4, Math.PI]) { const a = m.yaw + da, q = flat(m.pos).add(new V3(Math.sin(a), 0, Math.cos(a)).multiplyScalar(6.5)), c = collide(q, it.radius + 0.5); p = c; if (c.distanceTo(q) < 0.3) break; }

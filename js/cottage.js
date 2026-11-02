@@ -372,7 +372,7 @@ function build(scene, opts) {
     box(lidPivot, cw + 0.2, 0.8, cd + 0.2, 0, 0, cd / 2, oak);
     for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) box(lidPivot, 1.2, 1.2, cd + 0.4, x, 0.5, cd / 2, '#3a3634');
     const grip = new THREE.Object3D(); grip.position.set(0, 0.2, cd + 0.3); lidPivot.add(grip);
-    world.chest = { pivot: lidPivot, grip, open: 0, target: 0, swing: -1.7, name: 'the chest', front: pc.P(cx, 0, cz + cd / 2), top: ch + 0.6 + cd / 2 * 0.45 };
+    world.chest = { pivot: lidPivot, grip, open: 0, target: 0, swing: -1.7, name: 'the chest', front: pc.P(cx, 0, cz + cd / 2), normal: pc.turn(new V3(0, 0, 1)), top: ch + 0.6 + cd / 2 * 0.45 };
     world.obstacles.push(pc.area(-cw / 2, cw / 2, -6.5, cd / 2));
     world.surfaces.push(Object.assign(pc.area(-cw / 2 + 2, cw / 2 - 2, -1, 1), { name: 'the chest', y: ch + 0.6 + cd / 2 * 0.45, panel: g, front: pc.turn(new V3(0, 0, 1)), when: () => world.chest.open < 0.05 }));
     for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) for (const sz of [-1, 1]) box(g, 1.2, ch + 0.2, 0.4, cx + x, ch / 2 + 0.6, cz + sz * (cd / 2 + 0.1), '#3a3634');
