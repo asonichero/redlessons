@@ -2,11 +2,13 @@
 // and menus): round glass buttons with a pale ring and line icons, a gold chip for what she can do here, a pause menu, settings and a sheet of
 // the controls.
 //
-//   Keys: WASD or arrows to walk, Shift (held) to run, E (or Enter) to do what the chip offers, Space to jump, Q for the other thing (lie down, on a bed),
-//   Esc for the menu, ? (or the keyboard button) for the controls. A drag goes round; the camera button, or the wheel, steps it near, medium or far.
-//   Touch (or ?touch in the address): a stick under the left thumb; under the right, the action button (labelled with what it'll do, greyed when
-//   there's nothing), the other action above it, and Run (held). Top right, the menu and the camera.
-//   The chip is clickable (or tappable) too: each part of it does what its key does.
+//   Keys: WASD or arrows to walk, Shift (held) to run, E (or Space, Enter) to do what the chip offers, Q for the other thing (put down what's in
+//   her hands; lie down, on a bed), C for the camera (near, medium, far), J her diary, B her basket, Esc the menu, ? (or the keyboard button) the
+//   controls. A drag goes round; the wheel steps the camera too.
+//   Touch (or ?touch in the address): a stick under the left thumb (pushed to its rim, she runs); under the right, the action button (labelled
+//   with what it'll do, greyed when there's nothing), and the other action beside it, only when there is one. Top right, the menu and the camera.
+//   The chip is clickable (or tappable) too: each part of it does what its key does. The same in both: the diary, her basket and how she's
+//   holding up, top left, each tapped or clicked for more.
 //
 //   const hud = Hud.create({ get: () => play, scenes: [{ label, run }], links: [{ label, href }], extra: node, title: () => … })
 //   hud.objective(text); hud.show(bool); hud.pause(bool); hud.settingsCard(back) (a node);  Hud.settings: { text, auto } (also read by js/talk.js)
@@ -23,10 +25,8 @@ const ICONS = {
   sit: '<path d="M7 4v9h10"/><path d="M7 13v7M17 13v7"/><path d="M7 9h9"/>',
   take: '<path d="M7 11V8a1.5 1.5 0 0 1 3 0v-1.5a1.5 1.5 0 0 1 3 0V8a1.5 1.5 0 0 1 3 0v6c0 4-2.5 6-5.5 6S6 17.5 6 14.5V12"/>',
   door: '<path d="M6 3h11v18H6z"/><path d="M14 12h.5"/>',
-  down: '<path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M5 20h14"/>',
   up: '<path d="M12 20V7"/><path d="M6.5 12.5 12 7l5.5 5.5"/><path d="M5 4h14"/>',
   lie: '<path d="M3 18V8M3 14h18v4M21 14v-2a3 3 0 0 0-3-3H10v5"/><circle cx="6.5" cy="11" r="1.6"/>',
-  run: '<path d="M5 6l6 6-6 6"/><path d="M12 6l6 6-6 6"/>',
   camera: '<path d="M3 8h4l1.6-2.4h6.8L17 8h4v11H3z"/><circle cx="12" cy="13.2" r="3.6"/>',
   keys: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
@@ -59,14 +59,15 @@ const CSS = `
 #hud .hb.off { opacity: 0.32; filter: grayscale(1); cursor: default; }
 #hAct { right: 22px; bottom: 24px; width: 78px; height: 78px; } #hAct svg { width: 32px; height: 32px; }
 #hAlt { right: 112px; bottom: 34px; width: 62px; height: 62px; } #hAlt svg { width: 26px; height: 26px; }
-#hRun { right: 37px; bottom: 112px; width: 54px; height: 54px; } #hRun svg { width: 25px; height: 25px; }
 #hMenu { right: 12px; top: 10px; width: 52px; height: 52px; display: flex !important; } #hMenu svg { width: 26px; height: 26px; stroke-width: 2.4; }
 #hCam { right: 12px; top: 70px; width: 52px; height: 52px; display: flex !important; } #hCam svg { width: 27px; height: 27px; }
 #hHelp { right: 12px; bottom: 12px; width: 46px; height: 46px; } #hHelp svg { width: 24px; height: 24px; }
 #hStick { position: absolute; left: 22px; bottom: 26px; width: 130px; height: 130px; border-radius: 50%; background: rgba(30,20,22,0.45); border: 2px solid rgba(230,196,106,0.55);
   touch-action: none; display: none; pointer-events: auto; }
 #hKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(230,196,106,0.75); pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
-#hud.touch #hStick { display: block; } #hud.touch .hb.t { display: flex; } #hud:not(.touch) #hHelp { display: flex; }
+#hud.touch #hStick { display: block; } #hud.touch .hb.t { display: flex; } #hud.touch #hAlt.off { display: none; } #hud:not(.touch) #hHelp { display: flex; }
+#hud.touch #hDiary, #hud.touch #hBasket { width: 44px; min-height: 44px; } #hud.touch #hCap { width: 16px; }
+#hStick.rim { border-color: rgba(240,217,138,0.95); } #hStick.rim #hKnob { background: rgba(240,217,138,0.95); }
 /* (what she can do here: a gold chip, each part clickable) */
 #hPrompt { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); display: none; gap: 18px; pointer-events: auto; white-space: nowrap; max-width: calc(100vw - 24px); }
 #hPrompt.on { display: flex; }
@@ -74,7 +75,7 @@ const CSS = `
   box-shadow: 0 2px 10px rgba(0,0,0,.35); overflow: hidden; text-overflow: ellipsis; }
 #hPrompt .p:hover { background: rgba(60,36,30,0.92); border-color: #f0d98a; }
 #hud kbd, #hSheet kbd { font: 600 13px Georgia, serif; background: #3a2c2e; color: #f3ead8; border: 1px solid #6a5658; border-bottom-width: 3px; border-radius: 5px; padding: 1px 7px; min-width: 10px; text-align: center; }
-#hud.touch #hPrompt { bottom: 172px; } #hud.touch #hPrompt kbd { display: none; } #hud.touch #hPrompt .p { padding-left: 14px; font-size: 15px; }
+#hud.touch #hPrompt { bottom: 120px; left: calc(50% + 40px); } #hud.touch #hPrompt kbd { display: none; } #hud.touch #hPrompt .p { padding-left: 14px; font-size: 15px; }
 #hObj { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); max-width: min(620px, calc(100vw - 150px)); text-align: center; font: italic clamp(13px, 1.9vw, 16px)/1.4 Georgia, serif;
   background: rgba(16,10,12,0.7); border: 1px solid #4a3a3c; border-radius: 8px; padding: 7px 16px; opacity: 0; transition: opacity .5s; }
 #hObj.on { opacity: 1; }
@@ -92,7 +93,9 @@ const CSS = `
 #hBasket.on { display: flex; } #hBasket svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hBasket:hover { background: rgba(60,40,44,0.8); }
 #hBasketCard .bl { font: 16px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0 4px; padding: 0; list-style: none; } #hBasketCard .bl li::before { content: '❧ '; color: #c9a84c; }
 /* (how she's holding up: a small upright bar by the diary, gold, dimming and reddening as she wears down) */
-#hCap { width: 12px; border-radius: 6px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); display: none; position: relative; overflow: hidden; }
+#hCap { width: 12px; border-radius: 6px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); display: none; position: relative; overflow: hidden; pointer-events: auto; cursor: pointer; padding: 0; }
+#hCapSay { font: italic 13px Georgia, serif; color: #f3e4b0; background: rgba(16,10,12,0.75); border: 1px solid #4a3a3c; border-radius: 8px; padding: 3px 9px; align-self: center; display: none; pointer-events: none; white-space: nowrap; }
+#hCapSay.on { display: block; }
 #hCap.on { display: block; } #hCap i { position: absolute; left: 2px; right: 2px; bottom: 2px; border-radius: 4px; background: #e2c26a; transition: height .6s, background .6s; }
 #hCap.low i { background: #c98a4a; } #hCap.worn i { background: #a8504a; }
 #hBasketCard .none { font: italic 15px Georgia, serif; color: #c9a88c; }
@@ -116,8 +119,8 @@ body.talking #hCam { opacity: .35; pointer-events: none; }
 /* (on a touch screen her thoughts come up at the top, clear of the thumbs) */
 body.touchmode .talk.muse { bottom: auto; top: 56px; }
 @media (max-height: 440px) {
-  #hAct { right: 18px; bottom: 18px; width: 68px; height: 68px; } #hAlt { right: 98px; bottom: 26px; width: 56px; height: 56px; } #hRun { right: 28px; bottom: 98px; width: 48px; height: 48px; }
-  #hStick { width: 112px; height: 112px; left: 16px; bottom: 18px; } #hMenu, #hCam { width: 46px; height: 46px; } #hCam { top: 62px; } #hud.touch #hPrompt { bottom: 130px; }
+  #hAct { right: 18px; bottom: 18px; width: 68px; height: 68px; } #hAlt { right: 98px; bottom: 26px; width: 56px; height: 56px; }
+  #hStick { width: 112px; height: 112px; left: 16px; bottom: 18px; } #hMenu, #hCam { width: 46px; height: 46px; } #hCam { top: 62px; } #hud.touch #hPrompt { bottom: 100px; }
 }
 /* ── The menus ── */
 .hScreen { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: rgba(8,5,6,0.72); font: 15px/1.55 Georgia, 'Times New Roman', serif; color: #f3ead8; }
@@ -145,13 +148,12 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><div id="hCap" title="How she’s holding up" aria-label="How she’s holding up"><i></i></div><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hCap" title="How she’s holding up" aria-label="How she’s holding up"><i></i></button><div id="hCapSay"></div><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
     '<button id="hAct" class="hb t off">' + svg('act') + '<span>Do</span></button>' +
-    '<button id="hAlt" class="hb t off">' + svg('lie') + '<span>Lie down</span></button>' +
-    '<button id="hRun" class="hb t">' + svg('run') + '<span>Run</span></button>';
+    '<button id="hAlt" class="hb t off">' + svg('lie') + '<span>Lie down</span></button>';
   document.body.appendChild(el);
   const $ = id => document.getElementById(id), prompt = $('hPrompt'), objEl = $('hObj');
 
@@ -174,11 +176,16 @@ function create(opts) {
   if (!opts.title) pc.querySelector('[data-k=title]').remove();
   if (!opts.restartDay) pc.querySelector('[data-k=restart]').remove();
   const setEl = screen('hSettings', '');
-  const sheet = screen('hSheet', '<h2>Controls</h2><table>' + [
-    ['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers'], ['<kbd>Space</kbd>', 'Jump'],
-    ['<kbd>Q</kbd>', 'Put down what’s in her hands (or the other thing: lie down, on a bed)'], ['<kbd>B</kbd>, or the basket by the diary', 'What’s in your basket, while she’s carrying it'], ['The camera button, or the wheel', 'Camera: near, medium or far'], ['Drag', 'Go round'],
-    ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>J</kbd>, or the book by the clock', 'Her diary'], ['<kbd>Esc</kbd>', 'Menu']].map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') +
-    '</table><p style="font-size:13px;color:#c9a88c;margin:12px 0 0">On a touch screen: the stick to walk, the round buttons to act and to run (hold); a finger on the view to go round, two to pinch nearer or further.</p><div class="x">Click anywhere or press Esc to close</div>');
+  // (the controls as she's being played: the keys, or the touch screen's)
+  const KEYS = [['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd>, <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers (or click it)'],
+    ['<kbd>Q</kbd>', 'The other thing: put down what’s in her hands; lie down, on a bed'], ['Drag', 'Look round'], ['<kbd>C</kbd>, the camera button, or the wheel', 'Camera: near, medium or far'],
+    ['<kbd>J</kbd>, or the book', 'Her diary'], ['<kbd>B</kbd>, or the basket', 'What’s in her basket, while she carries it'], ['The bar by the diary', 'How she’s holding up'],
+    ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>Esc</kbd>', 'Menu']];
+  const TOUCH = [['The stick (left)', 'Walk; push it to the rim to run'], ['The big round button', 'Do what it says (the gold chip says it in full)'], ['The smaller one beside it', 'The other thing, when there is one: put down what’s in her hands; lie down'],
+    ['A finger on the view', 'Look round; two fingers pinch nearer or further'], ['The camera button', 'Camera: near, medium or far'], ['The book, the basket, the bar', 'Her diary, her basket, how she’s holding up'],
+    ['In a conversation', 'Tap anywhere: on; tap a choice to choose'], ['The menu button', 'Menu']];
+  const sheet = screen('hSheet', '<h2>Controls</h2><table></table><div class="x">Tap or click anywhere, or press Esc, to close</div>');
+  const showSheet = () => { sheet.querySelector('table').innerHTML = (touch ? TOUCH : KEYS).map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join(''); sheet.classList.add('on'); };
   // The diary: the whole journal in a pop-up of its own (the game held while it's open). J, or the button by the clock.
   const diaryEl = screen('hDiaryCard', '<h2>Her diary</h2><div class="dtabs"><button data-tab="days" class="on">Her days</button><button data-tab="people">Her people</button></div><div class="journal"></div><div class="x">Esc, or click outside, to close</div>');
   let diaryTab = 'days';
@@ -210,7 +217,8 @@ function create(opts) {
   function drawJournal(into, tab) {
     const d = into || pc.querySelector('.journal'); if (!opts.journal) return; const j = opts.journal(); if (!j) { d.innerHTML = ''; return; }
     const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
-    const head = '<div class="ph">' + esc(j.clock) + (j.phase ? ' · Act ' + j.phase.act + ', ' + esc(j.phase.name) : '') + '</div>';
+    const cap = $('hCap').classList.contains('on') ? '<div class="ph">How she’s holding up: ' + esc($('hCap').title.toLowerCase()) + '</div>' : '';
+    const head = '<div class="ph">' + esc(j.clock) + (j.phase ? ' · Act ' + j.phase.act + ', ' + esc(j.phase.name) : '') + '</div>' + cap;
     if (tab === 'people') { d.innerHTML = head + (j.people.length ? j.people.map(p => '<div class="q ' + (p.trust < 0 ? 'cool' : '') + '"><b>' + esc(p.name) + '</b><small>' + esc(p.text) + '</small></div>').join('') : '<div class="q"><small>No one yet.</small></div>'); return; }
     d.innerHTML = head + '<h3>Today</h3>' + (j.today.length ? j.today.map(t => '<div class="q"><b>' + esc(t) + '</b></div>').join('') : '<div class="q"><small>Nothing asked of her. The day’s her own.</small></div>') +
       (j.steps.length ? '<h3>Under way</h3>' + j.steps.map(s => '<div class="q"><b>' + esc(s.name) + '</b> — ' + esc(s.title) + '<small>' + esc(s.hint) + '</small></div>').join('') : '');
@@ -242,7 +250,7 @@ function create(opts) {
   function openSettings(back) { const c = setEl.querySelector('.hCard'); c.innerHTML = ''; c.appendChild(settingsCard(() => { setEl.classList.remove('on'); if (back) back(); })); setEl.classList.add('on'); }
   pauseEl.addEventListener('click', e => {
     const k = e.target.dataset && e.target.dataset.k; if (e.target === pauseEl) return pause(false);
-    if (k === 'resume') pause(false); else if (k === 'settings') openSettings(); else if (k === 'controls') sheet.classList.add('on');
+    if (k === 'resume') pause(false); else if (k === 'settings') openSettings(); else if (k === 'controls') showSheet();
     else if (k === 'title' && opts.title) { pause(false); opts.title(); }
     else if (k === 'restart' && opts.restartDay && (!opts.canRestart || opts.canRestart()) && confirm('Start today again from the morning? Everything since breakfast is undone.')) { pause(false); opts.restartDay(); }
   });
@@ -250,7 +258,9 @@ function create(opts) {
   $('hMenu').addEventListener('click', e => { e.stopPropagation(); pause(!paused); });
   $('hDiary').addEventListener('click', e => { e.stopPropagation(); diary(true); });
   $('hBasket').addEventListener('click', e => { e.stopPropagation(); basketCard(true); });
-  $('hHelp').addEventListener('click', e => { e.stopPropagation(); sheet.classList.add('on'); });
+  $('hHelp').addEventListener('click', e => { e.stopPropagation(); showSheet(); });
+  // (how she's holding up, said in words for a moment, tapped or clicked)
+  let capT = 0; $('hCap').addEventListener('click', e => { e.stopPropagation(); const say = $('hCapSay'); say.textContent = $('hCap').title; say.classList.add('on'); clearTimeout(capT); capT = setTimeout(() => say.classList.remove('on'), 2200); });
 
   // ── The camera: in close, at the usual distance, or well back (the wheel still zooms between). ──
   const ZOOMS = [['Close', 0.55], ['Usual', 1], ['Far', 1.9]]; let zoom = 1, base = null;
@@ -266,11 +276,11 @@ function create(opts) {
   $('hCam').addEventListener('click', e => { e.stopPropagation(); stepCam(); });
 
   // ── Keys ──
-  const held = new Set(); let runBtn = false;
+  const held = new Set(); let rim = false;      // (rim: the touch stick pushed all the way out)
   function axes() {
     const p = P(); if (!p) return; const k = c => held.has(c) ? 1 : 0;
     if (sid == null) { p.input.move.x = k('KeyD') + k('ArrowRight') - k('KeyA') - k('ArrowLeft'); p.input.move.z = k('KeyW') + k('ArrowUp') - k('KeyS') - k('ArrowDown'); }
-    p.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || runBtn;
+    p.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || rim;
   }
   setInterval(axes, 200);      // (the scene can change under the keys)
   const typing = e => /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'range' && e.target.type !== 'checkbox';
@@ -280,10 +290,11 @@ function create(opts) {
   }, true);
   addEventListener('keydown', e => {
     if (typing(e) || el.classList.contains('hide')) return;
-    if (e.key === '?' || e.code === 'F1') { sheet.classList.add('on'); e.preventDefault(); return; }
+    if (e.key === '?' || e.code === 'F1') { showSheet(); e.preventDefault(); return; }
     if (e.repeat) return; held.add(e.code); const p = P();
-    if (p && ['KeyE', 'Enter', 'NumpadEnter'].includes(e.code)) p.use(); else if (p && p.jump && e.code === 'Space') p.jump();
+    if (p && ['KeyE', 'Space', 'Enter', 'NumpadEnter'].includes(e.code)) p.use();
     if (p && e.code === 'KeyQ') p.use(true);
+    if (e.code === 'KeyC') stepCam();
     if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
     axes();
   });
@@ -293,10 +304,11 @@ function create(opts) {
   // ── Touch: the stick and the buttons ──
   const stick = $('hStick'), knob = $('hKnob'); let sid = null;
   const stickAt = e => { const p = P(); if (!p) return; const r = stick.getBoundingClientRect(), rad = r.width / 2; let x = (e.clientX - r.left - rad) / rad, y = (e.clientY - r.top - rad) / rad; const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
-    const dz = Math.hypot(x, y) < 0.15 ? 0 : 1; p.input.move.x = x * dz; p.input.move.z = -y * dz; knob.style.transform = `translate(${x * rad * 0.55}px, ${y * rad * 0.55}px)`; };
+    const m = Math.hypot(x, y), dz = m < 0.15 ? 0 : 1; p.input.move.x = x * dz; p.input.move.z = -y * dz; knob.style.transform = `translate(${x * rad * 0.55}px, ${y * rad * 0.55}px)`;
+    const r2 = m > 0.92 && !p.noRun; if (r2 !== rim) { rim = r2; stick.classList.toggle('rim', rim); p.input.run = rim; } };      // (to the rim: she runs; the ring lights to say so)
   stick.addEventListener('pointerdown', e => { sid = e.pointerId; stick.setPointerCapture(sid); stickAt(e); e.preventDefault(); e.stopPropagation(); });
   stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickAt(e); });
-  const stickEnd = () => { sid = null; const p = P(); if (p) p.input.move.x = p.input.move.z = 0; knob.style.transform = ''; };
+  const stickEnd = () => { sid = null; rim = false; stick.classList.remove('rim'); const p = P(); if (p) { p.input.move.x = p.input.move.z = 0; p.input.run = false; } knob.style.transform = ''; };
   stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
   const press = (id, down, up) => { const b = $(id);
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (b.classList.contains('off')) return; b.classList.add('down'); try { b.setPointerCapture(e.pointerId); } catch (x) { /* fine */ } if (root.GameAudio && GameAudio.init) GameAudio.init(); down(); });
@@ -304,7 +316,6 @@ function create(opts) {
     b.addEventListener('pointerup', end); b.addEventListener('pointercancel', end); b.addEventListener('contextmenu', e => e.preventDefault()); };
   press('hAct', () => { const p = P(); if (p) p.use(); });
   press('hAlt', () => { const p = P(); if (p) p.use(true); });
-  press('hRun', () => { runBtn = true; $('hRun').classList.add('on'); axes(); }, () => { runBtn = false; $('hRun').classList.remove('on'); axes(); });
 
   // ── Each frame: the chip and the buttons say what she can do now. ──
   const btn = (id, o) => { const b = $(id), sig = JSON.stringify(o); if (b._sig === sig) return; b._sig = sig;
@@ -314,7 +325,6 @@ function create(opts) {
     requestAnimationFrame(tick);
     const p = P(), o = p && p.offer;
     btn('hAct', o ? { icon: iconFor(o.label), label: verb(o.label), title: o.label, enabled: true } : { icon: 'act', label: 'Do', enabled: false });
-    { const nr = !!(p && p.noRun); if ($('hRun')._nr !== nr) { $('hRun')._nr = nr; $('hRun').style.visibility = nr ? 'hidden' : ''; } }      // (no running there: no button for it)
     const a = p && p.alt;      // (what Q does: the offer's other thing, or put down what's in her hands)
     btn('hAlt', a ? { icon: a.down ? 'down' : 'lie', label: verb(a.label), title: a.label, enabled: true } : { icon: 'lie', label: 'Lie down', enabled: false });
     const chip = (o ? o.label : '') + '|' + (a ? a.label : '');
