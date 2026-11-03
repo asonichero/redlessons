@@ -4,8 +4,8 @@
 //   • Over breakfast her mother gives her the day's errand, if there is one: not asked, given (Red's handed the deciding back to her mother).
 //     Red's yes is a promise: it must be begun by its time. Let slide past its half hour's grace, it's wilful.
 //   • The week: Lay day mornings, after breakfast, her mother reckons it (wilful and naughty since the last Lay day, naughty weighed heavier,
-//     each correction she's had besides): over the line, a maintenance correction there and then, the week gone through as it's given, all
-//     three stages; near it, a warning (and midweek, at supper); a good week, said so (weekly, weekReckon, WEEK).
+//     each correction she's had besides): over the line, a maintenance correction there and then, the week gone through as it's given (skirt
+//     lifted, drawers down, the hairbrush); near it, a warning (and midweek, at supper); a good week, said so (weekly, weekReckon, WEEK).
 //   • The garden's hers every day, any time before dusk (js/garden.js: the weeds, the flowers watered, the vegetables tended); left
 //     untended, it's a little broken promise.
 //   • An errand's work is done where it's asked for (the well, the bakery, the forge…), and some things are carried home to her mother after.

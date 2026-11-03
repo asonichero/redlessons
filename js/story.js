@@ -615,33 +615,44 @@ const weekWarn = k => [
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: k.due ? 'And I’ll tell you now, so it’s no surprise: Lay day morning, you and I have a reckoning coming. You’ve earned it already.' : 'And mind yourself, the rest of this week. You’re near enough to a Lay day reckoning as it is.' },
   { who: 'red', face: 'shy', text: '…Yes, Mama.' },
 ];
-// The maintenance correction: Lay day morning, the week gone through as it's given, a part of it at each stage: across her lap with her skirt
-// down, for what she let slide (the wilful); lifted, for what cost someone else (the naughty); her drawers down, for the corrections she
-// needed besides, and the week as a whole. Each longer than an evening's.
+// The maintenance correction: Lay day morning, the week gone through as it's given, a part of it at each stage: her skirt lifted, for what
+// she let slide (the wilful); her drawers down, for what cost someone else (the naughty); and the hairbrush, which she's sent to fetch, for
+// the corrections she needed besides and the week as a whole. Each longer than an evening's.
 const maintenanceCorrection = async (S, how) => {
   const M = 'corrector', R = 'subject', k = (how && how.week) || { items: [], corrected: 0 };
   const wil = weekWhys(k, 'wilful', 3), nau = weekWhys(k, 'naughty', 3), givers = [...new Set((k.items || []).filter(e => e.st === 'corrected').map(e => GIVERS[e.why] || 'someone'))];
-  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.35, pace: 1.3 });
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.45, pace: 1.4 });
   await S.wait(0.8);
   await S.say(M, 'Hands down. There. We’ll take it in order, and you’ll hear every bit of it.', 'calm');
-  await S.step([M, 'The shape of your days, first. What I ask, done, and done in time.', 'stern'], 10);
-  for (const t of wil.length ? wil : ['What I asked, let slide.']) { await S.step([M, t, 'stern'], 8); await S.smacks(4); }
-  await S.step([R, 'I know, Mama— I know—'], 6);
   await S.gesture('skirt'); await S.wait(0.4);
-  S.set({ strength: 1.6, pace: 1.55 });
-  await S.step([M, nau.length ? 'Then what cost somebody else.' : 'And you’ve kept your hands to yourself, this week, mostly. That’s something.', 'stern'], 10);
-  for (const t of nau) { await S.step([M, t, 'stern'], 10); await S.smacks(4); }
-  await S.step([R, 'Ow— Mama, I’m sorry—'], 6);
+  // (her skirt lifted: what she let slide)
+  await S.step([M, 'The shape of your days, first. What I ask, done, and done in time.', 'stern'], 10);
+  for (const t of wil.length ? wil : ['What I asked, let slide.']) { await S.step([M, t, 'stern'], 8); await S.smacks(5); }
+  await S.step([R, 'I know, Mama— I know—'], 6);
   await S.smacks(8);
+  // (her drawers down: what cost somebody else)
   await S.gesture('drawers'); await S.wait(0.5);
   await S.say(R, 'Mama—');
-  await S.say(M, 'Yes. The last of it, for the week as a whole.', 'calm');
-  S.set({ strength: 1.85, pace: 1.75 });
-  if (givers.length) await S.step([M, 'Taken in hand by ' + (givers.length > 1 ? givers.slice(0, -1).join(', ') + ' and ' + givers[givers.length - 1] : givers[0]) + ', and it didn’t hold. That’s what this is for: so that it does.', 'stern'], 12);
-  else await S.step([M, 'It’s not one thing. It’s the week. It’s letting it run away from you, a day at a time.', 'stern'], 12);
-  await S.step([R, 'I’ll be better— I will—'], 6);
-  await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 12);
-  await S.smacks(10);
+  await S.say(M, 'Yes. ' + (nau.length ? 'Now what cost somebody else.' : 'You’ve kept your hands to what’s yours, this week, mostly. That’s something. But it’s not all.'), 'stern');
+  S.set({ strength: 1.75, pace: 1.65 });
+  for (const t of nau) { await S.step([M, t, 'stern'], 10); await S.smacks(5); }
+  await S.step([R, 'Ow— Mama, I’m sorry—'], 6);
+  await S.step([M, 'Sorry’s a start. It’s not the end of it.'], 10);
+  await S.smacks(8);
+  // (the hairbrush, fetched: the corrections that didn't hold, and the week as a whole)
+  await S.fetch('hairbrush', {
+    ask: [M, 'Up you get, Little Red. My hairbrush, from the chest. You know where it is.'],
+    waitFace: 'concerned', presentFace: 'stern',
+    present: [R, '…Here, Mama.'],
+    back: [M, 'Back across my knee. The last of it.', 'stern'],
+  });
+  S.set({ strength: 1.85, pace: 1.1 }); await S.wait(0.8);
+  if (givers.length) await S.step([M, 'Taken in hand by ' + (givers.length > 1 ? givers.slice(0, -1).join(', ') + ' and ' + givers[givers.length - 1] : givers[0]) + ', and it didn’t hold. This is so that it does.', 'stern'], 8);
+  await S.step([M, 'It’s not one thing. It’s the week. Letting it run away from you, a day at a time.', 'stern'], 8);
+  await S.step([R, 'I’ll be better— I will—'], 4);
+  await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 8);
+  await S.smacks(4);
+  S.set({ implement: 'hand' });
   if (how && how.also) await how.also(S);
   await S.say(M, 'There. That’s done, and you’re set right. A clean week from today. Up you get.', 'calm');
   await S.wait(1.2);
