@@ -429,7 +429,20 @@ function build(scene, opts) {
     const thing = (name, build, x, z, grip, radius, ry) => { const it = new THREE.Group(); build(it); it.position.copy(pc.P(x, H, z)); it.rotation.y = (ry || 0) + pc.ry; root_.add(it); const item = { obj: it, name, grip, radius, panel: g }; world.items.push(item); pc.items.push({ obj: it, at: new V3(x, H, z), ry: ry || 0 }); return item; };
     thing('the jug', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [1.6, 0.1], [1.9, 2], [1.3, 3.8], [1.0, 4.4], [1.3, 4.9]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#a85a3a', 0, 0, 0, { ink: 0.08 });
       solid(it, new THREE.TorusGeometry(1.1, 0.25, 6, 12, Math.PI * 1.2), '#a85a3a', 1.5, 3.2, 0, { rot: [0, 0, -1.2], ink: 0.05 }); }, tx_ - 2, tz - 8, new V3(0, 2.6, 0), 2, 0.6);
-    thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
+    // (the loaf: a rounded end, its middle, and the other end; as it's eaten (setLeft), the far end's cut away and the middle shortened, the
+    // crumb showing at the cut, down to the heel)
+    thing('the loaf', it => {
+      const RX = 2.6, RY = 1.6, CAP = 1.8, MID = 3.6, crust = '#c98a44', cap = s => { const g = new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2); g.rotateX(s * Math.PI / 2); g.scale(RX, RY, CAP); return g; };
+      solid(it, cap(-1), crust, 0, RY, -MID / 2, { ink: 0.08 });      // (the back end: always there)
+      const midG = new THREE.CylinderGeometry(1, 1, 1, 16, 1, true); midG.rotateX(Math.PI / 2); midG.translate(0, 0, 0.5); midG.scale(RX, RY, 1);
+      const mid = solid(it, midG, crust, 0, RY, -MID / 2, { ink: 0.08 }); mid.scale.z = MID; mid.material.side = THREE.DoubleSide;
+      const front = solid(it, cap(1), crust, 0, RY, MID / 2, { ink: 0.08 });
+      const cutG = new THREE.CircleGeometry(1, 16); cutG.scale(RX - 0.15, RY - 0.12, 1); const cut = solid(it, cutG, '#f0dcae', 0, RY, MID / 2, { ink: 0 }); cut.visible = false;
+      const slashes = [-1, 0, 1].map(k => solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }));
+      it.userData.setLeft = f => { f = Math.max(0, Math.min(1, f)); const whole = f >= 0.999, len = whole ? MID : Math.max(0.3, (MID + CAP * 2) * f - CAP);
+        mid.scale.z = len; front.visible = whole; cut.visible = !whole; cut.position.z = -MID / 2 + len;
+        slashes.forEach((s, k) => { s.visible = s.position.z < -MID / 2 + len - 0.2; }); };
+    }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
     for (const it of world.items) { if (it.name === 'the jug') it.fixed = true; if (it.name === 'the loaf') it.kind = 'loaf'; }      // (the jug is the table's; the loaf, Mama's, for supper: js/chores.js)
     world.surfaces.push(Object.assign(pc.area(-D / 2 + 2, D / 2 - 2, -L / 2 + 2, L / 2 - 2), { name: 'the table', y: H, panel: g, front: pc.turn(new V3(-1, 0, 0)) }));
     world.obstacles.push(pc.area(-D / 2 - 0.5, D / 2 + 0.5, -L / 2, L / 2));

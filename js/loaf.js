@@ -127,7 +127,7 @@ async function diminished(P, w, near) {
 async function eat(P, w, meal) {
   if (!onBoard(w)) return;
   const b = bread(w), left = Math.max(0, b.left - (PER[meal] || 0.2)), out = left < HEEL;
-  setBread(w, x => { x.left = out ? 0 : left; if (out) x.need = true; });
+  setBread(w, x => { x.left = out ? 0 : left; if (out) x.need = true; }); show(P, w);
   if (out) { if (P && P.talk && root.Story.loafOut) await P.converse(root.Story.loafOut(w.cal.minute < H('11:30')), { shot: ['red', 'mother'] }); if (w.refresh) w.refresh(); }
 }
 // (whether her mother will have something to say of it at this meal: missed, gone down, or down to the heel)
@@ -136,6 +136,8 @@ function asks(w, meal) {
   if (onBoard(w)) return b.fed > 0 || b.left - (PER[meal] || 0.2) < HEEL;
   return !!(l && (l.state === 'taken' || l.state === 'ducks' || l.state === 'gone'));
 }
+// (as much of it as is left, to see: the loaf on the board shortened, cut, down to the heel: js/cottage.js's setLeft)
+function show(P, w) { const it = P && P.world && P.world.items && P.world.items.find(x => x.kind === 'loaf'); if (it && it.obj.userData.setLeft) it.obj.userData.setLeft(bread(w).left); }
 // (a whole loaf on the board again: Master Pennock's loaves, home; or the one fetched from the counter)
 function fresh(w) { setBread(w, x => { x.left = 1; x.fed = 0; x.need = false; x.carrying = false; }); }
 // Fetching it: at Mistress Pennock's counter while she's at it, in her basket; home, and onto the board.
@@ -166,7 +168,7 @@ async function board(P, w) {
   const b = basket(P), it = P.world.items.find(x => x.kind === 'loaf'), m = P.motion; if (!it) return;
   const at = it.obj.position.clone(); await up(P, at, 6); await m.reach('R', at.clone().setY(at.y + 2)); await P.wait(0.3); await m.release('R');
   if (b && root.Chores) root.Chores.takeOut(b, FRESH); if (b && b === P.bag) change(w, c => { if (c.bag) c.bag.contents = b.contents.slice(); });
-  fresh(w); change(w, c => { if (c.loaf && c.loaf.day === w.cal.day && c.loaf.state !== 'taken') c.loaf.state = 'back'; });
+  fresh(w); show(P, w); change(w, c => { if (c.loaf && c.loaf.day === w.cal.day && c.loaf.state !== 'taken') c.loaf.state = 'back'; });
   it.away = false; it.obj.visible = true; w.refresh();
 }
 const objective = w => { const b = bread(w); return b.carrying ? 'Put the fresh loaf on the board at home.' : b.need ? (w.cal.minute < H('12:30') ? 'Fetch a fresh loaf from Mistress Pennock’s counter.' : 'Fetch a fresh loaf from Mistress Pennock’s counter, in the morning.') : null; };
@@ -176,6 +178,7 @@ function putBack(P, w) {
   if (b && b === P.bag) change(w, c => { if (c.bag) c.bag.contents = b.contents.slice(); });
   if (P.motion.carry && P.motion.carry.kind === 'loaf') { const it = P.motion.drop(); if (it) it.obj.visible = false; }
   const it = P.world.items.find(x => x.kind === 'loaf'); if (it) { it.away = false; it.obj.visible = true; }
+  show(P, w);
   change(w, c => { if (c.away) c.away.loaf = 0; });
   w.refresh();
 }
@@ -186,7 +189,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { peter, feed, evening, eat, asks, fresh, actions, objective, bread, onBoard, correct, breadIn, LOAF, LOAVES, FRESH, PER };
+const api = { show, peter, feed, evening, eat, asks, fresh, actions, objective, bread, onBoard, correct, breadIn, LOAF, LOAVES, FRESH, PER };
 root.Loaf = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

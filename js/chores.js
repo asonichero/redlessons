@@ -457,6 +457,7 @@ function create(w) {
     if (P && held && !P.motion.carry) regive(P, held);      // (whatever she had in her hands, still in them)
     if (P) { const b = st().bag; P.bag = b && b.at === w.area && SETBY.includes(w.area) ? b : null; }      // (her basket, set by in here)
     away(P);
+    if (P && w.area === 'home' && root.Loaf && root.Loaf.show) root.Loaf.show(P, w);      // (the loaf on the board, as much as is left of it)
     if (P && w.area === 'home' && st().buttWaiting) { const b = P.world.items && P.world.items.find(x => x.kind === 'butt'); if (b && b !== P.motion.carry) fill(b, true); }      // (still full by the hearth, her mother not yet in to see to it)
     if (P && w.area !== 'home') for (const l of st().left || []) if (l.area === w.area) {      // (what she put down here, where she put it)
       const it = prop(l.kind, { empty: !l.full, contents: l.contents }); it.keep = false; it.leftId = l.id; it.obj.position.set(l.x, 0, l.z); P.stage.scene.add(it.obj); P.world.items.push(it); }
