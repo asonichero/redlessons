@@ -293,7 +293,7 @@ function create(opts) {
     if (d.t) { dbgTab = d.t; drawDebug(); return; }
     if (d.tr && opts.debugSet) { opts.debugSet({ trust: d.tr, by: +d.by }); drawDebug(); } });
   dbgEl.addEventListener('change', e => { const t = e.target, d = t.dataset || {}; if (!opts.debugSet) return;
-    if (d.q) opts.debugSet({ quest: d.q, done: t.checked }); else if (d.fl) opts.debugSet({ flag: d.fl, on: t.checked }); drawDebug(); });
+    if (d.q) opts.debugSet({ quest: d.q, done: t.checked }); else if (d.fl) opts.debugSet({ flag: d.fl, on: t.checked }); else return; drawDebug(); });      // (the day and time boxes wait for Set: redrawn now, the Set button would go from under the click)
   // (how she's holding up, said in words for a moment, tapped or clicked)
   let capT = 0; $('hCap').addEventListener('click', e => { e.stopPropagation(); const say = $('hCapSay'); say.textContent = $('hCap').title; say.classList.add('on'); clearTimeout(capT); capT = setTimeout(() => say.classList.remove('on'), 2200); });
 

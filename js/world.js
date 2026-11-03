@@ -185,7 +185,10 @@ function create(view, ui) {
     if (o.trust) rep.trusts(o.trust, o.by);
     if (o.quest) { if (o.done) q.complete(o.quest); else { const [li, si] = o.quest.split('.'); save.change(s => { if (s.quests[li]) delete s.quests[li][si]; }, { quest: o.quest }); } }
     if (o.flag) save.change(s => { s.flags = s.flags || {}; if (o.on) s.flags[o.flag] = cal.day; else delete s.flags[o.flag]; }, { flag: o.flag });
-    if (o.flag === 'abney-promise-broken' && !o.on) save.change(s => { if (s.promise) { s.promise.broken = false; s.promise.told = false; } }, { promise: true });      // (unbroken: the evening's to be had again)
+    // (unbroken: the evening's to be had again, tonight: the promise for today, the clock back to six if it's gone half past (or the next
+    // check would only break it again), and its step undone)
+    if (o.flag === 'abney-promise-broken' && !o.on) { save.change(s => { if (s.promise) Object.assign(s.promise, { broken: false, told: false, kept: false, sitting: false, day: s.day }); if (s.minute > 18 * 60 + 30 || s.minute < 17 * 60 + 30) s.minute = 18 * 60; delete (s.flags || {})['abney-promise-broken'];
+      if (s.quests && s.quests.abney) delete s.quests.abney.promise; }, { promise: true, time: true }); }
     if (o.day != null || o.minute != null) save.change(s => { if (o.day != null) s.day = Math.max(1, Math.round(o.day)); if (o.minute != null) s.minute = Math.max(0, Math.min(24 * 60 - 1, Math.round(o.minute))); }, { time: true });      // (the day and the time, written over)
     refresh();
   }
