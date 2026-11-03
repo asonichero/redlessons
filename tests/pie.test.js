@@ -22,13 +22,9 @@ test('the first time: once both trust her, and the dares are behind them; in the
   assert.equal(Pie.ready(world({ done: ['tom.meet', 'tom.dares'], hour: 18 })), null, 'and in again by evening');
 });
 
-test('again, some days on, until she\'s asked to share his correction; never while her mother\'s still to hear of the last', () => {
+test('once only: not again, whatever the days since', () => {
   const w = world({ done: ['tom.meet', 'tom.dares', 'tom.pie', 'pennock.helps'] }); Pie.stateOf(w).last = 5;
-  assert.equal(Pie.ready(w), null, 'not the same day');
-  w.save.change(s => { s.day = 5 + Pie.AGAIN_AFTER - 1; }); assert.equal(Pie.ready(w), null, 'not too soon');
-  w.save.change(s => { s.day = 5 + Pie.AGAIN_AFTER; }); assert.equal(Pie.ready(w), 'again');
-  Pie.stateOf(w).pending = { day: 9, told: false }; assert.equal(Pie.ready(w), null, 'her mother still to hear of it');
-  Pie.stateOf(w).pending = null; w.q.complete('pennock.pie'); assert.equal(Pie.ready(w), null, 'done with, once she\'s asked');
+  for (const d of [5, 5 + Pie.AGAIN_AFTER, 30]) { w.save.change(s => { s.day = d; }); assert.equal(Pie.ready(w), null); }
 });
 
 test('sent home: the objective, that day only, until she\'s in', () => {

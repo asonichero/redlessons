@@ -524,7 +524,7 @@ const fitting = late => [
 const breakfast = (errand, ctx) => {
   const hello = { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'There. Bowls done, and you fed. Now then.' };
   // (her own day: out at the farm, or needlework at home for the morning or the afternoon (ctx.needle))
-  const away = ctx.fair ? ctx.fair : ctx.lay ? 'It’s Lay day, so no Hallorans’ for me, and nothing for you but the garden. Even the fields get a rest.' : ctx.allDay ? 'I’m at the Hallorans’ all day today, and I’ll not be home for dinner: the planting’s behind. There’ll be bread and cheese out on the table, whenever you want it.' : ctx.needle === 'morning' ? 'I’ve needlework this morning, so I’m home till dinner, then up at the Hallorans’ after.' : ctx.needle === 'afternoon' ? 'I’m up at the Hallorans’ this morning, and home with my needlework this afternoon.' : 'I’m up at the Hallorans’ all day, setting the beans. I’ll be home for dinner at half past twelve, and so will you.';
+  const away = ctx.fair ? ctx.fair : ctx.lay ? 'It’s Lay day, so no Hallorans’ for me, and nothing for you but the garden. I’ll walk up to your grandmother’s this afternoon, and be back by five. Even the fields get a rest.' : ctx.allDay ? 'I’m at the Hallorans’ all day today, and I’ll not be home for dinner: the planting’s behind. There’ll be bread and cheese out on the table, whenever you want it.' : ctx.needle === 'morning' ? 'I’ve needlework this morning, so I’m home till dinner, then up at the Hallorans’ after.' : ctx.needle === 'afternoon' ? 'I’m up at the Hallorans’ this morning, and home with my needlework this afternoon.' : 'I’m up at the Hallorans’ all day, setting the beans. I’ll be home for dinner at half past twelve, and so will you.';
   const mine = ctx.agreed ? [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: away }] : [];
   // (the garden: hers today, or her mother's: ctx.garden 'maren' (she has the time) or 'after' (the day after a correction for it))
   const garden = ctx.garden === 'after' ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Leave the garden to me today. I’ll set my flowers straight myself.' }]
@@ -806,6 +806,9 @@ const tomStops = ctx => {
     const did = [{ run: ctx.accept }, T('cheeky', ctx.kind === 'bell' ? 'Go on, then. I’ll be watching from here. Three, mind. Not two.' : 'Go on, then. I’ll be watching from the corner. Three knocks, and then run.', 'cheeky')];
     middle = [
       T('cheeky', 'I’ve been waiting all day for somebody worth daring. I dare you to ' + what, 'surprised'), M(3),
+      ...(ctx.afterPie ? [R('shy', 'Tom. The last time I took one of your dares, I ended up over Mistress Pennock’s knee. And so did you.'), M(1),
+        T('pout', 'This isn’t pies. Nobody’s marching anyone anywhere for this.', 'shy'), R('shy', '…That isn’t how it works, and you know it.'), M(1),
+        T('calm', 'Then don’t. I’ll not think less of you. Much.', 'shy')] : []),
       { choose: [
         { text: 'Done.', face: 'cheeky', then: did },
         { text: 'Not today, Tom.', face: 'shy', then: [M(2), T('pout', 'Not today. Coward. I’ll save it for you, then.', 'shy'), R('cheeky', 'Save it as long as you like.')] },
@@ -1005,11 +1008,18 @@ const pieForge = ctx => [
   { choose: [
     { text: 'Yes, Mistress Pennock.', face: 'shy', then: [{ run: ctx.obey }, { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Go on, then. Straight home, mind. Come along, Tom.' }] },
     { text: 'Mistress Pennock… may I say something? Just to you.', face: 'shy', then: [{ run: ctx.tell },
-      { who: 'red', face: 'shy', listen: { pennock: 'calm' }, text: 'It was my hand on the pie, not his. Whatever you give Tom, I’ve earned it too.' },
-      { who: 'red', face: 'shy', listen: { pennock: 'concerned' }, text: 'Mama takes me in hand, when I’ve earned it. I asked her to. And I think she’d want you to, for this. I’d rather it was you, now, than carry it home.' },
-      { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Your mother does, does she. I did wonder, once or twice.' },
-      { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Well. You were honest with me, and that took some doing. Then you’ll come along with us, and I’ll speak to your mother after.' }] },
+      { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Just to me. Hm.' },
+      { who: 'pennock', face: 'stern', listen: { tom: 'wince' }, text: 'Tom Ferrier: on to my bakery, and wait for me there. Don’t touch a thing.' },
+      { who: 'tom', face: 'pout', listen: { pennock: 'stern' }, text: 'Yes, Mistress Pennock.' }] },
   ] },
+];
+// (a few steps off from the anvil, the two of them: she says it)
+const pieAside = () => [{ who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Over here, then, out of the din. Go on.' }];
+const pieTell = () => [
+  { who: 'red', face: 'shy', listen: { pennock: 'calm' }, text: 'It was my hand on the pie, not his. Whatever you give Tom, I’ve earned it too.' },
+  { who: 'red', face: 'shy', listen: { pennock: 'concerned' }, text: 'Mama takes me in hand, when I’ve earned it. I asked her to. And I think she’d want you to, for this. I’d rather it was you, now, than carry it home.' },
+  { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Your mother does, does she. I did wonder, once or twice.' },
+  { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Well. You were honest with me, and that took some doing. Then you’ll come along to the bakery, and I’ll speak to your mother after.' },
 ];
 // In the bakery, before it.
 const pieBakery = () => [
@@ -1019,17 +1029,21 @@ const pieBakery = () => [
 // Tom across her knee: he jokes, and stops joking; his word's his own, and he doesn't use it.
 const pieTom = async S => {
   const M = 'corrector', R = 'subject';
-  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.4 });
+  S.set({ skirt: 'up', drawers: 'up', implement: 'hand', strength: 1.5, pace: 1.4 });      // (his trousers down from the start: for a man, the skirt's state is his trousers')
   await S.wait(0.6);
   await S.say(R, 'You know, Mistress Pennock, it was a very good pie.');
   await S.say(M, 'It was. And it’s still on my board, no thanks to you.', 'stern');
   await S.step([M, 'A dare, was it? Every time, Tom Ferrier. Every time it’s a dare.'], 8);
   await S.step([R, 'Ow— she didn’t have to take it!'], 4);
   await S.step([M, 'No. And you didn’t have to ask her. That’s what this is for.'], 8);
-  await S.gesture('skirt'); await S.wait(0.4);
   S.set({ strength: 1.8, pace: 1.6 });
   await S.step([M, 'You’re a grown man and a good smith’s apprentice, and you still can’t walk past a windowsill.'], 10);
   await S.step([R, 'I can walk past it— ow!— I just don’t—'], 4);
+  await S.gesture('drawers'); await S.wait(0.5);
+  await S.say(R, 'Mistress Pennock! Not— she’s standing right there—', 'wince');
+  await S.say(M, 'She is. And you’ll remember that, the next time you think of mischief, and think twice. That’s what it’s for.', 'stern');
+  S.set({ strength: 1.9, pace: 1.7 });
+  await S.step([M, 'Every time it’s a dare. Not any more.'], 8);
   await S.set({ implement: 'bakersPaddle', strength: 1.7, pace: 1 });
   await S.say(M, 'And now the paddle. Six.', 'stern');
   await S.smacks(6);
@@ -1049,6 +1063,11 @@ const pieRed = async S => {
   await S.step([M, 'And you’ll not let Tom Ferrier talk you into anything again without thinking twice. Not for a pie. Not for anything.'], 10);
   await S.step([R, 'Ow— no, Mistress Pennock—'], 4);
   await S.step([M, 'You told me the truth today, and that was brave. I’ll not forget it.'], 8);
+  await S.gesture('drawers'); await S.wait(0.5);
+  await S.say(R, 'Mistress Pennock—', 'wince');
+  await S.say(M, 'The same as Tom, Rose. You asked for it.', 'calm');
+  S.set({ strength: 1.8, pace: 1.6 });
+  await S.step([M, 'Not for a pie. Not for anything.'], 8);
   S.set({ implement: 'bakersPaddle', strength: 1.6, pace: 1 });
   await S.say(M, 'Six with the paddle, the same as he had. Then it’s done, and we’re even.', 'stern');
   await S.smacks(6);
@@ -1094,7 +1113,8 @@ const pennockShortAfter = r => r && r.rose ? [
 const pieAfter = r => r && r.rose ? [
   { who: 'pennock', face: 'concerned', listen: { red: 'shy' }, text: 'Sit a minute, Rose. There’s milk. You did right to stop me.' },
 ] : [
-  { who: 'pennock', face: 'calm', listen: { red: 'teary' }, text: 'There. Done, and we’re even, the three of us. Tom can knead my dough for an hour, and then home with his ears ringing.' },
+  { who: 'pennock', face: 'calm', listen: { red: 'teary' }, text: 'There. Done, and we’re even, the three of us. Tom, you’ll knead my dough for an hour, and then home with your ears ringing.' },
+  { who: 'tom', face: 'pout', listen: { pennock: 'calm' }, text: 'Yes, Mistress Pennock.' },
   { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'And you. Come and see me, any time. Not for pies. Just come.' },
   { who: 'red', face: 'shy', text: 'Thank you, Mistress Pennock.' },
   { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'I’ll walk up and see your mother this evening. She’ll hear it from me, all of it, the good part too.' },
@@ -2620,5 +2640,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

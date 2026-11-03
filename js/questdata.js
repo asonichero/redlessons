@@ -96,7 +96,7 @@ const lines = [
   { id: 'pennock', name: 'Mistress Pennock', steps: [
     s('prospects', '1.1', 'Her prospects', 'village', 'pennock', { optional: true }),
     s('helps', '1.2', 'At the bakery', 'bakery', 'pennock'),
-    s('pie', '1.2', 'Asking to share Tom’s correction', 'bakery', 'pennock', { when: { done: 'tom.pie' } }),
+    s('pie', '1.2', 'Asking to share Tom’s correction', 'bakery', 'pennock', { optional: true, when: { done: 'tom.pie' } }),      // (the pie comes once: asked then, or not at all)
     s('trust', '1.3', 'Trust', 'bakery', 'pennock'),
     s('cake', '2.3', 'The cake', 'bakery', 'pennock'),
     s('who', '3.2', 'Who ordered the cake', 'bakery', 'pennock'),

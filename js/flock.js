@@ -99,10 +99,14 @@ function attach(P, w) {
   }
   const nearestLoose = p => { let best = null, bd = 1e9; for (const s of flock || []) if (s.state === 'loose') { const d = s.obj.position.distanceTo(p); if (d < bd) { bd = d; best = s; } } return best; };
   function home_(s) { s.state = 'home'; s.path = [gate.clone().add(new V3((Math.random() - 0.5) * 6, 0, 8)), gate.clone(), pen.clone()]; }
+  // (Bo, coming to find her: from as near as she can be and not be seen arriving, the edge of what's drawn, the way she'd come; running)
+  function edge() { const m = P.motion, d = bo.motion.pos.clone().setY(0).sub(m.pos.clone().setY(0)), R = 240; if (d.length() <= R) return;
+    if (d.lengthSq() < 1) d.set(0, 0, 1); const at = P.collide(m.pos.clone().setY(0).addScaledVector(d.normalize(), R), 3.2); bo.motion.warp(at, yawTo(at, m.pos)); bo.rig.root.position.copy(at); }
   async function ask() {
+    edge();
     const m = P.motion; change(x => { x.asked = cal.day; }); if (!(save.state.flags || {})['bo-met']) save.flag('bo-met', cal.day);
     const near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2);
-    await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(12)]);
+    await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(25)]);
     bo.motion.face(yawTo(bo.motion.pos, m.pos)); await m.face(yawTo(m.pos, bo.motion.pos));
     let yes = false;
     await P.converse(S.boHelp({ yes: () => { yes = true; } }), { shot: ['red', 'bo'] });
@@ -115,7 +119,7 @@ function attach(P, w) {
     boBusy = true; thanking = true;
     P.act(async () => {
       const m = P.motion, near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2);
-      await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(10)]);
+      edge(); await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(25)]);
       bo.motion.face(yawTo(bo.motion.pos, m.pos)); await m.face(yawTo(m.pos, bo.motion.pos));
       await P.converse(S.boThanks(cal.day), { shot: ['red', 'bo'] });
       rep.trusts('bo', 0.5); if (w.refresh) w.refresh();

@@ -3,7 +3,7 @@
 // dinner at half past twelve: if Red's in, they eat together (it fills her again: js/capacity.js), and her mother looks over her morning,
 // never correcting there, but saying what she's seen; what she's warned of and still finds undone by evening is wilful.
 //
-//   Maren.home(w) → she's in the cottage now · Maren.at(w) → 'home' | 'farm' | 'needle' · Maren.needlework(day) → 'morning' | 'afternoon' | null
+//   Maren.home(w) → she's in the cottage now · Maren.at(w) → 'home' | 'farm' | 'needle' | 'gran' (Lay day afternoons, up at Grandmother's) · Maren.needlework(day) → 'morning' | 'afternoon' | null
 //   Maren.dinnerDue(w) · Maren.dinner(P, w) (the meal, and her word) · Maren.warned(w, what) → she warned of it at dinner today
 // Kept in the save: state.maren = { dinner (the day they ate together), warned: { day, garden, errand } }.
 (function (root) {
@@ -20,15 +20,17 @@ const on = w => !!(w.chores && w.chores.on());
 // (the days Red's asked for the bakery's afternoon at breakfast: her mother at the Hallorans' all day, not home for dinner, and bread and cheese
 // left out on the table for her, so she needn't choose between the two)
 const allDay = (w, day) => { const c = w.save.state.chores, d = day || w.cal.day; return on(w) && !!c && c.day === d && !!c.errand && c.errand.id === 'bakery' && !(root.Fair && root.Fair.phase && root.Fair.phase(w, d)); };
+const LAY_OUT = 14 * 60, LAY_BACK = 17 * 60;
 function at(w) {
   const m = w.cal.minute, n = needlework(w.cal.day);
   { const f = root.Fair && on(w) ? root.Fair.marenAt(w) : null; if (f) return f; }      // (the fair's week: home, at the dress; fair day: at her stall)
   if (on(w) && !w.cal.lay && allDay(w) && m >= OUT && m < HOME) return 'farm';      // (the bakery's day: out all day, dinner too)
-  if (!on(w) || (w.cal.lay) || m < OUT || m >= HOME || (m >= DINNER && m < BACK)) return 'home';      // (Lay day: home all day)
+  if (on(w) && w.cal.lay && m >= LAY_OUT && m < LAY_BACK) return 'gran';      // (Lay day: up to Grandmother's of an afternoon, for the week's news; home the rest of it)
+  if (!on(w) || (w.cal.lay) || m < OUT || m >= HOME || (m >= DINNER && m < BACK)) return 'home';      // (Lay day: home all day, but the afternoon)
   if ((n === 'morning' && m < DINNER) || (n === 'afternoon' && m >= BACK)) return 'needle';
   return 'farm';
 }
-const home = w => at(w) !== 'farm' && at(w) !== 'fair';
+const home = w => at(w) !== 'farm' && at(w) !== 'fair' && at(w) !== 'gran';
 const dinnerDue = w => on(w) && !allDay(w) && w.cal.minute >= DINNER && w.cal.minute < BACK && stateOf(w).dinner !== w.cal.day;
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
 const missedDinner = w => on(w) && !allDay(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;

@@ -265,7 +265,8 @@ function create(w) {
       if (e && !early && (e.state === 'accepted' || (e.state === 'broken' && e.shift) || e.state === 'working' || (e.state === 'missed' && e.gone && !e.knocked)) && sp[e.place] && (e.state === 'working' || e.state === 'missed' || has(P, e) || e.needs === 'basket')) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
     // (the pot at the forge, mended, from the day after: hers to fetch home in her basket, asked or not)
-    if (area === 'village' && c.potAt === 'forge' && cal.day > (c.potSince || 0) && !(e && e.id === 'potback' && e.state === 'accepted') && sp.forge && cal.minute < H('18:00')) out.push({ label: 'Ask Master Ferrier for Mama’s pot', at: sp.forge.at.clone().setY(14), run: () => fetchPot(P) });
+    if (area === 'village' && c.potAt === 'forge' && cal.day > (c.potSince || 0) && !cal.lay && !(e && e.id === 'potback' && e.state === 'accepted') && sp.forge && cal.minute < H('18:00'))      // (not on Lay day: the forge is shut, and Master Ferrier not there)
+ out.push({ label: 'Ask Master Ferrier for Mama’s pot', at: sp.forge.at.clone().setY(14), run: () => fetchPot(P) });
     // (home with it: back on the hearth, where it lives)
     if (area === 'home' && c.potAt === 'carrying' && basketOf(P) && (basketOf(P).contents || []).includes(POT) && !(e && e.id === 'potback' && e.state === 'carrying')) { const it = W.items.find(x => x.kind === 'pot'); if (it) out.push({ label: 'Put the pot back on the hearth', at: it.obj.position.clone().setY(4), run: () => potHome(P) }); }
     if (root.Loaf) out.push(...root.Loaf.actions(P, w, area));      // (a fresh loaf, fetched from the counter; the loaf, back on the board: js/loaf.js)

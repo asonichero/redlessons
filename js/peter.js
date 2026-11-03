@@ -30,7 +30,9 @@ const visited = w => !!stateOf(w).visited;
 // week; but about one working day in four he's sent down to the village at midday (birds for the inn, thread), and is about for an hour)
 const offToday = w => visited(w) && ((w.cal.day - 1) % 7) + 1 === 7;
 const errandToday = w => visited(w) && !offToday(w) && hash(w.cal.day, 21) < 0.25 && !(w.chores && w.chores.pick && w.chores.pick(w.cal.day) === 'eggs');      // (never the day she's sent for the eggs)
-const inVillage = w => offToday(w) || (errandToday(w) && w.cal.minute >= H('11:00') && w.cal.minute < H('12:30'));
+// (and his afternoons his own, from two, once the birds are seen to: down in the village, unless he's waiting for her at the beech)
+const meetingNow = w => { const m = stateOf(w).meet; return !!(m && m.day === w.cal.day && w.cal.minute >= m.at - 30 && w.cal.minute <= m.at + 90); };
+const inVillage = w => offToday(w) || (errandToday(w) && w.cal.minute >= H('11:00') && w.cal.minute < H('12:30')) || (visited(w) && w.cal.minute >= H('14:00') && !meetingNow(w));
 // Whether there's a note in the beech today: every few days (the third day since the last she read, or sometimes the second), from the
 // day after the first visit, and not on his days off.
 function noteToday(w) {

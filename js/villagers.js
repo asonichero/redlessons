@@ -61,7 +61,7 @@ function station(key, day, min) {
     case 'pennock': return !lay && min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;      // (the counter till the bread's sold; the clearing down inside, of an afternoon)
     case 'baker': return !lay && min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;      // (baking from four, at the door with it till mid-morning; then to his bed)
     case 'peter': { if (min < H('10:00') || min >= H('20:30')) return null; if (min >= H('19:00')) return { stand: 'pondSide' };      // (by the pond, of an evening)
-      if (min >= H('18:00')) return { sit: SEAT.lime, n: 2 }; const k = r(7); return k < 0.4 ? { wander: true } : k < 0.7 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (only on his days off: see update)
+      if (min >= H('18:00')) return { sit: SEAT.lime, n: 2 }; const k = r(7); return k < 0.3 ? { wander: true } : k < 0.55 ? { sit: SEAT.lime, n: 2 } : { stand: 'pondSide' }; }      // (the pond, as often as not: he likes the ducks)      // (only on his days off: see update)
     case 'willie': return min >= H('22:00') || min < H('5:30') ? { round: true } : min >= H('21:15') ? { stand: 'bell' } : null;      // (out to the bell for half past nine, by it till ten, the village's curfew; then round till first light)
   }
   return null;
@@ -232,7 +232,7 @@ function attach(P, w) {
 
   // ── Talking to them: whoever's near, once she's close (each their word for the time of day, or what's between them; trust a little, once a day).
   function actions() {
-    const out = dareActions();
+    const out = dareActions().concat(root.Pie && root.Pie.actions ? root.Pie.actions(P, w) : []);      // (the pie, Tom's dare taken: hers to take off the board)
     for (const key in figs) { const f = figs[key]; if (f.held || f.watching || f.scene) continue;      // (on their way out of the village, or home, too: stopped for a word, and then on their way)
       out.push({ label: 'Talk to ' + PEOPLE[key].name, at: f.motion.pos.clone().setY(18), run: () => talkTo(key) }); }
     return out;
@@ -291,8 +291,8 @@ function attach(P, w) {
     if (!pie && w.q.stateOf && w.q.stateOf('tom.pie') === 'offered' && cal.minute < H('13:00') && !(root.Pie && root.Pie.stateOf(w).last === cal.day)) return;      // (his idea about the pies in mind: he keeps it for the afternoon, when they're out, rather than spend his day's word on a chat)      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
     const red = P.motion, d = flat(f.motion.pos).distanceTo(flat(red.pos));
     if (P.busy) { f.chasing = false; return; }      // (sat down, he comes to her where she sits)
-    if (!f.chasing) { if (d > 260) return; f.chasing = true; f.since = clock; f.re = 0; }
-    if (clock - f.since > 40) { f.chasing = false; change(s => { if (s.tom.day !== cal.day) s.tom = { day: cal.day, done: false, tries: 0 }; s.tom.tries = (s.tom.tries || 0) + 1; }); return; }      // (she's kept away from him: another time)
+    if (!f.chasing) { f.chasing = true; f.since = clock; f.re = 0; }      // (he knows where to find her: no need to have seen her first)
+    if (clock - f.since > 90) { f.chasing = false; change(s => { if (s.tom.day !== cal.day) s.tom = { day: cal.day, done: false, tries: 0 }; s.tom.tries = (s.tom.tries || 0) + 1; }); return; }      // (she's kept away from him: another time)
     if (d < 18) { f.chasing = false; f.path = null; f.motion.auto = null; P.act(() => tomStops(f)); return; }
     if ((f.re -= dt) <= 0) { f.re = 1.5; walk(f, red.pos, null); }
   }
@@ -305,8 +305,9 @@ function attach(P, w) {
     let spent = 0;
     const ctx = {
       kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares, chats: v.chats || 0,
+      afterPie: !!(w.q.done && w.q.done('tom.pie')) && !(save.state.flags || {})['dare-after-pie'],      // (the first dare after the pie: she thinks twice)
       mins: n => { spent += n; cal.advance(n); w.refresh(); },
-      accept: () => { change(s => { s.dare = { kind, day: cal.day, until: cal.minute + 90 }; }); },      // (hers to do now: js/villagers.js's dare actions)
+      accept: () => { change(s => { s.dare = { kind, day: cal.day, until: cal.minute + 90 }; }); if (w.q.done && w.q.done('tom.pie')) save.flag('dare-after-pie', cal.day); },      // (hers to do now: js/villagers.js's dare actions)
       chatted: () => { rep.trusts('tom', 0.5); change(s => { s.chats = (s.chats || 0) + 1; }); },      // (his story heard out: the next time, another)
     };
     try {
