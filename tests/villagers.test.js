@@ -66,3 +66,9 @@ test('every villager has something to say, to whoever\'s there', () => {
     assert.ok(lines.length > 0, k); for (const l of lines) assert.ok(!l.who || l.who === 'red' || V.PEOPLE[l.who], k + ': ' + l.who);
   }
 });
+
+test('Tom’s stories: a different one each time he’s heard out', () => {
+  require('../js/story.js'); const S = globalThis.Story, seen = new Set();
+  for (let n = 0; n < 4; n++) { const sc = S.tomStops({ kind: 'chat', chats: n, mins() {}, chatted() {}, accept() {} }); seen.add(JSON.stringify(sc[2].choose[1].then[1])); }
+  assert.equal(seen.size, 4);
+});

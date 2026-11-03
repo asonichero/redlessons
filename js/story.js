@@ -763,14 +763,7 @@ const tomStops = ctx => {
     : [R('calm', 'Not today, Tom. I’ve done my work and I want my own company for a bit.'), M(2), T('pout', 'Your own company. Dull company, that.', 'calm'), R('cheeky', 'Better than yours.'), T('cheeky', 'Liar. Go on, then. I’ll find you tomorrow.', 'cheeky')];
   const away = (face, text) => ({ text: 'I really must go, Tom.', face: 'shy', then: [M(2), T(face, text, 'shy')] });
   let middle;
-  if (ctx.kind === 'chat') middle = [
-    T('calm', 'Father’s in a mood. Some fellow from over the hill brought a plough to mend and wouldn’t pay till it was done, and then wouldn’t pay when it was.'), M(5),
-    R('calm', 'What did your father do?'), T('cheeky', 'Held onto the plough. Fellow’s been stood outside the forge since dinner, looking at it.', 'smile'), M(5),
-    { choose: [away('pout', 'Go on, then. Spoil my story.'),
-      { text: 'And then what?', face: 'smile', then: [M(8), T('smile', 'And then Mistress Pennock came by and told him what she thought of him, and he paid double to make her stop.', 'smile'),
-        R('smile', 'She’d frighten anybody.'), M(6), T('calm', 'Not you, though. Nothing frightens you, Ridley.', 'shy'), R('shy', '…Plenty does, Tom.'), M(4),
-        T('calm', 'Well. Not me, then. That’s something.', 'shy'), { run: ctx.chatted }] }] },
-  ];
+  if (ctx.kind === 'chat') middle = TOM_CHATS[(ctx.chats || 0) % TOM_CHATS.length](T, R, M, away, ctx);      // (a different story each time he has one: js/villagers.js counts them)
   else {
     const what = ctx.kind === 'bell' ? 'ring the curfew bell. Now, in broad day. Three strokes, and back here before anyone sees who.'
       : 'knock on the Dunns’ door. Master William’s asleep up there after his round. Three knocks, and back here before the shutter opens.';
@@ -789,6 +782,41 @@ const tomStops = ctx => {
     { text: 'Why? What’s it to you?', face: 'cheeky', then: [M(2)].concat(middle) },
   ] }];
 };
+// (his stories, in turn: each its own, and a little more of him in each)
+const TOM_CHATS = [
+  (T, R, M, away, ctx) => [
+    T('calm', 'Father’s in a mood. Some fellow from over the hill brought a plough to mend and wouldn’t pay till it was done, and then wouldn’t pay when it was.'), M(5),
+    R('calm', 'What did your father do?'), T('cheeky', 'Held onto the plough. Fellow’s been stood outside the forge since dinner, looking at it.', 'smile'), M(5),
+    { choose: [away('pout', 'Go on, then. Spoil my story.'),
+      { text: 'And then what?', face: 'smile', then: [M(8), T('smile', 'And then Mistress Pennock came by and told him what she thought of him, and he paid double to make her stop.', 'smile'),
+        R('smile', 'She’d frighten anybody.'), M(6), T('calm', 'Not you, though. Nothing frightens you, Ridley.', 'shy'), R('shy', '…Plenty does, Tom.'), M(4),
+        T('calm', 'Well. Not me, then. That’s something.', 'shy'), { run: ctx.chatted }] }] },
+  ],
+  (T, R, M, away, ctx) => [
+    T('cheeky', 'Georgie Dunn fell in the millpond this morning. All the way in. Hat and all.', 'surprised'), M(4),
+    R('surprised', 'He never did. How?'), T('smile', 'Leaning over to see a pike he swore was there. There wasn’t a pike. There was Georgie, and then there wasn’t.', 'smile'), M(5),
+    { choose: [away('pout', 'You’ll miss the best of it. Suit yourself.'),
+      { text: 'Did you pull him out?', face: 'smile', then: [M(6), T('calm', 'Course I did. After I’d had a good look. He’d have done the same.', 'smile'),
+        R('cheeky', 'He’d have pulled you out straight away, Tom Ferrier.'), M(4), T('shy', 'Aye. He would. Don’t tell him I said so.', 'smile'), R('smile', 'I’ll tell everyone.'), M(3),
+        T('cheeky', 'Then I’ll tell them about the bell.', 'wince'), { run: ctx.chatted }] }] },
+  ],
+  (T, R, M, away, ctx) => [
+    T('calm', 'Father let me draw a bar out on my own today. Start to end. Didn’t say a word the whole while.'), M(4),
+    R('smile', 'Was it any good?'), T('pout', 'He looked at it a long time. Then he put it in the scrap.', 'shy'), M(5),
+    { choose: [away('calm', 'No. Go on. It’s only a bar.'),
+      { text: 'Oh, Tom. What did he say?', face: 'shy', then: [M(6), T('calm', '“Again.” That’s all. But he stood by while I did it, and that’s more than he does for the apprentices.', 'calm'),
+        R('smile', 'Then he thinks you’re worth the standing by.'), M(4), T('shy', 'Maybe. You’d say that to cheer a dog up, though.', 'smile'), R('cheeky', 'I would not. Dogs don’t need it.'), M(3),
+        T('smile', 'Ha. All right. Thanks, Ridley.', 'smile'), { run: ctx.chatted }] }] },
+  ],
+  (T, R, M, away, ctx) => [
+    T('cheeky', 'Guess who’s been sent round every door with the hiring notice for the Hallorans. Me. Every door. Twice, because Mistress Thatcher wasn’t in.', 'pout'), M(4),
+    R('cheeky', 'You poor lamb.'), T('pout', 'Laugh. Bess Abney made me read it out to her, all of it, and then asked what half the words meant.', 'smile'), M(5),
+    { choose: [away('pout', 'Fine. I’ll tell somebody who cares.'),
+      { text: 'And did you know what they meant?', face: 'cheeky', then: [M(6), T('shy', '…Some. I made the others up. She knew, too. She let me.', 'shy'),
+        R('smile', 'That’s Bess.'), M(4), T('calm', 'She’s all right, Bess. You’re all right, an’ all.', 'shy'), R('shy', 'Tom.'), M(3),
+        T('cheeky', 'Don’t make anything of it.', 'smile'), { run: ctx.chatted }] }] },
+  ],
+];
 // After the dare, Tom running up to her (kind: 'bell' | 'knock').
 const tomDared = kind => kind === 'bell' ? [
   { who: 'tom', face: 'cheeky', listen: { red: 'cheeky' }, text: 'Ha! Look at them all, turning round like geese. You’re a marvel, Ridley.' },

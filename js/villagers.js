@@ -11,7 +11,7 @@
 //
 //   const v = Villagers.attach(P, w)      (P: the village's js/play.js; w: js/world.js's world)
 //   v.actions() → talking to whoever's near · v.station(key, day, minute) → where they'd be (or null: not out) · v.here(key) → their figure
-// The days' state is kept in the save (state.villagers): { talked: { key: day }, tom: { day, done }, dares: n, met: { key: true } }.
+// The days' state is kept in the save (state.villagers): { talked: { key: day }, tom: { day, done }, dares: n, chats: n (his stories heard out), met: { key: true } }.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
@@ -287,7 +287,8 @@ function attach(P, w) {
     const f = figs.tom, v = vs(); if (!f || !f.want || !f.want.wander || f.held) return;
     if (v.tom.day === cal.day && (v.tom.done || v.tom.tries > 2)) return;
     const pie = root.Pie && root.Pie.ready(w);      // (he's had an idea: he'll come looking for her, whatever the day)
-    if ((!tomComes(cal.day) && !pie) || cal.minute < H('9:00') || cal.curfew()) return;      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
+    if ((!tomComes(cal.day) && !pie) || cal.minute < H('9:00') || cal.curfew()) return;
+    if (!pie && w.q.stateOf && w.q.stateOf('tom.pie') === 'offered' && cal.minute < H('13:00') && !(root.Pie && root.Pie.stateOf(w).last === cal.day)) return;      // (his idea about the pies in mind: he keeps it for the afternoon, when they're out, rather than spend his day's word on a chat)      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
     const red = P.motion, d = flat(f.motion.pos).distanceTo(flat(red.pos));
     if (P.busy) { f.chasing = false; return; }      // (sat down, he comes to her where she sits)
     if (!f.chasing) { if (d > 260) return; f.chasing = true; f.since = clock; f.re = 0; }
@@ -303,10 +304,10 @@ function attach(P, w) {
     const v = vs(), dare = hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0;
     const ctx = {
-      kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares,
+      kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares, chats: v.chats || 0,
       mins: n => { spent += n; cal.advance(n); w.refresh(); },
       accept: () => { change(s => { s.dare = { kind, day: cal.day, until: cal.minute + 90 }; }); },      // (hers to do now: js/villagers.js's dare actions)
-      chatted: () => rep.trusts('tom', 0.5),
+      chatted: () => { rep.trusts('tom', 0.5); change(s => { s.chats = (s.chats || 0) + 1; }); },      // (his story heard out: the next time, another)
     };
     try {
       await near();
@@ -339,7 +340,7 @@ function attach(P, w) {
   async function crow(kind) {
     const f = figs.tom; change(s => { s.dare = null; }); if (!f) return;
     f.watching = false; await meet(f, 13);
-    try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); } finally { release(f); }
+    try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); rep.trusts('tom', 0.5); } finally { release(f); }      // (a dare done, and he's seen it: he thinks the more of her)
     w.refresh();
     if (root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
   }
