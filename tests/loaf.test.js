@@ -17,8 +17,8 @@ const player = pick => { const said = []; return { said, talk: {}, async wait() 
 test('a piece at each meal; down to the heel, her mother asks for another from the counter', async () => {
   const w = world(), P = player();
   assert.equal(Loaf.bread(w).left, 1); assert.ok(Loaf.onBoard(w));
-  for (const m of ['breakfast', 'dinner', 'supper', 'breakfast', 'dinner']) await Loaf.eat(P, w, m);
-  assert.ok(Loaf.bread(w).left > 0 && !Loaf.bread(w).need, 'near two days’ meals, and some left');
+  for (let k = 0; k < 11; k++) await Loaf.eat(P, w, ['breakfast', 'dinner', 'supper'][k % 3]);
+  assert.ok(Loaf.bread(w).left > 0 && !Loaf.bread(w).need, 'near four days’ meals, and some left');
   await Loaf.eat(P, w, 'supper');
   assert.equal(Loaf.bread(w).left, 0); assert.ok(Loaf.bread(w).need); assert.ok(P.said.some(t => /Mistress Pennock’s counter/.test(t)));
   assert.match(Loaf.objective(w), /fresh loaf/); assert.equal(Loaf.onBoard(w), false);

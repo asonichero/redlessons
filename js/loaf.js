@@ -25,7 +25,7 @@
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const flat = p => new V3(p.x, 0, p.z), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
 const LOAF = 'the loaf', LOAVES = 'the loaves', FRESH = 'a fresh loaf', HEEL = 'the heel';      // (HEEL: the loaf's last, hers for the ducks, once she's owned up to them: in her basket the morning it's all that's left)
-const PER = { breakfast: 0.15, dinner: 0.15, supper: 0.15 }, FED = 0.45, HEEL_LEFT = 0.15;      // (a meal's piece of it; the ducks' share; the heel, not enough for another meal)
+const PER = { breakfast: 0.075, dinner: 0.075, supper: 0.075 }, FED = 0.45, HEEL_LEFT = 0.15;      // (a meal's piece of it; the ducks' share; the heel, not enough for another meal)
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
 const chores = w => w.save.state.chores || {};
 const change = (w, fn) => w.save.change(s => { s.chores = s.chores || {}; fn(s.chores); }, { chores: true });
