@@ -282,11 +282,30 @@ function create(w) {
     if (e.pie && P.villagers && P.villagers.summon && basketIn(P)) { await pieAtDoor(P, e); fulfilled(P, e); return; }      // (played: the knock, Master William at his door)
     if (e.pie && basketIn(P)) takeOut(basketIn(P), PIE);      // (the pie out of it, into Master William's hands)
     if (e.pails) await pails(P, e);      // (the well: three pails drawn, and into the butt)
+    // (the one it's for, not out of doors: they come out to her, with it: Mistress Abney from the inn with Mama's jug)
+    { const OUTOF = { abney: 'innDoor' }, door = OUTOF[e.who];
+      if (door && e.met && P.villagers && P.villagers.summon && P.world.spots[door] && !(P.figure && P.figure(e.who))) { await comesOut(P, e, e.who, door); fulfilled(P, e); return; } }
     // (the one it's for, if they're there: facing her, and their own word for it)
     const f = e.who && P.figure ? P.figure(e.who) : null;
     if (f && e.met) { if (!f.sat) f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); m.face(Math.atan2(f.motion.pos.x - m.pos.x, f.motion.pos.z - m.pos.z)); }
     await P.converse(f && e.met ? e.met : e.there, { shot: false, keepCamera: true });
     fulfilled(P, e);
+  }
+  // Someone the errand's for, indoors: seen from within, out at their door to her, what's hers handed over with their word, and in again.
+  async function comesOut(P, e, who, doorSpot) {
+    const flat = v => new V3(v.x, 0, v.z), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+    const V = P.villagers, m = P.motion, d = P.world.spots[doorSpot], door = d.look.clone().setY(0), out = flat(d.at).sub(door).normalize();
+    await P.wait(0.8);
+    const f = V.summon(who, doorSpot), from = door.clone().addScaledVector(out, 3);
+    f.motion.warp(from, yawTo(from, m.pos)); f.rig.root.position.copy(from); f.rig.root.rotation.y = f.motion.yaw;
+    { const A = root.GameAudio; if (A && A.thud) A.thud(0.3); }      // (the door)
+    const to = P.collide(flat(m.pos).add(flat(f.motion.pos).sub(flat(m.pos)).setLength(9)), 3.2);
+    await Promise.race([V.walkTo(who, to, yawTo(to, m.pos)), P.wait(5)]); f.motion.face(yawTo(f.motion.pos, m.pos)); m.face(yawTo(m.pos, f.motion.pos));
+    const mid = () => f.motion.pos.clone().add(m.pos).multiplyScalar(0.5).setY(10.5);
+    m.reach('L', mid()); await Promise.race([f.motion.reach('R', mid()), P.wait(1.6)]); await P.wait(0.3); m.release('L'); await Promise.race([f.motion.release('R'), P.wait(1)]);      // (handed over)
+    await P.converse(e.met, { shot: ['red', who] });
+    await Promise.race([V.walkTo(who, door.clone().addScaledVector(out, 1), null), P.wait(5)]);
+    V.letGo(who);      // (in again)
   }
   // The Dunns': a knock, and Master William to the door as he is in the house, woken; the pie out of her basket into his hands, and a word;
   // then in again, and her own thought, going.
