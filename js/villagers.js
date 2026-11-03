@@ -120,13 +120,29 @@ function attach(P, w) {
   // (who has the watch tonight: Master William, or on Lay night his son)
   const watchKey = () => layNight(cal.day, cal.minute) ? 'georgie' : 'willie';
   // ── Out, and in again.
+  // Mistress Pennock, after the counter: into the bakery at half past twelve, and out of it, home, at two at the earliest, or half an hour after
+  // the afternoon's work there's done (its list's set end: js/work.js), whichever's later. (leave: that minute; doorOf: the door she's in and
+  // out of just now)
+  function pennockLeave() {
+    let t = H('14:00'); const Wk = root.Work, k = Wk && Wk.current ? Wk.current(w, 'bakery') : null, ws = Wk && Wk.stateOf ? Wk.stateOf(w) : {}, c = save.state.chores, e = c && c.day === cal.day ? c.errand : null;
+    const backAt = (Wk && Wk.SHIFTS.bakery.backAt) || '15:30';
+    if (k && k.until) t = Math.max(t, k.until + 30);      // (the afternoon's list under way: half an hour after she's back)
+    else if (ws.day === cal.day && ws.lastShift === 'bakery' && ws.backAt) t = Math.max(t, ws.backAt + 30);      // (back, and it looked over: half an hour after)
+    else if (e && e.id === 'bakery' && (e.state === 'broken' || e.state === 'missed')) t = H('17:00');      // (Red never came: she's at it all herself, till five)
+    else if (e && e.id === 'bakery' && (e.state === 'accepted' || e.state === 'working')) t = Math.max(t, H(backAt) + 30);      // (asked, and not begun yet: she waits on it)
+    return t;
+  }
+  const PENNOCK_WALK = 15;      // (minutes, from the bakery's door to her own)
+  const doorOf = key => { const D = PEOPLE[key]; if (key !== 'pennock' || cal.lay) return D.door; const m = cal.minute; return m >= H('12:30') && m < pennockLeave() + PENNOCK_WALK ? 'bakeryDoor' : D.door; };
+  // (her afternoon: inside, then the walk home; undefined, her day as station has it)
+  function pennockAfter(min) { if (cal.lay || min < H('12:30') || !(w.chores && w.chores.on())) return undefined; const t = pennockLeave(); return min < t ? null : min < t + PENNOCK_WALK ? { stand: 'pennocksDoor' } : undefined; }
   function spawn(key, want, arriving, o) {
     const D = PEOPLE[key], rig = root.Toon.make(D.rig, looks[D.rig] || {}, o && o.indoors ? { indoors: true } : undefined);      // (o.indoors: come to their own door as they are in the house: the Watchman without his hat and cape)
     const motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, key) });
     const f = { key, rig, motion, want: null, path: null, i: 0, sat: null, held: false, wait: 0, stuck: 0 };
     figs[key] = f; P.addFigure(key, { rig, motion, cast: { name: D.name, voice: D.voice, tint: D.tint, bg: D.bg } });
     if ((key === 'willie' || (key === 'georgie' && want && (want.round || want.stand === 'bell'))) && !(o && o.indoors)) lit(f);      // (the watch's lantern: Georgie's too, on Lay night)
-    const door = sp[D.door];
+    const door = sp[doorOf(key)];
     if (arriving && door) { motion.warp(door.at, door.yaw + Math.PI); rig.root.position.copy(door.at); send(f, want); }
     else place(f, want);
     return f;
@@ -153,11 +169,15 @@ function attach(P, w) {
     f.want = want; f.path = null; f.goal = null;
     if (f.sat) { const m = f.motion; untake(f); f.standing = true; await m.stand(); f.standing = false; if (f.want !== want) return; }
     let to = null;
-    if (!want) { const D = PEOPLE[f.key]; to = sp[D.home && cal.minute >= H('17:00') ? D.home : D.door]; }
+    if (!want) { const D = PEOPLE[f.key]; to = sp[D.home && cal.minute >= H('17:00') ? D.home : doorOf(f.key)]; }
     else if (want.stand) to = { at: sp[want.stand].at, yaw: standYaw(f.key, sp[want.stand]) };
     else if (want.sit) { const seat = freeSeat(want); if (seat) { take(f, seat); f.goal = { seat }; to = { at: seatFront(seat), yaw: seat.facing }; } else to = sp.wellSide; }
     else { f.wait = clock; return; }      // (wandering, or on the round: the next point's chosen when it's time)
     walk(f, to.at, to.yaw);
+    // (from her counter into the bakery: round the front of it, not through it)
+    if (!want && f.key === 'pennock' && to === sp.bakeryDoor && sp.counter && f.motion.pos.distanceTo(sp.counter.at) < 20) {
+      const out = s => new V3(-Math.sin(s.yaw), 0, -Math.cos(s.yaw));
+      f.path = [sp.counter.at.clone().addScaledVector(out(sp.counter), 8), sp.bakeryDoor.at.clone().addScaledVector(out(sp.bakeryDoor), 7), sp.bakeryDoor.at.clone()]; f.i = 0; }
   }
   function walk(f, at, yaw) { f.path = net.route(f.motion.pos, flat(at)); f.i = 0; f.endYaw = yaw; f.motion.auto = null; }
   // Each moment: along their way, a point at a time; at the end of it, settled there (facing their work, sat down, or in, and gone).
@@ -172,7 +192,10 @@ function attach(P, w) {
       if (!m.auto) {
         if (f.i >= f.path.length) { const end = f.path; f.path = null; arrive(f, end); return; }
         const p = f.path[f.i++], last = f.i >= f.path.length; m.goTo(p, last && f.endYaw != null ? f.endYaw : null, { speed: f.speed || (f.key === 'tom' && f.chasing ? 0.9 : 0.55) }); f.stuck = 0;
-      } else { f.stuck = m.speed < 1 ? f.stuck + dt : 0; if (f.stuck > 4) { m.auto = null; f.stuck = 0; } }      // (held up: on to the next point)
+      } else {      // (held up: on to the next point. Held up's not getting anywhere: stood still, or pressing on against something and not moving)
+        f.prog = f.prog || { t: 0, at: m.pos.clone() }; f.prog.t += dt;
+        if (f.prog.t > 1.5) { const moved = f.prog.at.distanceTo(m.pos); f.prog = { t: 0, at: m.pos.clone() }; f.stuck = moved < 1 ? f.stuck + 1.5 : 0; }
+        if (f.stuck > 3) { m.auto = null; f.stuck = 0; } }
       return;
     }
     // (wandering, or the Watchman's round: a while where they are, then on)
@@ -197,7 +220,8 @@ function attach(P, w) {
     const day = cal.day, min = cal.minute;
     for (const key in PEOPLE) {
       let fs = root.FairDay ? root.FairDay.station(w, key, min) : undefined;      // (fair day: at the fair, all of them)
-      if (fs === undefined && root.Agnes) fs = root.Agnes.station(w, key, min);      // (after the fair: Agnes up by the pinfold; the afternoon in the wood, the two of them gone)
+      if (fs === undefined && root.Agnes) fs = root.Agnes.station(w, key, min);
+      if (fs === undefined && key === 'pennock') fs = pennockAfter(min);      // (after the counter: in the bakery, then home)      // (after the fair: Agnes up by the pinfold; the afternoon in the wood, the two of them gone)
       const want = (vs().away && vs().away[key] === day) || (key === 'peter' && fs === undefined && !(root.Peter && root.Peter.inVillage(w))) ? null : fs !== undefined ? fs : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
       if (f && f.scene) continue;      // (a scene has them)
       if (want && !f) spawn(key, want, !first);
@@ -209,12 +233,13 @@ function attach(P, w) {
   // ── Talking to them: whoever's near, once she's close (each their word for the time of day, or what's between them; trust a little, once a day).
   function actions() {
     const out = dareActions();
-    for (const key in figs) { const f = figs[key]; if (!f.want || f.held || f.watching) continue;
+    for (const key in figs) { const f = figs[key]; if (f.held || f.watching || f.scene) continue;      // (on their way out of the village, or home, too: stopped for a word, and then on their way)
       out.push({ label: 'Talk to ' + PEOPLE[key].name, at: f.motion.pos.clone().setY(18), run: () => talkTo(key) }); }
     return out;
   }
   async function hold(f) { f.held = true; f.motion.auto = null; }
-  function release(f) { f.held = false; if (f.motion.lookAt) f.motion.lookAt(null); if (f.want && !f.sat && figs[f.key]) { if (f.want.stand) send(f, f.want); else f.wait = clock + 2; } }
+  function release(f) { f.held = false; if (f.motion.lookAt) f.motion.lookAt(null); if (!figs[f.key]) return; if (!f.want) { send(f, null); return; }      // (on their way out: on again, after)
+    if (!f.sat) { if (f.want.stand) send(f, f.want); else f.wait = clock + 2; } }
   // (her, to a comfortable distance from them, and the two of them facing)
   async function meet(f, dist) {
     const m = P.motion, away = flat(m.pos).sub(flat(f.motion.pos)); if (away.lengthSq() < 1) away.set(0, 0, 1); away.normalize();

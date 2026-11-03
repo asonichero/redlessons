@@ -16,12 +16,13 @@
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
+const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
 const SHIFT_RATE = 1;      // (game minutes a second, in a timed shift: a minute a second, slower than the day's, so there's time to do the work in it. A shift's own rate, where it has one, over this)
 
 // The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it. Done in any
 // order, each offered where it's done, as she comes near it (as the garden's are); after: not till that one's done.
 const SHIFTS = {
-  bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', away: 210, picked: ['trough', 'boards', 'racks', 'sweep'], tasks: [      // (the afternoon: the clearing down after the morning's baking, and the next day begun; away: the mill run; picked: the head start's list)
+  bakery: { area: 'bakery', boss: 'pennock', errand: 'bakery', away: 150, backAt: '15:30', picked: ['trough', 'boards', 'racks', 'sweep'], tasks: [      // (the afternoon: the clearing down after the morning's baking, and the next day begun; away: the mill run; picked: the head start's list)
     { id: 'trough', what: 'the trough', label: 'Scrape out the dough trough', place: 'trough', mins: 25, kind: 'shape' },
     { id: 'boards', what: 'the boards', label: 'Scrub down the boards', place: 'table', mins: 25, kind: 'shape' },
     { id: 'ash', what: 'the oven', label: 'Rake the ash out of the oven', place: 'oven', mins: 20, kind: 'oven' },
@@ -85,6 +86,7 @@ function attach(P, w) {
   // (to a task's place: walked there, and if the way's not found in a few seconds, or she stops short, put there: never left a step away from it)
   const arrive = async (at, yaw, o) => { const to = at.clone().setY(0); await Promise.race([m.goTo(to, yaw, o), P.wait(7)]);
     if (Math.hypot(m.pos.x - to.x, m.pos.z - to.z) > 2.5) { m.auto = null; const p = P.collide(to, 3.2); m.warp(p, yaw == null ? m.yaw : yaw); P.rig.root.position.copy(p); } };
+  let allDone = false;
   const timed = !!st0.mode, mm = P.npcMotion, rig = P.npc, cur = () => current(w);
   let away = false, due = false, carrying = null, offers = 0, offerDue = false;
   const say = (text, face) => !(away && (sh.out || sh.boss) === sh.boss) && talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });      // (the boss gone out: not if it's the boss who's gone)
@@ -121,7 +123,7 @@ function attach(P, w) {
   else if (timed && (st0.until || doneOf(st0).length)) gone();      // (back in, with her already gone)
   else P.act(async () => {
     await P.wait(0.6); await P.converse(short ? lines.short || [] : lines.list || [], { shot: ['red', sh.out || sh.boss] });
-    change(w, s => { s.until = w.cal.minute + (short ? sh.shortAway : sh.away); });
+    change(w, s => { s.until = sh.backAt && !short && st0.mode === 'errand' ? Math.max(w.cal.minute + 30, H(sh.backAt)) : w.cal.minute + (short ? sh.shortAway : sh.away); });      // (backAt: the afternoon's, back at that hour however late Red began: less time, for a late start)
     if (mm) await Promise.race([mm.goTo(P.collide(short && spots.stair ? spots.stair.at : inAt(), 3), null), P.wait(5)]);
     gone(); w.refresh();
   });
@@ -129,14 +131,14 @@ function attach(P, w) {
   P.tick(dt => {
     const s = cur(); if (!s || !s.until || s.back) return;
     if (P.busy && !(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, sh.rate || SHIFT_RATE);      // (busy at a task, the day's own clock stands: this one runs on. Otherwise the day's runs, at the shift's rate: see rate)
-    if (w.cal.minute >= s.until) due = true;
-    if (due && !P.busy) { due = false; P.act(back); }
+    if (w.cal.minute >= s.until || allDone) due = true;      // (her hour come; or all of it done, and Red to wait by the oven for her)
+    if (due && !P.busy) { due = false; allDone = false; P.act(back); }
   });
   P.tick(() => { if (offerDue && !P.busy && !(talk && talk.playing) && cur() && !cur().back) { offerDue = false; P.act(sitWithBess); } });
 
   function markDone(id) {
     change(w, s => { s.done = (s.done || []).concat(id); s.step = s.done.length; });
-    const s = cur(); if (s && !leftOf(s).length && s.until && !s.back) P.act(back);      // (all of it done before she's back: and then she is, at her hour)
+    const s = cur(); if (s && !leftOf(s).length && s.until && !s.back) allDone = true;      // (all of it done before she's back: and then she is, at her hour (once this task's let go: see the tick))
     else { w.refresh(); if (ID === 'inn') maybeOffer(); }
   }
   async function doTask(t) {
@@ -204,7 +206,7 @@ function attach(P, w) {
     if (P.sitting) await P.getUp();
     away = false; if (rig && rig.root) rig.root.visible = true;
     if (mm) { const at = short && spots.stair ? spots.stair.at : inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
-    change(w, x => { x.id = null; });
+    change(w, x => { x.id = null; x.backAt = w.cal.minute; x.lastShift = ID; });      // (when she was back: Mistress Pennock home half an hour after, js/villagers.js)
     if (s.mode === 'picked') {      // (the bakery's head start: more than half of it, her thanks; less, no harm done)
       const good = k * 2 > n;
       await P.converse(good ? lines.pickedGood || [] : lines.pickedSome || [], { shot: ['red', sh.boss] });
@@ -266,7 +268,7 @@ function outside(P, w) {
 }
 // (the clock's rate while a shift's under way here, its boss away: js/world.js runs the day at it)
 const rate = w => { const s = current(w, w.area); return s && s.until && !s.back ? SHIFTS[s.id].rate || SHIFT_RATE : null; };
-const api = { outside, begin, attach, current, tasksOf, leftOf, doneOf, stashed, rate, SHIFTS, SHIFT_RATE };
+const api = { stateOf, outside, begin, attach, current, tasksOf, leftOf, doneOf, stashed, rate, SHIFTS, SHIFT_RATE };
 root.Work = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

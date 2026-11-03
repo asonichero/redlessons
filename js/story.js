@@ -1686,7 +1686,7 @@ const WORK = {
     // (asked for at breakfast: the mill run's hers today, so it's the list, and Red left to it)
     list: [
       { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love, and on the hour. I’ve the mill run to do, and Master Pennock’s in his bed, so it’s you and the list.' },
-      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The trough, the boards, the oven raked, the racks cleared, tomorrow’s flour sifted, the sponge set, and the floor. I’ll be back by half past four.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The trough, the boards, the oven raked, the racks cleared, tomorrow’s flour sifted, the sponge set, and the floor. I’ll be back by half past three.' },
       { who: 'red', face: 'calm', text: 'All of it, by then?' },
       { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'All of it, by then. You’ll manage. No dawdling at the window, mind: I’ll know.' },
     ],
