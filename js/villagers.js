@@ -308,8 +308,9 @@ function attach(P, w) {
     hold(f); change(s => { s.tom = { day: cal.day, done: true, tries: 0 }; });
     // (his idea about the pies, when he has it: js/pie.js plays it out)
     if (root.Pie && root.Pie.ready(w)) { try { if (P.sitting) await P.getUp(); await near(); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
-    const v = vs(), dare = hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
+    const v = vs(), fairWeek = !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), dare = !fairWeek && hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0;
+    // (fair week: on the bellows dawn to dusk, he's said so: no dares, but he'll still come and tell her his stories)
     const ctx = {
       kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares, chats: v.chats || 0,
       afterPie: !!(w.q.done && w.q.done('tom.pie')) && !(save.state.flags || {})['dare-after-pie'],      // (the first dare after the pie: she thinks twice)
