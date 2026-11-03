@@ -41,9 +41,9 @@ const SHIFTS = {
     { id: 'tableC', what: 'the table by the stair', label: 'Wipe down the table', place: 'tableC', mins: 8, kind: 'shape', line: 'tables' },
     { id: 'pots', what: 'the pots', label: 'Scour the pots', place: 'tub', mins: 20, kind: 'shape' },
     { id: 'tea', what: 'Bess’s tea', label: 'Take Bess her tea', place: 'counter', mins: 8, kind: 'tea' },      // (steeping on the bar: taken up there, and carried to her)
-    { id: 'bowls', what: 'the bowls and bread', label: 'Set out the bowls and bread', place: 'table2', mins: 10, kind: 'shape', carriers: true },
-    { id: 'service', what: 'the carrier’s men', label: 'See to the carrier’s men', place: 'table2', mins: 0, kind: 'service', carriers: true },      // (their orders, as they call them: js/innshift.js)
-    { id: 'after', what: 'their table', label: 'Clear after them', place: 'table2', mins: 15, kind: 'shape', carriers: true, after: 'service' },
+    { id: 'bowls', what: 'the bowls and bread', label: 'Set out the bowls and bread', place: 'tableA', mins: 10, kind: 'shape', carriers: true },
+    { id: 'service', what: 'the carrier’s men', label: 'See to the carrier’s men', place: 'tableA', mins: 0, kind: 'service', carriers: true },      // (their orders, as they call them: js/innshift.js)
+    { id: 'after', what: 'their table', label: 'Clear after them', place: 'tableA', mins: 15, kind: 'shape', carriers: true, after: 'service' },
     { id: 'sweep', what: 'the floor', label: 'Sweep out', place: 'floor', mins: 20, kind: 'sweep' },
   ] },
 };

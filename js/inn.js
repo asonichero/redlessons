@@ -115,8 +115,9 @@ function build(scene) {
     world.obstacles.push(pc.area(-12, 12, -10, 10));
     world.tableTops = world.tableTops || {}; world.tableTops[id] = Object.assign(pc.area(-12, 12, -4.5, 4.5), { y: 13.7 });      // (the board itself: wiped from whichever side she comes at it)
     for (let k = 0; k < 3; k++) solid(g, new THREE.CylinderGeometry(1, 0.9, 2.6, 10), pewter, -6 + k * 6, 15, (k - 1) * 1.5, { ink: 0.04 });
-    // (where the carrier's men sit, at the table by the hearth: two on the far bench, one on the near; each, where to stand to serve him)
-    if (id === 'tableB') world.carrierSeats = [[-5, -1], [5, -1], [0, 1]].map(([x, sz]) => { const at = pc.P(x, 9, sz * 8), serve = pc.P(x, 0, sz * 15), look = pc.P(x, 14, sz * 6);
+    // (where the carrier's men sit, at the long table against the back wall, behind Bess's chair: two on the far bench, one on the near; each,
+    // where to stand to serve him. Not the one by her, where Red sits with her)
+    if (id === 'tableA') world.carrierSeats = [[-5, -1], [5, -1], [0, 1]].map(([x, sz]) => { const at = pc.P(x, 9, sz * 8), serve = pc.P(x, 0, sz * 15), look = pc.P(x, 14, sz * 6);
       return { name: 'the bench', at, facing: pc.ry + (sz < 0 ? 0 : Math.PI), kind: 'stool', serve: { at: new V3(serve.x, 0, serve.z), look } }; }); }
   // ── The stair up to the rooms, in the back right corner.
   { const pc = piece('stair', wall), g = pc.g;
