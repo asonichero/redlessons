@@ -54,14 +54,15 @@ function attach(P, w) {
     if (flock) for (const s of flock) P.stage.scene.remove(s.obj); flock = null;
     if (bo) { P.removeFigure('bo'); bo = null; }
   }
-  const penned = () => { const m = cal.minute, f = st(); return m >= IN + WALK + 2 && !(scattered && !f.done && m < LATE); };
+  const penned = () => { const m = cal.minute, f = st(); return m >= IN + WALK + 2 && !(scattered && !f.done && (m < LATE || f.help === 'yes')); };
   W.flockPenned = false;
 
   // Each moment: where they are along the way (by the clock), or out about the street, scattered; and the strays brought in.
   P.tick(dt => {
     const m = cal.minute, f = st(), sc = scatters(cal.day);
     W.flockPenned = m < H('5:30') || penned();      // (in the pen overnight; out at dawn)
-    const due = thanking || m >= IN && m < IN + WALK + 6 && !(sc && f.done) || (sc && m >= IN + WALK * SCATTER_AT && m < LATE && !f.done);      // (thanking: kept till she's said it, and gone off)
+    const helping = sc && f.help === 'yes' && !f.done;      // (Red's helping: as long as it takes, till every one's in; not given up at half past six)
+    const due = thanking || helping && m >= IN + WALK * SCATTER_AT || m >= IN && m < IN + WALK + 6 && !(sc && f.done) || (sc && m >= IN + WALK * SCATTER_AT && m < LATE && !f.done);      // (thanking: kept till she's said it, and gone off)
     if (due && !flock) { make(); scattered = false; }
     if (!due && flock) { unmake(); return; }
     if (!flock) return;
@@ -100,13 +101,28 @@ function attach(P, w) {
   const nearestLoose = p => { let best = null, bd = 1e9; for (const s of flock || []) if (s.state === 'loose') { const d = s.obj.position.distanceTo(p); if (d < bd) { bd = d; best = s; } } return best; };
   function home_(s) { s.state = 'home'; s.path = [gate.clone().add(new V3((Math.random() - 0.5) * 6, 0, 8)), gate.clone(), pen.clone()]; }
   // (Bo, coming to find her: from as near as she can be and not be seen arriving, the edge of what's drawn, the way she'd come; running)
-  function edge() { const m = P.motion, d = bo.motion.pos.clone().setY(0).sub(m.pos.clone().setY(0)), R = 240; if (d.length() <= R) return;
-    if (d.lengthSq() < 1) d.set(0, 0, 1); const at = P.collide(m.pos.clone().setY(0).addScaledVector(d.normalize(), R), 3.2); bo.motion.warp(at, yawTo(at, m.pos)); bo.rig.root.position.copy(at); }
+  // (put at the edge of what's drawn, the way she'd come, on a lane where there's one; then the way to Red by the lanes, so she's not left
+  // running into a wall; and her shout, Red turning, the camera finding her)
+  function edge() { const m = P.motion, d = bo.motion.pos.clone().setY(0).sub(m.pos.clone().setY(0)), R = 200; if (d.length() <= R) return;
+    if (d.lengthSq() < 1) d.set(0, 0, 1); d.normalize();
+    const lanes = (P.world.wander || []).filter(p => { const v = p.clone().setY(0).sub(m.pos.clone().setY(0)), L = v.length(); return L > 110 && L < 240; }).sort((a, b) => b.clone().sub(m.pos).setY(0).normalize().dot(d) - a.clone().sub(m.pos).setY(0).normalize().dot(d));
+    const at = P.collide((lanes[0] || m.pos.clone().setY(0).addScaledVector(d, R)).clone().setY(0), 3.2); bo.motion.warp(at, yawTo(at, m.pos)); bo.rig.root.position.copy(at); }
+  async function runTo(to) {      // (by the village's ways, running)
+    const net = P.villagers && P.villagers.net, pts = net ? net.route(bo.motion.pos, to) : [to];
+    for (let i = 0; i < pts.length; i++) await Promise.race([bo.motion.goTo(P.collide(pts[i].clone().setY(0), 3.2), i === pts.length - 1 ? yawTo(to, P.motion.pos) : null, { run: true }), P.wait(8)]);
+    if (bo.motion.pos.distanceTo(to) > 4) { bo.motion.auto = null; const p = P.collide(to.clone(), 3.2); bo.motion.warp(p, yawTo(p, P.motion.pos)); bo.rig.root.position.copy(p); }      // (held up: there, all the same)
+  }
+  async function shout() {
+    const m = P.motion, st_ = P.stage; await m.face(yawTo(m.pos, bo.motion.pos));
+    const c = m.pos.clone().setY(0), b = bo.motion.pos.clone().setY(0), back = c.clone().sub(b).normalize();
+    P.camHeld = true; st_.go(c.clone().addScaledVector(back, 26).setY(22), b.clone().lerp(c, 0.25).setY(12), 900);
+    await P.converse([{ who: 'bo', face: 'concerned', text: 'Miss Rose!' }], { shot: false, keepCamera: true });
+  }
   async function ask() {
-    edge();
+    edge(); await shout();
     const m = P.motion; change(x => { x.asked = cal.day; }); if (!(save.state.flags || {})['bo-met']) save.flag('bo-met', cal.day);
     const near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2);
-    await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(25)]);
+    await runTo(near); P.camHeld = false;
     bo.motion.face(yawTo(bo.motion.pos, m.pos)); await m.face(yawTo(m.pos, bo.motion.pos));
     let yes = false;
     await P.converse(S.boHelp({ yes: () => { yes = true; } }), { shot: ['red', 'bo'] });
@@ -119,7 +135,7 @@ function attach(P, w) {
     boBusy = true; thanking = true;
     P.act(async () => {
       const m = P.motion, near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2);
-      edge(); await Promise.race([bo.motion.goTo(near, yawTo(near, m.pos), { run: true }), P.wait(25)]);
+      edge(); await runTo(near);
       bo.motion.face(yawTo(bo.motion.pos, m.pos)); await m.face(yawTo(m.pos, bo.motion.pos));
       await P.converse(S.boThanks(cal.day), { shot: ['red', 'bo'] });
       rep.trusts('bo', 0.5); if (w.refresh) w.refresh();
