@@ -26,7 +26,7 @@ const INTRO = ['eggs', 'pot', 'bakery', 'jug', 'dunns', 'inn', 'well', 'bread'];
 let wicker = null;      // (the cottage's wicker, made once)
 const NAME = { bucket: 'the bucket', loaves: 'the loaves', pot: 'the pot', jug: 'the jug', basket: 'your basket', butt: 'the little water butt' };
 // (where each thing she's to take from home is kept, for the list)
-const WHERE = { basket: 'your basket’s on its peg', pot: 'the pot’s on the chest', butt: 'the little butt’s by the hearth' };
+const WHERE = { basket: 'your basket’s on its peg', pot: 'the pot’s on the hearth', butt: 'the little butt’s by the hearth' };
 
 // Things carried: a bucket, two loaves in a cloth, the pot, a jug, a covered basket (o.empty: a basket with nothing in it), the little water
 // butt (o.empty: dry). → an item for her hands (motion's hold), not to be set down away from home.

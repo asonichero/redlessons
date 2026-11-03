@@ -424,7 +424,7 @@ const ERRANDS = {
     back: { who: 'mother', face: 'smile', text: 'Still warm. He does look after us.' } },
   pot: { title: 'A pot to the forge for mending', by: '12:00', place: 'forge', action: 'Leave the pot with the smith', needs: 'pot', leave: 'pot', mins: 15, who: 'smith',
     it: 'the pot', todo: 'take the pot down to the forge', did: 'took the pot down to Master Ferrier',
-    ask: 'The big pot’s sprung its handle again. It’s on the chest: take it down to the forge before noon. Master Ferrier said he’d see to it.',
+    ask: 'The big pot’s sprung its handle again. It’s on the hearth: take it down to the forge before noon. Master Ferrier said he’d see to it.',
     met: [{ who: 'smith', face: 'calm', listen: { red: 'shy' }, text: 'Handle again? Leave it by the anvil. Tell your mother tomorrow.' },
       { who: 'red', face: 'cheeky', thought: true, text: 'Eleven words. That’s a speech, for Master Ferrier.' }],
     there: [{ who: 'red', face: 'calm', thought: true, text: 'All heat and ringing in there. He nodded without stopping. That means yes.' },
@@ -2283,11 +2283,11 @@ const basketLeft = (area, here) => { const P_ = { village: 'in the village', woo
 // Her mother, as Red goes to the door without what the errand wants (need: 'basket' | 'pot' | 'butt'; holding: what's in her hands instead).
 const needReminder = (need, holding) => {
   const hands = holding === 'basket' && need !== 'basket' && need !== 'pie' ? ' Put your basket down first: you’ve only the two hands.' : holding && holding !== need && !(need === 'pie' && holding === 'basket') ? ' And put that down first.' : '';
-  const say = { basket: 'Rose! In what, your apron? Take your basket off its peg, love.', pot: 'Rose! The pot, for Master Ferrier. It’s on the chest.', butt: 'Rose! You’ll want the little butt to carry it in. By the hearth.', pie: 'Rose! The Dunns’ pie. Take your basket down, and I’ll put it in.' }[need] || 'Rose! You’ve forgotten something.';
+  const say = { basket: 'Rose! In what, your apron? Take your basket off its peg, love.', pot: 'Rose! The pot, for Master Ferrier. It’s on the hearth.', butt: 'Rose! You’ll want the little butt to carry it in. By the hearth.', pie: 'Rose! The Dunns’ pie. Take your basket down, and I’ll put it in.' }[need] || 'Rose! You’ve forgotten something.';
   return [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: say + hands }];
 };
 // (the same, her mother out at the farm: her own thought at the door)
-const needThought = need => ({ basket: 'My basket. I’ll want it for this.', pot: 'The pot, for Master Ferrier. It’s on the chest.', butt: 'The little butt, to carry the water in. By the hearth.', pie: 'Mama’s pie for the Dunns. My basket first, and it goes in that.' })[need] || 'I’ve forgotten something. What was it?';
+const needThought = need => ({ basket: 'My basket. I’ll want it for this.', pot: 'The pot, for Master Ferrier. On the hearth.', butt: 'The little butt, to carry the water in. By the hearth.', pie: 'Mama’s pie for the Dunns. My basket first, and it goes in that.' })[need] || 'I’ve forgotten something. What was it?';
 // Asked again, after the first three (first: where it grows, reminded).
 const herbAskAgain = (h, first) => [{ who: 'gran', face: 'smile', listen: { red: 'smile' }, text: first ? 'I’m out of ' + h.name.replace(/^the /, '') + ' again, love. You remember: ' + h.where + '.' : 'Some ' + h.name.replace(/^the /, '') + ' for me today, if you would.' }];
 const herbThanks = id => [{ who: 'gran', face: 'smile', listen: { red: 'smile' }, text: ({ yarrow: 'Lovely. That’ll see Fowler’s fingers through another month of nets.', sorrel: 'Good. And you didn’t make a face this time. You’re learning.', comfrey: 'Good girl. Into the pot it goes, for whoever needs it.' })[id] }];

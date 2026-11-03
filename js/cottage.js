@@ -377,12 +377,6 @@ function build(scene, opts) {
     world.obstacles.push(pc.area(-cw / 2, cw / 2, -6.5, cd / 2));
     world.surfaces.push(Object.assign(pc.area(-cw / 2 + 2, cw / 2 - 2, -1, 1), { name: 'the chest', y: ch + 0.6 + cd / 2 * 0.45, panel: g, front: pc.turn(new V3(0, 0, 1)), when: () => world.chest.open < 0.05 }));
     for (const x of [-cw / 2 + 2.5, cw / 2 - 2.5]) for (const sz of [-1, 1]) box(g, 1.2, ch + 0.2, 0.4, cx + x, ch / 2 + 0.6, cz + sz * (cd / 2 + 0.1), '#3a3634');
-    // (on it, the iron pot with the cracked handle, waiting to go to the smith for mending: a thing to carry, two-handed)
-    { const it = new THREE.Group(), iron = T.mat('#2e2a28'); solid(it, new THREE.SphereGeometry(2.4, 14, 10, 0, Math.PI * 2, Math.PI * 0.35, Math.PI * 0.65), iron, 0, 2.4, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
-      solid(it, new THREE.TorusGeometry(2.2, 0.2, 5, 16).rotateX(Math.PI / 2), iron, 0, 3.6, 0, { ink: 0.03 });
-      for (const sx of [-1, 1]) solid(it, new THREE.TorusGeometry(0.6, 0.15, 4, 10, Math.PI).rotateY(Math.PI / 2), iron, sx * 2.4, 3.4, 0, { ink: 0.02 });
-      const at = pc.P(-4, ch + 0.6 + cd / 2 * 0.45, 0); it.position.copy(at); it.rotation.y = pc.ry; root_.add(it);
-      world.items.push({ obj: it, name: 'the pot', kind: 'pot', grip: new V3(0, 3.6, 0), radius: 2.9, panel: g, home: at.clone() }); pc.items.push({ obj: it, at: new V3(-4, ch + 0.6 + cd / 2 * 0.45, 0), ry: 0 }); }
     box(g, 2.2, 3, 0.4, cx, ch - 0.6, cz + cd / 2 + 0.2, '#3a3634');
     for (const x of [-cw / 2 + 1.2, cw / 2 - 1.2]) for (const z of [-cd / 2 + 1, cd / 2 - 1]) box(g, 1.6, 0.8, 1.6, cx + x, 0.4, cz + z, oakDk);
   }
@@ -514,8 +508,15 @@ function build(scene, opts) {
       solid(g, new THREE.LatheGeometry([[0.01, 0], [1.6, 0.1], [1.9, 1.2], [1.4, 2.4], [0.5, 2.8], [0.6, 3.1]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#3a3634', kx, 1.4, kz, { ink: 0.07 });
       solid(g, new THREE.TorusGeometry(1.2, 0.12, 6, 14, Math.PI), '#3a3634', kx, 1.4 + 3.0, kz, { ink: 0 });
       solid(g, new THREE.CylinderGeometry(0.2, 0.35, 2.2, 8), '#3a3634', kx + 1.9, 1.4 + 2.0, kz, { rot: [0, 0, -0.9], ink: 0.04 }); }
+    // (and across the fire from it, the big iron pot with the cracked handle, waiting to go to the smith for mending: a thing to carry,
+    // two-handed; gone from here while it's at the forge)
+    { const it = new THREE.Group(); solid(it, new THREE.SphereGeometry(2.4, 14, 10, 0, Math.PI * 2, Math.PI * 0.35, Math.PI * 0.65), iron, 0, 2.4, 0, { ink: 0.06 }).material.side = THREE.DoubleSide;
+      solid(it, new THREE.TorusGeometry(2.2, 0.2, 5, 16).rotateX(Math.PI / 2), iron, 0, 3.6, 0, { ink: 0.03 });
+      for (const sx of [-1, 1]) solid(it, new THREE.TorusGeometry(0.6, 0.15, 4, 10, Math.PI).rotateY(Math.PI / 2), iron, sx * 2.4, 3.4, 0, { ink: 0.02 });
+      const at = new V3(cx - OW / 2 - JW + 1, 1.4, zf - 3); it.position.copy(at); root_.add(it);
+      world.items.push({ obj: it, name: 'the pot', kind: 'pot', grip: new V3(0, 3.6, 0), radius: 2.9, panel: g, home: at.clone() }); }
     for (const [dx, tip] of [[-0.6, 'poker'], [0.6, 'shovel']]) {
-      const tx_ = cx - OW / 2 - JW - 1.2 + dx, tz = zf - 0.8, it = new THREE.Group(); it.position.set(tx_, 1.4, tz); it.rotation.set(0.12, 0, dx * 0.1); g.add(it);
+      const tx_ = cx - OW / 2 - JW - 3.6 + dx, tz = zf - 0.8,      /* (by the jamb's outer edge, clear of the pot) */ it = new THREE.Group(); it.position.set(tx_, 1.4, tz); it.rotation.set(0.12, 0, dx * 0.1); g.add(it);
       pole(it, new V3(0, 0, 0), new V3(0, 12, 0), 0.18, iron, { ink: 0.04 }); solid(it, new THREE.TorusGeometry(0.6, 0.14, 6, 12), iron, 0, 12.6, 0, { ink: 0 });
       if (tip === 'shovel') box(it, 2.2, 0.2, 2.6, 0, 0.3, 0.4, iron, { rot: [0.25, 0, 0] }); else solid(it, new THREE.ConeGeometry(0.3, 1, 6), iron, 0, -0.2, 0, { rot: [Math.PI, 0, 0], ink: 0 });
     }
