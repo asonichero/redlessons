@@ -230,6 +230,7 @@ function create(w) {
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
     if (cal.lay) await weekly(P);      // (Lay day: the week reckoned, after breakfast)
+    if (root.Fair && root.Fair.phase(w) === 'last' && !(save.state.flags || {})['fair-told']) { save.flag('fair-told', cal.day); await P.converse(S.fairAnnounce(), { shot: ['red', 'mother'] }); }      // (the planting done: the fair, a week today, told as its own)
     if (root.Loaf) { await root.Loaf.eat(P, w, 'breakfast'); await root.Loaf.shopAsk(P, w, id); await root.Loaf.heelOut(P, w); }      // (breakfast's piece of the loaf; and the shopping, if there's any, on top of the day's errand)
     w.refresh();
   }

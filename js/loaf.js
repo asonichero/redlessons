@@ -41,6 +41,9 @@ const breadIn = P => { const b = basket(P), c = (b && b.contents) || []; return 
 // Peter on the green. → true if it was the ducks' talk (the rest of his talk is js/villagers.js's).
 async function peter(P, w, f, V) {
   const S = root.Story, what = breadIn(P), d = w.cal.day, fl = w.save.state.flags || {};
+  // (only on the green, the pond just there: not stopped on the street or by the gate with her basket)
+  const p = f && f.motion ? f.motion.pos : null, onGreen = !!p && ((p.x / 160) ** 2 + ((p.z - 22) / 110) ** 2 <= 1);
+  if (!onGreen) return false;
   if (what) {
     let yes = false;
     await P.converse(S.ducksAsk(what, { yes: () => { yes = true; } }), { shot: ['red', 'peter'] });
@@ -128,7 +131,8 @@ async function eat(P, w, meal) {
   if (!onBoard(w)) return;
   const b = bread(w), left = Math.max(0, b.left - (PER[meal] || 0.2)), out = left < HEEL_LEFT;
   setBread(w, x => { x.left = out ? 0 : left; if (out) { x.need = true; x.heelDue = true; } }); show(P, w);
-  if (out && meal !== 'breakfast') { if (P && P.talk && root.Story.loafOut) await P.converse(root.Story.loafOut(w.cal.minute < H('11:30')), { shot: ['red', 'mother'] }); if (w.refresh) w.refresh(); }
+  const layNext = w.cal.lay || (meal === 'supper' && root.Calendar && root.Calendar.weekday(w.cal.day + 1) === 7);      // (the next counter's not till First day)
+  if (out && meal !== 'breakfast') { if (P && P.talk && root.Story.loafOut) await P.converse(root.Story.loafOut(layNext ? 'first' : w.cal.minute < H('11:30')), { shot: ['red', 'mother'] }); if (w.refresh) w.refresh(); }
 }
 // (whether her mother will have something to say of it at this meal: missed, gone down, or down to the heel)
 function asks(w, meal) {
@@ -173,7 +177,7 @@ async function heelOut(P, w) {
   if (P.talk && root.Story.heelGiven) await P.converse(root.Story.heelGiven(), { shot: ['red', 'mother'] });
 }
 async function shopAsk(P, w, errand) {
-  const b = bread(w); if (!b.need || b.carrying) return;
+  const b = bread(w); if (!b.need || b.carrying || w.cal.lay) return;      // (Lay day: the Pennocks' day too; it waits for First day)
   setBread(w, x => { x.shopDay = w.cal.day; });
   if (P && root.Story.shopAsk) await P.converse(root.Story.shopAsk(!!errand), { shot: ['red', 'mother'] });
 }
@@ -210,7 +214,7 @@ async function board(P, w) {
   fresh(w); show(P, w); change(w, c => { if (c.loaf && c.loaf.day === w.cal.day && c.loaf.state !== 'taken') c.loaf.state = 'back'; });
   it.away = false; it.obj.visible = true; w.refresh();
 }
-const objective = w => { const b = bread(w); return b.carrying ? 'Put the fresh loaf on the board at home.' : b.need ? (w.cal.minute < H('12:30') ? 'Fetch a fresh loaf from Mistress Pennock’s counter.' : 'Fetch a fresh loaf from Mistress Pennock’s counter, in the morning.') : null; };
+const objective = w => { const b = bread(w); return b.carrying ? 'Put the fresh loaf on the board at home.' : b.need && w.cal.lay ? null : b.need ? (w.cal.minute < H('12:30') ? 'Fetch a fresh loaf from Mistress Pennock’s counter.' : 'Fetch a fresh loaf from Mistress Pennock’s counter, in the morning.') : null; };
 // (out of her basket, and back on the board)
 function putBack(P, w) {
   const b = basket(P); if (b && root.Chores) root.Chores.takeOut(b, LOAF);

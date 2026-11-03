@@ -223,7 +223,8 @@ function attach(P, w) {
   const finished = async () => {
     const pr = progress(w); if (!pr.done || !w.chores) return;
     w.chores.gardenDone();
-    const n = cal.day % S.GARDEN.length; for (const [face, text] of S.GARDEN[n]) P.talk.muse(text, { face });
+    const n = cal.day % S.GARDEN.length;      // (her thoughts on it, to be read: the day's clock stands while they're said)
+    await P.converse(S.GARDEN[n].map(([face, text]) => ({ who: 'red', face, thought: true, text })), { shot: false, keepCamera: true });
   };
   // Her work: what's offered, from close by.
   function actions() {
