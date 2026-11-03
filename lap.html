@@ -184,6 +184,7 @@
     else if (st.implement !== 'hand' && st.implement !== c.implement) st.implement = 'hand';
     const E = WHERE[where] || WHERE.cottage;
     lap = Lap.create($('view'), { looks: L.load(), giver: who.A, subject: who.B, pitch: sub.pitch, set: E.set, place: E.place });
+    { const sv = lap.stageView; if (where === 'glade' && sv && sv.cottage && sv.cottage.light) sv.cottage.light(0.25, sv); }      // (out of doors: the wood's own sky and light, of an afternoon)
     lap.set(Object.assign({}, st)); lap.view(camNow || 'side'); lap.start();
     const me = session;
     lap.on((type, d) => {

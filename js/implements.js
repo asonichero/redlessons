@@ -19,7 +19,7 @@ const LIST = {
   tawse:        { name: 'the tawse', of: 'fatherBarrow', mark: 2.6, at: 5.2, half: 0.12 },
   birch:        { name: 'the birch', of: 'brannock', mark: 2.3, at: 5.2, half: 0.3 },
   walkingStick: { name: 'the walking stick', of: 'fowler', mark: 2.7, at: 5.6, half: 0.14 },
-  legget:       { name: 'the legget', of: 'agnes', mark: 2.1, at: 4.4, half: 0.2 },      // (her father's: the thatcher's paddle for dressing reed, its face ridged)
+  legget:       { name: 'the legget', of: 'agnes', mark: 2.9, at: 5.6, half: 0.42 },      // (her father's: the thatcher's square bat for dressing reed, its face ridged: the heaviest thud of any, and the ridges' sting with it)
 };
 
 // ── The models, in the toon style: two-band shading, ink outlines. ──
@@ -53,10 +53,12 @@ function model(id, palm) {
       put(T.ell(0.2, 2.5, 0.95, 18, 10), '#4a3a30', 0, -L.at + 0.4, 0);
       put(T.ell(0.5, 1.4, 0.85, 16, 10), '#6a2a3a', -side * 0.4, -L.at - 0.7, 0);
       break; }
-    case 'legget': {         // a thatcher's legget: a stout handle set into a square wooden bat, its face grooved for dressing reed
-      rod(0.26, 0.3, 2.6, '#9a7448', 0.1, { rot: [0, 0, 0] });
-      put(new THREE.BoxGeometry(0.4, 2.2, 2.0), '#a8814e', 0, -L.at, 0);
-      for (const y of [-0.7, -0.25, 0.2, 0.65]) put(new THREE.BoxGeometry(0.1, 0.16, 1.9), '#7a5a34', side * 0.22, -L.at + y, 0, { ink: 0 });      // (the grooves, on the far face from the skin)
+    case 'legget': {         // a thatcher's legget: a long turned handle running up the back of a square wooden bat, the face that lands ribbed with ridges
+      const wood = '#6a4628', rib = '#946640', dark = '#4e3220';
+      rod(0.28, 0.34, 4.6, dark, 0.3);      // (the handle, from the fist)
+      put(new THREE.BoxGeometry(0.3, 3.0, 3.0), wood, 0, -L.at, 0);      // (the bat)
+      put(new THREE.BoxGeometry(0.34, 2.2, 0.62), dark, -side * 0.3, -L.at + 0.4, 0, { ink: 0.03 });      // (the handle's end, along its back)
+      for (let k = 0; k < 6; k++) put(new THREE.CylinderGeometry(0.17, 0.17, 3.0, 8), rib, side * 0.17, -L.at, -1.25 + k * 0.5, { ink: 0.025 });      // (the ridges, down the face, the way of the handle)
       break; }
     case 'switch': {         // a hazel switch, cut and stripped: thin, long, a knot or two
       rod(0.12, 0.16, 2.0, '#6a5a3a', 0.6);
