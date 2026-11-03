@@ -279,7 +279,7 @@ function create(opts) {
     const clockRow = () => { const m = g.minute != null ? g.minute : 0, hh = String(Math.floor(m / 60)).padStart(2, '0'), mm = String(m % 60).padStart(2, '0');
       return '<div class="row dt dclock"><b>Day <input type="number" min="1" data-dday value="' + f.day + '"></b><span><input type="time" data-dtime value="' + hh + ':' + mm + '"><button data-k="settime">Set</button></span></div>'; };
     if (dbgTab === 'fair') rows.innerHTML = clockRow() + '<div class="row"><small>Day ' + f.day + (f.phase ? ' · ' + esc_(f.phase) : '') + '</small></div>' + (f.rows || []).map(r => '<div class="row' + (r.done ? ' ok' : '') + '"><b>' + (r.done ? '✓ ' : '○ ') + esc_(r.label) + '</b>' + (r.note ? '<small>' + esc_(r.note) + '</small>' : '') + '</div>').join('');
-    else if (dbgTab === 'trust') rows.innerHTML = (g.trust || []).map(t => '<div class="row dt"><b>' + esc_(t.name) + '</b><span><button data-tr="' + t.who + '" data-by="-1">−</button><i>' + t.value + '</i><button data-tr="' + t.who + '" data-by="1">+</button></span></div>').join('');
+    else if (dbgTab === 'trust') rows.innerHTML = (g.stats || []).map(t => '<div class="row dt"><b>Red: ' + t.stat + '</b><span><button data-st="' + t.stat + '" data-by="-0.5">−</button><i>' + t.value + '</i><button data-st="' + t.stat + '" data-by="0.5">+</button></span></div>').join('') + (g.week != null ? '<div class="row"><small>This week’s tally: ' + g.week + ' (a reckoning at 7)</small></div>' : '') + (g.trust || []).map(t => '<div class="row dt"><b>' + esc_(t.name) + '</b><span><button data-tr="' + t.who + '" data-by="-1">−</button><i>' + t.value + '</i><button data-tr="' + t.who + '" data-by="1">+</button></span></div>').join('');
     else if (dbgTab === 'story') rows.innerHTML = (g.quests || []).map(l => '<div class="row"><small>' + esc_(l.name) + '</small>' + l.steps.map(st => '<label class="dq' + (st.done ? ' ok' : '') + '"><input type="checkbox" data-q="' + st.ref + '"' + (st.done ? ' checked' : '') + '> ' + esc_(st.title) + (st.optional ? ' <em>(optional)</em>' : '') + '</label>').join('') + '</div>').join('');
     else { for (const x of g.flags || []) dbgFlags.add(x.key); const on = {}; for (const x of g.flags || []) on[x.key] = x.value;
       rows.innerHTML = [...dbgFlags].sort().map(k => '<label class="dq' + (k in on ? ' ok' : '') + '"><input type="checkbox" data-fl="' + esc_(k) + '"' + (k in on ? ' checked' : '') + '> ' + esc_(k) + (k in on ? ' <em>' + esc_(on[k]) + '</em>' : '') + '</label>').join('') || '<div class="row"><small>No flags yet.</small></div>'; }
@@ -291,7 +291,8 @@ function create(opts) {
     if (d.k === 'settime' && opts.debugSet) { const day = +dbgEl.querySelector('[data-dday]').value, tm = (dbgEl.querySelector('[data-dtime]').value || '').split(':');
       opts.debugSet({ day: day || undefined, minute: tm.length === 2 ? +tm[0] * 60 + +tm[1] : undefined }); drawDebug(); return; }
     if (d.t) { dbgTab = d.t; drawDebug(); return; }
-    if (d.tr && opts.debugSet) { opts.debugSet({ trust: d.tr, by: +d.by }); drawDebug(); } });
+    if (d.tr && opts.debugSet) { opts.debugSet({ trust: d.tr, by: +d.by }); drawDebug(); }
+    if (d.st && opts.debugSet) { opts.debugSet({ stat: d.st, by: +d.by }); drawDebug(); } });
   dbgEl.addEventListener('change', e => { const t = e.target, d = t.dataset || {}; if (!opts.debugSet) return;
     if (d.q) opts.debugSet({ quest: d.q, done: t.checked }); else if (d.fl) opts.debugSet({ flag: d.fl, on: t.checked }); else return; drawDebug(); });      // (the day and time boxes wait for Set: redrawn now, the Set button would go from under the click)
   // (how she's holding up, said in words for a moment, tapped or clicked)

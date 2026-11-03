@@ -175,7 +175,7 @@ function create(view, ui) {
   const DBG_WHO = ['maren', 'hulda', 'peter', 'fowler', 'tom', 'smith', 'pennock', 'baker', 'abney', 'abneyDaughter', 'agnes', 'georgie', 'willie', 'holt', 'bo'];
   function debugInfo() {
     const tr = save.state.trust || {}, P_ = (root.QuestData && root.QuestData.PEOPLE) || {}, who = [...new Set(DBG_WHO.concat(Object.keys(tr)))];
-    return { fair: fairProgress(), minute: cal.minute,
+    return { fair: fairProgress(), minute: cal.minute, stats: ['naughty', 'wilful'].map(k => ({ stat: k, value: Math.round(rep.stat(k) * 10) / 10 })), week: chores && chores.weekReckon ? chores.weekReckon(cal.day).score : null,
       trust: who.map(k => ({ who: k, name: (P_[k] && P_[k].name) || (k === 'bo' ? 'Bo' : k), value: Math.round((tr[k] || 0) * 10) / 10 })),
       quests: Object.values(q.lines).map(l => ({ id: l.id, name: l.name, steps: l.steps.map(st => ({ ref: l.id + '.' + st.id, title: st.title || st.id, done: q.done(l.id + '.' + st.id), optional: !!st.optional })) })),
       flags: Object.keys(save.state.flags || {}).sort().map(k => ({ key: k, value: save.state.flags[k] })) };
@@ -183,6 +183,7 @@ function create(view, ui) {
   // (o: { trust: who, by } · { quest: ref, done } · { flag: key, on }: on, it's today's)
   function debugSet(o) {
     if (o.trust) rep.trusts(o.trust, o.by);
+    if (o.stat) rep.add(o.stat, o.by, 'debug');      // (and the week's tally with it)
     if (o.quest) { if (o.done) q.complete(o.quest); else { const [li, si] = o.quest.split('.'); save.change(s => { if (s.quests[li]) delete s.quests[li][si]; }, { quest: o.quest }); } }
     if (o.flag) save.change(s => { s.flags = s.flags || {}; if (o.on) s.flags[o.flag] = cal.day; else delete s.flags[o.flag]; }, { flag: o.flag });
     // (unbroken: the evening's to be had again, tonight: the promise for today, the clock back to six if it's gone half past (or the next
@@ -289,7 +290,7 @@ function create(view, ui) {
   }
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, noRun: !!A.noRun, light: cal.light() };      // (noRun: walking only: the wood, on her way home)
-    o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); }; o.stowable = it => !!(chores && P && chores.stowable(P, it)); o.stow = it => chores.stow(P, it); o.caught = it => (chores && P ? chores.caught(P, it) : false);      // (stow: the pot, the loaf, into her basket)      // (put down out of doors: there still, when she comes back for it)
+    o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); }; o.stowable = it => !!(chores && P && chores.stowable(P, it)); o.canTake = it => !(chores && chores.canTake) || chores.canTake(P, it); o.stow = it => chores.stow(P, it); o.caught = it => (chores && P ? chores.caught(P, it) : false);      // (stow: the pot, the loaf, into her basket)      // (put down out of doors: there still, when she comes back for it)
     if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc(w) : A.npc;
     if (root.Fair) o.gown = root.Fair.gown(w);      // (fair day: in the dress her mother made, and what's on it)
     // (where she comes in: the saved place, when taking the game up again; the way she came in; or the place's first)

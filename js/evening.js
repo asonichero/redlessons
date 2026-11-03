@@ -55,20 +55,21 @@ async function home(P, w, o) {
   }
   if (st.done !== night(cal)) {
     change(w, s => { s.done = night(cal); });
+    if (excused) await abneyBrings(P, w);      // (Mistress Abney in with her, first: the hour's hers, and how Red did)
     // (what she's brought home for her mother, given first, whatever else the evening holds: the errand done)
     { const give = w.chores && w.chores.handIn ? w.chores.handIn(P) : null; if (give) { await P.wait(0.4); await P.approach(); await P.converse(give, { shot: ['red', 'mother'] }); } }
     // (in after the bell, or brought to the door: no supper; it's seen to at once)
     if (late || walked) { await lateHome(P, w, walked); return; }
     await raise(P, w);      // (what she's to be set right for, said now)
     await reprieves(P, w);
-    if (excused) { await P.wait(0.4); await P.approach(); await P.converse(S.excusedHome(), { shot: ['red', 'mother'] }); }
     // (what her mother's heard from others since: raised now, whatever else is owed tonight; all of it seen to together)
     if (root.Pie) await root.Pie.evening(P, w, true);
     if (root.AbneyPromise) await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
     if (root.Garden && w.chores && w.chores.on()) await root.Garden.evening(P, w, true, { witnessOnly: true });      // (heard from the village: she lied about her flowers, and her mother knows; her own look round's asked in her day's telling)
     if (!owes(w) && P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
-    // (then the evening as it always goes: supper at the table, and her day)
     if (P !== w.P) return;
+    if (excused) { await excusedDay(P, w); return; }      // (too late for supper at the table: her day told stood by the hearth, and then what's owed, or bed)
+    // (then the evening as it always goes: supper at the table, and her day)
     const table = await supper(P, w, { owed: owes(w), late, home: !!o.athome });      // (home: she's been in, and her mother calls her to it)
     // (and last, what's owed: told to wash for supper, and then it's seen to. Or, nothing owed, up from the table, and a wash at the dresser
     // when she's ready: and supper, and bed)
@@ -255,6 +256,34 @@ async function brought(P, w) {
   try { await P.wait(0.5); await P.converse(who === 'georgie' ? S.georgieBrings(n) : S.willieBrings(n), { shot: [who, 'mother'] }); }
   finally { f.remove(); delete P.talk.cast[who]; }
   change(w, s => { s.walking = 0; });
+}
+// ── Home after sitting with Bess, Mistress Abney with her: in at the door beside her, she tells Red's mother (if Red hadn't) how she did,
+// and owns the hour; and goes.
+const ABNEY = { name: 'Mistress Abney', voice: 'abney', tint: '#4a4a6a', bg: '#e0e0ea' };
+async function abneyBrings(P, w) {
+  const S = root.Story, C = root.Correction, looks = root.Looks && root.Looks.load ? root.Looks.load() : {}, ps = root.AbneyPromise ? root.AbneyPromise.stateOf(w) : {};
+  if (!C || !C.figure || !P.npcMotion) return;
+  const f = C.figure(P, 'abney', looks.abney), at = P.collide(P.motion.pos.clone().add(new root.THREE.Vector3(6, 0, 8)), 3.6), mm = P.npcMotion;
+  f.m.warp(at, Math.atan2(mm.pos.x - at.x, mm.pos.z - at.z)); f.rig.root.position.copy(at);
+  P.talk.cast.abney = Object.assign({ rig: f.rig, side: 'right' }, ABNEY);
+  try { await P.wait(0.5); await P.converse(S.abneyHome(!!ps.mamaTold), { shot: ['abney', 'mother'] }); }
+  finally { await w.fade(true); f.remove(); delete P.talk.cast.abney; await w.fade(false); }      // (and she's gone, out at the door)
+  if (!ps.mamaTold) w.rep.trusts('maren', 0.5);      // (a promise she kept that her mother hears of from the one it was made to)
+}
+// (and her day, stood by the hearth, the hour too late for supper at the table: what she'll tell, what her mother asks; then what's owed,
+// seen to now, or bed)
+async function excusedDay(P, w) {
+  const S = root.Story, shot = { shot: ['red', 'mother'] };
+  await P.wait(0.4); await P.approach();
+  await P.converse(S.excusedDay(), shot);
+  if (root.Report && w.chores && w.chores.on()) await root.Report.run(P, w, { when: 'supper' });      // (her day, told as she will; what her mother knows of, asked: js/report.js)
+  const owed = owes(w);
+  await P.converse(S.excusedEnd(owed), shot);
+  if (w.capacity) w.capacity.add(8, 'bread and cheese');
+  change(w, s => { s.ate = night(w.cal); });
+  if (owed) { await settle(P, w, null); return; }
+  change(w, s => { s.abed = night(w.cal); s.tonight = { kind: 'kept' }; }); w.refresh();
+  if (P === w.P) await toBed(P, w, { kind: 'kept' });
 }
 // ── The fair's night: home, both of them, after ten. No supper (they ate at the fair). Her mother sees the dress, and how it's come through
 // the day: clean, and she's proud; a little marked, and Red owns it (they'll wash and mend it in the morning) or says it's fine (and her mother

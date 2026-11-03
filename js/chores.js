@@ -265,7 +265,7 @@ function create(w) {
   }
   // (midweek, at supper: nearing the line, her mother says so, once a week)
   async function weekWarn(P) {
-    if (cal.lay || !P) return; const k = weekReckon(cal.day), wk = lastLay(cal.day);
+    if (cal.lay || !P || cal.weekday < 4) return; const k = weekReckon(cal.day), wk = lastLay(cal.day);      // (not before midweek: the first days, however they've gone, she's not told yet)
     if (!k.close || st().weekWarned === wk) return; change(c => { c.weekWarned = wk; });
     await P.converse(S.weekWarn(k), { shot: ['red', 'mother'] });
   }
@@ -557,7 +557,13 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { weekReckon, weekly, weekWarn, WEEK, savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  // (what's hers to pick up: the little butt only on a water day, the errand hers and not yet done; nothing else held back)
+  function canTake(P, it) {
+    if (!it || it.kind !== 'butt') return true;
+    if (it.home && it.obj.position.distanceTo(it.home) > 3) return true;      // (left about somewhere: hers to bring back)
+    const c = st(), e = c.errand; return !!(e && e.id === 'well' && c.day === cal.day && ['accepted', 'broken', 'carrying'].includes(e.state));
+  }
+  return { canTake, weekReckon, weekly, weekWarn, WEEK, savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };
