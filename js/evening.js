@@ -53,6 +53,8 @@ async function home(P, w, o) {
   }
   if (st.done !== night(cal)) {
     change(w, s => { s.done = night(cal); });
+    // (what she's brought home for her mother, given first, whatever else the evening holds: the errand done)
+    { const give = w.chores && w.chores.handIn ? w.chores.handIn(P) : null; if (give) { await P.wait(0.4); await P.approach(); await P.converse(give, { shot: ['red', 'mother'] }); } }
     // (in after the bell, or brought to the door: no supper; it's seen to at once)
     if (late || walked) { await lateHome(P, w, walked); return; }
     await raise(P, w);      // (what she's to be set right for, said now)
