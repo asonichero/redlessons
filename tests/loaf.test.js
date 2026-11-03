@@ -36,3 +36,13 @@ test('gone down to the ducks, back on the board: "I was hungry" is a lie, wilful
     else { assert.equal(owed, true); assert.equal(w.slid.length, 0); assert.equal(w.owed[0].kind, 'loaf'); }
   }
 });
+
+test('shopping: named over breakfast on top of the errand, not one itself; at supper, twice grateful for both, understanding if one’s missed', async () => {
+  const w = world(), P = player(); w.save.change(s => { s.chores.bread = { left: 0, need: true }; });
+  await Loaf.shopAsk(P, w, 'well'); assert.ok(P.said.some(t => /on top of that/.test(t)));
+  assert.deepEqual(Loaf.shopping(w), { asked: true, done: false });
+  w.save.change(s => { s.chores.bread.got = 5; }); assert.deepEqual(Loaf.shopping(w), { asked: true, done: true });
+  const S = globalThis.Story, base = { garden: null, errand: { id: 'well', state: 'done' } };
+  assert.ok(S.dayTalk('yes', Object.assign({}, base, { shop: { asked: true, done: true } })).some(l => /twice grateful/.test(l.text || '')));
+  assert.ok(S.dayTalk('yes', Object.assign({}, base, { shop: { asked: true, done: false } })).some(l => /Never mind/.test(l.text || '')));
+});

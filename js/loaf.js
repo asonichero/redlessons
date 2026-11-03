@@ -128,7 +128,7 @@ async function eat(P, w, meal) {
   if (!onBoard(w)) return;
   const b = bread(w), left = Math.max(0, b.left - (PER[meal] || 0.2)), out = left < HEEL;
   setBread(w, x => { x.left = out ? 0 : left; if (out) x.need = true; }); show(P, w);
-  if (out) { if (P && P.talk && root.Story.loafOut) await P.converse(root.Story.loafOut(w.cal.minute < H('11:30')), { shot: ['red', 'mother'] }); if (w.refresh) w.refresh(); }
+  if (out && meal !== 'breakfast') { if (P && P.talk && root.Story.loafOut) await P.converse(root.Story.loafOut(w.cal.minute < H('11:30')), { shot: ['red', 'mother'] }); if (w.refresh) w.refresh(); }
 }
 // (whether her mother will have something to say of it at this meal: missed, gone down, or down to the heel)
 function asks(w, meal) {
@@ -138,6 +138,14 @@ function asks(w, meal) {
 }
 // (as much of it as is left, to see: the loaf on the board shortened, cut, down to the heel: js/cottage.js's setLeft)
 function show(P, w) { const it = P && P.world && P.world.items && P.world.items.find(x => x.kind === 'loaf'); if (it && it.obj.userData.setLeft) it.obj.userData.setLeft(bread(w).left); }
+// Shopping: not an errand, but named over breakfast on top of whatever the day's is (so far, only a fresh loaf, when it's run out): her mother
+// asks it, and remembers it at supper (shopping(w): { day, done }).
+function shopping(w) { const b = bread(w), d = w.cal.day; return b.need || b.carrying || b.got === d ? { asked: b.shopDay === d, done: b.got === d } : null; }
+async function shopAsk(P, w, errand) {
+  const b = bread(w); if (!b.need || b.carrying) return;
+  setBread(w, x => { x.shopDay = w.cal.day; });
+  if (P && root.Story.shopAsk) await P.converse(root.Story.shopAsk(!!errand), { shot: ['red', 'mother'] });
+}
 // (a whole loaf on the board again: Master Pennock's loaves, home; or the one fetched from the counter)
 function fresh(w) { setBread(w, x => { x.left = 1; x.fed = 0; x.need = false; x.carrying = false; }); }
 // Fetching it: at Mistress Pennock's counter while she's at it, in her basket; home, and onto the board.
@@ -162,7 +170,7 @@ async function fetch(P, w) {
   if (f) { f.motion.face(yawTo(f.motion.pos, m.pos)); m.face(yawTo(m.pos, f.motion.pos)); }
   await P.converse(S.loafCounter(), { shot: ['red', 'pennock'] });
   root.Chores.putIn(b, FRESH); if (b === P.bag) change(w, c => { if (c.bag) c.bag.contents = b.contents.slice(); });
-  setBread(w, x => { x.carrying = true; }); w.cal.advance(5); w.refresh();
+  setBread(w, x => { x.carrying = true; x.got = w.cal.day; }); w.cal.advance(5); w.refresh();
 }
 async function board(P, w) {
   const b = basket(P), it = P.world.items.find(x => x.kind === 'loaf'), m = P.motion; if (!it) return;
@@ -189,7 +197,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { show, peter, feed, evening, eat, asks, fresh, actions, objective, bread, onBoard, correct, breadIn, LOAF, LOAVES, FRESH, PER };
+const api = { shopping, shopAsk, show, peter, feed, evening, eat, asks, fresh, actions, objective, bread, onBoard, correct, breadIn, LOAF, LOAVES, FRESH, PER };
 root.Loaf = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

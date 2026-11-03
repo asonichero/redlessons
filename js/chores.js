@@ -229,7 +229,7 @@ function create(w) {
     await P.wait(0.8); if (!(o && o.seated)) await P.approach();      // (seated: across the table from her already)
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
-    if (root.Loaf) await root.Loaf.eat(P, w, 'breakfast');      // (breakfast's piece of the loaf)
+    if (root.Loaf) { await root.Loaf.eat(P, w, 'breakfast'); await root.Loaf.shopAsk(P, w, id); }      // (breakfast's piece of the loaf; and the shopping, if there's any, on top of the day's errand)
     w.refresh();
   }
   // Her answer to the day's errand: 'yes' (a promise, to begin by its time), 'little' (an honest no: nothing against her), 'wont' (wilful, and

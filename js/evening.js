@@ -338,9 +338,11 @@ async function supper(P, w, ctx) {
   const day = { owed: !!ctx.owed, noDinner: !!(root.Maren && root.Maren.stateOf(w).dinner !== w.cal.day && !root.Maren.allDay(w) && w.chores && w.chores.on()), late: !!ctx.late, dusk: w.cal.minute >= H('19:00'), errand: e && c.day === d ? { id: c.errand.id, state: c.errand.state, late: c.errand.late } : null, garden: c.day === d && !(root.Garden && root.Garden.offToday(w)) ? !!c.garden : null, gardenDry: !!(w.chores && w.chores.gardenDry && w.chores.gardenDry()),      // (her mother's garden today: nothing for Red to say of it)
     gran: (() => { const g = (w.save.state.green || {}).seen || 1, n = d - g; return n >= 4 && d % 2 === 0 ? n : 0; })(),      // (every other evening, once it's been four days or more since she was up at her grandmother's)
     friends: !ctx.owed && !ctx.late && w.cal.minute < H('20:00') && !!root.Green && !root.Green.friendsSeen(w),      // (time before the bell, and she's not seen them: they're out on the green)
+    shop: root.Loaf && root.Loaf.shopping ? (s0 => s0 && s0.asked ? s0 : null)(root.Loaf.shopping(w)) : null,      // (the shopping asked at breakfast: done, or not)
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   w.save.change(s => { s.evening.today = day; }, { evening: true });      // (for her thoughts in bed, after)
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
+  if (day.shop && day.shop.done && day.errand && ['done', 'carrying'].includes(day.errand.state)) w.rep.trusts('maren', 0.5);      // (both: twice grateful)
   await Promise.all(peeling.map(j => j.done()));
   if (w.capacity) w.capacity.add(how === 'late' ? 4 : how === 'yes' ? 10 : 15, 'supper');      // (supper, with her mother: sat still, more; late, it's long since eaten)
   w.cal.advance(how === 'yes' ? 40 : 20);
