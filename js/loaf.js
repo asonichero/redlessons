@@ -63,11 +63,12 @@ async function feed(P, w, f, V, what) {
   const me = P.collide(edge.clone().addScaledVector(side, -5), 3.2), him = P.collide(edge.clone().addScaledVector(side, 5), 3.2);
   await Promise.all([m.goTo(me, yawTo(me, pond)), V && V.walkTo ? Promise.race([V.walkTo('peter', him, yawTo(him, pond)), P.wait(8)]) : null]);
   if (f) f.motion.face(yawTo(f.motion.pos, pond));
+  { const at = pond.clone().setY(2); if (m.lookAt) m.lookAt(at); if (f && f.motion.lookAt) f.motion.lookAt(at); }      // (eyes on the water and the ducks)
   const throwing = { on: true }, toss = async (mo, at, h) => { while (throwing.on) { await mo.reach(h, at.clone().setY(9)); await P.wait(0.25); await mo.release(h); await P.wait(0.6 + Math.random() * 0.5); } };
   const going = [toss(m, me.clone().lerp(pond, 0.2), 'L')]; if (f) going.push(toss(f.motion, him.clone().lerp(pond, 0.2), 'R'));      // (hers with her left: the basket's on her right arm)
   const left = bread(w).left, all = what === FRESH ? false : what !== LOAF || left - FED < HEEL_LEFT, heel = what === HEEL;      // (the fresh loaf: a share of it, the rest still to go home)      // (the loaf: a good share of it, or what's left, if that's little enough; the loaves: both)
-  await P.converse(S.ducksFed(what, !all), { shot: ['red', 'peter'] });
-  throwing.on = false; await Promise.all(going);
+  await P.converse(S.ducksFed(what, !all), { shot: ['red', 'peter'], apart: ['red', 'peter'] });      // (side by side, both at the water: not turned to each other)
+  throwing.on = false; await Promise.all(going); if (m.lookAt) m.lookAt(null); if (f && f.motion.lookAt) f.motion.lookAt(null);
   const b = basket(P);
   if (all) { if (b && root.Chores) root.Chores.takeOut(b, what); if (b && b === P.bag) change(w, c => { if (c.bag) c.bag.contents = b.contents.slice(); }); }
   if (heel) { /* (the heel: hers, and given) */ }

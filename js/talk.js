@@ -103,7 +103,8 @@ function create(stage, opts) {
 
   // ── The camera: side on to the two of them, far enough back to hold both, a little above, their heads in the upper part of the view (the
   // box covers the lower). It eases there, and back to where it was after. ──
-  let still = [];      // (o.still: who isn't turned to the other while it's said, kept at what they're doing: Red at the well, drawing)
+  let still = [], apart = [];      // (o.apart: who neither turns to the other nor looks at them: both at something else, side by side)
+       // (o.still: who isn't turned to the other while it's said, kept at what they're doing: Red at the well, drawing)
   let saved = null, giveBack = null, handing = null;      // (handing: the view to give back, held a moment after a conversation ends, in case another follows straight on)      // (giveBack: the camera's handing back after the last conversation, still to come)
   function settle(names, ms) {
     const rigs = names.map(n => cast[n] && cast[n].rig).filter(Boolean); if (!rigs.length) return;
@@ -138,9 +139,9 @@ function create(stage, opts) {
     }
     stage.go(pos, look, ms == null ? 900 : ms);
     // (each turns to the other, opened a little toward the camera, as on a stage, so both faces read)
-    if (opts.turn && heads.length > 1) names.forEach((nm, k) => { if (still.includes(nm)) return; const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, ri >= 0 ? 0.12 : 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });      // (with Red, facing each other; otherwise opened toward us, as on a stage)
+    if (opts.turn && heads.length > 1) names.forEach((nm, k) => { if (still.includes(nm) || apart.includes(nm)) return; const to = heads[1 - k].clone().sub(heads[k]).setY(0).normalize().lerp(n, ri >= 0 ? 0.12 : 0.6).normalize(); opts.turn(nm, Math.atan2(to.x, to.z)); });      // (with Red, facing each other; otherwise opened toward us, as on a stage)
     // (and each looks at the other's face, turned a little toward us, so that even sitting square to one another their faces read from here)
-    if (opts.look && rigs.length > 1) names.forEach((nm, k) => { const other = rigs[1 - k]; looking.add(nm);
+    if (opts.look && rigs.length > 1) names.forEach((nm, k) => { if (apart.includes(nm)) return; const other = rigs[1 - k]; looking.add(nm);
       // (a little: a quarter of the way between them, sideways toward us, which turns the head some fifteen degrees, never round over a shoulder)
       opts.look(nm, () => { const me = rigs[k].headGroup.getWorldPosition(new V3()), h = other.headGroup.getWorldPosition(new V3()).add(new V3(0, -1.6 * other.scaleW, 0)), gap = h.distanceTo(me);      // (at the mouth: looking up at someone taller, she needn't tip her head right back)
         const toCam = pos.clone().sub(h).setY(0), along = h.clone().sub(me).setY(0).normalize(); toCam.addScaledVector(along, -toCam.dot(along));
@@ -212,7 +213,7 @@ function create(stage, opts) {
 
   let playing = false;
   async function play(script, o) {
-    o = o || {}; still = o.still || []; captionOff(); playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile; a caption still up is done with, so its ending can't take the box away mid-conversation)
+    o = o || {}; still = o.still || []; apart = o.apart || []; captionOff(); playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile; a caption still up is done with, so its ending can't take the box away mid-conversation)
     // (if the last one's still handing the camera back, it's the player's: this one gives it back to them too, rather than keeping it held)
     const follows = !!(giveBack && handing);      // (straight on from the last: the camera stays where it is, and the player's view is the one from before that)
     const wasEnabled = giveBack ? (clearTimeout(giveBack), giveBack = null, true) : stage.controls.enabled;
@@ -235,7 +236,7 @@ function create(stage, opts) {
     };
     try { await runList(script); }
     finally {
-      el.classList.remove('on', 'thought'); portrait = null; playing = false; still = []; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
+      el.classList.remove('on', 'thought'); portrait = null; playing = false; still = []; apart = []; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
       for (const k in cast) relax(k, o.hold || 9000); unlook();
       // (after it: the camera stays where the conversation left it, and she's the player's again from there; only o.returnCam takes it back to
       // where it was before (the Fowlers' gate, Peter beyond: the shot that shows him))
