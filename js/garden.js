@@ -37,6 +37,8 @@ const PATHS = [-397, -428.5, -451.5, -468.5, -485.5],      // (paths between the
 const BUTT = V3 ? new V3(-253, 0, -389) : null, CAN = V3 ? new V3(-260, 0, -390) : null;
 const BENCH = { x: -296, z: -388.5, w: 18, d: 4, y: 8 }, GATE = { x: X0, z: -397 };      // (the potting bench along the fence by the house: the trowel on it, room for a basket; the gate, from the path by the cottage)      // (no THREE under node's tests: the plan and the state only)
 const PER_ROW = 16, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
+// (how many trodden: a slip (a flower or three), careless (a stretch of them), or wanton (most of a bed, or more: not an accident, a want of care)
+const degree = n => n <= 3 ? 'slip' : n < 20 ? 'careless' : 'wanton';
 const FLOWERS = ROWS.filter(r => r.kind === 'flowers');
 const inside = p => p.x > X0 && p.x < X1 && p.z > Z0 && p.z < Z1;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
@@ -360,7 +362,7 @@ async function evening(P, w, force, o) {
   if (report) {
     change(w, s => { s.pending = null; });
     await P.converse(S.gardenReport(report), { shot: ['red', 'mother'] });
-    await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'witness', who: report.who, rows: report.rows });      // (seen to at the evening's end: js/evening.js)
+    await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'witness', who: report.who, rows: report.rows, n: report.n, degree: report.degree });      // (seen to at the evening's end: js/evening.js)
     return true;
   }
   return reckon(P, w);
@@ -373,18 +375,21 @@ async function reckon(P, w, opts) {
   const rows = FLOWERS.filter(r => ids.some(id => id.startsWith(r.id + ':'))).map(r => r.name);
   const restore = () => change(w, s => { for (const id of ids) delete s.trampled[id]; if (!dinner) s.checked = cal.day; });
   if (!ids.length) { if (dinner) return false; restore(); await P.converse(S.gardenFine(progress(w).done), { shot: ['red', 'mother'] }); return false; }
+  const dg = degree(ids.length), weigh = { slip: 0, careless: 0.5, wanton: 1.5 }[dg];      // (more trodden, more to answer for: and wanton, a want of care besides)
   let answer = opts && opts.owned ? 'own' : null;      // (owned: she's said it herself, before she was asked)
-  if (answer) { change(w, s => { s.evening = cal.day; }); await P.converse(S.gardenOwned(rows), { shot: ['red', 'mother'] }); }
-  else await P.converse(S.gardenAsk(rows, ids.length, { dinner, own: () => { answer = 'own'; }, lie: () => { answer = 'lie'; } }), { shot: ['red', 'mother'] });
+  if (answer) { change(w, s => { s.evening = cal.day; }); await P.converse(S.gardenOwned(rows, dg), { shot: ['red', 'mother'] }); }
+  else await P.converse(S.gardenAsk(rows, ids.length, { degree: dg, dinner, own: () => { answer = 'own'; }, lie: () => { answer = 'lie'; } }), { shot: ['red', 'mother'] });
   if (!dinner) change(w, s => { s.evening = cal.day; });
   const petals = g.petals.some(q => q.until > cal.minute);
-  if (answer === 'own') { restore(); w.rep.add('naughty', 0.5, 'trampling her mother’s flowers'); await root.Evening.owe(P, w, 'garden', { lied: false, rows }); return true; }
-  if (today && petals) { restore(); w.rep.add('naughty', 1.5, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'boots', rows }); return true; }
+  if (dg === 'wanton') w.rep.add('wilful', 1, 'trampling her mother’s flowers, bed after bed');
+  if (answer === 'own') { restore(); w.rep.add('naughty', 0.5 + weigh, 'trampling her mother’s flowers'); await root.Evening.owe(P, w, 'garden', { lied: false, rows, n: ids.length, degree: dg }); return true; }
+  if (dg === 'wanton') { restore(); w.rep.add('naughty', 1.5 + weigh, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenWantonLie(), { shot: ['red', 'mother'] }); await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'plain', rows, n: ids.length, degree: dg }); return true; }      // (a cat, through every bed? not believed)
+  if (today && petals) { restore(); w.rep.add('naughty', 1.5 + weigh, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'boots', rows, n: ids.length, degree: dg }); return true; }
   // (believed: but someone may have seen, and her mother will hear of it)
   const days = [...new Set(ids.map(id => g.trampled[id]))], seen = days.map(d => g.seen[d]).find(Boolean);
   const who = seen || (hash(cal.day, 91) < 0.35 ? passerby(cal.day) : null);
   restore(); w.rep.add('naughty', 1, 'lying to her mother about the garden');
-  change(w, s => { if (who) s.pending = { day: cal.day + 1, who, rows }; s.seen = {}; });
+  change(w, s => { if (who) s.pending = { day: cal.day + 1, who, rows, n: ids.length, degree: dg }; s.seen = {}; });
   await P.converse(S.gardenBelieved(), { shot: ['red', 'mother'] });
   return false;
 }

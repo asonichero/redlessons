@@ -976,7 +976,7 @@ const trodden = row => pickOf(['Oh no. Mama’s ' + row.replace(/^the /, '') + '
 const gardenFine = tended => [{ who: 'mother', face: 'smile', listen: { red: 'calm' }, text: tended ? 'I went round the garden when I came in. Not a flower out of its row. You’re a good gardener, love, when you put your mind to it.' : 'I went round the garden when I came in. My flowers are standing, at least. Mind the weeds tomorrow.' }];
 // Trodden: her mother asks (of an evening, or at dinner: ctx.dinner, after the rest of the morning's told; js/maren.js). ctx.own(), ctx.lie(): run on her answer.
 const gardenAsk = (rows, n, ctx) => [
-  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: (ctx.dinner ? 'And I came in past my flowers. ' : 'I went round the garden when I came in. ') + (n > 3 ? 'There’s a whole stretch of ' + mine(rows) + ' trodden flat, broken off and out of their rows.' : 'Some of ' + mine(rows) + ' are trodden down, broken off and out of their rows.') },
+  { who: 'mother', face: ctx.degree === 'wanton' ? 'wince' : 'stern', listen: { red: 'shy' }, text: (ctx.dinner ? 'And I came in past my flowers. ' : 'I went round the garden when I came in. ') + (ctx.degree === 'wanton' ? 'Every bed. Every one, trampled flat, near enough all of them broken off. It looks as if the Thatchers’ goat had a dance in it.' : n > 3 ? 'There’s a whole stretch of ' + mine(rows) + ' trodden flat, broken off and out of their rows.' : 'Some of ' + mine(rows) + ' are trodden down, broken off and out of their rows.') },
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Was that you, Little Red?' },
   { choose: [
     { text: 'Yes, Mama. I stepped off the path. I’m sorry.', face: 'shy', then: [{ run: ctx.own }, { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Thank you for telling me. That’s worth something. It doesn’t mend my flowers, though.' }] },
@@ -984,7 +984,16 @@ const gardenAsk = (rows, n, ctx) => [
   ] },
 ];
 // Said herself, before she was asked: her mother's answer.
-const gardenOwned = rows => [{ who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Did you. ' + (rows && rows.length ? mine(rows).charAt(0).toUpperCase() + mine(rows).slice(1) : 'My flowers') + '. Thank you for telling me before I found it myself. That’s worth something. It doesn’t mend them, though.' }];
+const gardenOwned = (rows, degree) => degree === 'wanton' ? [
+  { who: 'mother', face: 'wince', listen: { red: 'shy' }, text: 'You did. I came past them. Every bed, Little Red.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'That’s not a slip, nor two. That’s not caring where you put your feet, bed after bed, and knowing it. Thank you for telling me. It doesn’t make it less.' },
+] : [{ who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Did you. ' + (rows && rows.length ? mine(rows).charAt(0).toUpperCase() + mine(rows).slice(1) : 'My flowers') + '. Thank you for telling me before I found it myself. That’s worth something. It doesn’t mend them, though.' }];
+// (a cat, through every bed in the garden: not believed)
+const gardenWantonLie = () => [
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'A cat. Through every bed in my garden, one after another, and every flower in it broken at the same height as your boots.' },
+  { who: 'red', face: 'wince', text: 'Mama—' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Don’t. Whatever made you do it, don’t add a lie to it.' },
+];
 // The lie, the same day, the petals still on her boots.
 const gardenBoots = rows => [
   { who: 'red', face: 'wince', thought: true, text: 'She’s looking at my boots.' },
@@ -1005,7 +1014,10 @@ const gardenReport = r => [
   { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'A cat, you said. The Thatchers’ goat. You stood there and looked at me and said it.' },
 ];
 // Before it: what it's for.
-const gardenTakeInHand = how => how.lied ? [
+const gardenTakeInHand = how => how.degree === 'wanton' && !how.lied ? [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Not a slip. Bed after bed of them, and you walking on.' },
+  { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'You’ll answer for every one, and for not caring. Come here, Little Red.' },
+] : how.lied ? [
   { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'This is for my flowers, which you didn’t care about. And it’s for the lie, which is worse, because I do care about that.' },
   { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'Come here, Little Red.' },
 ] : [
@@ -1028,6 +1040,30 @@ const gardenCorrection = async (S, how) => {
   await S.step([M, 'The paths are there for a reason. You walk them slowly, and you look where you’re going.'], 10);
   await S.step([R, 'Ow— I will, I will—'], 4);
   await S.step([M, 'Somebody grew every one of those. Somebody knelt in the mud for them.'], 10);
+  // (more than a slip: careless, her drawers down for the rest; wanton, bed after bed, and the hairbrush after, twelve, counted)
+  const dg = how.degree || 'slip';
+  if (!lied && dg !== 'slip') {
+    await S.smacks(6);
+    await S.gesture('drawers'); await S.wait(0.5);
+    await S.say(R, 'Mama—');
+    await S.say(M, dg === 'wanton' ? 'Yes. Every bed in it, Little Red. Every one.' : 'Yes. Not one or two. A whole stretch of them.', 'stern');
+    S.set({ strength: 1.8, pace: 1.7 });
+    await S.step([M, dg === 'wanton' ? 'One you might not see. Two, three. But you walked on, and on, and you knew.' : 'You weren’t looking where you went. Not once.'], dg === 'wanton' ? 14 : 10);
+    await S.step([R, 'I’m sorry— I’m sorry, Mama—'], 6);
+    await S.smacks(dg === 'wanton' ? 10 : 6);
+    if (dg === 'wanton') {
+      await S.fetch('hairbrush', { ask: [M, 'Up. The hairbrush, from the chest.'], waitFace: 'concerned', presentFace: 'stern', present: [R, '…Here, Mama.'], back: [M, 'Back over my knee.', 'stern'] });
+      S.set({ strength: 1.85, pace: 1 }); await S.wait(0.8);
+      await S.say(M, 'Twelve. One for every few you trod down. Count them.', 'stern');
+      const nums = ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six…', 'Seven…', 'Eight…', 'Nine…', 'Ten…', 'Eleven…', 'Twelve… I’m sorry, Mama…'];
+      for (let k = 0; k < nums.length; k++) await count(nums[k], k === 4 ? 'concerned' : k === 11 ? 'calm' : null);
+      S.set({ implement: 'hand' });
+    }
+    await marenReckon(S, how);
+    if (how.also) await how.also(S);
+    await S.say(M, 'There. You owned it, and it’s answered. Up you get.', 'calm');
+    await S.wait(1.2); return;
+  }
   if (!lied) {
     await S.smacks(8);
     await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
@@ -1040,7 +1076,7 @@ const gardenCorrection = async (S, how) => {
   await S.say(R, 'Mama, please—');
   await S.say(M, 'You had your chance to tell me, and you told me a cat.', 'stern');
   S.set({ strength: 1.85, pace: 1.8 });
-  await S.step([M, how.caught === 'witness' ? 'And I had to hear the truth from ' + (FULL[how.who] || 'a neighbour') + ', over a fence, like gossip.' : 'With the petals on your boots, Little Red. On your boots.'], 10);
+  await S.step([M, how.caught === 'plain' ? 'A cat, you said. Through every bed I have.' : how.caught === 'witness' ? 'And I had to hear the truth from ' + (FULL[how.who] || 'a neighbour') + ', over a fence, like gossip.' : 'With the petals on your boots, Little Red. On your boots.'], 10);
   await S.step([R, 'I’m sorry! I’m sorry I said it!'], 6);
   await S.step([M, 'Flowers grow back. Trust takes longer.'], 10);
   await S.smacks(8);
@@ -1051,9 +1087,10 @@ const gardenCorrection = async (S, how) => {
     back: [M, 'Back over my knee.', 'stern'],
   });
   S.set({ strength: 1.8, pace: 1 }); await S.wait(0.8);
-  await S.say(M, 'Six. Count them, and then it’s done with.', 'stern');
+  await S.say(M, dg === 'wanton' ? 'Twelve: for every bed, and for the lie. Count them.' : 'Six. Count them, and then it’s done with.', 'stern');
   await S.say(R, '…Yes, Mama.');
-  await count('One…'); await count('Two…'); await count('Three…', 'concerned'); await count('Four…'); await count('Five…'); await count('Six… I’m sorry, Mama…', 'calm');
+  { const nums = dg === 'wanton' ? ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six…', 'Seven…', 'Eight…', 'Nine…', 'Ten…', 'Eleven…', 'Twelve… I’m sorry, Mama…'] : ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six… I’m sorry, Mama…'];
+    for (let k = 0; k < nums.length; k++) await count(nums[k], k === 2 ? 'concerned' : k === nums.length - 1 ? 'calm' : null); }
   await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) { S.set({ implement: 'hand' }); await how.also(S); }      // (anything else to be said over her, before the last word)
   await S.say(M, 'I know you are. It’s done. Up you get.', 'calm');
@@ -2791,5 +2828,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { granCall, granTea, fairAnnounce, heelGiven, dayEnd, pieOwned, loafOwned, gardenOwned, weekDue, weekGood, weekFine, weekClose, weekWarn, owedAlso, shopAsk, georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { gardenWantonLie, granCall, granTea, fairAnnounce, heelGiven, dayEnd, pieOwned, loafOwned, gardenOwned, weekDue, weekGood, weekFine, weekClose, weekWarn, owedAlso, shopAsk, georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
