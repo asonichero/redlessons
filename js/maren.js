@@ -20,6 +20,9 @@ const on = w => !!(w.chores && w.chores.on());
 // (the days Red's asked for the bakery's afternoon at breakfast: her mother at the Hallorans' all day, not home for dinner, and bread and cheese
 // left out on the table for her, so she needn't choose between the two)
 const allDay = (w, day) => { const c = w.save.state.chores, d = day || w.cal.day; return on(w) && !!c && c.day === d && !!c.errand && c.errand.id === 'bakery' && !(root.Fair && root.Fair.phase && root.Fair.phase(w, d)); };
+// (a bakery day, whether she's out or not (the fair's run-up, she's home at her sewing): Red's due at the bakery by one, and there's no dinner
+// together; bread and cheese left on the table for when she's done)
+const bakeryDay = (w, day) => { const c = w.save.state.chores, d = day || w.cal.day; return on(w) && !!c && c.day === d && !!c.errand && c.errand.id === 'bakery'; };
 const LAY_OUT = 14 * 60, LAY_BACK = 17 * 60;
 function at(w) {
   const m = w.cal.minute, n = needlework(w.cal.day);
@@ -31,9 +34,9 @@ function at(w) {
   return 'farm';
 }
 const home = w => at(w) !== 'farm' && at(w) !== 'fair' && at(w) !== 'gran';
-const dinnerDue = w => on(w) && !allDay(w) && w.cal.minute >= DINNER && w.cal.minute < BACK && stateOf(w).dinner !== w.cal.day;
+const dinnerDue = w => on(w) && !bakeryDay(w) && w.cal.minute >= DINNER && w.cal.minute < BACK && stateOf(w).dinner !== w.cal.day;
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
-const missedDinner = w => on(w) && !allDay(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
+const missedDinner = w => on(w) && !bakeryDay(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
 
 // (stood up at once, under a fade: off the seat, free to be put anywhere)
 const unsit = mo => { if (!mo) return; mo.sitW = mo.sitWant = 0; mo.lieW = mo.lieWant = 0; mo.seat = null; mo.locked = false; };
@@ -135,14 +138,14 @@ function larder(P, w) {
   put(T.ell(1.5, 1.1, 2.2, 12, 8), '#c98a44', -1, 1.2, 0);      // (the end of a loaf)
   put(new THREE.CylinderGeometry(1.3, 1.3, 1, 3), '#f0d070', 1.4, 0.9, 0.3).rotation.y = 0.4;      // (a wedge of cheese)
   g.position.set(x, tb.y, z); P.stage.scene.add(g);
-  const out = () => allDay(w) && at(w) === 'farm' && stateOf(w).dinner !== w.cal.day;
+  const out = () => bakeryDay(w) && (!allDay(w) || at(w) === 'farm') && stateOf(w).dinner !== w.cal.day;      // (her bakery day: on the table from breakfast, whether her mother's out or at her sewing)
   P.tick(() => { g.visible = out(); });
   (W.actions = W.actions || []).push({ label: 'Eat the bread and cheese', at: new V3(x, tb.y + 2, z), when: () => out() && !P.busy,
     run: async () => { const m = P.motion, c = new V3(x, 0, z), to = P.collide(m.pos.clone().setY(0).sub(c).setLength(9).add(c), 3.2); await Promise.race([m.goTo(to, Math.atan2(c.x - to.x, c.z - to.z)), P.wait(4)]); change(w, s => { s.dinner = w.cal.day; });
       if (P.talk) P.talk.muse('Bread and cheese, and a cup of water from the jug. Better.', { face: 'smile' });
       if (w.capacity) w.capacity.add(LARDER, 'bread and cheese'); w.cal.advance(15); if (w.refresh) w.refresh(); } });
 }
-const api = { allDay, larder, unsit, atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
+const api = { bakeryDay, allDay, larder, unsit, atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
 root.Maren = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -26,7 +26,7 @@ function goal(w) {
   const add = (goal, at, active) => { if (goal) cands.push({ goal, at: at == null ? 24 * 60 : at, active: !!active }); };
   if (root.Herbs && root.Herbs.objective(w)) { const s = root.Herbs.stateOf(w); if (s.asked) add(!s.have ? { area: 'wood', herb: s.asked } : { area: 'cabin', who: 'gran' }, null, true); }      // (Grandmother's herb, asked for; a visit, not yet asked, is only a reminder, and isn't marked)
   if (E && e.state === 'carrying') add(E.carry === 'butt' ? { area: 'home', spot: 'buttHome' } : { area: 'home', who: 'mother' }, null, true);      // (the water: back in its place by the hearth)
-  { const M = root.Maren; if (M && ch && ch.on() && !(M.allDay && M.allDay(w)) && !cal.lay && M.stateOf(w).dinner !== cal.day && cal.minute < M.BACK) add({ area: 'home', who: 'mother' }, M.DINNER); }      // (home for dinner, from the morning)
+  { const M = root.Maren; if (M && ch && ch.on() && !(M.bakeryDay && M.bakeryDay(w)) && !cal.lay && M.stateOf(w).dinner !== cal.day && cal.minute < M.BACK) add({ area: 'home', who: 'mother' }, M.DINNER); }      // (home for dinner, from the morning)
   { const pm = root.Peter && root.Peter.objective(w) && root.Peter.stateOf ? root.Peter.stateOf(w).meet : null; if (root.Peter && root.Peter.objective(w)) add({ area: 'wood', spot: 'beech' }, pm && pm.at); }
   if (E && (e.state === 'accepted' || (e.state === 'broken' && E.shift))) {
     const has_ = w.P && (E.needs === 'basket' ? !!(root.Chores && root.Chores.basketOf(w.P)) : ch.has(w.P, E)), by = e.by || H(E.by);

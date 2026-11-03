@@ -590,7 +590,8 @@ const breakfast = (errand, ctx) => {
   const again = ctx.again ? [{ who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Yesterday’s still wants doing. It doesn’t go away because it wasn’t done; it waits. So, again:' }] : [];
   return [hello].concat(mine, garden, again, [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: errand.ask }, { run: ctx.yes },
     { who: 'red', face, text: YES },
-    { who: 'mother', face: 'smile', listen: { red: face }, text: (t === 'wilful' ? 'And without the face, next time. ' : 'That’s my girl. ') + (errand.mind || 'By ' + aloud(by) + ', mind.') }]);
+    { who: 'mother', face: 'smile', listen: { red: face }, text: (t === 'wilful' ? 'And without the face, next time. ' : 'That’s my girl. ') + (errand.mind || 'By ' + aloud(by) + ', mind.') }],
+    ctx.homeBakery ? [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'We’ll not manage dinner together, not with you due at Mistress Pennock’s for one. Don’t fret about it: I’ll leave bread and cheese out on the table for when you’re done.' }] : []);      // (the fair's run-up: her mother home, but no time for dinner between)
 };
 // The third promise let slide in a week: what her mother says, when Red's home, of what's to come after supper.
 const enough = () => [

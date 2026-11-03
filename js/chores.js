@@ -223,7 +223,7 @@ function create(w) {
     if (root.Agnes) root.Agnes.morning(w);      // (after the fair: the kiss heard of; the afternoon in the wood, gone by)
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
-      needle: root.Maren && id !== 'bakery' ? root.Maren.needlework(cal.day) : null, allDay: id === 'bakery',      // (the bakery's afternoon: her mother out all day, bread and cheese left)
+      needle: root.Maren && id !== 'bakery' ? root.Maren.needlework(cal.day) : null, allDay: id === 'bakery', homeBakery: id === 'bakery' && !!(root.Fair && root.Fair.phase && root.Fair.phase(w)),      // (homeBakery: the fair's run-up, her mother home, and no dinner together for it)      // (the bakery's afternoon: her mother out all day, bread and cheese left)
       agreed: !!root.Maren, lay: cal.lay, fair: root.Fair ? root.Fair.breakfast(w) : null, fairDay: !!(root.Fair && root.Fair.isFair(w)), again: !!id && id === owing(),      // (her mother's own day: js/maren.js)
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
     await P.wait(0.8); if (!(o && o.seated)) await P.approach();      // (seated: across the table from her already)
@@ -529,7 +529,7 @@ function create(w) {
     if (root.FairDay) out.push(...root.FairDay.objectives(w));      // (fair day: the day's errands)
     for (const M of [root.Fair, root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
-    if (root.Maren && root.Maren.allDay(w)) { if (cal.minute >= H('11:30') && cal.minute < root.Maren.HOME && root.Maren.stateOf(w).dinner !== cal.day) out.push('Bread and cheese on the table at home, when you want it.'); }      // (her mother out all day)
+    if (root.Maren && root.Maren.bakeryDay(w)) { if (cal.minute >= H('11:30') && cal.minute < root.Maren.HOME && root.Maren.stateOf(w).dinner !== cal.day) out.push('Bread and cheese on the table at home, when you want it.'); }      // (her mother out all day)
     else if (root.Maren && !(root.Fair && root.Fair.isFair(w)) && cal.minute < root.Maren.BACK && root.Maren.stateOf(w).dinner !== cal.day) out.push('Home for dinner with Mama, at half past twelve.');      // (from the morning, on the days there's dinner at home)      // (she's back from the farm for it)
     const k = root.Work && root.Work.current(w), left = k && (e || k.mode === 'picked') ? root.Work.leftOf(k).filter(t => t.kind !== 'service') : null;
     const orders = k && root.InnShift ? (((save.state.work || {}).svc || {}).orders || []).filter(x => x && x.state === 'waiting') : [];      // (the carrier's men's, as they call them)
