@@ -276,7 +276,7 @@ function create(view, opts) {
   function altOf(shown) { const o = offer[0]; if (o && o.alt) return { label: o.altLabel || 'Lie down', run: o.alt }; if (m.carry && !m.carry.keep && !sitting && !lying && (!shown || (o && o.full))) return { label: 'Put ' + m.carry.name + ' down', run: putDown, down: true }; return null; }
   async function take(it) {
     const p = it.obj.position.clone().add(it.grip), s = approachFor(p);
-    await m.goTo(s.at, yawTo(s.at, p));
+    await Promise.race([m.goTo(s.at, yawTo(s.at, p)), wait(4)]); if (m.auto) { m.auto = null; m.face(yawTo(m.pos, p)); }      // (held up short of it (the hearth's stone in the way): reached for from where she's got to)
     m.lookAt(p); const two = !it.hangs && it.radius > 2.6;
     if (two) { m.reach('L', p.clone().add(new V3(Math.cos(m.yaw) * it.radius * 0.8, 0, -Math.sin(m.yaw) * it.radius * 0.8))); await m.reach('R', p.clone().add(new V3(-Math.cos(m.yaw) * it.radius * 0.8, 0, Math.sin(m.yaw) * it.radius * 0.8))); }
     else await m.reach('R', p);

@@ -117,7 +117,9 @@ function create(w) {
     const wd = root.Calendar ? root.Calendar.weekday(day) : ((day - 1) % 7) + 1;
     if (wd === 7) return null;
     if (root.Fair && root.Fair.isFair(w, day)) return null;      // (fair day: only the fair's own errands)
-    const fits = id => !(id === 'inn' && wd !== 4) && !(id === 'bakery' && wd === 6);
+    const potAt = save.state.chores && save.state.chores.potAt, potSince = (save.state.chores && save.state.chores.potSince) || 0;
+    const fits = id => !(id === 'inn' && wd !== 4) && !(id === 'bakery' && wd === 6) && !(id === 'pot' && potAt) && !(id === 'potback' && !(potAt === 'forge' && day - potSince >= 3));      // (the pot: not sent again while it's away; fetched back as an errand, once it's been three days)
+    if (potAt === 'forge' && day - potSince >= 3 && E.potback) return 'potback';      // (left three days at the forge: her mother asks for it)
     const asked = (save.state.chores && save.state.chores.asked) || [], next = INTRO.find(id => E[id] && !asked.includes(id) && fits(id));
     if (next) return next;      // (the first of them not yet asked that suits the day: the inn's evening waits for Carrier's day, the rest go on meanwhile)
     if (((save.state.chores && save.state.chores.cans) || 0) >= CANS) return 'well';      // (five cans out of the butt since she last drew it full: the well, whatever else)
@@ -166,7 +168,7 @@ function create(w) {
   }
   // (the pot, gone to the smith: not in the house till it's mended, the next day)
   // (and her basket not on its peg, while she's left it somewhere out of doors)
-  const away = (P) => { const W = P && P.world, a = st().away, lf = st().loaf; if (!W || !W.items) return; for (const it of W.items) { if (it.home || STOW[it.kind]) { it.away = !!(a && a[it.kind] === cal.day) || (it.kind === 'loaf' && !!lf && lf.day === cal.day && lf.state !== 'back'); it.obj.visible = !it.away; } if (it.kind === 'basket' && it.peg) it.fixed = true; } };      // (the baskets on the pegs: the cottage's, not to be taken)
+  const away = (P) => { const W = P && P.world, a = st().away, lf = st().loaf; if (!W || !W.items) return; for (const it of W.items) { if (it.home || STOW[it.kind]) { it.away = !!(a && a[it.kind] === cal.day) || (it.kind === 'loaf' && !!lf && lf.day === cal.day && lf.state !== 'back') || (it.kind === 'pot' && !!st().potAt); if (it.kind === 'pot') it.fixed = true;      /* (the pot: never off the hearth by her hand; in her basket on its errand's day, and at the forge till she brings it back) */ it.obj.visible = !it.away; } if (it.kind === 'basket' && it.peg) it.fixed = true; } };      // (the baskets on the pegs: the cottage's, not to be taken)
   // Out of doors, what she puts down stays where she put it, the rest of the day (and is there when she comes back for it); at home, it's
   // the cottage's own. (The next morning, it's all back where it lives.)
   let leftN = 0;
@@ -258,11 +260,29 @@ function create(w) {
       const early = e && e.shift && e.state === 'accepted' && cal.minute < e.by - SHIFT_SLACK;      // (a shift: not before a quarter of an hour before its time)
       if (e && !early && (e.state === 'accepted' || (e.state === 'broken' && e.shift) || e.state === 'working' || (e.state === 'missed' && e.gone && !e.knocked)) && sp[e.place] && (e.state === 'working' || e.state === 'missed' || has(P, e) || e.needs === 'basket')) out.push({ label: e.state === 'working' ? 'Back in to work' : e.action, at: sp[e.place].at, run: () => doErrand(P, e) });
     }
+    // (the pot at the forge, mended, from the day after: hers to fetch home in her basket, asked or not)
+    if (area === 'village' && c.potAt === 'forge' && cal.day > (c.potSince || 0) && !(e && e.id === 'potback' && e.state === 'accepted') && sp.forge && cal.minute < H('18:00')) out.push({ label: 'Ask Master Ferrier for Mama’s pot', at: sp.forge.at.clone().setY(14), run: () => fetchPot(P) });
+    // (home with it: back on the hearth, where it lives)
+    if (area === 'home' && c.potAt === 'carrying' && basketOf(P) && (basketOf(P).contents || []).includes(POT) && !(e && e.id === 'potback' && e.state === 'carrying')) { const it = W.items.find(x => x.kind === 'pot'); if (it) out.push({ label: 'Put the pot back on the hearth', at: it.obj.position.clone().setY(4), run: () => potHome(P) }); }
     if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npc && !P.npcAway) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     // (her mother out at the farm: left on the table for her, and the errand's done)
     else if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npcAway) { const tb = P.world.surfaces.find(s => s.name === 'the table');
       if (tb) out.push({ label: 'Leave ' + (e.carryName || NAME[e.carry]) + ' on the table for Mama', at: new V3((tb.x0 + tb.x1) / 2, tb.y + 2, (tb.z0 + tb.z1) / 2), run: () => leaveHome(P, e, tb) }); }
     return out;
+  }
+  // The pot, fetched from the forge: Master Ferrier's word, into her basket (heavy), and home with it.
+  async function fetchPot(P) {
+    const b = basketOf(P); if (!b) { await noBasket(P); return; }
+    const sp = P.world.spots.forge; await Promise.race([P.motion.goTo(sp.at, sp.yaw), P.wait(5)]);
+    await P.converse(S.potFetched(), { shot: P.figure && P.figure('smith') ? ['red', 'smith'] : false, keepCamera: !(P.figure && P.figure('smith')) });
+    putIn(b, POT); b.heavy = true; change(c => { c.potAt = 'carrying'; }); cal.advance(10); w.refresh();
+  }
+  // Back on the hearth: out of her basket, and the pot where it lives.
+  async function potHome(P) {
+    const b = basketOf(P), it = P.world.items.find(x => x.kind === 'pot'); if (!b || !it) return;
+    await Promise.race([P.motion.goTo(P.collide(it.obj.position.clone().setY(0).add(new V3(0, 0, -9)), 3.2), 0), P.wait(4)]);
+    await P.motion.reach('R', it.obj.position.clone().setY(3)); takeOut(b, POT); b.heavy = false; change(c => { c.potAt = null; }); it.away = false; it.obj.visible = true; await P.motion.release('R');
+    if (P.talk) P.talk.muse('Back where it lives. Handle like new.', { face: 'smile' }); w.refresh();
   }
   // The garden: its work done (js/garden.js plays it), it's tended for the day.
   const gardenDone = () => { change(c => { c.garden = true; }); w.refresh(); };
@@ -277,6 +297,7 @@ function create(w) {
     if (e.from && cal.minute < H(e.from)) { await P.converse(e.early, { shot: false, keepCamera: true }); return; }      // (too early: nobody up to answer)
     if (e.state === 'missed') { change(c => { c.errand.knocked = true; }); await P.converse(e.gone, { shot: false, keepCamera: true }); return; }      // (too late: he's gone out)
     if (e.shift && root.Work) { if (!root.Work.current(w)) root.Work.begin(w, e.shift, { short: e.short, mode: e.short ? 'short' : 'errand' }); change(c => { c.errand.state = 'working'; c.errand.late = e.state === 'broken'; }); await w.go(root.Work.SHIFTS[e.shift].area, 'door'); return; }      // (short: Mistress Abney's afternoon, offered on the day)
+    if (e.leave === 'pot') change(c => { c.potAt = 'forge'; c.potSince = cal.day; });      // (at the forge now, till she fetches it home: from tomorrow)
     if (e.leave && !holding(P, e.leave) && STOW[e.leave] && basketIn(P)) { takeOut(basketIn(P), STOW[e.leave]); change(c => { c.away = Object.assign({}, c.away, { [e.leave]: cal.day }); }); }      // (out of her basket, and left with the smith)
     else if (e.leave && holding(P, e.leave)) { const it = m.drop(); if (it) { it.obj.visible = false; it.panel = null; it.away = !!it.home; change(c => { c.away = Object.assign({}, c.away, { [e.leave]: cal.day }); }); } }      // (left with the smith)
     if (e.pie && P.villagers && P.villagers.summon && basketIn(P)) { await pieAtDoor(P, e); fulfilled(P, e); return; }      // (played: the knock, Master William at his door)
@@ -395,6 +416,7 @@ function create(w) {
   async function giveHome(P, e) { await P.approach(9); await P.converse(marenTalk(P), { shot: ['red', 'mother'] }); }
   // (what she's brought, out of her hands and her mother's: and the errand's done)
   function handOver(P, e) {
+    if (e.key === 'potback') { change(c => { c.potAt = null; }); const pot = P.world.items && P.world.items.find(x => x.kind === 'pot'); if (pot) { pot.away = false; pot.obj.visible = true; } }      // (Mama's pot: on the hearth again)
     const b = basketIn(P), it = P.motion.carry;
     if (b) takeOut(b, e.carryName || NAME[e.carry]);      // (the eggs out of it, and her basket hers again)
     else if (it && it.home) { P.motion.drop(); fill(it, false); it.keep = false; it.obj.position.copy(it.home); it.obj.rotation.set(0, 0, 0); }      // (the butt: her mother takes it, and it's back by the hearth, emptied into the big one)
@@ -468,6 +490,8 @@ function create(w) {
     else if (e && e.state === 'carrying') out.push('Take ' + (e.carryName || NAME[e.carry]) + ' home to Mama.');
     if (!c.garden && cal.minute < H('19:00')) out.push(root.Garden && w.area === 'village' && w.P && root.Garden.inside(w.P.motion.pos) ? 'Mama’s garden: ' + root.Garden.progressText(w) + '.' : 'Tend Mama’s garden.');      // (what's left in it, once she's through the gate)
     { const t = root.Herbs && root.Herbs.objective(w); if (t) out.push(t); }      // (Grandmother's herbs: after what's asked at home)
+    if (c.potAt === 'forge' && cal.day > (c.potSince || 0) && !(e && e.id === 'potback')) out.push('Mama’s pot, mended, at the forge: fetch it home in your basket.');
+    else if (c.potAt === 'carrying' && !(e && e.id === 'potback')) out.push('Put Mama’s pot back on the hearth.');
     { const t = root.Flock && root.Flock.objective(w); if (t) out.unshift(t); }      // (Bo's strays: while they're loose, first)
     return out;
   }

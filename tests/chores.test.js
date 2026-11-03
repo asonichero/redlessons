@@ -122,3 +122,12 @@ test('the garden left only for want of the water: her mother speaks of it as the
   const plain = text(S.dayTalk('yes', { errand: { id: 'well', state: 'broken' }, garden: false, gardenDry: false }));
   assert.match(plain, /let it slide/); assert.match(plain, /I didn’t get to it/, 'a garden simply left: both, as before');
 });
+
+test('the pot: never taken from the hearth; at the forge till fetched; three days there, and it’s an errand', () => {
+  const { chores, save, cal } = world();
+  save.change(s => { s.chores = s.chores || {}; s.chores.asked = Object.keys(chores.ERRANDS); s.chores.potAt = 'forge'; s.chores.potSince = cal.day; }, { chores: true });
+  for (let d = cal.day; d < cal.day + 3; d++) { assert.notEqual(chores.pick(d), 'potback', 'not yet: day ' + d); assert.notEqual(chores.pick(d), 'pot', 'nor sent again'); }
+  let d = cal.day + 3; while ((((d - 1) % 7) + 1) === 7) d++;
+  assert.equal(chores.pick(d), 'potback', 'three days at the forge: fetch it home');
+  save.change(s => { s.chores.potAt = null; }, { chores: true }); assert.notEqual(chores.pick(d), 'potback');
+});
