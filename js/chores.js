@@ -395,13 +395,14 @@ function create(w) {
     const n = (st().fills || 0) + 1; change(c => { c.fills = n; });
     const V = P.villagers, agnes = V && V.summon && !(root.Agnes && root.Agnes.away(w)) ? V.summon('agnes', 'wellSide') : null;      // (not after the fair, till it's settled: she keeps away from the well)
     if (agnes) { const at = P.collide(m.pos.clone().setY(0).addScaledVector(new V3(f.z, 0, -f.x), -12).addScaledVector(f, 3), 3.2); await Promise.race([V.walkTo('agnes', at, Math.atan2(m.pos.x - at.x, m.pos.z - at.z)), P.wait(6)]); agnes.motion.face(Math.atan2(m.pos.x - agnes.motion.pos.x, m.pos.z - agnes.motion.pos.z)); }
-    const draw = async () => { for (let k = 0; k < 3; k++) {
+    let talking = !!agnes;      // (with Agnes there, she keeps on drawing for as long as they talk, three at least)
+    const draw = async () => { for (let k = 0; k < 3 || talking; k++) {
       m.reach('L', well.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-1.5))); await m.reach('R', well.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(1.5))); await P.wait(agnes ? 1.6 : 0.7);
       m.reach('L', butt.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-1.5))); await m.reach('R', butt.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(1.5))); await P.wait(agnes ? 1 : 0.4);
       m.release('L'); await m.release('R');
-      if (P.talk && !agnes) P.talk.muse(['One.', 'Two. My arms…', 'Three, and full.'][k], { face: k === 2 ? 'smile' : 'calm' });
+      if (P.talk && !agnes && k < 3) P.talk.muse(['One.', 'Two. My arms…', 'Three, and full.'][k], { face: k === 2 ? 'smile' : 'calm' });
     } };
-    if (agnes) { await Promise.all([draw(), P.converse(S.agnesWell(n - 1), { shot: ['red', 'agnes'] })]); V.letGo('agnes'); rep.trusts('agnes', 0.5); }      // (she talks; Red draws)
+    if (agnes) { await Promise.all([draw(), P.converse(S.agnesWell(n - 1), { shot: ['red', 'agnes'], still: ['red'] }).then(r => { talking = false; return r; })]); V.letGo('agnes'); rep.trusts('agnes', 0.5); }      // (she talks; Red draws)
     else await draw();
     fill(b, true); const p = b.obj.position.clone().add(b.grip); m.lookAt(p);
     m.reach('L', p.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-2.4))); await m.reach('R', p.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(2.4)));
