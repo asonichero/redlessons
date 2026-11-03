@@ -59,21 +59,23 @@ test('yes is a promise: begun in time, kept; a half hour past it, unspoken; afte
   chores.tick(null); assert.equal(rep.stat('wilful'), 1, 'let slide once, not every moment after');
 });
 
-test('three promises let slide within a week bring the maintenance correction, which sets her right', () => {
-  const { chores, cal, rep } = world(), by = id => { const [h, m] = chores.ERRANDS[id].by.split(':').map(Number); return h * 60 + m; };
+test('the week, reckoned on Lay day: wilful and naughty since the last, naughty heavier, and each correction besides; over the line, a maintenance correction', () => {
+  const { chores, cal, rep, save } = world(), by = id => { const [h, m] = chores.ERRANDS[id].by.split(':').map(Number); return h * 60 + m; };
   const let_ = id => { chores.answer(id, 'yes'); cal.advance(by(id) + 31 - cal.minute); chores.tick(null); };
-  let_('bread'); morning(cal); morning(cal);
-  let_('jug'); assert.equal(chores.due(), false);
-  morning(cal); let_('pot'); assert.equal(chores.due(), true);
-  chores.settled(); assert.equal(chores.due(), false); assert.equal(rep.stat('wilful'), 0, 'her wilfulness settled');
+  let_('bread'); morning(cal); let_('jug');
+  let k = chores.weekReckon(cal.day); assert.equal(k.wilful, 2); assert.ok(!k.due && !k.good);
+  rep.add('naughty', 1, 'taking the loaf off the board'); k = chores.weekReckon(cal.day); assert.equal(k.score, 3.5);
+  rep.log('corrected', 1, 'maren'); rep.log('corrected', 1, 'pennock'); k = chores.weekReckon(cal.day); assert.ok(k.close && !k.due, 'near the line: ' + k.score);
+  rep.add('wilful', 1.5, 'home after the curfew bell'); assert.ok(chores.weekReckon(cal.day).due, 'over it');
+  chores.settled(); assert.equal(rep.stat('wilful'), 0, 'her wilfulness settled');
 });
 
-test('promises let slide more than a week apart don\'t add up', () => {
-  const { chores, cal } = world(), by = id => { const [h, m] = chores.ERRANDS[id].by.split(':').map(Number); return h * 60 + m; };
-  const let_ = id => { chores.answer(id, 'yes'); cal.advance(by(id) + 31 - cal.minute); chores.tick(null); };
-  let_('bread'); for (let i = 0; i < 4; i++) morning(cal);
-  let_('jug'); for (let i = 0; i < 4; i++) morning(cal);
-  let_('pot'); assert.equal(chores.due(), false, 'the first has dropped out of the week');
+test('the week starts again each Lay day; a good week is a little wilful, hardly naughty, nothing seen to', () => {
+  const { chores, cal, rep, save } = world();
+  while (cal.weekday !== 7) morning(cal);
+  rep.add('wilful', 3, 'refusing an errand'); assert.equal(chores.weekReckon(cal.day).wilful, 3);
+  morning(cal); assert.equal(chores.weekReckon(cal.day).wilful, 0, 'Lay day gone: a new week');
+  rep.add('wilful', 0.5, 'the garden left'); assert.ok(chores.weekReckon(cal.day).good);
 });
 
 test('the garden: hers each day, a little broken promise if it\'s left till dusk', () => {

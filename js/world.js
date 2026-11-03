@@ -122,7 +122,7 @@ function create(view, ui) {
   let areaName = null, P = null, going = null, lightFn = null, timeOn = true, sinceSave = 0, sceneNow = null;
   const q = root.Quests.create(save, root.QuestData, { rep, cal, area: () => areaName });
   // (how many times each giver has corrected her: after the first, they lift her skirt before they begin (js/correction.js))
-  if (root.Correction) root.Correction.history = { count: id => (save.state.corrected || {})[id] || 0, add: id => save.change(s => { s.corrected = Object.assign({}, s.corrected, { [id]: ((s.corrected || {})[id] || 0) + 1 }); }, { corrected: true }) };
+  if (root.Correction) root.Correction.history = { count: id => (save.state.corrected || {})[id] || 0, add: id => { save.change(s => { s.corrected = Object.assign({}, s.corrected, { [id]: ((s.corrected || {})[id] || 0) + 1 }); }, { corrected: true }); rep.log('corrected', 1, id); } };      // (and the week's record: each one counts toward her mother's Lay day reckoning)
   const fade = async (on, text) => { if (ui.fade) await ui.fade(on, text); };
   const w = {
     save, cal, rep, q, AREAS, SCENES,

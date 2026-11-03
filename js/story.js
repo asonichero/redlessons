@@ -590,24 +590,60 @@ const marenReckon = async (S, how) => {
     S.set({ implement: 'hand' });
   }
 };
+// ── The week, on Lay day mornings (js/chores.js's weekly): k = { items: [{ d, st, n, why }], score, wilful, naughty, corrected }.
+// (what she did, as her mother tells it back: the week's reasons, most weighed first, each once)
+const weekWhys = (k, st, max) => { const seen = new Set(); return (k.items || []).filter(e => e.st === st && e.n > 0 && e.why).sort((a, b) => b.n - a.n)
+  .filter(e => { const t = e.why.toLowerCase(); if (seen.has(t)) return false; seen.add(t); return true; }).slice(0, max || 3).map(e => e.why.charAt(0).toUpperCase() + e.why.slice(1) + '.'); };
+const GIVERS = { maren: 'me', pennock: 'Mistress Pennock', abney: 'Mistress Abney', smith: 'Master Ferrier', willie: 'Master William', hulda: 'your grandmother', agnes: 'Agnes' };
+const weekDue = k => [
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Stay sat a moment, love. It’s Lay day, and we’ll look at the week, you and I.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: k.corrected > 1 ? 'You’ve been taken in hand ' + (k.corrected === 2 ? 'twice' : k.corrected + ' times') + ' since last Lay day, and still it’s been one thing after another.' : 'It’s been one thing after another this week. You know it has.' },
+  { who: 'red', face: 'shy', text: '…Yes, Mama.' },
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Then we’ll set you right, this morning, and you’ll start the week clean. All of it, so you know what it was for.' },
+];
+const weekGood = () => [
+  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Lay day. And a good week, love: what I asked, done; nothing I’ve had to see to. I noticed. I always notice.' },
+  { who: 'red', face: 'smile', text: 'Thank you, Mama.' },
+];
+const weekFine = k => [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Lay day. Not a bad week, and not the best you’ve had. ' + (k.naughty >= 1 ? 'Mind what’s not yours, this week.' : 'A little less of your own way, this week.') }];
+const weekClose = k => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Lay day. I’ll say it plainly: that week came close. Another like it and you know how next Lay day starts.' },
+  { who: 'red', face: 'shy', text: 'Yes, Mama. I know.' },
+];
+// (midweek, at supper, nearing the line)
+const weekWarn = k => [
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: k.due ? 'And I’ll tell you now, so it’s no surprise: Lay day morning, you and I have a reckoning coming. You’ve earned it already.' : 'And mind yourself, the rest of this week. You’re near enough to a Lay day reckoning as it is.' },
+  { who: 'red', face: 'shy', text: '…Yes, Mama.' },
+];
+// The maintenance correction: Lay day morning, the week gone through as it's given, a part of it at each stage: across her lap with her skirt
+// down, for what she let slide (the wilful); lifted, for what cost someone else (the naughty); her drawers down, for the corrections she
+// needed besides, and the week as a whole. Each longer than an evening's.
 const maintenanceCorrection = async (S, how) => {
-  const M = 'corrector', R = 'subject';
-  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3, pace: 1.3 });
+  const M = 'corrector', R = 'subject', k = (how && how.week) || { items: [], corrected: 0 };
+  const wil = weekWhys(k, 'wilful', 3), nau = weekWhys(k, 'naughty', 3), givers = [...new Set((k.items || []).filter(e => e.st === 'corrected').map(e => GIVERS[e.why] || 'someone'))];
+  S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.35, pace: 1.3 });
   await S.wait(0.8);
-  await S.say(M, 'Hands down. There. You know why.', 'calm');
-  await S.step([M, 'The garden, each morning. That’s yours.', 'stern'], 8);
-  await S.step([R, 'I know, Mama—'], 4);
-  await S.step([M, 'What I give you to do: done, and done in time. Not let slide.'], 8);
-  await S.smacks(6);
+  await S.say(M, 'Hands down. There. We’ll take it in order, and you’ll hear every bit of it.', 'calm');
+  await S.step([M, 'The shape of your days, first. What I ask, done, and done in time.', 'stern'], 10);
+  for (const t of wil.length ? wil : ['What I asked, let slide.']) { await S.step([M, t, 'stern'], 8); await S.smacks(4); }
+  await S.step([R, 'I know, Mama— I know—'], 6);
   await S.gesture('skirt'); await S.wait(0.4);
-  S.set({ strength: 1.5, pace: 1.5 });
-  await S.step([M, 'And home by the bell.'], 8);
-  await S.step([R, 'Yes, Mama!'], 4);
-  await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 10);
+  S.set({ strength: 1.6, pace: 1.55 });
+  await S.step([M, nau.length ? 'Then what cost somebody else.' : 'And you’ve kept your hands to yourself, this week, mostly. That’s something.', 'stern'], 10);
+  for (const t of nau) { await S.step([M, t, 'stern'], 10); await S.smacks(4); }
+  await S.step([R, 'Ow— Mama, I’m sorry—'], 6);
   await S.smacks(8);
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
+  await S.gesture('drawers'); await S.wait(0.5);
+  await S.say(R, 'Mama—');
+  await S.say(M, 'Yes. The last of it, for the week as a whole.', 'calm');
+  S.set({ strength: 1.85, pace: 1.75 });
+  if (givers.length) await S.step([M, 'Taken in hand by ' + (givers.length > 1 ? givers.slice(0, -1).join(', ') + ' and ' + givers[givers.length - 1] : givers[0]) + ', and it didn’t hold. That’s what this is for: so that it does.', 'stern'], 12);
+  else await S.step([M, 'It’s not one thing. It’s the week. It’s letting it run away from you, a day at a time.', 'stern'], 12);
+  await S.step([R, 'I’ll be better— I will—'], 6);
+  await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 12);
+  await S.smacks(10);
   if (how && how.also) await how.also(S);
-  await S.say(M, 'There. That’s done, and you’re set right. Up you get.', 'calm');
+  await S.say(M, 'There. That’s done, and you’re set right. A clean week from today. Up you get.', 'calm');
   await S.wait(1.2);
 };
 const afterMaintenance = () => [
@@ -2691,5 +2727,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { owedAlso, shopAsk, georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { weekDue, weekGood, weekFine, weekClose, weekWarn, owedAlso, shopAsk, georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

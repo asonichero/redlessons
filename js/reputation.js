@@ -1,8 +1,14 @@
 // Little Red’s Lessons — what's known about her, and by whom. Three kinds of trouble she can be known for, trust and openness with each figure,
 // how far it's known in the village, and what she's told Wolfe (which is never shown: it only decides what he can use against her).
 //
-//   Wilful: defying a direct instruction (off the path, past curfew, refusing a task). Mischievous: playful trouble that harms no one much
-//   (pranks, dawdling, teasing). Naughty: wrongdoing that costs someone else (theft, lies, broken promises).
+//   Wilful: defying a direct instruction (off the path, past curfew, refusing a task, letting a promised errand slide, the garden left after
+//   being told). For Red it's the shape of her days pushed against: what she asked her mother to hold her to; her mother minds it most, and
+//   it's what a maintenance correction answers. Naughty: wrongdoing that costs someone else (taking what isn't hers, lies, broken promises, harm
+//   to what others made or grew: the loaf, the flowers, the dress, Bess left alone). For Red it's character, not routine: weighed heavier, and
+//   what Mistress Pennock and Mistress Abney mind. Mischievous: playful trouble that harms no one much (pranks, dares, dawdling, teasing): her
+//   grandmother's to mind, and never her mother's reason for a maintenance correction.
+//   The week (state.weekLog: [{ d, st, n, why }], kept a fortnight): what she's added to wilful and naughty, day by day, and each correction she's
+//   had (st 'corrected', why the giver): her mother's reckoning on Lay day mornings (js/chores.js's weekly).
 //   Openness, with each figure: 0 doesn't know; 1 she's told them what being Little Red means; 2 she's asked them to take her in hand, and
 //   they will. Trust is built first (by time and work together); a figure takes her in hand only once she's told them, herself.
 //
@@ -46,9 +52,13 @@ function create(save) {
     STATS, VILLAGE, FIGURES, WOLFE,
     add(stat, n, why) {
       if (!STATS.includes(stat)) throw new Error('Reputation: no stat ' + stat);
+      if (stat !== 'mischievous') rep.log(stat, n == null ? 1 : n, why);
       save.change(s => { s.stats[stat] = Math.max(0, (s.stats[stat] || 0) + (n == null ? 1 : n)); if (why) { s.log.push([s.day, stat + (n < 0 ? ' −' : ' +') + Math.abs(n == null ? 1 : n) + ': ' + why]); if (s.log.length > 40) s.log.shift(); } }, { stat });
     },
     stat: k => S().stats[k] || 0,
+    // (the week's record, for her mother's Lay day reckoning: kept a fortnight)
+    log(st, n, why) { save.change(s => { const d = s.day || 1; s.weekLog = (s.weekLog || []).filter(e => e.d > d - 14).concat({ d, st, n, why: why || '' }); }, { weekLog: true }); },
+    week: (from, to) => (S().weekLog || []).filter(e => e.d > from && e.d <= to),
     known: k => { const v = rep.stat(k); return v >= KNOWN[1] ? 2 : v >= KNOWN[0] ? 1 : 0; },
     // (a correction settles what it was for: some of it is forgiven, the rest stays as what she's known for)
     settle(stat, share) { const k = share == null ? 0.6 : share; save.change(s => { for (const st of stat ? [stat] : STATS) s.stats[st] = Math.round((s.stats[st] || 0) * (1 - k) * 10) / 10; }, { stat: stat || 'all' }); },

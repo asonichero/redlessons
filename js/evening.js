@@ -120,6 +120,18 @@ async function settle(P, w, table) {
   await aftercare(P, w, r, AFTER[o.kind](how, r));
   await toBed(P, w, { kind: o.kind, r });
 }
+// A correction of her mother's at another hour than the evening's end (Lay day morning's maintenance: js/chores.js's weekly): stood, seen to,
+// and the after; then the day goes on.
+async function seeTo(P, w, kind, how) {
+  if (!CORRECT[kind]) return null;
+  await stood(P, w, null);
+  lapAfter(r_ => AFTER[kind](how, r_));
+  const r = await CORRECT[kind](P, w, how); if (root.Correction) root.Correction.next = null;
+  if (w.capacity) w.capacity.add(15, 'set right');
+  if (P !== w.P) return r;
+  await aftercare(P, w, r, AFTER[kind](how, r)); await w.fade(false);
+  return r;
+}
 // Up from the table, under a fade: the two of them stood in the middle of the room, facing.
 async function stood(P, w, table) {
   const V = root.THREE.Vector3, mm = P.npcMotion, m = P.motion;
@@ -354,6 +366,7 @@ async function supper(P, w, ctx) {
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   w.save.change(s => { s.evening.today = day; }, { evening: true });      // (for her thoughts in bed, after)
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
+  if (w.chores && w.chores.weekWarn) await w.chores.weekWarn(P);      // (nearing the line for the week: her word on it)
   if (day.shop && day.shop.done && day.errand && ['done', 'carrying'].includes(day.errand.state)) w.rep.trusts('maren', 0.5);      // (both: twice grateful)
   await Promise.all(peeling.map(j => j.done()));
   if (w.capacity) w.capacity.add(how === 'late' ? 4 : how === 'yes' ? 10 : 15, 'supper');      // (supper, with her mother: sat still, more; late, it's long since eaten)
@@ -385,7 +398,7 @@ function caught(w, who) {
   w.refresh(); return n;
 }
 
-const api = { abed, actions, tableDue, washDue, curfewNudge, nudge, home, record, watchman, objective, caught, stateOf, night, owe, owes };
+const api = { seeTo, abed, actions, tableDue, washDue, curfewNudge, nudge, home, record, watchman, objective, caught, stateOf, night, owe, owes };
 root.Evening = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

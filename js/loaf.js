@@ -116,7 +116,6 @@ async function diminished(P, w, near) {
   if (how === 'lie') {
     w.rep.add('naughty', 0.5, 'saying she ate Mama’s loaf, when the ducks had it');
     const C = w.chores; if (C && C.slid) C.slid('eating between meals');
-    if (C && C.due && C.due() && root.Evening && !root.Evening.owes(w, 'maintenance')) await root.Evening.owe(null, w, 'maintenance', {});      // (the third this week: set right tonight)
     return false;
   }
   w.rep.add('naughty', 0.5, 'Mama’s loaf, to the ducks');

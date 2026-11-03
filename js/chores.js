@@ -2,9 +2,10 @@
 // Days and errands). Once the chores are agreed with her mother (the maren.chores step), each morning:
 //
 //   • Over breakfast her mother gives her the day's errand, if there is one: not asked, given (Red's handed the deciding back to her mother).
-//     Red's yes is a promise: it must be begun by its time. Let slide past its half hour's grace, it's wilful; three of those in a week, and
-//     her mother gives her a maintenance correction that evening, last thing, which sets her right (her wilfulness settled, the count begun
-//     again).
+//     Red's yes is a promise: it must be begun by its time. Let slide past its half hour's grace, it's wilful.
+//   • The week: Lay day mornings, after breakfast, her mother reckons it (wilful and naughty since the last Lay day, naughty weighed heavier,
+//     each correction she's had besides): over the line, a maintenance correction there and then, the week gone through as it's given, all
+//     three stages; near it, a warning (and midweek, at supper); a good week, said so (weekly, weekReckon, WEEK).
 //   • The garden's hers every day, any time before dusk (js/garden.js: the weeds, the flowers watered, the vegetables tended); left
 //     untended, it's a little broken promise.
 //   • An errand's work is done where it's asked for (the well, the bakery, the forge…), and some things are carried home to her mother after.
@@ -196,7 +197,6 @@ function create(w) {
     if (mm && !mm.seat) mm.face(Math.atan2(P.motion.pos.x - mm.pos.x, P.motion.pos.z - mm.pos.z));
     await P.converse(S.loafStopped(sewing), { shot: ['red', 'mother'] });
     rep.add('naughty', 0.5, 'reaching for Mama’s loaf, with her in the house'); change(c => { c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); });
-    if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third this week: set right this evening)
     w.refresh(); return true;
   }
   function pickedUp(P, it) { if (!it || !it.leftId) return; const id = it.leftId; it.leftId = null; change(c => { c.left = (c.left || []).filter(l => l.id !== id); }); w.refresh(); }
@@ -229,6 +229,7 @@ function create(w) {
     await P.wait(0.8); if (!(o && o.seated)) await P.approach();      // (seated: across the table from her already)
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
+    if (cal.lay) await weekly(P);      // (Lay day: the week reckoned, after breakfast)
     if (root.Loaf) { await root.Loaf.eat(P, w, 'breakfast'); await root.Loaf.shopAsk(P, w, id); }      // (breakfast's piece of the loaf; and the shopping, if there's any, on top of the day's errand)
     w.refresh();
   }
@@ -242,8 +243,32 @@ function create(w) {
   // A promise let slide (an errand broken, or missed): wilful, and counted toward the week's three. (refusals: the days of them, kept so)
   const slid = why => { rep.add('wilful', 1, why); change(c => { c.refusals = (c.refusals || []).filter(d => d > cal.day - 7).concat(cal.day); }); };
   const wont = slid;      // (the old name)
-  // (three let slide within the week: a maintenance correction is due, at the evening's end: js/evening.js)
-  const due = () => (st().refusals || []).filter(d => d > cal.day - 7).length >= 3;
+  // ── The week, reckoned on Lay day mornings, after breakfast: what she's added to wilful and naughty since the last Lay day, naughty weighed
+  // heavier, and each correction she's had besides (needing them more than once in a week is the very thing a maintenance correction's
+  // for). Over the line, she's set right there and then, all three ways, her mother going through the week as she does; near it, a word;
+  // a good week (a little wilful, hardly naughty, nothing that needed seeing to), said so. Midweek, nearing the line, her mother warns her.
+  const WEEK = { DUE: 7, WARN: 4.5, W: { wilful: 1, naughty: 1.5, corrected: 1 } };
+  const lastLay = day => { const wd = root.Calendar ? root.Calendar.weekday(day) : ((day - 1) % 7) + 1; return day - (wd === 7 ? 7 : wd); };
+  function weekReckon(day) {
+    const from = lastLay(day), items = rep.week ? rep.week(from, day) : []; let score = 0, wilful = 0, naughty = 0, corrected = 0;
+    for (const e of items) { score += e.n * (WEEK.W[e.st] || 0); if (e.st === 'wilful') wilful += e.n; else if (e.st === 'naughty') naughty += e.n; else if (e.st === 'corrected') corrected++; }
+    score = Math.max(0, Math.round(score * 10) / 10);
+    return { from, items, score, wilful, naughty, corrected, due: score >= WEEK.DUE, close: score >= WEEK.WARN, good: wilful <= 1 && naughty < 1 && corrected === 0 };
+  }
+  // (the Lay day morning's word on the week, and the correction, if it's come to that)
+  async function weekly(P) {
+    if (!cal.lay || st().weekDone === cal.day || !P || !P.npc) return;
+    const k = weekReckon(cal.day); change(c => { c.weekDone = cal.day; });
+    if (k.due) { await P.converse(S.weekDue(k), { shot: ['red', 'mother'] }); if (root.Evening && root.Evening.seeTo) await root.Evening.seeTo(P, w, 'maintenance', { week: k }); return; }
+    await P.converse(k.good ? S.weekGood() : k.close ? S.weekClose(k) : S.weekFine(k), { shot: ['red', 'mother'] });
+  }
+  // (midweek, at supper: nearing the line, her mother says so, once a week)
+  async function weekWarn(P) {
+    if (cal.lay || !P) return; const k = weekReckon(cal.day), wk = lastLay(cal.day);
+    if (!k.close || st().weekWarned === wk) return; change(c => { c.weekWarned = wk; });
+    await P.converse(S.weekWarn(k), { shot: ['red', 'mother'] });
+  }
+  const due = () => false;      // (the old three-in-a-week count, kept for what still asks: the week's reckoning is Lay day's now)
   // The maintenance correction itself, when the evening comes to it: and after it, she's set right.
   async function maintenance(P, w_, how) {
     const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.maintenanceCorrection(Sc, how) }], fade: on_ => w.fade(on_) });
@@ -253,7 +278,7 @@ function create(w) {
   }
 
   // (after it: her wilfulness settled, and the count of refusals begun again)
-  const settled = () => { rep.settle('wilful', 1); change(c => { c.refusals = []; }); };
+  const settled = () => { rep.settle('wilful', 1); rep.settle('naughty', 0.4); change(c => { c.refusals = []; }); };
 
   // ── What she can do, where she is: the garden and the errand's place (the village); giving what she's brought home to her mother (home).
   function actions(P, area) {
@@ -481,7 +506,6 @@ function create(w) {
     { const c0 = st(); if (c0.pieIn === cal.day && w.area !== 'home' && P.talk) { change(x => { x.pieIn = -1; }); P.talk.muse('Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }      // (put in as she went out of the door)
     if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : e.fails ? 0 : GRACE)) {      // (a shift has a quarter of an hour's grace; an errand, its half hour, unspoken; the Dunns' pie, none: he's gone out)
       change(cc => { cc.errand.state = e.fails ? 'missed' : 'broken'; }); slid('a promise let slide: ' + e.title.toLowerCase()); if (root.Maren && root.Maren.warned(w, 'errand')) rep.add('wilful', 0.5, 'after Mama’s word at dinner');      // (fails: past its time, it can't be done at all)
-      if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third in a week: her mother will set her right, this evening)
       if (P && P.talk) for (const [face, text] of S.broken(e)) P.talk.muse(text, { face });
       w.refresh();
     }
@@ -530,7 +554,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { weekReckon, weekly, weekWarn, WEEK, savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };
