@@ -606,7 +606,7 @@ const owedRaise = (kind, ago) => kind === 'maintenance' ? enough() : kind === 'w
 // The maintenance correction: her hand only, not long, the shape of her days put back in place. (js/correction.js runs it: as the homecoming's.)
 // ── What her mother holds against her besides (S.held: how naughty, how wilful she's found her lately, short of the week's three that make a
 // maintenance correction): not let go with the rest. Any of it, and it's her drawers down for the last of it, if they aren't already; the more
-// of it, the longer. Brought home by the Watchman (how.willie), the hairbrush besides: a spell of it, not counted. Said before the last word.
+// of it, the longer. Said before the last word, and before any hairbrush: once the brush is out it's the brush to the end.
 const marenReckon = async (S, how) => {
   const M = 'corrector', R = 'subject', held = S.held || 0, brush = !!(how && how.willie && !how.brushed);
   if (held < 1 && !brush) return;
@@ -617,27 +617,38 @@ const marenReckon = async (S, how) => {
     await S.say(R, 'Mama, no— please—');
     await S.say(M, 'Yes. All of it, Little Red, not only tonight’s.', 'stern');
   }
-  S.set({ implement: 'hand', strength: 1.8 + Math.min(held, 8) * 0.03, pace: 1.7 });
   if (held >= 1) {
+    S.set({ strength: 1.8 + Math.min(held, 8) * 0.03, pace: 1.7 });
     const n = 6 + Math.round(Math.min(held, 8) * 2);
     await S.step([M, naughty ? 'You know better. You’ve known better all along, and you’ve done it anyway.' : 'When I tell you a thing, it’s to be done. Not argued, not put off, not forgotten.'], Math.ceil(n / 2));
     await S.step([R, 'I know— ow— I’ll be better, Mama—'], 4);
     await S.step([M, 'You will. This is to help you remember it, the next time.'], Math.floor(n / 2));
   }
-  if (brush) {
-    await S.fetch('hairbrush', {
-      ask: [M, 'Up you get. The hairbrush, from the chest. For Master William’s walk to my door.'],
-      waitFace: 'concerned', presentFace: 'stern',
-      present: [R, '…Here, Mama.'],
-      back: [M, 'Back over my knee, Little Red.', 'stern'],
-    });
+};
+// ── The close of any of her mother's: what she holds against her besides (marenReckon), what else is owed tonight (how.also), all by hand;
+// and then the hairbrush, last of all, never the hand after it: the correction's own (own: { ask, run(S) }), and for being brought home by the
+// Watchman (how.willie) a spell of it besides, not counted, before the correction's own. One fetch for both.
+const marenClose = async (S, how, own) => {
+  const M = 'corrector', R = 'subject';
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
+  if (how && how.also) await how.also(S);      // (anything else owed tonight, by hand, before the brush)
+  const watch = !!(how && how.willie && !how.brushed);
+  if (!own && !watch) return;
+  if (S.lap.st.drawers !== 'down') { await S.gesture('drawers'); await S.wait(0.5); }
+  if (S.lap.st.implement !== 'hairbrush') await S.fetch('hairbrush', {
+    ask: own && own.ask ? own.ask : [M, 'Up you get. The hairbrush, from the chest. For Master William’s walk to my door.'],
+    waitFace: 'concerned', presentFace: 'stern',
+    present: [R, '…Here, Mama.'],
+    back: own && own.back ? own.back : [M, 'Back over my knee, Little Red.', 'stern'],
+  });
+  if (watch) {
     S.set({ strength: 1.85, pace: 1.15 }); await S.wait(0.8);
-    await S.say(M, 'You’ll not count these. Just take them, and think about whose lantern brought you home.', 'stern');
+    await S.say(M, own ? 'These first, and you’ll not count them. For whose lantern brought you home.' : 'You’ll not count these. Just take them, and think about whose lantern brought you home.', 'stern');
     await S.step([R, 'Mama— oh—'], 6);
     await S.step([M, 'Out past the bell, where anything might find you. Home on a Watchman’s arm.'], 6);
     await S.smacks(2);
-    S.set({ implement: 'hand' });
   }
+  if (own) await own.run(S);
 };
 // ── The week, on Lay day mornings (js/chores.js's weekly): k = { items: [{ d, st, n, why }], score, wilful, naughty, corrected }.
 // (what she did, as her mother tells it back: the week's reasons, most weighed first, each once)
@@ -688,7 +699,8 @@ const maintenanceCorrection = async (S, how) => {
   await S.step([R, 'Ow— Mama, I’m sorry—'], 6);
   await S.step([M, 'Sorry’s a start. It’s not the end of it.'], 10);
   await S.smacks(8);
-  // (the hairbrush, fetched: the corrections that didn't hold, and the week as a whole)
+  if (how && how.also) await how.also(S);      // (anything else owed tonight, by hand, before the brush)
+  // (the hairbrush, fetched: the corrections that didn't hold, and the week as a whole; the last of it)
   await S.fetch('hairbrush', {
     ask: [M, 'Up you get, Little Red. My hairbrush, from the chest. You know where it is.'],
     waitFace: 'concerned', presentFace: 'stern',
@@ -701,8 +713,6 @@ const maintenanceCorrection = async (S, how) => {
   await S.step([R, 'I’ll be better— I will—'], 4);
   await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 8);
   await S.smacks(4);
-  S.set({ implement: 'hand' });
-  if (how && how.also) await how.also(S);
   await S.say(M, 'There. That’s done, and you’re set right. A clean week from today. Up you get.', 'calm');
   await S.wait(1.2);
 };
@@ -1044,7 +1054,6 @@ const wantonBrush = async (S, lied) => {
   await S.step([R, 'I’ll put them right. Every one I can. I’ll kneel in the mud with you. Please, Mama. I’m truly sorry. Truly.'], 4);
   S.set({ pace: 0.7 });
   await S.step([M, 'I know you are. I can hear it.', 'concerned'], 3);
-  S.set({ implement: 'hand' });
 };
 // The correction: her hand, for the carelessness; for a lie as well, longer, her drawers down, and the hairbrush to finish.
 const gardenCorrection = async (S, how) => {
@@ -1073,19 +1082,13 @@ const gardenCorrection = async (S, how) => {
     await S.step([M, dg === 'wanton' ? 'One you might not see. Two, three. But you walked on, and on, and you knew.' : 'You weren’t looking where you went. Not once.'], dg === 'wanton' ? 14 : 10);
     await S.step([R, 'I’m sorry— I’m sorry, Mama—'], 6);
     await S.smacks(dg === 'wanton' ? 10 : 6);
-    if (dg === 'wanton') {
-      await S.fetch('hairbrush', { ask: [M, 'Up. The hairbrush, from the chest.'], waitFace: 'concerned', presentFace: 'stern', present: [R, '…Here, Mama.'], back: [M, 'Back over my knee.', 'stern'] });
-      await wantonBrush(S);
-    }
-    await marenReckon(S, how);
-    if (how.also) await how.also(S);
+    await marenClose(S, how, dg === 'wanton' ? { ask: [M, 'Up. The hairbrush, from the chest.'], back: [M, 'Back over my knee.', 'stern'], run: S2 => wantonBrush(S2) } : null);
     await S.say(M, 'There. You owned it, and it’s answered. Up you get.', 'calm');
     await S.wait(1.2); return;
   }
   if (!lied) {
     await S.smacks(8);
-    await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-    if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
+    await marenClose(S, how);
     await S.say(M, 'There. You owned it, and that’s the end of it. Up you get.', 'calm');
     await S.wait(1.2); return;
   }
@@ -1098,21 +1101,14 @@ const gardenCorrection = async (S, how) => {
   await S.step([R, 'I’m sorry! I’m sorry I said it!'], 6);
   await S.step([M, 'Flowers grow back. Trust takes longer.'], 10);
   await S.smacks(8);
-  await S.fetch('hairbrush', {
-    ask: [M, 'Up. The hairbrush, from the chest. You know where it is.'],
-    waitFace: 'concerned', presentFace: 'stern',
-    present: [R, '…Here, Mama.'],
-    back: [M, 'Back over my knee.', 'stern'],
-  });
-  S.set({ strength: 1.8, pace: 1 }); await S.wait(0.8);
-  if (dg === 'wanton') { await wantonBrush(S, true); }
-  else {
-  await S.say(M, 'Six. Count them, and then it’s done with.', 'stern');
-  await S.say(R, '…Yes, Mama.');
-  { const nums = ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six… I’m sorry, Mama…'];
-    for (let k = 0; k < nums.length; k++) await count(nums[k], k === 2 ? 'concerned' : k === nums.length - 1 ? 'calm' : null); } }
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how.also) { S.set({ implement: 'hand' }); await how.also(S); }      // (anything else to be said over her, before the last word)
+  // (and the hairbrush, last: six, counted; or, for the wanton, until she's truly sorry)
+  await marenClose(S, how, { ask: [M, 'Up. The hairbrush, from the chest. You know where it is.'], back: [M, 'Back over my knee.', 'stern'], run: async S2 => {
+    S2.set({ strength: 1.8, pace: 1 }); await S2.wait(0.8);
+    if (dg === 'wanton') { await wantonBrush(S2, true); return; }
+    await S2.say(M, 'Six. Count them, and then it’s done with.', 'stern');
+    await S2.say(R, '…Yes, Mama.');
+    const nums = ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six… I’m sorry, Mama…'];
+    for (let k = 0; k < nums.length; k++) await count(nums[k], k === 2 ? 'concerned' : k === nums.length - 1 ? 'calm' : null); } });
   await S.say(M, 'I know you are. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
 };
@@ -1416,8 +1412,7 @@ const loafCorrection = async (S, how) => {
   await S.step([R, 'It wasn’t— ow— it wasn’t like that—'], 4);
   await S.step([M, 'Bread costs. Somebody baked it, and somebody paid for it, and neither of them was you.'], 10);
   await S.smacks(6);
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
+  await marenClose(S, how);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
 };
@@ -1449,8 +1444,7 @@ const pieMaren = async (S, how) => {
   } else {
     await S.smacks(8);
   }
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
+  await marenClose(S, how);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
 };
@@ -1521,8 +1515,7 @@ const curfewCorrection = async (S, how) => {
   }
   await S.step([M, 'Home by the bell. Every night. That’s the shape of it.'], 8);
   await S.smacks(8);
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how.also) await how.also(S);      // (a "won't" at supper, on top of it)
+  await marenClose(S, how);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
 };
@@ -1982,8 +1975,7 @@ const dressCorrection = async (S, how) => {
   if (how.hid) { await S.step([M, 'And then to stand there and tell me it was fine.'], 10); await S.step([R, 'I’m sorry! I didn’t want you to be sad—'], 4); }
   else await S.step([M, 'The quick way, every time. The quick way’s what spoils things.'], 10);
   await S.smacks(how.spoilt ? 8 : 6);
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how.also) await how.also(S);
+  await marenClose(S, how);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
 };
@@ -2383,8 +2375,7 @@ const promiseCorrection = async (S, how) => {
   S.set({ strength: 1.95, pace: 1.85 });
   await S.step([M, 'When you give your word, you keep it. Even when something better comes along. Especially then.'], 12);
   await S.smacks(8);
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how && how.also) await how.also(S);      // (anything else to be said over her, before the last word)
+  await marenClose(S, how);
   await S.say(M, 'There. It’s done. Tomorrow you go to the Wheatsheaf, and you say sorry to them both.', 'calm');
   await S.wait(1.2);
 };
@@ -2401,8 +2392,7 @@ const woodCorrection = async (S, how) => {
   S.set({ strength: 1.65, pace: 1.6 });
   await S.step([M, 'I stood on that step and watched the edge of the trees, and the light going, and you not coming.'], 10);
   await S.smacks(8);
-  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
-  if (how && how.also) await how.also(S);
+  await marenClose(S, how);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
 };

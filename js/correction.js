@@ -210,7 +210,9 @@ async function run(P, o) {
       // (a stroke, and then the line: a count, or what's said in answer to it, once it's landed)
       after: async (l, n) => { await smacks(n == null ? 1 : n); if (ended()) throw STOP; if (l) await line(l[0], l[1], l[2]); if (ended()) throw STOP; },
       wait: async secs => { await wait(secs); if (ended()) throw STOP; },
-      set: o2 => { if (o2.pace != null && quicken) o2 = Object.assign({}, o2, { pace: o2.pace * (1 + quicken) }); lap.set(lifted && o2.skirt === 'down' ? Object.assign({}, o2, { skirt: 'up' }) : o2); },      // (quicken: the more serious it is, the quicker she goes)
+      set: o2 => { if (o2.pace != null && quicken) o2 = Object.assign({}, o2, { pace: o2.pace * (1 + quicken) });
+        if (o2.implement === 'hand' && lap.st.implement && lap.st.implement !== 'hand') { o2 = Object.assign({}, o2); delete o2.implement; }      // (anyone's: once the implement is out, it's the implement to the end, never the hand again)
+        lap.set(lifted && o2.skirt === 'down' ? Object.assign({}, o2, { skirt: 'up' }) : o2); },      // (quicken: the more serious it is, the quicker she goes)
       // (the giver's hand: lifting the skirt, drawing the drawers down, or soothing: see js/lap.js's gesture)
       face: f => { if (f) talk.face(castKey, f); },      // (the corrector's face, between lines; it stays until another is set)
       gesture: async (kind, o3) => { if (ended()) throw STOP; if (kind === 'skirt' && (lifted || lap.st.skirt === 'up')) { lifted = true; return; } await lap.gesture(kind, o3); if (ended()) throw STOP; },
