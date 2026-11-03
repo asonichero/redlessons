@@ -86,7 +86,7 @@ function attach(P, w) {
   // (to a task's place: walked there, and if the way's not found in a few seconds, or she stops short, put there: never left a step away from it)
   const arrive = async (at, yaw, o) => { const to = at.clone().setY(0); await Promise.race([m.goTo(to, yaw, o), P.wait(7)]);
     if (Math.hypot(m.pos.x - to.x, m.pos.z - to.z) > 2.5) { m.auto = null; const p = P.collide(to, 3.2); m.warp(p, yaw == null ? m.yaw : yaw); P.rig.root.position.copy(p); } };
-  let allDone = false;
+  let allDone = false, waited = false;
   const timed = !!st0.mode, mm = P.npcMotion, rig = P.npc, cur = () => current(w);
   let away = false, due = false, carrying = null, offers = 0, offerDue = false;
   const say = (text, face) => !(away && (sh.out || sh.boss) === sh.boss) && talk && talk.cast[sh.boss] && talk.caption(sh.boss, text, { face: face || 'calm', wait: s => P.wait(s) });      // (the boss gone out: not if it's the boss who's gone)
@@ -131,7 +131,8 @@ function attach(P, w) {
   P.tick(dt => {
     const s = cur(); if (!s || !s.until || s.back) return;
     if (P.busy && !(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, sh.rate || SHIFT_RATE);      // (busy at a task, the day's own clock stands: this one runs on. Otherwise the day's runs, at the shift's rate: see rate)
-    if (w.cal.minute >= s.until || allDone) due = true;      // (her hour come; or all of it done, and Red to wait by the oven for her)
+    if (allDone && !waited && w.cal.minute < s.until && !P.busy) { waited = true; allDone = false; P.act(waitOut); }      // (all of it done before she's back: Red waits, by the oven, or sat with Bess; she's back at her hour, not before)
+    if (w.cal.minute >= s.until) due = true;      // (her hour come)
     if (due && !P.busy) { due = false; allDone = false; P.act(back); }
   });
   P.tick(() => { if (offerDue && !P.busy && !(talk && talk.playing) && cur() && !cur().back) { offerDue = false; P.act(sitWithBess); } });
@@ -204,17 +205,27 @@ function attach(P, w) {
   };
   // The boss back, at her hour (or as soon as it's all done, the time let go by): the list looked over, and what comes of it; then out of
   // the door, and she's outside again.
+  // All done before she's back: the word for it, and Red waits (the clock running on as it does): by the oven where it's warm, at the bakery;
+  // sat with Bess, at the inn, as she says to.
+  async function waitOut() {
+    await P.converse(lines.waiting || [], { shot: false, keepCamera: true });
+    if (ID === 'bakery' && spots.oven && !P.sitting) { const o = spots.oven, d = new V3(o.at.x - o.look.x, 0, o.at.z - o.look.z); if (d.lengthSq() < 1) d.set(0, 0, 1); const at = P.collide(o.at.clone().setY(0).addScaledVector(d.normalize(), 4), 3.2); await arrive(at, Math.atan2(inAt().x - at.x, inAt().z - at.z)); }
+    if (ID === 'inn' && !P.sitting && W.bessChair) { const chair = W.bessChair, seat = W.seats.filter(x => x.name === 'the bench').sort((a, b) => a.at.distanceTo(chair.at) - b.at.distanceTo(chair.at))[0];
+      if (seat) { const to = Math.atan2(chair.at.x - seat.at.x, chair.at.z - seat.at.z), dd = a => Math.abs(Math.atan2(Math.sin(a - to), Math.cos(a - to))); await P.sitOn(dd(seat.facing) <= dd(seat.facing + Math.PI) ? seat : Object.assign({}, seat, { facing: seat.facing + Math.PI })); } }
+  }
   async function back() {
     const s = cur(); if (!s || s.back) return; change(w, x => { x.back = true; });
-    if (w.cal.minute < s.until) { await P.converse(lines.waiting || [], { shot: false, keepCamera: true });
-      if (ID === 'bakery' && spots.oven && !P.sitting) { const o = spots.oven, d = new V3(o.at.x - o.look.x, 0, o.at.z - o.look.z); if (d.lengthSq() < 1) d.set(0, 0, 1); const at = P.collide(o.at.clone().setY(0).addScaledVector(d.normalize(), 4), 3.2); await arrive(at, Math.atan2(inAt().x - at.x, inAt().z - at.z)); await P.wait(1.2); }      // (by the oven where it's warm, facing the door for her)
-      w.cal.advance(s.until - w.cal.minute); }      // (done early: she waits out the time)
     if (carrying) { const it = m.drop(); if (it) P.stage.scene.remove(it.obj); carrying = null; }
     const list = tasksOf(s), n = list.length, k = doneOf(s).length, all = k >= n, left = leftOf(s).map(t => t.what || t.label.toLowerCase()), who = sh.out || sh.boss;
     const up = svc ? svc.up : 0; if (svc) svc.gone();      // (the inn: how many times Bess was on her feet; and the men up to their beds)
+    // (the inn: under a fade, the two of them in the middle of the room, facing, and her word there; not walked down the stair into a corner)
+    if (ID === 'inn' && mm && w.fade) { await w.fade(true); if (P.sitting) await P.getUp(); away = false; if (rig && rig.root) rig.root.visible = true;
+      const c = (spots.floor && spots.floor.at) ? spots.floor.at.clone().setY(0) : new V3(0, 0, 0), red = P.collide(c.clone().add(new V3(0, 0, 6)), 3.2), her = P.collide(c.clone().add(new V3(0, 0, -7)), 3.2);
+      m.auto = null; m.warp(red, Math.atan2(her.x - red.x, her.z - red.z)); P.rig.root.position.copy(red); mm.warp(her, Math.atan2(red.x - her.x, red.z - her.z));
+      for (let i = 0; i < 20; i++) P.frame(1 / 60); await w.fade(false); }
     if (P.sitting) await P.getUp();
     away = false; if (rig && rig.root) rig.root.visible = true;
-    if (mm) { const at = short && spots.stair ? spots.stair.at : inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
+    if (mm && !(ID === 'inn' && w.fade)) { const at = short && spots.stair ? spots.stair.at : inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
     change(w, x => { x.id = null; x.backAt = w.cal.minute; x.lastShift = ID; });      // (when she was back: Mistress Pennock home half an hour after, js/villagers.js)
     if (s.mode === 'picked') {      // (the bakery's head start: more than half of it, her thanks; less, no harm done)
       const good = k * 2 > n;

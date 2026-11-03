@@ -891,7 +891,7 @@ const TOM_CHATS = [
     T('calm', 'Father let me draw a bar out on my own today. Start to end. Didn’t say a word the whole while.'), M(4),
     R('smile', 'Was it any good?'), T('pout', 'He looked at it a long time. Then he put it in the scrap.', 'shy'), M(5),
     { choose: [away('calm', 'No. Go on. It’s only a bar.'),
-      { text: 'Oh, Tom. What did he say?', face: 'shy', then: [M(6), T('calm', '“Again.” That’s all. But he stood by while I did it, and that’s more than he does for the apprentices.', 'calm'),
+      { text: 'Oh, Tom. What did he say?', face: 'shy', then: [M(6), T('calm', '“Again.” That’s all. But he stood by while I did it, and that’s more than he ever did for his other apprentices.', 'calm'),
         R('smile', 'Then he thinks you’re worth the standing by.'), M(4), T('shy', 'Maybe. You’d say that to cheer a dog up, though.', 'smile'), R('cheeky', 'I would not. Dogs don’t need it.'), M(3),
         T('smile', 'Ha. All right. Thanks, Ridley.', 'smile'), { run: ctx.chatted }] }] },
   ],
