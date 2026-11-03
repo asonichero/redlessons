@@ -50,7 +50,7 @@ const SHIFTS = {
 const stateOf = w => w.save.state.work || (w.save.state.work = { day: 0, id: null, step: 0 });
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.work); }, { work: true });
 // (a shift under way today, here)
-const current = (w, area) => { const s = stateOf(w); return s.id && s.day === w.cal.day && (!area || SHIFTS[s.id].area === area) ? s : null; };
+const current = (w, area) => { const s = stateOf(w); return s.id && s.day === w.cal.day && !s.left && (!area || SHIFTS[s.id].area === area) ? s : null; };      // (left: walked out of before she was back; over, for the day)
 function begin(w, id, o) { o = o || {}; change(w, s => { s.day = w.cal.day; s.id = id; s.step = 0; s.done = []; s.basket = null; s.short = !!o.short; s.mode = o.mode || null; s.until = o.until || 0; s.back = false; s.start = w.cal.minute; s.svc = null; }); }
 // (a shift's tasks, as this one is: asked for on the day, by her, the inn's afternoon is without the carrier's men; the bakery's head start,
 // its own short list)
@@ -112,7 +112,7 @@ function attach(P, w) {
     done: () => { markDone('service'); } }) : null;
   if (svc) W.more.push(() => cur() ? svc.actions() : []);
   // (the door shut on her until it's over)
-  const door = (W.exits || []).find(e => e.name === 'the door'); if (door) { const was = door.when; door.when = () => !current(w) && (!was || was()); }
+  const door = (W.exits || []).find(e => e.name === 'the door'); if (door) { const was = door.when; door.when = () => { const s = current(w); return !(s && s.mode !== 'picked') && (!was || was()); }; }      // (a head start picked up: hers to walk out of, and say so outside)
   w.refresh();
   // The start: the list given, and the boss away. (The bakery's head start: her list chalked up, and Mistress Pennock at the counter. The inn's
   // short afternoon: Mistress Abney upstairs, Bess's word for it.)
@@ -252,9 +252,21 @@ function attach(P, w) {
   return { actions };
 }
 
+// Out of the door of a head start before Mistress Pennock's back in (js/world.js: the village, each time she comes into it): her at the counter,
+// and Red's sorry; no trust either way, and the clock stood while they talk. The shift's over for the day, its list gone from her objectives.
+function outside(P, w) {
+  const s = stateOf(w); if (s.id !== 'bakery' || s.mode !== 'picked' || s.day !== w.cal.day || !s.until || s.back || s.left) return;
+  const done = doneOf(s).length; change(w, x => { x.left = true; x.until = null; }); w.refresh();
+  P.act(async () => {
+    const S = root.Story, V = P.villagers, f = V && (V.here('pennock') || (V.summon && V.summon('pennock', 'counter')));
+    await P.wait(0.5); if (f && V.meetAt) await V.meetAt('pennock'); else if (f) { const m = P.motion, at = P.collide(f.motion.pos.clone().setY(0).add(new V3(0, 0, 12)), 3.2); await Promise.race([m.goTo(at, Math.atan2(f.motion.pos.x - at.x, f.motion.pos.z - at.z)), P.wait(4)]); f.motion.face(Math.atan2(m.pos.x - f.motion.pos.x, m.pos.z - f.motion.pos.z)); }
+    await P.converse(S.shiftLeft(done, w.cal.minute), { shot: ['red', 'pennock'] });
+    if (V && V.letGo) V.letGo('pennock'); w.refresh();
+  });
+}
 // (the clock's rate while a shift's under way here, its boss away: js/world.js runs the day at it)
 const rate = w => { const s = current(w, w.area); return s && s.until && !s.back ? SHIFTS[s.id].rate || SHIFT_RATE : null; };
-const api = { begin, attach, current, tasksOf, leftOf, doneOf, stashed, rate, SHIFTS, SHIFT_RATE };
+const api = { outside, begin, attach, current, tasksOf, leftOf, doneOf, stashed, rate, SHIFTS, SHIFT_RATE };
 root.Work = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

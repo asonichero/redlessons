@@ -333,7 +333,7 @@ function create(w) {
   // Asked on the day, by Mistress Pennock (before noon, at her counter: any day Red hasn't been asked for the bakery's afternoon) or Mistress Abney (before one, if
   // Red's nothing else promised). Mistress Pennock's is a head start on the clearing down, there and then, while she sells (js/work.js); by
   // Mistress Abney, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.
-  const OFFER = { pennock: { id: 'bakery', before: H('11:30'), sold: H('12:10') },      /* (the morning's shift picked up: Mistress Pennock back by ten past twelve, time to be home for dinner; offered till half eleven, so forty minutes' work still ends by then) */ abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
+  const OFFER = { pennock: { id: 'bakery', before: H('12:00'), sold: H('12:10') },      /* (the morning's shift picked up: Mistress Pennock back by ten past twelve, time to be home for dinner; from half eleven, Red knows she'd miss it, and may still choose to) */ abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
   function canOffer(who) {
     const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day || cal.lay || (root.Fair && root.Fair.isFair(w))) return false;      // (fair day: no shifts)      // (Lay day: no work offered)
     if (who === 'pennock') return !(e && e.id === 'bakery') && !(root.Work && root.Work.current(w));      // (any day she's not been asked for the afternoon's: and not twice)
@@ -341,7 +341,7 @@ function create(w) {
   }
   async function offer(P, who) {
     const o = OFFER[who]; let yes = false; change(c => { c.offered = Object.assign({}, c.offered, { [who]: cal.day }); });
-    await P.converse(S.shiftOffer(who, { fairWeek: !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), yes: () => { yes = true; } }), { shot: ['red', who] });
+    await P.converse(S.shiftOffer(who, { late: who === 'pennock' && cal.minute >= H('11:30'), fairWeek: !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), yes: () => { yes = true; } }), { shot: ['red', who] });
     if (yes && who === 'pennock' && root.Work) { root.Work.begin(w, 'bakery', { mode: 'picked', until: Math.max(OFFER.pennock.sold, cal.minute + 40) }); w.refresh(); await w.go('bakery', 'door'); return true; }      // (in, and at it: till she's sold out)
     if (yes) change(c => { c.errand = { id: o.id, state: 'accepted', by: o.by || H(E[o.id].by), short: who === 'abney' }; c.last = o.id; });
     w.refresh(); return yes;
