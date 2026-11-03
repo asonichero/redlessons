@@ -1597,7 +1597,7 @@ const dinner = r => {
   if (e && (st === 'done' || st === 'carrying')) told.push('I ' + e.did + '.');
   else if (e && st === 'accepted') told.push('I’ve still to ' + e.todo + (e.mind ? '.' : ', by ' + aloud(r.errand.by) + '.'));
   else if (e && (st === 'broken' || st === 'missed')) told.push('I didn’t get to ' + e.it + ' in time.');
-  if (r.garden === 'done') told.push('And the garden’s done.'); else if (r.garden === 'begun') told.push('I’ve made a start on the garden.'); else if (r.garden === 'untouched') told.push('I haven’t got to the garden yet.');
+  if (r.garden === 'done') told.push('The garden’s done.'); else if (r.garden === 'begun') told.push('I’ve made a start on the garden.'); else if (r.garden === 'untouched') told.push('I haven’t got to the garden yet.');
   if (r.herb) told.push('Grandmother sent me for ' + r.herb.name + '.');
   out.push(R(told.length ? 'calm' : 'shy', told.length ? told.join(' ') : 'Nothing much yet, Mama. It’s been a quiet morning.'));
   // (then hers: her word on each)
@@ -1605,7 +1605,7 @@ const dinner = r => {
   else if (e && st === 'accepted') out.push(M('calm', e.mind ? e.mind : 'By ' + aloud(r.errand.by) + ', then. Not a minute after.'));
   else if (e && (st === 'broken' || st === 'missed')) out.push(M('stern', 'No. It’s too late for it now, isn’t it. We’ll talk about it tonight.', 'shy'));
   if (r.garden === 'untouched') out.push(M('stern', 'Before dark, mind. I’ll look when I’m home.', 'shy'));
-  else if (r.garden === 'begun') out.push(M('calm', 'Then finish it this afternoon.'));
+  else if (r.garden === 'begun') out.push(M('calm', 'Finish the garden this afternoon, then.'));
   if (r.herb) out.push(M('smile', 'Did she, now. She’s teaching you, then.', 'smile'));
   if (!r.trodden && !r.later) out.push(...dinnerEnd(r));      // (her flowers trodden, the loaf: she asks about them first, js/garden.js, js/loaf.js, and then this)
   return out;
@@ -2001,7 +2001,7 @@ const dayEnd = (how, day) => {
   else if (!day.owed) out.push(M('calm', 'Well. Tomorrow’s another day.', 'shy'));
   if (day.gran) out.push(...granAsk(day.gran));      // (a while since she was up at her grandmother's)
   if (day.friends) out.push(...friendsOut());      // (time before the bell, and she's not seen them today)
-  if (day.owed) out.push(M('stern', 'And what’s owed, you and I will see to after supper. Now go and wash your hands for it.', 'shy'), R('shy', 'Yes, Mama.'));      // (and it's closed: a wash, supper, and then it)
+  if (day.owed) out.push(M('stern', 'What’s owed, you and I will see to after supper. Now go and wash your hands for it.', 'shy'), R('shy', 'Yes, Mama.'));      // (and it's closed: a wash, supper, and then it)
   else if (!day.late) out.push(M('calm', 'Supper in a little while. Wash your hands at the basin when you’re ready for it.'));
   else out.push(M('calm', 'Bed soon. It’s been a long day.'));
   return out;

@@ -25,16 +25,16 @@ function topics(P, w, when) {
   // The errand: done, still to do (at dinner), or let slide.
   if (e && (st === 'done' || st === 'carrying') && !e.shift) out.push({ id: 'errand:done', label: 'I ' + e.did + (e.late ? '. Late, but I did it.' : '.'), noticed: true,
     tell: [e.late ? M('calm', 'Late’s better than never. Earlier, next time.') : M('smile', 'Good girl. That’s ' + e.it + ' seen to.', 'smile')],
-    raise: [M('smile', 'And I see ' + e.it + '’s seen to. Good girl.', 'smile')] });
+    raise: [M('smile', 'I see ' + e.it + '’s seen to. Good girl.', 'smile')] });
   else if (e && e.shift && st === 'done') out.push({ id: 'errand:done', label: 'I ' + e.did + '.', noticed: false, tell: [M('smile', 'Good girl. They’ll have been glad of you.', 'smile')] });
   else if (e && st === 'accepted' && !sup) out.push({ id: 'errand:accepted', label: 'I’ve still to ' + e.todo + (e.mind ? '.' : ', by ' + clock(e.by) + '.'), noticed: true,
-    tell: [M('calm', e.mind ? e.mind : 'By ' + clock(e.by) + ', then. Not a minute after.')], raise: [M('calm', 'And you’ve still ' + e.it + ' to see to. ' + (e.mind ? e.mind : 'By ' + clock(e.by) + '.'))] });
+    tell: [M('calm', e.mind ? e.mind : 'By ' + clock(e.by) + ', then. Not a minute after.')], raise: [M('calm', 'You’ve still ' + e.it + ' to see to. ' + (e.mind ? e.mind : 'By ' + clock(e.by) + '.'))] });
   else if (e && (st === 'broken' || st === 'missed')) {
     const dry = e.key === 'well' && ch && ch.gardenDry && ch.gardenDry();
     out.push({ id: 'errand:' + st, label: e.key === 'dunns' && st === 'missed' ? 'The Dunns’ pie. I left it too late.' : 'I never got to ' + e.it + '. I’m sorry, Mama.', noticed: true,
       tell: [dry ? M('stern', 'No. And my flowers stood dry all day for it. One thing let slide runs on into the next. Thank you for saying so.', 'shy') : M('stern', 'No. You were told, and you let it slide. Thank you for saying so, at least.', 'shy')],
       raise: async P_ => { let ans = null;
-        await P_.converse([M('stern', 'And ' + e.it + '?', 'shy'), { choose: [
+        await P_.converse([M('stern', 'What about ' + e.it + '?', 'shy'), { choose: [
           { text: 'I didn’t get to it, Mama. I’m sorry.', face: 'shy', then: [{ run: () => { ans = 'own'; } }, M('stern', 'No. You were told, and you let it slide.', 'shy')] },
           { text: 'I did, Mama.', face: 'shy', then: [{ run: () => { ans = 'lie'; } }, M('stern', 'You did not. Don’t stand there and tell me you did. That’s worse than the forgetting.', 'wince')] } ] }], { shot: ['red', 'mother'] });
         if (ans === 'lie') lied(w, 'lying to Mama about ' + e.it); } });
@@ -45,13 +45,13 @@ function topics(P, w, when) {
     const gp = G.progress(w), done = ch.gardenTended ? ch.gardenTended() : gp.done, dry = ch.gardenDry && ch.gardenDry();
     const trod = G.trodden ? G.trodden(w).length : 0;      // (her flowers trodden down, more than a slip: no praise for the rest of it)
     if (done && trod > 3) out.push({ id: 'garden:done', label: 'The weeding’s done, and the rows watered.', noticed: false, tell: [M('stern', 'The weeding. Yes.', 'shy')] });
-    else if (done) out.push({ id: 'garden:done', label: 'And the garden’s done.', noticed: sup, tell: [M('smile', sup ? 'I saw. The bells look pleased with themselves.' : 'Already? Good girl.', 'smile')], raise: [M('smile', 'I saw the garden’s done. The bells look pleased with themselves.', 'smile')] });
+    else if (done) out.push({ id: 'garden:done', label: 'The garden’s done.', noticed: sup, tell: [M('smile', sup ? 'I saw. The bells look pleased with themselves.' : 'Already? Good girl.', 'smile')], raise: [M('smile', 'I saw the garden’s done. The bells look pleased with themselves.', 'smile')] });
     else if (!sup && gp.begun) out.push({ id: 'garden:begun', label: 'I’ve made a start on the garden.', noticed: false, tell: [M('calm', 'Then finish it this afternoon.')] });
     else if (!sup) out.push({ id: 'garden:untouched', label: 'I haven’t got to the garden yet.', noticed: false, tell: [M('stern', 'Before dark, mind. I’ll look when I’m home.', 'shy')] });
     else if (sup) out.push({ id: 'garden:left', label: dry ? 'The flowers went without, Mama. The butt was dry.' : 'I didn’t get to the garden, Mama.', noticed: true,
       tell: [dry ? M('stern', 'No. For the water you were to bring. That’s the well’s to answer for, not the garden’s.', 'shy') : w.cal.minute >= H('19:00') ? M('stern', 'No. And now it’s too dark to.', 'shy') : M('stern', 'Then before the light goes. I’ll not ask twice.', 'shy')],
       raise: async P_ => { let ans = null;
-        await P_.converse([M('calm', 'And the garden?', 'shy'), { choose: [
+        await P_.converse([M('calm', 'What about the garden?', 'shy'), { choose: [
           { text: dry ? 'All but the flowers. The butt was dry.' : 'I didn’t get to it, Mama.', face: 'shy', then: [{ run: () => { ans = 'own'; } }, dry ? M('stern', 'No. That’s the well’s to answer for.', 'shy') : M('stern', 'No. I could see that from the gate.', 'shy')] },
           { text: 'It’s done, Mama.', face: 'shy', then: [{ run: () => { ans = 'lie'; } }, M('stern', 'Is it. I walked past it on my way in, Little Red. I’ve eyes.', 'wince')] } ] }], { shot: ['red', 'mother'] });
         if (ans === 'lie') lied(w, 'lying to Mama about the garden'); } });
@@ -85,7 +85,7 @@ function topics(P, w, when) {
   // A dare the village is talking of: the bell rung in broad day (heard by dinner, or supper), a knock at the Dunns' (by supper).
   const fl = w.save.state.flags || {}, dare = fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null;
   if (dare) out.push({ id: 'dare', label: dare === 'bell' ? 'I rang the curfew bell, Mama. Tom dared me.' : 'I knocked at the Dunns’ and ran. Tom dared me.', noticed: dare === 'bell' || sup,
-    tell: [M('stern', dare === 'bell' ? 'Half the green came out for that bell.' : 'And woke Master William, after his night on the lanes.', 'wince'), M('calm', 'Tom Ferrier’s idea, I don’t doubt. And your feet that did it. Thank you for telling me straight.', 'shy')],
+    tell: [M('stern', dare === 'bell' ? 'Half the green came out for that bell.' : 'You woke Master William, after his night on the lanes.', 'wince'), M('calm', 'Tom Ferrier’s idea, I don’t doubt. And your feet that did it. Thank you for telling me straight.', 'shy')],
     raise: async P_ => { let ans = null;
       await P_.converse([M('calm', dare === 'bell' ? 'Someone rang the curfew bell in broad day, I hear. Half the green came out.' : 'Somebody woke Master William today. Three knocks, and nobody there.', 'wince'), { choose: [
         { text: 'That was me, Mama. Tom dared me.', face: 'wince', then: [{ run: () => { ans = 'own'; } }, M('calm', 'I thought as much. Thank you for not making me drag it out of you.', 'shy')] },
@@ -98,7 +98,7 @@ function topics(P, w, when) {
   const shop = L && L.shopping ? L.shopping(w) : null;
   if (sup && shop && shop.asked) { const eGood = !e || st === 'done' || st === 'carrying';
     if (shop.done) out.push({ id: 'shop', label: 'There’s a fresh loaf on the board, from Mistress Pennock.', noticed: true,
-      tell: [e && eGood ? M('smile', 'Both, and the bread besides. I’m twice grateful, love.', 'smile') : M('calm', 'Thank you, love. That’s one thing I needn’t think about.')], raise: [M('smile', e && eGood ? 'And a fresh loaf on the board, and the rest done. I’m twice grateful, love.' : 'And there’s bread. Thank you, love.', 'smile')],
+      tell: [e && eGood ? M('smile', 'Both, and the bread besides. I’m twice grateful, love.', 'smile') : M('calm', 'Thank you, love. That’s one thing I needn’t think about.')], raise: [M('smile', e && eGood ? 'A fresh loaf on the board, and the rest done. I’m twice grateful, love.' : 'There’s bread, I see. Thank you, love.', 'smile')],
       after: () => { if (e && eGood) w.rep.trusts('maren', 0.5); } });
     else out.push({ id: 'shop', label: 'I didn’t get to Mistress Pennock’s counter, Mama.', noticed: true, tell: [M('calm', eGood ? 'Never mind. You did what I asked first. Tomorrow, if she’s any left.' : 'Well. Tomorrow, then. Early.')], raise: [M('calm', 'No bread, I see. Never mind. Tomorrow, then.', 'shy')] }); }
   const done = stateOf(w).said;

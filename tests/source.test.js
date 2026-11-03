@@ -22,3 +22,11 @@ test('no code is swallowed by a comment at the end of a line', () => {
   }
   assert.deepEqual(found, [], 'code after a line comment, never run: ' + found.join(', '));
 });
+
+// Her day's telling (js/report.js) comes in whatever order she and her mother take it: no line of it opens on a joining word, as if it
+// followed something else.
+test('report lines stand alone: none opens with And, But, So or Also', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'js', 'report.js'), 'utf8');
+  const bad = src.split('\n').map((l, i) => [i + 1, l]).filter(([, l]) => /'(And|But|So|Also) /.test(l.replace(/\/\/.*$/, '')));
+  assert.deepEqual(bad.map(([n]) => n), []);
+});
