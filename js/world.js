@@ -179,6 +179,8 @@ function create(view, ui) {
       if (sc && sc.establish) await establish(sc.establish, A.name);
       areaName = name; lightFn = null; timeOn = true; sceneNow = sc;
       if (name === 'cabin') save.change(s => { s.green = Object.assign({ day: 0, n: {} }, s.green, { seen: cal.day }); }, { green: true });      // (up at her grandmother's: her mother asks after it, when it's been a while)
+      // (out of her door, anywhere but home, she's in her cloak: Little Red, once Grandmother's given it her; unless the story says otherwise (how.noCloak))
+      if (name !== 'home' && q.done('hulda.cloak') && !(how && how.noCloak) && root.Looks) { const l = root.Looks.load(); if (l.red && l.red.outfit === 'No cloak') { l.red.outfit = 'Hood down'; root.Looks.save(l); } }
       let opts = baseOpts(name, entry);
       if (sc && sc.prepare) opts = sc.prepare(opts, w, step) || opts;
       P = root.Play.create(view, opts);
