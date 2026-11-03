@@ -7,7 +7,7 @@
 //     gives him off. Out, he comes and finds her (on some days, not all): a word, or a dare, while the clock runs; keeping her from her chores if she has any.
 //   • Master Ferrier at his anvil, seven till five. Bess Abney on the bench outside the inn; her mother at the inn's door at the busy times.
 //   • Mistress Pennock at the bakery's counter in the morning, Master Pennock at its door early on. Master William on his rounds at night.
-//   • Peter Fowler, on his days off (about one in four, once she's been to the Fowlers': js/peter.js): about the green, by the lime tree, the pond.
+//   • Peter Fowler, once she's been to the Fowlers' (js/peter.js): his afternoons, from two, and all his day off; about the green, by the lime tree, the pond.
 //
 //   const v = Villagers.attach(P, w)      (P: the village's js/play.js; w: js/world.js's world)
 //   v.actions() → talking to whoever's near · v.station(key, day, minute) → where they'd be (or null: not out) · v.here(key) → their figure

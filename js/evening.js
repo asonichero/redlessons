@@ -38,7 +38,7 @@ const objective = w => watchman(w) ? (stateOf(w).walkingBy === 'georgie' ? 'Home
 
 async function home(P, w, o) {
   o = o || {};
-  const cal = w.cal, S = root.Story, st = stateOf(w), excused = !!(root.AbneyPromise && root.AbneyPromise.excused(w)), late = cal.curfew() && !excused, walked = !!watchman(w);      // (excused: walked home by Mistress Abney, after sitting with Bess)
+  const cal = w.cal, S = root.Story, st = stateOf(w), excused = !!(root.AbneyPromise && root.AbneyPromise.excused(w)), late = cal.curfew() && !excused && !o.athome, walked = !!watchman(w);      // (excused: walked home by Mistress Abney, after sitting with Bess)
   if (!P || !P.npc) return;
   // (fair day: her mother's at her stall till ten; the night's word once they're both in, after it: js/fair.js)
   if (root.Fair && root.Fair.isFair(w)) { if (cal.minute >= root.Fair.ENDS && st.done !== night(cal)) { change(w, s => { s.done = night(cal); }); await fairNight(P, w); } return; }
