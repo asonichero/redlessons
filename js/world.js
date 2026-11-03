@@ -70,7 +70,7 @@ const AREAS = {
   // The inn, inside (js/inn.js): the Wheatsheaf's taproom. Mistress Abney at her counter, Bess in her chair by the fire. (Where the afternoon's
   // work is worked (js/work.js), and the evening sat with Bess (js/promise.js: AbneyPromise).)
   inn: {
-    name: 'The Wheatsheaf', music: 'hearth', set: s => root.Inn.build(s), npc: () => ({ id: 'abney', key: 'abney', name: 'Mistress Abney', at: [18, 2], yaw: 0, voice: 'abney', tint: '#4a4a6a', bg: '#e0e0ea' }),
+    name: 'The Wheatsheaf', music: 'hearth', set: s => root.Inn.build(s), npc: w => root.AbneyPromise && w && root.AbneyPromise.away(w) && !root.AbneyPromise.stateOf(w).kept ? null : ({ id: 'abney', key: 'abney', name: 'Mistress Abney', at: [18, 2], yaw: 0, voice: 'abney', tint: '#4a4a6a', bg: '#e0e0ea' }),
     talk: () => root.Story.abneyIdle(),
     dress(P, w) { seatBess(P); if (root.Work) P.work = root.Work.attach(P, w); if (root.AbneyPromise) P.promise = root.AbneyPromise.inn(P, w); },
     entries: { door: { at: [4, 30], yaw: Math.PI } },
@@ -285,7 +285,7 @@ function create(view, ui) {
   function baseOpts(name, entry) {
     const A = AREAS[name], o = { set: A.set, followCam: A.followCam, camBack: A.camBack, noRun: !!A.noRun, light: cal.light() };      // (noRun: walking only: the wood, on her way home)
     o.onPut = it => { if (chores && P) chores.leftAt(P, it); }; o.onTake = it => { if (chores && P) chores.pickedUp(P, it); }; o.stowable = it => !!(chores && P && chores.stowable(P, it)); o.stow = it => chores.stow(P, it); o.caught = it => (chores && P ? chores.caught(P, it) : false);      // (stow: the pot, the loaf, into her basket)      // (put down out of doors: there still, when she comes back for it)
-    if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc() : A.npc;
+    if (A.npc !== undefined) o.npc = typeof A.npc === 'function' ? A.npc(w) : A.npc;
     if (root.Fair) o.gown = root.Fair.gown(w);      // (fair day: in the dress her mother made, and what's on it)
     // (where she comes in: the saved place, when taking the game up again; the way she came in; or the place's first)
     const saved = entry === 'saved' && save.state.at, list = A.entries === 'set' ? null : A.entries;

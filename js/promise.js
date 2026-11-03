@@ -34,6 +34,8 @@ function lapse(w) {
     w.rep.add('naughty', 2, 'leaving Bess alone, after promising Mistress Abney'); w.rep.trusts('abney', -1);
   }
 }
+// (the evening of it: Mistress Abney off to the market town from half past five till nine, and Bess indoors by her fire)
+const away = w => { const s = stateOf(w), m = w.cal.minute; return s.day === w.cal.day && !s.broken && m >= H('17:30') && m < BACK; };
 // (home after nine, walked there by Mistress Abney: no curfew owed tonight)
 const excused = w => { const s = stateOf(w); return s.kept && s.day === (w.cal.minute < H('12:00') ? w.cal.day - 1 : w.cal.day); };
 
@@ -100,7 +102,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { wants, ask, tempter, tempt, inn, evening, correct, objective, excused, lapse, stateOf, FROM, LATE, BACK };
+const api = { away, wants, ask, tempter, tempt, inn, evening, correct, objective, excused, lapse, stateOf, FROM, LATE, BACK };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.AbneyPromise = api;      // (not "Promise": that name is the language's own)
 })(typeof window !== 'undefined' ? window : globalThis);

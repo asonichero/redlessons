@@ -57,7 +57,7 @@ function station(key, day, min) {
       return min >= H('8:00') && min < H('20:45') ? { wander: true } : null;
     case 'smith': return !lay && min >= H('7:00') && min < H('17:00') ? { stand: 'anvil' } : null;
     case 'bess': return min >= H('9:30') && min < H('18:30') ? { sit: SEAT.inn, n: 0 } : null;
-    case 'abney': return (min >= H('11:00') && min < H('13:30')) || (min >= H('17:00') && min < H('20:00')) ? { stand: 'innDoor' } : null;
+    case 'abney': return (min >= H('11:00') && min < H('13:30')) || (min >= H('17:00') && min < H('20:00')) ? { stand: 'innStep' } : null;      // (beside her door, not in it)
     case 'pennock': return !lay && min >= H('7:00') && min < H('12:30') ? { stand: 'counter' } : null;      // (the counter till the bread's sold; the clearing down inside, of an afternoon)
     case 'baker': return !lay && min >= H('5:30') && min < H('10:30') ? { stand: 'bakeryDoor' } : null;      // (baking from four, at the door with it till mid-morning; then to his bed)
     case 'peter': { if (min < H('10:00') || min >= H('20:30')) return null; if (min >= H('19:00')) return { stand: 'pondSide' };      // (by the pond, of an evening)
@@ -221,6 +221,7 @@ function attach(P, w) {
     for (const key in PEOPLE) {
       let fs = root.FairDay ? root.FairDay.station(w, key, min) : undefined;      // (fair day: at the fair, all of them)
       if (fs === undefined && root.Agnes) fs = root.Agnes.station(w, key, min);
+      if (fs === undefined && (key === 'abney' || key === 'bess') && root.AbneyPromise && root.AbneyPromise.away(w)) fs = null;      // (the promised evening: Mistress Abney at market, Bess inside by the fire)
       if (fs === undefined && key === 'pennock') fs = pennockAfter(min);      // (after the counter: in the bakery, then home)      // (after the fair: Agnes up by the pinfold; the afternoon in the wood, the two of them gone)
       const want = (vs().away && vs().away[key] === day) || (key === 'peter' && fs === undefined && !(root.Peter && root.Peter.inVillage(w))) ? null : fs !== undefined ? fs : station(key, day, min), f = figs[key];      // (away: kept in for the rest of the day, by a scene)
       if (f && f.scene) continue;      // (a scene has them)

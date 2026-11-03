@@ -637,7 +637,8 @@ function build(scene, opts) {
     pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },
     // (where the village's people are found: js/villagers.js)
     anvil: before(forge, 'front', 8, 17), tub: before(forge, 'front', -30, 16), bakeryDoor: before(bakery, 'front', 14, 4), counter: before(bakery, 'front', -24, 10),
-    pieSill: before(bakery, 'front', -15, 10), innDoor: before(inn, 'front', -6, 4), pennocksDoor: before(ne, 'front', -10, 6), ferriersDoor: before(millLane, 'front', 10, 6), thatchers: before(thatchers, 'front', 20, 8), dunnsDoor: before(dunns, 'front', -16, 6),
+    pieSill: before(bakery, 'front', -15, 10), innDoor: before(inn, 'front', -6, 4), innStep: before(inn, 'front', -20, 7),      // (innStep: beside the door, not in it: Mistress Abney's place of an evening, so the way in's clear)
+    pennocksDoor: before(ne, 'front', -10, 6), ferriersDoor: before(millLane, 'front', 10, 6), thatchers: before(thatchers, 'front', 20, 8), dunnsDoor: before(dunns, 'front', -16, 6),
     wellSide: { at: wellAt.clone().add(V(FX * 10, -8)), yaw: Math.atan2(-FX * 10, 8), look: wellAt.clone().setY(8) },
     pondSide: { at: POND.clone().add(V(0, 26)), yaw: Math.PI, look: POND.clone().setY(2) },
     wellNear: { at: wellAt.clone().add(V(-FX * 16, 14)), yaw: Math.atan2(FX * 16, -14), look: wellAt.clone().setY(8) },      // (near enough to the well to be seen there, and to see who's at it)
