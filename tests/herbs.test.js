@@ -22,3 +22,12 @@ test('asked, gathered, brought: three over three days, and the step done', () =>
   }
   assert.deepEqual(w.done, ['hulda.errands']); assert.equal(Herbs.stateOf(w).n, 3);
 });
+
+test('a social call, once the three herbs are learnt: help or visit; not again the same day, nor while she’s off for one', () => {
+  const w = world(9); w.complete('hulda.errands');
+  w.save.change(s => { s.herbs = { n: 3, asked: null, have: false, day: 0 }; });
+  assert.ok(Herbs.callDue(w));
+  w.save.change(s => { s.herbs.asked = 'yarrow'; }); assert.ok(!Herbs.callDue(w), 'off for a herb, or back with it');
+  w.save.change(s => { s.herbs.asked = null; s.herbs.called = w.cal.day; }); assert.ok(!Herbs.callDue(w), 'once a day');
+  const S = globalThis.Story; assert.ok(S.granTea(Herbs.news(w), false).length > 2);
+});

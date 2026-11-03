@@ -215,6 +215,7 @@ function create(view, ui) {
       refresh();
       if (sc && sc.run) sc.run(P, w, step);
       else if (name === 'home' && entry === 'door' && how && how.walked) homeAgain();
+      else if (name === 'cabin' && how && how.walked && root.Herbs && root.Herbs.callDue && root.Herbs.callDue(w)) { const P_ = P; P_.act(() => root.Herbs.call(P_, w)); }      // (in at her grandmother's door: her greeting, and help or visit)
       // (under the fade, the scene's own first shot settles before it opens: its conversation under way, the camera on them)
       if (sc && sc.establish) { const t0 = performance.now(); while (performance.now() - t0 < 4000 && !(P.talk && P.talk.playing)) await new Promise(r => setTimeout(r, 50)); await new Promise(r => setTimeout(r, 150)); }
       await fade(false);

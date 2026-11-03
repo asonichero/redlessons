@@ -73,7 +73,34 @@ function objective(w) {
   return s.day !== w.cal.day && w.cal.minute < 18 * 60 ? 'Visit Grandmother, when there’s time.' : null;      // (every day, while there's a herb for her to ask)
 }
 
-const api = { talk, wood, objective, stateOf, next, told, HERBS };
+// ── A social call (once the first three herbs are learnt): as she comes in, her grandmother's greeting (how long it's been; whether she
+// knows what Red and her mother have), and is she here to help, or to visit? Help: a herb, as ever. Visit: tea, and the village's news,
+// half an hour. Not again the same day, and not when she's back with a herb.
+const callDue = w => { const s = stateOf(w); return on(w) && s.n >= HERBS.length && s.called !== w.cal.day && !s.asked; };
+// (what's new to tell her, as Red would: tempered by whether she knows)
+function news(w) {
+  const d = w.cal.day, fl = w.save.state.flags || {}, out = [], knows = stateOf(w).lighter === 'told', F = root.Fair, ph = F && F.phase ? F.phase(w) : null;
+  if (ph === 'last' || ph === 'week') out.push('fair');
+  else if (ph === 'after' || (F && F.stateOf && F.stateOf(w).day && d > F.stateOf(w).day && d - F.stateOf(w).day < 7)) out.push('fairDone');
+  if (root.Agnes && root.Agnes.stateOf && root.Agnes.stateOf(w).settled === 'yes') out.push(knows ? 'agnesKnows' : 'agnes');
+  if (fl['met-peter'] != null && d - fl['met-peter'] <= 3) out.push('peter');
+  { const c = ((w.save.state.evening || {}).corrected || []).filter(x => d - x.day <= 3); if (knows && c.length) out.push('corrected:' + c[c.length - 1].by); }
+  if (fl['rang-bell'] != null && d - fl['rang-bell'] <= 3) out.push('bell');
+  out.push('bess');
+  return out.slice(0, 3);
+}
+async function call(P, w) {
+  const S = root.Story, s = stateOf(w), d = w.cal.day, since = s.lastVisit ? d - s.lastVisit : 0, knows = s.lighter === 'told', shot = { shot: ['red', 'gran'] };
+  change(w, x => { x.called = d; x.lastVisit = d; });
+  await P.wait(0.5); if (P.approach) await P.approach();
+  let pick = null;
+  await P.converse(S.granCall(since, knows, { help: () => { pick = 'help'; }, visit: () => { pick = 'visit'; } }), shot);
+  if (pick === 'help') { await P.converse(talk(w), shot); return; }
+  await P.converse(S.granTea(news(w), knows), shot);
+  w.cal.advance(30); if (w.capacity) w.capacity.add(10, 'tea with her grandmother'); w.rep.trusts('hulda', 0.25); if (w.refresh) w.refresh();
+}
+
+const api = { callDue, call, news, talk, wood, objective, stateOf, next, told, HERBS };
 root.Herbs = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
