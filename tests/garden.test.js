@@ -60,3 +60,12 @@ test('what she\'s asked, and the lines for each outcome, name the rows trodden',
   assert.match(S.gardenBoots(['the pretty maids'])[1].text, /my pretty maids/);
   assert.match(S.gardenReport({ who: 'tom', rows: ['the silver bells'] })[0].text, /Tom Ferrier/);
 });
+
+test('trodden flowers seen at dinner: asked about there, before her mother goes back out', () => {
+  const S = globalThis.Story;
+  const d = S.dinner({ garden: null, errand: null, trodden: true, herb: null, needle: null });
+  assert.ok(!d.some(l => /Supper at six|needlework this afternoon/.test(l.text || '')), 'the end of dinner waits for the asking');
+  assert.ok(S.dinner({ garden: null, errand: null, trodden: false, herb: null, needle: null }).some(l => /Supper at six/.test(l.text || '')));
+  const ask = S.gardenAsk(['the silver bells'], 1, { dinner: true, own() {}, lie() {} });
+  assert.match(ask[0].text, /came in past my flowers/); assert.ok(ask.some(l => l.choose));
+});

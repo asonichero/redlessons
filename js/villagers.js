@@ -289,16 +289,17 @@ function attach(P, w) {
     const pie = root.Pie && root.Pie.ready(w);      // (he's had an idea: he'll come looking for her, whatever the day)
     if ((!tomComes(cal.day) && !pie) || cal.minute < H('9:00') || cal.curfew()) return;      // (whether or not she's anything to do: busy, he keeps her from it; free, he fills her afternoon)
     const red = P.motion, d = flat(f.motion.pos).distanceTo(flat(red.pos));
-    if (P.busy || P.sitting) { f.chasing = false; return; }
+    if (P.busy) { f.chasing = false; return; }      // (sat down, he comes to her where she sits)
     if (!f.chasing) { if (d > 260) return; f.chasing = true; f.since = clock; f.re = 0; }
     if (clock - f.since > 40) { f.chasing = false; change(s => { if (s.tom.day !== cal.day) s.tom = { day: cal.day, done: false, tries: 0 }; s.tom.tries = (s.tom.tries || 0) + 1; }); return; }      // (she's kept away from him: another time)
     if (d < 18) { f.chasing = false; f.path = null; f.motion.auto = null; P.act(() => tomStops(f)); return; }
     if ((f.re -= dt) <= 0) { f.re = 1.5; walk(f, red.pos, null); }
   }
   async function tomStops(f) {
+    const near = () => P.sitting ? f.motion.face(yawTo(f.motion.pos, P.motion.pos)) : meet(f, 13);      // (sat, she stays sat: he stands over her)
     hold(f); change(s => { s.tom = { day: cal.day, done: true, tries: 0 }; });
     // (his idea about the pies, when he has it: js/pie.js plays it out)
-    if (root.Pie && root.Pie.ready(w)) { try { await meet(f, 13); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
+    if (root.Pie && root.Pie.ready(w)) { try { if (P.sitting) await P.getUp(); await near(); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
     const v = vs(), dare = hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0;
     const ctx = {
@@ -308,7 +309,7 @@ function attach(P, w) {
       chatted: () => rep.trusts('tom', 0.5),
     };
     try {
-      await meet(f, 13);
+      await near();
       await P.converse(S.tomStops(ctx), { shot: ['red', 'tom'] });
       change(s => { s.met.tom = true; s.talked.tom = cal.day; });
       if (w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');

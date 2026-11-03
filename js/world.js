@@ -317,6 +317,7 @@ function create(view, ui) {
     const idle = !P.busy && !(P.talk && P.talk.playing) && !document.body.classList.contains('correcting');
     if (timeOn && idle) { const d0 = cal.day, m0 = cal.minute; cal.tick(dt, (root.Work && root.Work.rate(w)) || (root.Fair && root.Fair.isFair(w) ? 1 : RATE)); if (cal.minute !== m0 || cal.day !== d0) refreshClock();      // (a shift's own pace, while one's under way)
       if (capacity && chores && chores.on()) capacity.tick(P, dt, (cal.day - d0) * 1440 + cal.minute - m0); }      // (worn, or rested, by the minutes gone by)
+    else if (P.sitting && capacity && chores && chores.on() && !document.body.classList.contains('correcting')) capacity.tick(P, dt, dt * RATE);      // (sat down, talking or not, she's resting from the moment she sits)
     if (capacity && chores && chores.on()) { P.tiredness = capacity.worn ? 2 : capacity.low ? 1 : 0; if (ui.capacity) ui.capacity(capacity.value); } else if (ui.capacity) ui.capacity(null);
     if (chores && idle) chores.tick(P);      // (a promise let slide; the garden left)
     if (areaName === 'home' && root.Maren && P.npcGo) marenDay(idle);

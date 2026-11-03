@@ -90,7 +90,7 @@ async function dinner(P, w, how) {
   const given = w.chores && w.chores.handIn ? w.chores.handIn(P) : null;      // (what she's brought home: handed over in the talk)
   const r = { given, garden: gp ? (gp.done ? 'done' : gp.begun ? 'begun' : 'untouched') : null, errand: e && !given ? { id: c.errand.id, state: c.errand.state, by: root.Calendar.clockOf(H(e.by)) } : null, trodden, herb, needle: needlework(d) };
   await P.converse(S.dinner(r), { shot: ['red', 'mother'] });
-  if (trodden && G.stateOf) w.save.change(s => { s.garden.mended = d; }, { garden: true });      // (spoken of: she'll have set them straight by supper)
+  if (trodden && G.reckon) { await G.reckon(P, w, { dinner: true }); w.save.change(s => { s.garden.mended = d; }, { garden: true }); await P.converse(S.dinnerEnd(r), { shot: ['red', 'mother'] }); }      // (seen on her way in: asked about there and then, owned or lied about; and set straight by supper)
   change(w, s => { s.warned = { day: d, garden: r.garden === 'untouched' || r.garden === 'begun', errand: !!(r.errand && r.errand.state === 'accepted') }; });
   if (w.capacity) w.capacity.add(35, 'dinner');
   // (and up from the table, under a fade, the plates cleared)

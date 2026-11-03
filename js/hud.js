@@ -85,7 +85,9 @@ const CSS = `
 @media (max-width: 640px) { #hClock { font-size: 11.5px; padding: 4px 8px; } #hObj { top: 52px; max-width: calc(100vw - 80px); } }
 /* (what's hers to do, top left under the clock; the diary button by the clock opens the whole of it) */
 #hTop { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: min(360px, calc(100vw - 150px)); }
-#hTop #hClock { position: static; } #hTopRow { display: flex; gap: 6px; align-items: stretch; }
+#hTop #hClock { position: static; min-width: 9.5em; } #hTopRow { display: flex; gap: 6px; align-items: stretch; }
+/* (the diary, and her basket under it while she has it) */
+#hBtns { display: flex; flex-direction: column; gap: 6px; } #hBtns > button { min-height: 36px; flex: 1 1 auto; } #hClock b { display: block; font-weight: normal; }
 #hDiary { pointer-events: auto; width: 40px; border-radius: 8px; border: 1px solid #4a3a3c; background: rgba(16,10,12,0.62); color: #f3ead8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
 #hDiary svg { width: 22px; height: 22px; fill: none; stroke: #f3e4b0; stroke-width: 1.6; } #hDiary:hover { background: rgba(60,40,44,0.8); }
 #hQuests { display: none; font: italic 14px/1.35 Georgia, serif; color: #f6efe2; background: rgba(16,10,12,0.55); border: 1px solid #4a3a3c; border-radius: 8px; padding: 6px 11px; }
@@ -148,7 +150,7 @@ function create(opts) {
   const P = () => (opts.get ? opts.get() : null);
   if (!document.getElementById('hud-css')) { const st = document.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; document.head.appendChild(st); }
   const el = document.createElement('div'); el.id = 'hud';
-  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hCap" title="How she’s holding up" aria-label="How she’s holding up"><i></i></button><div id="hCapSay"></div><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
+  el.innerHTML = '<div id="hTop"><div id="hTopRow"><div id="hClock"></div><div id="hBtns"><button id="hDiary" title="Her diary (J)" aria-label="Diary">' + svg('diary') + '</button><button id="hBasket" title="Your basket (B)" aria-label="Your basket">' + svg('basket') + '</button></div><button id="hCap" title="How she’s holding up" aria-label="How she’s holding up"><i></i></button><div id="hCapSay"></div></div><div id="hQuests"></div></div><div id="hObj"></div><div id="hPrompt"></div><div id="hStick"><div id="hKnob"></div></div>' +
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
@@ -360,7 +362,7 @@ function create(opts) {
     capacity(v) { const c = $('hCap'); c.classList.toggle('on', v != null); if (v == null) return; const k = Math.round(v); if (c._v === k) return; c._v = k;
       c.firstChild.style.height = 'calc(' + k + '% - 4px)'; c.classList.toggle('low', v < 35 && v >= 18); c.classList.toggle('worn', v < 18); c.title = v < 18 ? 'Worn through' : v < 35 ? 'Flagging' : v < 70 ? 'Holding up' : 'Fresh'; },
     basket(list) { basketList = list; $('hBasket').classList.toggle('on', !!list); if (!list && basketEl.classList.contains('on')) basketCard(false); else if (basketEl.classList.contains('on')) drawBasket(); },      // (her basket, while she's carrying it: what's in it)
-    clock(t, phase) { const c = $('hClock'); c.innerHTML = t ? t + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },
+    clock(t, phase) { const c = $('hClock'), k = t ? t.lastIndexOf(' · ') : -1; c.innerHTML = t ? (k > 0 ? t.slice(0, k) + '<b>' + t.slice(k + 3) + '</b>' : t) + (phase ? '<i>' + phase.name + '</i>' : '') : ''; c.classList.toggle('on', !!t); },      // (the day on one line, the time on the next: it changes, and shouldn't push the rest about)
     show(on) { el.classList.toggle('hide', !on); if (!on) pause(false); },
   };
 }

@@ -361,12 +361,18 @@ async function evening(P, w, force) {
     await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'witness', who: report.who, rows: report.rows });      // (seen to at the evening's end: js/evening.js)
     return true;
   }
+  return reckon(P, w);
+}
+// Her flowers trodden: her mother asks, and Red owns up or lies. Of an evening, after she's been round the garden; or at dinner, if she's seen
+// them on her way in (opts.dinner: those she saw, and no more; the evening's look still to come, for any trodden after)
+async function reckon(P, w, opts) {
+  const g = stateOf(w), cal = w.cal, S = root.Story, dinner = !!(opts && opts.dinner);
   const ids = Object.keys(g.trampled).filter(id => g.trampled[id] > (g.checked || 0)), today = ids.some(id => g.trampled[id] === cal.day);
   const rows = FLOWERS.filter(r => ids.some(id => id.startsWith(r.id + ':'))).map(r => r.name);
-  const restore = () => change(w, s => { for (const id of ids) delete s.trampled[id]; s.checked = cal.day; });
-  if (!ids.length) { restore(); await P.converse(S.gardenFine(progress(w).done), { shot: ['red', 'mother'] }); return false; }
+  const restore = () => change(w, s => { for (const id of ids) delete s.trampled[id]; if (!dinner) s.checked = cal.day; });
+  if (!ids.length) { if (dinner) return false; restore(); await P.converse(S.gardenFine(progress(w).done), { shot: ['red', 'mother'] }); return false; }
   let answer = null;
-  await P.converse(S.gardenAsk(rows, ids.length, { own: () => { answer = 'own'; }, lie: () => { answer = 'lie'; } }), { shot: ['red', 'mother'] });
+  await P.converse(S.gardenAsk(rows, ids.length, { dinner, own: () => { answer = 'own'; }, lie: () => { answer = 'lie'; } }), { shot: ['red', 'mother'] });
   const petals = g.petals.some(q => q.until > cal.minute);
   if (answer === 'own') { restore(); w.rep.add('naughty', 0.5, 'trampling her mother’s flowers'); await root.Evening.owe(P, w, 'garden', { lied: false, rows }); return true; }
   if (today && petals) { restore(); w.rep.add('naughty', 1.5, 'trampling her mother’s flowers, and lying about it'); await P.converse(S.gardenBoots(rows), { shot: ['red', 'mother'] }); await root.Evening.owe(P, w, 'garden', { lied: true, caught: 'boots', rows }); return true; }
@@ -391,7 +397,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { build, attach, boots, progress, progressText, evening, correct, plan, offToday, lookDue, ROWS, PATHS, RX0, RX1, inside, stateOf, hash };
+const api = { build, attach, boots, progress, progressText, evening, reckon, correct, plan, offToday, lookDue, ROWS, PATHS, RX0, RX1, inside, stateOf, hash };
 root.Garden = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
