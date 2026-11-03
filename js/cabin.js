@@ -57,7 +57,7 @@ function build(scene, opts) {
   const tx = tex(), root_ = new THREE.Group(); root_.userData.cabin = true; scene.add(root_);
   const logM = toonMap(tx.log), endM = toonMap(tx.ends), barkM = toonMap(tx.bark), clay = T.mat('#d8c8a6'), oakDk = T.mat('#4e3420'), stone = toonMap(tx.stone), iron = T.mat('#2e2a28');
   const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: [], door: null, chest: null, exits: [],
-    corr: { key: 'cabin', giver: { x: 0, z: 0, yaw: 0 } } };      // (a correction: a chair in the middle of the room (js/corrlayout.js))
+    corr: { key: 'cabin', giver: { x: -12, z: 0, yaw: 0 }, seat: 'cabin', watchers: [{ x: -22.5, z: 28 }, { x: 31.5, z: 24 }], corner: { x: 14, z: -22.5, yaw: 2.356 } } };      // (a correction: her chair from the table, brought into the middle of the room (js/corrlayout.js))
   const panels = [];      // { g, test(cam) → visible }
   const panel = (p, n) => { const g = new THREE.Group(); root_.add(g); n = n.clone().normalize(); panels.push({ g, test: c => opts.outside || c.clone().sub(p).dot(n) > 2 }); return g; };
 
@@ -221,13 +221,16 @@ function build(scene, opts) {
     world.surfaces.push(Object.assign(pc.area(-5, 5, -5, 5), { name: 'the table', y: H, panel: pc.g.parent, front: new V3(0, 0, 1) }));
     world.obstacles.push({ x: g.position.x, z: g.position.z, r: 9 });
   }
-  // (her stool and the old woman's chair: each faces the way it's turned; the chair has a back)
+  // (her stool and the old woman's chair: each faces the way it's turned; the chair has a back, and is what she sits in for a correction, brought
+  // out into the middle of the room)
   for (const [id, nm] of [['stool', 'the stool'], ['chair', 'the chair']]) {
     const pc = piece(id, wall), s = pc.g;
+    if (id === 'chair') {      // (her chair: the same as is brought into the middle of the room for a correction (js/toon.js's makeChair, 'cabin'), its seat at the table's height)
+      const ch = T.makeChair(9, 'cabin'); ch.position.z = -1.8; s.add(ch); world.corr.hide = [s];
+      world.seats.push({ name: nm, at: pc.P(0, 9, 0), facing: pc.ry, kind: 'stool', rung: 3.4, rungR: 3.6 }); world.obstacles.push({ x: s.position.x, z: s.position.z, r: 4.6 }); continue; }
     solid(s, new THREE.CylinderGeometry(3.4, 3.4, 1.2, 16), oakDk, 0, 8.4, 0, { ink: 0.08 });
     for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2 + 0.3; pole(s, new V3(Math.cos(a) * 2, 8, Math.sin(a) * 2), new V3(Math.cos(a) * 3.1, 0, Math.sin(a) * 3.1), 0.45, oakDk); }
     solid(s, new THREE.TorusGeometry(2.7, 0.28, 6, 20), oakDk, 0, 3.4, 0, { rot: [Math.PI / 2, 0, 0], ink: 0.05 });
-    if (id === 'chair') { for (const sx of [-1, 1]) pole(s, new V3(sx * 2.4, 8.6, -2.2), new V3(sx * 2.6, 19, -3.2), 0.4, oakDk); box(s, 5.6, 4, 0.7, 0, 16.5, -3, oakDk); }
     world.seats.push({ name: nm, at: pc.P(0, 9, 0), facing: pc.ry, kind: 'stool', rung: 3.4, rungR: 2.7 }); world.obstacles.push({ x: s.position.x, z: s.position.z, r: 3.6 });
   }
 

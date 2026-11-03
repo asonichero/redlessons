@@ -1403,6 +1403,16 @@ function makeChair(seatY, kind) {
   const boxes = [];
   if (kind === 'log') { const r = seatY / 2, m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.08, 18, 14).rotateZ(Math.PI / 2), mat('#6e5236')); m.position.set(0, r, 0.6); m.castShadow = m.receiveShadow = true;      // (a fallen trunk, across: in the wood)
     m.add(new THREE.Mesh(hullGeo(m.geometry, 0.08), INKM[0])); g.add(m); boxes.push({ c: new V3(0, seatY / 2, 0.6), h: new V3(9, seatY / 2, r) }); }
+  else if (kind === 'cabin') {      // (her grandmother's chair, as all her furniture: dark oak, a round seat on three splayed legs ringed by a rung, a back of two posts and a rail)
+    const oak = mat('#4e3420'), part = (geo, x, y, z, ink) => { const m = new THREE.Mesh(geo, oak); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; m.add(new THREE.Mesh(hullGeo(geo, ink), INKM[0])); g.add(m); return m; };
+    const leg = (a, b, r) => { const d = b.clone().sub(a), m = part(new THREE.CylinderGeometry(r, r, d.length(), 8), 0, 0, 0, 0.05); m.position.copy(a).lerp(b, 0.5); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.normalize()); };
+    const R = 4.6, cz = 1.8;
+    part(new THREE.CylinderGeometry(R, R, 1.2, 20), 0, seatY - 0.6, cz, 0.08); boxes.push({ c: new V3(0, seatY - 0.6, cz), h: new V3(R, 0.6, R) });
+    for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2 + Math.PI / 2; leg(new V3(Math.cos(a) * 2.7, seatY - 1.2, cz + Math.sin(a) * 2.7), new V3(Math.cos(a) * 4.2, 0, cz + Math.sin(a) * 4.2), 0.5); }
+    part(new THREE.TorusGeometry(3.6, 0.3, 6, 20).rotateX(Math.PI / 2), 0, seatY * 0.38, cz, 0.05);
+    for (const sx of [-1, 1]) leg(new V3(sx * 3.1, seatY - 0.4, cz - 3.2), new V3(sx * 3.4, seatY + 10.5, cz - 4.6), 0.45);
+    part(new THREE.BoxGeometry(7.2, 4.2, 0.7), 0, seatY + 8, cz - 4.3, 0.06); boxes.push({ c: new V3(0, seatY + 5, cz - 4), h: new V3(3.6, 5.5, 0.6) });
+  }
   else if (kind === 'bench') { box(16, 0.9, 5.4, 0, seatY - 0.45, 0.6, wood); for (const x of [-6.5, 6.5]) box(1.2, seatY - 0.9, 4.2, x, (seatY - 0.9) / 2, 0.6, dark); }
   else {
     box(9.4, 0.9, 9.2, 0, seatY - 0.45, 1.8, wood);
