@@ -1,18 +1,19 @@
 // Little Red’s Lessons — the pie (phase 1.2: the tom.pie and pennock.pie steps). Once Mistress Pennock and Tom both trust her enough (and after
-// a dare or two), Tom finds her one afternoon with an idea: Mistress Pennock's pies, cooling on the bakery's board. She takes one; Mistress
-// Pennock is out of her door before she's turned round; and she marches the pair of them to the forge, where Master Ferrier, busy at his
-// anvil, leaves Tom to her. Then it's Red's: sent home to her mother (Mistress Pennock will be speaking to her), or she can tell Mistress
-// Pennock what being Little Red means, and ask to have the same as Tom, there and then.
+// a dare or two), Tom finds her one afternoon with an idea: Mistress Pennock's pies, cooling on the bakery's board. Taken, the pie's hers to
+// take off the board (Pie.actions), Tom watching from the corner; Mistress Pennock is out of her door before she's turned round; and the pair
+// of them are before Master Ferrier at his forge, who leaves Tom to her. Then it's Red's: sent home to her mother (Mistress Pennock will be
+// speaking to her), or, a word aside with Mistress Pennock, she tells her what being Little Red means, and asks to have the same as Tom.
 //
 //   • Sent home, she obeys: at home she can tell her mother, or keep it back. Kept back, her mother hears of it from Mistress Pennock the next
 //     day, and that evening she's corrected for the pie and for keeping it from her. Told, she's corrected for the pie, and that's the end of it.
-//   • Then, some days on, Tom has the same idea again ("it went fine, last time"), and she's caught again, and the choice comes round again.
+//   • It comes once: whichever she chose, Tom doesn't try it again (and the first dare after it, she thinks twice: js/story.js's tomStops).
 //   • She tells Mistress Pennock: the two of them in the bakery, Tom across her knee first, then Red, with the other watching (Tom in the
 //     corner after his). Mistress Pennock tells her mother herself, after; her mother has a word, but no more (js/evening.js's reprieve).
 //
-//   Pie.ready(w) → 'first' | 'again' | null · Pie.dare(P, w, tomFigure) (the scene, from js/villagers.js's Tom) · Pie.evening(P, w, force) (at
+//   Pie.ready(w) → 'first' | null · Pie.dare(P, w, tomFigure) (from js/villagers.js's Tom) · Pie.actions(P, w) · Pie.evening(P, w, force) (at
 //   home; → whether a correction was given) · Pie.objective(w)
-// Kept in the save (state.pie): { tries, last (the day of the last one), pending: { day, told: null | false } (sent home) }.
+// Kept in the save (state.pie): { tries, last (the day of the last one), pending: { day, told: null | false } (sent home), taking: { day,
+// until, kind } (the dare taken, the pie not yet) }.
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
