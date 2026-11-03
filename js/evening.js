@@ -114,6 +114,7 @@ async function settle(P, w, table) {
   await stood(P, w, table);
   const now = S.owedNow(o.kind, how); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
   lapAfter(r_ => AFTER[o.kind](how, r_));      // (the aftercare on her lap, still in the chair: held, or sat up)
+  if (root.Correction) root.Correction.how = how;      // (what it's for: her pace by it, js/correction.js)
   const r = await CORRECT[o.kind](P, w, how); if (root.Correction) root.Correction.next = null;
   if (w.capacity) w.capacity.add(15, 'set right');      // (held to account: and lighter for it)
   if (P !== w.P) return;
@@ -126,6 +127,7 @@ async function seeTo(P, w, kind, how) {
   if (!CORRECT[kind]) return null;
   await stood(P, w, null);
   lapAfter(r_ => AFTER[kind](how, r_));
+  if (root.Correction) root.Correction.how = how;
   const r = await CORRECT[kind](P, w, how); if (root.Correction) root.Correction.next = null;
   if (w.capacity) w.capacity.add(15, 'set right');
   if (P !== w.P) return r;
@@ -290,6 +292,7 @@ async function lateHome(P, w, walked) {
   await P.converse(S.owedNow('curfew', how).slice(2), { shot: ['red', 'mother'] });
   lapAfter(() => S.curfewAfter(how));
   foldIn(w, how, { kind: 'curfew' });      // (anything else owed today, seen to in the same: nothing slept on)
+  if (root.Correction) root.Correction.how = how;
   const r = await curfewCorrect(P, w, how); if (root.Correction) root.Correction.next = null;
   if (w.capacity) w.capacity.add(15, 'set right');
   if (P !== w.P) return;

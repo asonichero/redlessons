@@ -198,6 +198,11 @@ async function run(P, o) {
     // (held: what the corrector holds against her besides, how naughty and wilful she's been found lately: her mother's, from the village's
     // reckoning of her (js/reputation.js); js/story.js's marenReckon answers it, before the end)
     const held = o.held != null ? o.held : (() => { const W_ = root.__world; return c.id === 'maren' && W_ && W_.rep ? W_.rep.stat('naughty') + W_.rep.stat('wilful') : 0; })();
+    // (her mother's pace, quickened by how serious it is: what it's for (a lie, the garden trodden wantonly, the Watchman's walk, something kept
+    // back, a week gone wrong), and what she holds against her besides; up to about a third again)
+    const how_ = o.how || (root.Correction && root.Correction.how) || {}; if (root.Correction) root.Correction.how = null;
+    const quicken = c.id !== 'maren' ? 0 : Math.min(0.35, Math.min(0.2, held * 0.025) + (how_.lied ? 0.1 : 0) + (how_.degree === 'wanton' ? 0.15 : how_.degree === 'careless' ? 0.07 : 0)
+      + (how_.willie ? 0.1 : 0) + (how_.withheld ? 0.08 : 0) + (how_.bakery ? 0.05 : 0) + (how_.week ? Math.min(0.15, Math.max(0, (how_.week.score - 7) * 0.03)) : 0));
     const S = { lap, corrector: c, subject: sub, held,
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
       step: async (l, n) => { if (ended()) throw STOP; await Promise.all([l ? line(l[0], l[1], l[2]) : null, smacks(n)]); if (ended()) throw STOP; },
@@ -205,7 +210,7 @@ async function run(P, o) {
       // (a stroke, and then the line: a count, or what's said in answer to it, once it's landed)
       after: async (l, n) => { await smacks(n == null ? 1 : n); if (ended()) throw STOP; if (l) await line(l[0], l[1], l[2]); if (ended()) throw STOP; },
       wait: async secs => { await wait(secs); if (ended()) throw STOP; },
-      set: o2 => lap.set(lifted && o2.skirt === 'down' ? Object.assign({}, o2, { skirt: 'up' }) : o2),
+      set: o2 => { if (o2.pace != null && quicken) o2 = Object.assign({}, o2, { pace: o2.pace * (1 + quicken) }); lap.set(lifted && o2.skirt === 'down' ? Object.assign({}, o2, { skirt: 'up' }) : o2); },      // (quicken: the more serious it is, the quicker she goes)
       // (the giver's hand: lifting the skirt, drawing the drawers down, or soothing: see js/lap.js's gesture)
       face: f => { if (f) talk.face(castKey, f); },      // (the corrector's face, between lines; it stays until another is set)
       gesture: async (kind, o3) => { if (ended()) throw STOP; if (kind === 'skirt' && (lifted || lap.st.skirt === 'up')) { lifted = true; return; } await lap.gesture(kind, o3); if (ended()) throw STOP; },
