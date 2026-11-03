@@ -91,3 +91,24 @@ test('Mistress Pennock offers a head start any morning Red’s not been asked fo
   chores.answer('bakery', 'little'); assert.equal(chores.canOffer('pennock'), false, 'asked for the afternoon: not as well');
   save.change(s => { s.chores.errand = null; }, { chores: true }); cal.advance(180); assert.equal(chores.canOffer('pennock'), false, 'past noon: sold nearly out');
 });
+
+test('an errand of her mother’s left undone is asked again the next day, unless the day is a shift’s; its well left undone dries the garden butt', () => {
+  const { chores, save, cal } = world(), wd = () => ((cal.day - 1) % 7) + 1;
+  assert.equal(cal.day, 2); assert.equal(chores.pick(cal.day), 'eggs', 'the eggs, the first day after the homecoming');
+  chores.answer('eggs', 'yes'); save.change(s => { s.chores.errand.state = 'broken'; }, { chores: true });
+  morning(cal); chores.owing();
+  assert.equal(chores.owing(), 'eggs'); assert.equal(chores.pick(cal.day), 'eggs', 'asked again');
+  chores.answer('eggs', 'yes'); save.change(s => { s.chores.errand.state = 'done'; }, { chores: true });
+  morning(cal); assert.equal(chores.owing(), null, 'done: nothing owed');
+  // (the well let slide: the butt dry, today and on, till it's fetched; on a shift's day, owed still, and asked the day after)
+  while (wd() !== 3) morning(cal);
+  save.change(s => { s.chores.errand = { id: 'well', state: 'missed', by: 600 }; }, { chores: true });
+  assert.equal(chores.buttDry(), true, 'let slide today: dry');
+  morning(cal); assert.equal(wd(), 4); assert.equal(chores.owing(), 'well'); assert.equal(chores.buttDry(), true);
+  save.change(s => { s.chores.asked = Object.keys(chores.ERRANDS).filter(id => id !== 'inn'); }, { chores: true });
+  assert.equal(chores.pick(cal.day), 'inn', 'Carrier’s day: the inn’s evening first');
+  chores.answer('inn', 'yes'); save.change(s => { s.chores.errand.state = 'done'; }, { chores: true });
+  morning(cal); assert.equal(chores.owing(), 'well', 'kept over the shift'); assert.equal(chores.pick(cal.day), 'well');
+  chores.answer('well', 'yes'); save.change(s => { s.chores.errand.state = 'done'; }, { chores: true });
+  assert.equal(chores.buttDry(), false, 'fetched: the butt full again');
+});

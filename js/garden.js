@@ -177,7 +177,7 @@ function progress(w) {
 function progressText(w) {
   const p = progress(w), parts = [];
   if (p.weeds) parts.push(p.weeds + (p.weeds > 1 ? ' weeds' : ' weed'));
-  if (p.dry.length) parts.push(p.dry.join(' and ').replace(/^the /, '') + ' to water');
+  if (p.dry.length) parts.push(p.dry.join(' and ').replace(/^the /, '') + ' to water' + (w && w.chores && w.chores.buttDry && w.chores.buttDry() ? ' (the butt’s dry: the water from the well first)' : ''));
   for (const j of p.jobs) parts.push(j.toLowerCase());
   if (!p.dry.length && p.can) parts.push('the can back by the butt');
   if (!p.jobs.length && p.trowel) parts.push('the trowel back on the bench');
@@ -250,7 +250,10 @@ function attach(P, w) {
   async function takeTrowel() { const s = benchStand(); await m.goTo(s, yawTo(s, new V3(BENCH.x, 0, BENCH.z))); await m.reach('R', G.trowel.obj.position.clone()); G.trowel.obj.visible = false; const t = trowelProp(); P.stage.scene.add(t.obj); m.hold(t, 'hang'); await m.release('R'); change(w, g => { g.trowel = 'held'; }); objective(); }
   async function putTrowel() { const s = benchStand(); await m.goTo(s, yawTo(s, new V3(BENCH.x, 0, BENCH.z))); await m.reach('R', G.trowel.obj.position.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); G.trowel.obj.visible = true; await m.release('R'); change(w, g => { g.trowel = 'bench'; }); objective(); await finished(); }
   async function takeCan() { await m.goTo(CAN.clone().add(new V3(-4, 0, -2)), yawTo(m.pos, CAN)); await m.reach('R', CAN.clone().setY(2)); G.can.obj.visible = false; const c = canProp(); P.stage.scene.add(c.obj); m.hold(c, 'hang'); await m.release('R'); change(w, g => { g.can = 'held'; }); objective(); }
-  async function fill() { await m.goTo(BUTT.clone().add(new V3(-5, 0, -3)), yawTo(m.pos, BUTT)); await m.reach('L', BUTT.clone().setY(6.5)); await P.wait(1.2); await m.release('L'); change(w, g => { g.water = WATER_PER_FILL; }); if (w.chores && w.chores.canFilled) w.chores.canFilled(); spend(2); }      // (and the butt the lower for it: js/chores.js asks for the well again)
+  // (the butt dry, the water from the well let slide: nothing to fill the can with till it's fetched (js/chores.js's buttDry))
+  async function fill() { if (w.chores && w.chores.buttDry && w.chores.buttDry()) { await m.goTo(BUTT.clone().add(new V3(-5, 0, -3)), yawTo(m.pos, BUTT)); await m.reach('L', BUTT.clone().setY(6.5)); await P.wait(0.6); await m.release('L');
+      if (P.talk) P.talk.muse('Dry. Not a drop in it. I never fetched the water from the well, and now the flowers go without till I do.', { face: 'wince' }); return; }
+    await m.goTo(BUTT.clone().add(new V3(-5, 0, -3)), yawTo(m.pos, BUTT)); await m.reach('L', BUTT.clone().setY(6.5)); await P.wait(1.2); await m.release('L'); change(w, g => { g.water = WATER_PER_FILL; }); if (w.chores && w.chores.canFilled) w.chores.canFilled(); spend(2); }      // (and the butt the lower for it: js/chores.js asks for the well again)
   async function putCan() { await m.goTo(CAN.clone().add(new V3(-4, 0, -2)), yawTo(m.pos, CAN)); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); G.can.obj.visible = true; change(w, g => { g.can = 'butt'; }); objective(); await finished(); }
   // Watering a row: from one end of the path beside it to the other, the can held out over the flowers.
   async function water(r) {

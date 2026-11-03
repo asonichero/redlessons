@@ -529,7 +529,9 @@ const breakfast = (errand, ctx) => {
   // (not asked: given. Her yes is how she's been lately: a sulk, a grin, or meek)
   const t = ctx.temper, by = ctx.byText;
   const [face, YES] = { wilful: ['pout', 'Yes, Mama.'], mischievous: ['cheeky', 'Yes, Mama. I’ll be quick. Mostly.'], naughty: ['shy', 'Yes, Mama. I will. Properly.'] }[t] || ['smile', 'Yes, Mama.'];
-  return [hello].concat(mine, garden, [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: errand.ask }, { run: ctx.yes },
+  // (again: yesterday's, left undone, asked again before anything new)
+  const again = ctx.again ? [{ who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Yesterday’s still wants doing. It doesn’t go away because it wasn’t done; it waits. So, again:' }] : [];
+  return [hello].concat(mine, garden, again, [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: errand.ask }, { run: ctx.yes },
     { who: 'red', face, text: YES },
     { who: 'mother', face: 'smile', listen: { red: face }, text: (t === 'wilful' ? 'And without the face, next time. ' : 'That’s my girl. ') + (errand.mind || 'By ' + aloud(by) + ', mind.') }]);
 };

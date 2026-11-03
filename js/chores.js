@@ -84,13 +84,28 @@ function create(w) {
   const S = root.Story, save = w.save, cal = w.cal, rep = w.rep;
   const E = S.ERRANDS;
   // (the day's state, begun afresh each day)
-  const st = () => { const c = save.state.chores || (save.state.chores = { day: 0, garden: false, errand: null, refusals: [], missed: 0 }); if (c.day !== cal.day) { c.day = cal.day; c.garden = !!(root.Garden && root.Garden.offToday(w)); c.errand = null; c.left = []; c.bag = { kind: 'basket', contents: [], at: 'home' }; } return c; };      // (left: what she's put down out of doors today, and where)      // (some days her mother has the garden: js/garden.js)
+  const st = () => { const c = save.state.chores || (save.state.chores = { day: 0, garden: false, errand: null, refusals: [], missed: 0 }); if (c.day !== cal.day) { c.owing = owed(c); c.day = cal.day; c.garden = !!(root.Garden && root.Garden.offToday(w)); c.errand = null; c.left = []; c.bag = { kind: 'basket', contents: [], at: 'home' }; } return c; };      // (left: what she's put down out of doors today, and where)      // (some days her mother has the garden: js/garden.js)
   const change = fn => save.change(s => { st(); fn(s.chores); }, { chores: true });
+  // (an errand of her mother's left undone, carried over to be asked again (owing): yesterday's, if it wasn't done; kept over a day with none
+  // of her mother's (Lay day, the fair, a shift); done, it's paid)
+  function owed(c) { const e = c.errand; if (!e || !E[e.id] || E[e.id].shift) return c.owing || null; return e.state === 'done' ? null : e.id; }
+  const owing = () => st().owing || null;
+  // (the garden's butt dry, while the water from the well is owed or let slide today, till it's fetched)
+  const buttDry = () => { const c = st(), e = c.errand; if (e && e.id === 'well' && e.state === 'done') return false;
+    return c.owing === 'well' || !!(e && e.id === 'well' && ['broken', 'missed', 'little', 'wont'].includes(e.state)); };
   const on = () => w.q.done('maren.chores');      // (once they're agreed)
   const errand = () => { const e = st().errand; return e && E[e.id] ? Object.assign({ key: e.id }, E[e.id], e) : null; };
   const clock = m => root.Calendar.clockOf(m).replace(/ in the (morning|afternoon|evening)| at night/, '');
   // Which errand today: one of them, not yesterday's, about one day in four none (the same for a day, however it's asked).
   function pick(day) {
+    const normal = pickNormal(day), owe = day === cal.day ? owing() : null;
+    if (!normal && !owe) return null;
+    if (owe && E[owe] && !(normal && E[normal].shift) && day === cal.day && pickable(day)) return owe;      // (an errand of her mother's left undone: asked again, before anything else, unless the day's a shift's)
+    return normal;
+  }
+  // (a day her mother asks anything at all: not Lay day, not the fair)
+  const pickable = day => { const wd = root.Calendar ? root.Calendar.weekday(day) : ((day - 1) % 7) + 1; return wd !== 7 && !(root.Fair && root.Fair.isFair(w, day)); };
+  function pickNormal(day) {
     const rnd = (n => () => { n = (n * 16807) % 2147483647; return (n - 1) / 2147483646; })(((day * 2654435761) % 2147483646) + 1); rnd(); rnd();      // (mixed, and the first draws let go: a small seed's first draw is small)
     // (at first, one of each in turn, in an order that has her meet everyone, the inn's afternoon last, so that by the time Mistress Abney asks
     // her favour she's plans and friends enough to be tempted from it; then any, about one day in four none)
@@ -184,11 +199,12 @@ function create(w) {
   // ── Breakfast: the asking. (Played at home, the morning she wakes: js/world.js's morning.)
   async function breakfast(P, o) {
     if (!on() || !P || !P.npc) return;
+    st();      // (the day begun: yesterday's errand, if it was left undone, owed)
     if (root.Fair) root.Fair.arm(w);      // (the fair's days set, once its gates are met)
     if (root.Agnes) root.Agnes.morning(w);      // (after the fair: the kiss heard of; the afternoon in the wood, gone by)
     const id = pick(cal.day), e = id ? E[id] : null, by = e ? H(e.by) : 0;
     const ctx = { temper: temper(), byText: e ? clock(by) : '', garden: root.Garden ? root.Garden.offToday(w) : null, rained: root.Garden ? root.Garden.plan(cal.day).rained : false,
-      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay, fair: root.Fair ? root.Fair.breakfast(w) : null, fairDay: !!(root.Fair && root.Fair.isFair(w)),      // (her mother's own day: js/maren.js)
+      needle: root.Maren ? root.Maren.needlework(cal.day) : null, agreed: !!root.Maren, lay: cal.lay, fair: root.Fair ? root.Fair.breakfast(w) : null, fairDay: !!(root.Fair && root.Fair.isFair(w)), again: !!id && id === owing(),      // (her mother's own day: js/maren.js)
       yes: async () => { answer(id, 'yes'); if (e.give) hand(P, e.give); } };      // (given her, not asked: she says yes, as she says it)
     await P.wait(0.8); if (!(o && o.seated)) await P.approach();      // (seated: across the table from her already)
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
@@ -427,7 +443,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { owing, buttDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };
