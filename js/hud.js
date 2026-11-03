@@ -62,6 +62,8 @@ const CSS = `
 #hMenu { right: 12px; top: 10px; width: 52px; height: 52px; display: flex !important; } #hMenu svg { width: 26px; height: 26px; stroke-width: 2.4; }
 #hCam { right: 12px; top: 70px; width: 52px; height: 52px; display: flex !important; } #hCam svg { width: 27px; height: 27px; }
 #hHelp { right: 12px; bottom: 12px; width: 46px; height: 46px; } #hHelp svg { width: 24px; height: 24px; }
+#hDebug { right: 64px; bottom: 12px; width: 46px; height: 46px; display: flex; font: bold 22px Georgia, serif; color: #f3e4b0; } body.talking #hDebug, body.correcting #hDebug { opacity: 0; pointer-events: none; }
+#hDebugCard .rows { font: 15px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0; } #hDebugCard .row b { font-weight: normal; } #hDebugCard .row.ok b { color: #9fd08a; } #hDebugCard .row small { display: block; color: #c9b8a8; font-style: italic; margin: 0 0 4px 1.4em; }
 #hStick { position: absolute; left: 22px; bottom: 26px; width: 130px; height: 130px; border-radius: 50%; background: rgba(30,20,22,0.45); border: 2px solid rgba(230,196,106,0.55);
   touch-action: none; display: none; pointer-events: auto; }
 #hKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(230,196,106,0.75); pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
@@ -154,6 +156,7 @@ function create(opts) {
     '<button id="hMenu" class="hb" title="Menu (Esc)" aria-label="Menu">' + svg('menu') + '</button>' +
     '<button id="hCam" class="hb" title="Camera: near, medium or far" aria-label="Camera">' + svg('camera') + '</button>' +
     '<button id="hHelp" class="hb" title="Controls (?)" aria-label="Controls">' + svg('keys') + '</button>' +
+    '<button id="hDebug" class="hb" title="Progress toward the fair (debug)" aria-label="Progress toward the fair">!</button>' +
     '<button id="hAct" class="hb t off">' + svg('act') + '<span>Do</span></button>' +
     '<button id="hAlt" class="hb t off">' + svg('lie') + '<span>Lie down</span></button>';
   document.body.appendChild(el);
@@ -261,6 +264,13 @@ function create(opts) {
   $('hDiary').addEventListener('click', e => { e.stopPropagation(); diary(true); });
   $('hBasket').addEventListener('click', e => { e.stopPropagation(); basketCard(true); });
   $('hHelp').addEventListener('click', e => { e.stopPropagation(); showSheet(); });
+  // (debug: the way to the fair, its gates and days: opts.debug() → { day, phase, rows: [{ label, done, note }] })
+  const dbgEl = screen('hDebugCard', '<h2>Toward the fair</h2><div class="rows"></div><div class="x">Tap or click anywhere, or press Esc, to close</div>');
+  const esc_ = t => String(t == null ? '' : t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  $('hDebug').addEventListener('click', e => { e.stopPropagation(); const g = opts.debug ? opts.debug() : null; if (!g) return;
+    dbgEl.querySelector('.rows').innerHTML = '<div class="row"><small>Day ' + g.day + (g.phase ? ' · ' + esc_(g.phase) : '') + '</small></div>' + g.rows.map(r => '<div class="row' + (r.done ? ' ok' : '') + '"><b>' + (r.done ? '✓ ' : '○ ') + esc_(r.label) + '</b>' + (r.note ? '<small>' + esc_(r.note) + '</small>' : '') + '</div>').join('');
+    dbgEl.classList.add('on'); });
+  dbgEl.addEventListener('click', () => dbgEl.classList.remove('on'));
   // (how she's holding up, said in words for a moment, tapped or clicked)
   let capT = 0; $('hCap').addEventListener('click', e => { e.stopPropagation(); const say = $('hCapSay'); say.textContent = $('hCap').title; say.classList.add('on'); clearTimeout(capT); capT = setTimeout(() => say.classList.remove('on'), 2200); });
 

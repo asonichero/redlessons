@@ -133,7 +133,7 @@ function create(view, ui) {
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
-    RATE, restartDay: () => restartDay(), canRestart: () => canRestart(), go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
+    fairProgress, RATE, restartDay: () => restartDay(), canRestart: () => canRestart(), go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
   };
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.
@@ -156,6 +156,21 @@ function create(view, ui) {
   }
   // Her diary: what's hers to do now (the day's: the garden, the errand, Grandmother's herb, and the evening's matters), then the steps of the
   // story under way; and the people of her days, and how they are with her.
+  // (debug: how far toward the fair, for the HUD's "!": its gates, and its days once they're met)
+  function fairProgress() {
+    const F = root.Fair, d = cal.day, fl = save.state.flags || {}, herbs = save.state.herbs || {}, wd = x => root.Calendar.weekday(x), names = x => 'day ' + x + ' (' + root.Calendar.dayName(x) + ')';
+    const next = k => { let x = d; while (wd(x) !== k) x++; return x; };
+    const ch = save.state.chores || {}, innAsked = (ch.asked || []).includes('inn');
+    const rows = [
+      { label: 'The inn’s evening worked (abney.work)', done: q.done('abney.work'), note: q.done('abney.work') ? '' : (innAsked ? 'asked before: comes round again on a Carrier’s day' : 'asked at breakfast on a Carrier’s day, once its turn comes') + '; next Carrier’s day: ' + names(next(4)) },
+      { label: 'Grandmother’s first herb learnt', done: (herbs.n || 0) >= 1, note: (herbs.n || 0) >= 1 ? herbs.n + ' learnt' : 'visit Grandmother: she asks for one' },
+      { label: 'Bo met', done: fl['bo-met'] != null, note: fl['bo-met'] != null ? 'day ' + fl['bo-met'] : 'talk to Bo, or help with the flock when it strays' },
+    ];
+    const s = F ? F.stateOf(w) : {}, met = F ? F.gatesMet(w) : false;
+    rows.push({ label: 'Gates met', done: met, note: met ? (s.day ? '' : 'the days are set the next morning') : '' });
+    if (s.day) { rows.push({ label: 'Planting finishes', done: d >= s.planted, note: names(s.planted) }); rows.push({ label: 'Fitting', done: !!s.fitted, note: names(F.fitDay(w)) + ' at four' }); rows.push({ label: 'The fair', done: d > s.day, note: names(s.day) + (d < s.day ? ' (' + (s.day - d) + ' days)' : '') }); }
+    return { day: d, phase: F ? F.phase(w) : null, rows };
+  }
   function journal() {
     const ph = q.phaseOf(q.phase()), names = {}; for (const l of q.lines ? Object.values(q.lines) : []) names[l.id] = l.name;
     const today = chores ? chores.objectives() : [];
