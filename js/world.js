@@ -95,7 +95,7 @@ const AREAS = {
   home: {
     name: 'Home', music: 'home', npc: undefined,      // (the cottage, and her mother: js/play.js's own)
     // (her cloak on its hook by the door, if she has one and isn't wearing it)
-    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); w.breakfasted = false; },
+    dress(P, w) { const h = P.world.cloakHooks; if (h) h.setRed(w.q.done('hulda.cloak') && P.outfit === 'No cloak'); w.breakfasted = false; if (root.Maren) root.Maren.larder(P, w); },      // (the bakery's day: bread and cheese left out for her)
     entries: { door: { at: [-44, 31], yaw: Math.PI / 2 }, bed: { at: [-30, -10], yaw: Math.PI / 2 } },      // (bed: up, and out from it into the room, in the morning)
     exits: { 'the door': { area: 'village', entry: 'home' } },      // (out of her door into the village)
   },

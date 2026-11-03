@@ -151,6 +151,8 @@ Each can be talked to (*Talk to Agnes*, and so on): a word by the time of day, s
 
 **Her mother in the day** (talking to her before six): whatever Red's brought home is given first, and the errand's done (the eggs out of the basket, the basket hers to hang up again); or, an errand with nothing to bring, she asks how it went, and Red says (fine; Tom kept her talking; harder than she thought); or, still to do, a reminder of it, and the time (late: it's not too late); or a word about nothing much (the Thatchers' hens, the Hallorans' mending, a sprig of rosemary on the step from Grandmother). Then the garden, if it's not done ("the garden won't tend itself"), or supper at six.
 
+**The bakery's day**: the days Red's asked at breakfast for the bakery's afternoon (at one, just after dinner), her mother's at the Hallorans' all day and says so: not home for dinner, but there'll be bread and cheese out on the table. It's there from when she goes till she's back at half past five; eaten, it's Red's dinner (it fills her as much, and counts as it), and on that day no dinner's missed either way.
+
 ## Evenings at home (`js/evening.js`)
 
 Whenever Red comes home after six of her own accord (walking in at her door, not sent there by a scene), her mother has a word with her, and in it whatever she's learned that might call for a correction, in this order:

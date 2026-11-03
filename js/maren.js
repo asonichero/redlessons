@@ -17,17 +17,21 @@ const stateOf = w => w.save.state.maren || (w.save.state.maren = { dinner: 0, wa
 const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.maren); }, { maren: true });
 // (only once the days are agreed: before that, she's home, as the first chapter has her)
 const on = w => !!(w.chores && w.chores.on());
+// (the days Red's asked for the bakery's afternoon at breakfast: her mother at the Hallorans' all day, not home for dinner, and bread and cheese
+// left out on the table for her, so she needn't choose between the two)
+const allDay = (w, day) => { const c = w.save.state.chores, d = day || w.cal.day; return on(w) && !!c && c.day === d && !!c.errand && c.errand.id === 'bakery' && !(root.Fair && root.Fair.phase && root.Fair.phase(w, d)); };
 function at(w) {
   const m = w.cal.minute, n = needlework(w.cal.day);
   { const f = root.Fair && on(w) ? root.Fair.marenAt(w) : null; if (f) return f; }      // (the fair's week: home, at the dress; fair day: at her stall)
+  if (on(w) && !w.cal.lay && allDay(w) && m >= OUT && m < HOME) return 'farm';      // (the bakery's day: out all day, dinner too)
   if (!on(w) || (w.cal.lay) || m < OUT || m >= HOME || (m >= DINNER && m < BACK)) return 'home';      // (Lay day: home all day)
   if ((n === 'morning' && m < DINNER) || (n === 'afternoon' && m >= BACK)) return 'needle';
   return 'farm';
 }
 const home = w => at(w) !== 'farm' && at(w) !== 'fair';
-const dinnerDue = w => on(w) && w.cal.minute >= DINNER && w.cal.minute < BACK && stateOf(w).dinner !== w.cal.day;
+const dinnerDue = w => on(w) && !allDay(w) && w.cal.minute >= DINNER && w.cal.minute < BACK && stateOf(w).dinner !== w.cal.day;
 const warned = (w, what) => { const s = stateOf(w).warned || {}; return s.day === w.cal.day && !!s[what]; };
-const missedDinner = w => on(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
+const missedDinner = w => on(w) && !allDay(w) && w.cal.minute >= BACK && stateOf(w).dinner !== w.cal.day;
 
 // (stood up at once, under a fade: off the seat, free to be put anywhere)
 const unsit = mo => { if (!mo) return; mo.sitW = mo.sitWant = 0; mo.lieW = mo.lieWant = 0; mo.seat = null; mo.locked = false; };
@@ -96,7 +100,24 @@ async function dinner(P, w, how) {
   if (w.fade) await w.fade(false);
 }
 
-const api = { unsit, atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
+// The bread and cheese on the table, the bakery's day: out from when her mother goes till she's back, if Red's not had it. Eaten, it's her
+// dinner: it fills her as much (js/capacity.js), and counts as it.
+const LARDER = 35;
+function larder(P, w) {
+  const THREE = root.THREE, V3 = THREE.Vector3, T = root.Toon, W = P.world, tb = W.surfaces && W.surfaces.find(s => s.name === 'the table'); if (!tb) return;
+  const g = new THREE.Group(), x = (tb.x0 + tb.x1) / 2, z = (tb.z0 + tb.z1) / 2, put = (geo, col, px, py, pz) => { const m = new THREE.Mesh(geo, T.mat(col)); m.position.set(px, py, pz); m.add(new THREE.Mesh(T.hullGeo(geo, 0.05), T.INKM[0])); g.add(m); return m; };
+  put(new THREE.BoxGeometry(5, 0.4, 3.6), '#b8864a', 0, 0.2, 0);      // (a board)
+  put(T.ell(1.5, 1.1, 2.2, 12, 8), '#c98a44', -1, 1.2, 0);      // (the end of a loaf)
+  put(new THREE.CylinderGeometry(1.3, 1.3, 1, 3), '#f0d070', 1.4, 0.9, 0.3).rotation.y = 0.4;      // (a wedge of cheese)
+  g.position.set(x, tb.y, z); P.stage.scene.add(g);
+  const out = () => allDay(w) && at(w) === 'farm' && stateOf(w).dinner !== w.cal.day;
+  P.tick(() => { g.visible = out(); });
+  (W.actions = W.actions || []).push({ label: 'Eat the bread and cheese', at: new V3(x, tb.y + 2, z), when: () => out() && !P.busy,
+    run: async () => { const m = P.motion, c = new V3(x, 0, z), to = P.collide(m.pos.clone().setY(0).sub(c).setLength(9).add(c), 3.2); await Promise.race([m.goTo(to, Math.atan2(c.x - to.x, c.z - to.z)), P.wait(4)]); change(w, s => { s.dinner = w.cal.day; });
+      if (P.talk) P.talk.muse('Bread and cheese, and a cup of water from the jug. Better.', { face: 'smile' });
+      if (w.capacity) w.capacity.add(LARDER, 'bread and cheese'); w.cal.advance(15); if (w.refresh) w.refresh(); } });
+}
+const api = { allDay, larder, unsit, atTable, toWork, sitDown, at, home, needlework, dinnerDue, dinner, warned, missedDinner, stateOf, OUT, DINNER, BACK, HOME };
 root.Maren = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

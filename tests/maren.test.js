@@ -27,3 +27,13 @@ test('before the days are agreed, she\'s home; dinner is due once, in its hour',
   const w = world(); atTime(w, 4, '12:00'); assert.equal(Maren.dinnerDue(w), false); atTime(w, 4, '12:40'); assert.equal(Maren.dinnerDue(w), true);
   w.save.change(s => { s.maren = { dinner: 4, warned: {} }; }); assert.equal(Maren.dinnerDue(w), false, 'eaten');
 });
+
+test('the day Red’s asked for the bakery’s afternoon: out all day, dinner too, and nothing missed for it', () => {
+  const w = world(); let day = 1; while ((((day - 1) % 7) + 1) === 7) day++;
+  atTime(w, day, '08:00'); w.save.change(s => { s.chores = { day, errand: { id: 'bakery', state: 'accepted', by: 780 } }; }, { chores: true });
+  assert.ok(Maren.allDay(w));
+  for (const [hm, home] of [['07:30', true], ['10:00', false], ['12:45', false], ['13:00', false], ['16:00', false], ['17:30', true]]) { atTime(w, day, hm); assert.equal(Maren.home(w), home, hm); }
+  atTime(w, day, '12:45'); assert.equal(Maren.dinnerDue(w), false, 'no dinner at home');
+  atTime(w, day, '15:00'); assert.equal(Maren.missedDinner(w), false, 'and none missed');
+  w.save.change(s => { s.chores.errand.id = 'eggs'; }, { chores: true }); assert.equal(Maren.allDay(w), false, 'any other errand: her usual day');
+});
