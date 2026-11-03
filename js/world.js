@@ -60,7 +60,7 @@ const AREAS = {
   village: {
     name: 'The village', music: 'village', set: s => root.Village.build(s), npc: null, followCam: true, camBack: [78, 30], outdoors: true,
     entries: 'set',      // (its own: in from the wood at the meadow gate; out of her door)
-    exits: { 'the meadow': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' }, 'the forge door': { area: 'forge', entry: 'door' } },      // (the meadow: through the meadow gate, js/wood.js's far end)
+    exits: { 'the meadow': { area: 'wood', entry: 'village' }, 'the door': { area: 'home', entry: 'door' }, 'the forge door': { area: 'forge', entry: 'door' }, 'the inn door': { area: 'inn', entry: 'door' } },      // (the meadow: through the meadow gate, js/wood.js's far end)
   },
   // The Fowlers' smallholding (js/holding.js): where the meadow meets the wood, off the fork from the meadow. Peter and his grandfather.
   holding: {
@@ -175,7 +175,7 @@ function create(view, ui) {
   const DBG_WHO = ['maren', 'hulda', 'peter', 'fowler', 'tom', 'smith', 'pennock', 'baker', 'abney', 'abneyDaughter', 'agnes', 'georgie', 'willie', 'holt', 'bo'];
   function debugInfo() {
     const tr = save.state.trust || {}, P_ = (root.QuestData && root.QuestData.PEOPLE) || {}, who = [...new Set(DBG_WHO.concat(Object.keys(tr)))];
-    return { fair: fairProgress(),
+    return { fair: fairProgress(), minute: cal.minute,
       trust: who.map(k => ({ who: k, name: (P_[k] && P_[k].name) || (k === 'bo' ? 'Bo' : k), value: Math.round((tr[k] || 0) * 10) / 10 })),
       quests: Object.values(q.lines).map(l => ({ id: l.id, name: l.name, steps: l.steps.map(st => ({ ref: l.id + '.' + st.id, title: st.title || st.id, done: q.done(l.id + '.' + st.id), optional: !!st.optional })) })),
       flags: Object.keys(save.state.flags || {}).sort().map(k => ({ key: k, value: save.state.flags[k] })) };
@@ -185,6 +185,8 @@ function create(view, ui) {
     if (o.trust) rep.trusts(o.trust, o.by);
     if (o.quest) { if (o.done) q.complete(o.quest); else { const [li, si] = o.quest.split('.'); save.change(s => { if (s.quests[li]) delete s.quests[li][si]; }, { quest: o.quest }); } }
     if (o.flag) save.change(s => { s.flags = s.flags || {}; if (o.on) s.flags[o.flag] = cal.day; else delete s.flags[o.flag]; }, { flag: o.flag });
+    if (o.flag === 'abney-promise-broken' && !o.on) save.change(s => { if (s.promise) { s.promise.broken = false; s.promise.told = false; } }, { promise: true });      // (unbroken: the evening's to be had again)
+    if (o.day != null || o.minute != null) save.change(s => { if (o.day != null) s.day = Math.max(1, Math.round(o.day)); if (o.minute != null) s.minute = Math.max(0, Math.min(24 * 60 - 1, Math.round(o.minute))); }, { time: true });      // (the day and the time, written over)
     refresh();
   }
   function journal() {
@@ -307,6 +309,10 @@ function create(view, ui) {
       o.doorGuard = () => chores && chores.forgot(P) ? chores.remind(P) : root.Evening && root.Evening.curfewNudge(w) ? root.Evening.nudge(P, w) : null;      // (going to open the door for the eggs with no basket: her mother calls her back, and it stays shut; after nine, with supper to come, the curfew)
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
+    // (the Wheatsheaf's door: in, of the evening she's promised to sit with Bess, from half past five till it's too late)
+    if (name === 'village') o.place = chain(o.place, P_ => { const W_ = P_.world, d = W_.spots && W_.spots.innDoor; if (!d || W_.exits.some(e => e.name === 'the inn door')) return;
+      const out = new THREE.Vector3(Math.sin(d.yaw), 0, Math.cos(d.yaw));
+      W_.exits.push({ name: 'the inn door', at: d.at.clone().setY(0).addScaledVector(out, 3), r: 5, when: () => !!(root.AbneyPromise && root.AbneyPromise.objective(w) && w.cal.minute >= 17 * 60 + 30 && w.cal.minute <= root.AbneyPromise.LATE) }); });
     if (name === 'village') { o.place = chain(o.place, P_ => { P_.fairDay = root.FairDay ? root.FairDay.attach(P_, w) : null; P_.villagers = root.Villagers ? root.Villagers.attach(P_, w) : null; if (root.Work) root.Work.outside(P_, w); P_.garden = root.Garden ? root.Garden.attach(P_, w) : null; P_.flock = root.Flock && !(root.Fair && root.Fair.isFair(w)) ? root.Flock.attach(P_, w) : null; });
       o.actions = () => (chores ? chores.actions(P, 'village') : []).concat(P && P.villagers ? P.villagers.actions() : [], P && P.flock ? P.flock.actions() : [], gateAction()); }
     if (name === 'wood') { o.actions = () => gateAction().concat(P && P.herbs ? P.herbs.actions() : [], P && P.world.signpost ? [{ label: 'Read the signpost', at: P.world.signpost, run: () => P.converse(root.Story.signpost(), { shot: false, keepCamera: true }) }] : []); o.place = chain(o.place, P_ => { P_.peter = root.Peter ? root.Peter.wood(P_, w) : null; P_.herbs = root.Herbs ? root.Herbs.wood(P_, w) : null; P_.stranger = root.IntoWood ? root.IntoWood.wood(P_, w) : null; P_.agnesWood = root.Agnes ? root.Agnes.wood(P_, w) : null; }); }      // (Hulda's herbs, gathered: js/herbs.js)
