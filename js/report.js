@@ -116,8 +116,9 @@ async function run(P, w, o) {
     await P.converse([{ choose: opts }], shot);
     if (!pick || pick === 'none') break;
     n++; told.push(pick); said(w, pick.id); left = left.filter(t => t !== pick);
-    if (pick.own) await pick.own(P); else if (pick.tell) await P.converse([R(pick.id === 'herb' || pick.id.endsWith(':done') ? 'smile' : 'shy', pick.label)].concat(pick.tell), shot);
-    if (pick.after) pick.after();
+    // (one thing that goes wrong in the telling doesn't end the rest of it: it's put aside, and the choice comes again)
+    try { if (pick.own) await pick.own(P); else if (pick.tell) await P.converse([R(pick.id === 'herb' || pick.id.endsWith(':done') ? 'smile' : 'shy', pick.label)].concat((pick.tell || []).filter(Boolean)), shot);
+      if (pick.after) pick.after(); } catch (err) { if (root.console) console.error('Report: ' + pick.id, err); }
     if (!left.length) break;
   }
   if (!n) await P.converse([M('calm', 'Nothing at all? Well. Those days are allowed too.')], shot);
