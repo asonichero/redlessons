@@ -7,7 +7,7 @@ test('the bakery: the whole list for the mill-run afternoon, a shorter one for a
   assert.equal(Work.tasksOf({ id: 'bakery', mode: 'errand' }).length, 7);
   assert.deepEqual(Work.tasksOf({ id: 'bakery', mode: 'picked' }).map(t => t.id), ['trough', 'boards', 'racks', 'sweep']);
   for (const t of Work.SHIFTS.bakery.tasks) assert.ok(t.what, t.id + ' has a short name, for what’s left');
-  assert.ok(Work.SHIFT_RATE > 2, 'the shift clock runs quicker than the day’s');
+  assert.equal(Work.SHIFT_RATE, 1, 'a shift runs at a minute a second, slower than the day’s');
 });
 
 test('the inn: the carrier’s men only when the afternoon was asked for at breakfast', () => {

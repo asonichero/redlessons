@@ -4,7 +4,7 @@
 // share of the morning or the afternoon (so the clock comes out where the errand's time says), and whoever she's working for talking the
 // whole while. When the last is done, the errand's done; and until then, the door stays shut on her.
 //
-// The bakery's are timed, on a clock that runs quicker than the day's while she's in there:
+// The bakery's are timed, on a clock that runs at a minute a second while she's in there (slower than the day's):
 //   • Asked for at breakfast (mode 'errand'): Mistress Pennock has the mill run to do, so she gives Red the list and leaves her to it. Back
 //     when she said, she finds it done (the errand's trust), or not: then, before Red's confided in her, no trust for it; after, a correction.
 //   • Picked up on the day (mode 'picked': offered at the counter while she's still selling, any day Red hasn't been asked for the afternoon): a shorter list,
@@ -16,7 +16,7 @@
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
-const SHIFT_RATE = 2.5;      // (game minutes a second, in a timed shift: a quarter quicker than the day's. The bakery's whole list, done briskly, is about seventy seconds' play. A shift's own rate, where it has one: the inn's, a minute a second)
+const SHIFT_RATE = 1;      // (game minutes a second, in a timed shift: a minute a second, slower than the day's, so there's time to do the work in it. A shift's own rate, where it has one, over this)
 
 // The shifts: each task's place (in the set's world.work), its time, what she does there (kind), and the boss's word as she does it. Done in any
 // order, each offered where it's done, as she comes near it (as the garden's are); after: not till that one's done.
@@ -125,7 +125,7 @@ function attach(P, w) {
     if (mm) await Promise.race([mm.goTo(P.collide(short && spots.stair ? spots.stair.at : inAt(), 3), null), P.wait(5)]);
     gone(); w.refresh();
   });
-  // (the shift's clock: quicker than the day's while she's in here, talk aside; and when it's run out, the boss back)
+  // (the shift's clock: a minute a second while she's in here, talk aside; and when it's run out, the boss back)
   P.tick(dt => {
     const s = cur(); if (!s || !s.until || s.back) return;
     if (P.busy && !(talk && talk.playing) && !document.body.classList.contains('correcting')) w.cal.tick(dt, sh.rate || SHIFT_RATE);      // (busy at a task, the day's own clock stands: this one runs on. Otherwise the day's runs, at the shift's rate: see rate)

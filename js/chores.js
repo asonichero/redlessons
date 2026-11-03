@@ -333,7 +333,7 @@ function create(w) {
   // Asked on the day, by Mistress Pennock (before noon, at her counter: any day Red hasn't been asked for the bakery's afternoon) or Mistress Abney (before one, if
   // Red's nothing else promised). Mistress Pennock's is a head start on the clearing down, there and then, while she sells (js/work.js); by
   // Mistress Abney, the inn's afternoon is without the carrier's men: they're only expected on a day it's asked for at breakfast.
-  const OFFER = { pennock: { id: 'bakery', before: H('12:00'), sold: H('12:30') }, abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
+  const OFFER = { pennock: { id: 'bakery', before: H('11:30'), sold: H('12:10') },      /* (the morning's shift picked up: Mistress Pennock back by ten past twelve, time to be home for dinner; offered till half eleven, so forty minutes' work still ends by then) */ abney: { id: 'inn', before: H('13:00'), by: H('14:00') } };      // (by her, the inn's afternoon is at two)
   function canOffer(who) {
     const o = OFFER[who], c = st(), e = c.errand; if (!o || !on() || cal.minute >= o.before || (c.offered || {})[who] === cal.day || cal.lay || (root.Fair && root.Fair.isFair(w))) return false;      // (fair day: no shifts)      // (Lay day: no work offered)
     if (who === 'pennock') return !(e && e.id === 'bakery') && !(root.Work && root.Work.current(w));      // (any day she's not been asked for the afternoon's: and not twice)
