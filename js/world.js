@@ -174,7 +174,7 @@ function create(view, ui) {
       const step = q.offered({ where: name }).find(s => s.scene && SCENES[s.scene]);
       const sc = step ? SCENES[step.scene] : null;
       await fade(true, sc && sc.establish ? '' : A.name);
-      const held = P && chores ? chores.through(chores.carried(P) || (root.Work && root.Work.stashed(w)), areaName, name) : null;      // (what's in her hands, to be in them still; her basket set by indoors, and back in her hand coming out: js/chores.js)
+      const held = chores && entry === 'saved' && chores.savedHand ? chores.savedHand() : P && chores ? chores.through(chores.carried(P) || (root.Work && root.Work.stashed(w)), areaName, name) : null;      // (picked up again from the save: what she had in her hands when it was last kept)      // (what's in her hands, to be in them still; her basket set by indoors, and back in her hand coming out: js/chores.js)
       if (P) { P.dispose(); P = null; }
       if (backdrop) { backdrop.dispose(); backdrop = null; }      // (the title's tableau)
       // (a scene can open on an establishing shot: another place seen from outside, without her, the camera easing in; then a fade, and the scene)

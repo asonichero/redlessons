@@ -87,7 +87,7 @@ async function owe(P, w, kind, how) {
 }
 async function raise(P, w) {
   for (const o of (stateOf(w).owed || []).filter(x => !x.raised)) {
-    await P.wait(0.4); await P.approach(); await P.converse(root.Story.owedRaise(o.kind), { shot: ['red', 'mother'] });
+    await P.wait(0.4); await P.approach(); await P.converse(root.Story.owedRaise(o.kind, Math.max(0, w.cal.day - (o.day || w.cal.day))), { shot: ['red', 'mother'] });
     change(w, s => { const x = s.owed.find(y => y === o || (y.kind === o.kind && y.day === o.day)); if (x) x.raised = true; });
   }
 }
@@ -99,9 +99,14 @@ const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), c
 const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how), dress: how => root.Story.dressAfter(how), wood: () => root.Story.woodAfter() };
 async function settle(P, w, table) {
   // (setting her right covers the bell too, if that's owed as well tonight: the rest waits)
-  const list = stateOf(w).owed || [], o = list.find(x => x.kind === 'maintenance') || list[0], S = root.Story; if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); if (table) { await w.fade(true); table.up(); await w.fade(false); } return; }
-  change(w, s => { s.owed = s.owed.filter(x => !(x.kind === o.kind && x.day === o.day) && !(o.kind === 'maintenance' && x.kind === 'curfew')); });
+  // (tonight's own first, the most recent of it; anything older, or else owed, folded into it, said over her before the end: not left to tangle)
+  const list = stateOf(w).owed || [], todays = list.filter(x => x.day === w.cal.day && CORRECT[x.kind]), S = root.Story;
+  const o = list.find(x => x.kind === 'maintenance') || todays[todays.length - 1] || list.find(x => CORRECT[x.kind]) || list[0];
+  if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); if (table) { await w.fade(true); table.up(); await w.fade(false); } return; }
+  const rest = list.filter(x => x !== o && CORRECT[x.kind] && x.kind !== o.kind && !(o.kind === 'maintenance' && x.kind === 'curfew'));
+  change(w, s => { s.owed = []; });
   const how = Object.assign({}, o.how);
+  if (rest.length && S.owedAlso) { const was = how.also; how.also = async Sc => { if (was) await was(Sc); for (const x of rest) { await Sc.step(['corrector', S.owedAlso(x.kind, x.how, Math.max(0, w.cal.day - (x.day || w.cal.day))), 'stern'], 8); await Sc.smacks(4); } }; }
   await stood(P, w, table);
   const now = S.owedNow(o.kind, how); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
   lapAfter(r_ => AFTER[o.kind](how, r_));      // (the aftercare on her lap, still in the chair: held, or sat up)

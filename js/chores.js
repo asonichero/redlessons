@@ -466,8 +466,15 @@ function create(w) {
     if (kind && !P.motion.carry && w.area !== 'home' && !(st().left || []).some(l => l.kind === kind)) hand(P, kind);      // (out, with nothing in her hands that should be: given her)
   }
   // Each moment: the time gone by an errand not begun (a broken promise, and she knows it); the garden still untended at dusk.
+  // (what's in her hands, kept in the save as it changes, so a game picked up again has it in them still)
+  let handWas = '';
+  function keepHand(P) { const h = carried(P), k = JSON.stringify(h) + cal.day; if (k === handWas) return; handWas = k; change(c => { c.hand = h ? Object.assign({ day: cal.day }, h) : null; }); }
+  function savedHand() { const c = st(), h = c.hand;
+    if (!h || h.day !== cal.day) { const anywhere = c.bag || (c.left || []).some(l => l.kind === 'basket'); return on() && !anywhere ? { kind: 'basket', contents: [], full: false } : null; }      // (her basket, not set by nor put down anywhere: in her hand, then, as she'd have had it)
+    const o = Object.assign({}, h); delete o.day; return o; }
   function tick(P) {
     if (!on()) return;
+    if (P) keepHand(P);
     if (P && w.area === 'home' && !(typeof document !== 'undefined' && document.body.classList.contains('correcting'))) takeUp(P);
     if (P && w.area === 'home' && st().buttWaiting && P.npc && !P.npcAway) { const b = P.world.items && P.world.items.find(x => x.kind === 'butt'); if (b && b !== P.motion.carry) { fill(b, false); change(x => { x.buttWaiting = false; }); } }      // (her mother in: the little butt into the big one)      // (her basket: in her hand at home, but at table and for a correction)
     const e = errand(), c = st();
@@ -523,7 +530,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };
