@@ -68,6 +68,7 @@ async function home(P, w, o) {
     if (!owes(w) && P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
     // (then the evening as it always goes: supper at the table, and her day)
     if (P !== w.P) return;
+    if (root.Loaf && w.chores && w.chores.on()) await root.Loaf.eat(P, w, 'supper');      // (supper's piece of the loaf, if it's on the board)
     const table = await supper(P, w, { owed: owes(w), late });
     // (and last, what's owed: told to wash for supper, and then it's seen to. Or, nothing owed, up from the table, and a wash at the dresser
     // when she's ready: and supper, and bed)

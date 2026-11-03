@@ -75,6 +75,7 @@ function toCorner(f, c) {
 
 async function run(P, o) {
   o = o || {};
+  { const W_ = root.__world, it = P.motion && P.motion.carry; if (it && it.kind === 'basket' && W_ && W_.chores && W_.chores.setBy && W_.P === P) W_.chores.setBy(P); }      // (her basket set by for it: back in her hand after, at home)
   const st = P.stage, talk = P.talk, fade = o.fade || (async () => {}), wait = s => P.wait(s), A = root.GameAudio, Cs = root.Correctors;
   const el = ui(), hint = document.getElementById('corrHint'), looks = root.Looks ? root.Looks.load() : {};
   if (!o.asRose && !P.gown && looks.red && looks.red.outfit === 'No cloak') looks.red = Object.assign({}, looks.red, { outfit: 'Hood down' });      // (in the fair dress: no cloak; the dress says as much)      // (Little Red, in her cloak, across the lap: unless the story's taken it off her (asRose))
