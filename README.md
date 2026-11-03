@@ -232,7 +232,7 @@ The controls and menus (`js/hud.js`) are the same in every walking scene and fol
 - **In the way:** walls and furniture (and the door, open) hold her back; she slides along them.
 - **Things to do:** she walks to the right spot, turns, and reaches (crouching for low things):
   - open and shut **the door** (by its latch) and **the chest** (lifting the lid with both hands);
-  - **take** a basket off its peg, or the jug, the bowl or the loaf off the table; carry it (a basket or the jug hangs from one hand, the bowl and the loaf in both); **put it** on the table, on the closed chest, in the open chest, back on an empty peg (baskets), or down on the floor;
+  - **take** a basket off its peg, or the jug or the loaf off the table; carry it (a basket or the jug hangs from one hand, the bowl and the loaf in both); **put it** on the table, on the closed chest, in the open chest, back on an empty peg (baskets), or down on the floor;
   - **sit** on either stool or on the bed, **lie down** on the bed, and get up again.
 
 ## Corrections, generalised (`js/correction.js`, `js/correctors.js`, `js/implements.js`)

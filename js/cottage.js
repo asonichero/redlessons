@@ -423,14 +423,13 @@ function build(scene, opts) {
       box(g, D - 1, 1.2, 1.4, tx_, H - 2.2, z, oak); box(g, 9.5, 1, 1.2, tx_, 4.5, z, oak);                                           // the head, and a cross bar
     }
     box(g, 1.4, 1.6, L - 9, tx_, 6, tz, oak);                                                                                        // the stretcher, through both
-    // On the table: a jug, a bowl, and a loaf.
+    // On the table: a jug, and a loaf.
     // (each a thing that can be carried: a group with its origin at the middle of its base)
     const thing = (name, build, x, z, grip, radius, ry) => { const it = new THREE.Group(); build(it); it.position.copy(pc.P(x, H, z)); it.rotation.y = (ry || 0) + pc.ry; root_.add(it); const item = { obj: it, name, grip, radius, panel: g }; world.items.push(item); pc.items.push({ obj: it, at: new V3(x, H, z), ry: ry || 0 }); return item; };
     thing('the jug', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [1.6, 0.1], [1.9, 2], [1.3, 3.8], [1.0, 4.4], [1.3, 4.9]].map(([r, h]) => new THREE.Vector2(r, h)), 16), '#a85a3a', 0, 0, 0, { ink: 0.08 });
       solid(it, new THREE.TorusGeometry(1.1, 0.25, 6, 12, Math.PI * 1.2), '#a85a3a', 1.5, 3.2, 0, { rot: [0, 0, -1.2], ink: 0.05 }); }, tx_ - 2, tz - 8, new V3(0, 2.6, 0), 2, 0.6);
-    thing('the bowl', it => { solid(it, new THREE.LatheGeometry([[0.01, 0], [2.2, 0.2], [3.2, 1.6], [3.4, 1.9]].map(([r, h]) => new THREE.Vector2(r, h)), 18), '#8a6a4a', 0, 0, 0, { ink: 0.08 }).material.side = THREE.DoubleSide; }, tx_ + 1, tz + 3, new V3(0, 1.6, 0), 3.4);
     thing('the loaf', it => { solid(it, T.ell(2.6, 1.6, 3.6, 14, 10), '#c98a44', 0, 1.6, 0, { ink: 0.08 }); for (const k of [-1, 0, 1]) solid(it, new THREE.BoxGeometry(2.4, 0.2, 0.25), '#e6c58a', 0, 2.95, k * 1.4, { rot: [0.1, 0, 0], ink: 0 }); }, tx_ + 1, tz + 13, new V3(0, 1.8, 0), 3.4, 0.2);
-    for (const it of world.items) { if (it.name === 'the bowl' || it.name === 'the jug') it.fixed = true; if (it.name === 'the loaf') it.kind = 'loaf'; }      // (the bowl and the jug are the table's; the loaf, Mama's, for supper: js/chores.js)
+    for (const it of world.items) { if (it.name === 'the jug') it.fixed = true; if (it.name === 'the loaf') it.kind = 'loaf'; }      // (the jug is the table's; the loaf, Mama's, for supper: js/chores.js)
     world.surfaces.push(Object.assign(pc.area(-D / 2 + 2, D / 2 - 2, -L / 2 + 2, L / 2 - 2), { name: 'the table', y: H, panel: g, front: pc.turn(new V3(-1, 0, 0)) }));
     world.obstacles.push(pc.area(-D / 2 - 0.5, D / 2 + 0.5, -L / 2, L / 2));
   }
