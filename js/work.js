@@ -199,7 +199,9 @@ function attach(P, w) {
   // the door, and she's outside again.
   async function back() {
     const s = cur(); if (!s || s.back) return; change(w, x => { x.back = true; });
-    if (w.cal.minute < s.until) { await P.converse(lines.waiting || [], { shot: false, keepCamera: true }); w.cal.advance(s.until - w.cal.minute); }      // (done early: she waits out the time)
+    if (w.cal.minute < s.until) { await P.converse(lines.waiting || [], { shot: false, keepCamera: true });
+      if (ID === 'bakery' && spots.oven && !P.sitting) { const o = spots.oven, d = new V3(o.at.x - o.look.x, 0, o.at.z - o.look.z); if (d.lengthSq() < 1) d.set(0, 0, 1); const at = P.collide(o.at.clone().setY(0).addScaledVector(d.normalize(), 4), 3.2); await arrive(at, Math.atan2(inAt().x - at.x, inAt().z - at.z)); await P.wait(1.2); }      // (by the oven where it's warm, facing the door for her)
+      w.cal.advance(s.until - w.cal.minute); }      // (done early: she waits out the time)
     if (carrying) { const it = m.drop(); if (it) P.stage.scene.remove(it.obj); carrying = null; }
     const list = tasksOf(s), n = list.length, k = doneOf(s).length, all = k >= n, left = leftOf(s).map(t => t.what || t.label.toLowerCase()), who = sh.out || sh.boss;
     const up = svc ? svc.up : 0; if (svc) svc.gone();      // (the inn: how many times Bess was on her feet; and the men up to their beds)
