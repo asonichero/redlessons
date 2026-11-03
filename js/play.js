@@ -280,6 +280,7 @@ function create(view, opts) {
     m.lookAt(p); const two = !it.hangs && it.radius > 2.6;
     if (two) { m.reach('L', p.clone().add(new V3(Math.cos(m.yaw) * it.radius * 0.8, 0, -Math.sin(m.yaw) * it.radius * 0.8))); await m.reach('R', p.clone().add(new V3(-Math.cos(m.yaw) * it.radius * 0.8, 0, Math.sin(m.yaw) * it.radius * 0.8))); }
     else await m.reach('R', p);
+    if (opts.caught && await opts.caught(it)) { m.release('L'); await m.release('R'); m.lookAt(null); return; }      // (seen, or heard: it stays where it is (the loaf, her mother in))
     if (opts.stowable && opts.stowable(it)) { m.release('L'); await m.release('R'); m.lookAt(null); opts.stow(it); return; }      // (into her basket)
     if (it.peg) { it.peg.item = null; it.peg = null; }
     it.panel = null; it.inChest = false; m.hold(it, it.hangs || !two ? 'hang' : 'front'); it.spin = it.obj.rotation.y - m.yaw;
