@@ -1024,6 +1024,28 @@ const gardenTakeInHand = how => how.degree === 'wanton' && !how.lied ? [
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Walk the paths, I said. My flowers took me years.' },
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You’ll learn to mind where you put your feet. Come here.' },
 ];
+// (her garden, wantonly trodden, bed after bed: one of the very few times her mother's hurt by what she's done, and says so; the hairbrush,
+// not counted, and on till she's truly sorry. lied: the lie on top of it)
+const wantonBrush = async (S, lied) => {
+  const M = 'corrector', R = 'subject';
+  S.set({ strength: 1.85, pace: 1.05 }); await S.wait(0.8);
+  await S.say(M, 'I’m not counting these. I’ll stop when you understand, and not before.', 'wince');
+  await S.step([M, 'Your grandmother gave me the first of those bells. The spring you were born. I carried them home in my apron.', 'wince'], 6);
+  await S.step([R, 'Mama— I didn’t—'], 3);
+  await S.step([M, 'The cockle shells I grew from seed. Three summers before they’d flower. Three.', 'wince'], 6);
+  await S.step([M, 'I knelt in that mud every evening you were small, while you played on the path. You knew which ones were which before you could say their names.', 'wince'], 7);
+  await S.step([R, 'I’m sorry—'], 3);
+  await S.step([M, 'You were cross. I know. And you put your boots through every one of them, and you kept going.' + (lied ? ' And then you looked at me and said a cat.' : ''), 'stern'], 8);
+  await S.step([R, 'Mama, please— I know— I know it was wicked—'], 4);
+  await S.step([M, 'It wasn’t the flowers, Little Red. It was you not caring that they were mine.', 'wince'], 8);
+  await S.step([R, 'I do care— I do— I’m so sorry, Mama, I’m so sorry—'], 6);
+  await S.step([M, 'Then feel it. All of it.', 'stern'], 8);
+  await S.smacks(6);
+  await S.step([R, 'I’ll put them right. Every one I can. I’ll kneel in the mud with you. Please, Mama. I’m truly sorry. Truly.'], 4);
+  S.set({ pace: 0.7 });
+  await S.step([M, 'I know you are. I can hear it.', 'concerned'], 3);
+  S.set({ implement: 'hand' });
+};
 // The correction: her hand, for the carelessness; for a lie as well, longer, her drawers down, and the hairbrush to finish.
 const gardenCorrection = async (S, how) => {
   const M = 'corrector', R = 'subject', lied = !!how.lied, more = lied ? 0.25 : 0;
@@ -1053,11 +1075,7 @@ const gardenCorrection = async (S, how) => {
     await S.smacks(dg === 'wanton' ? 10 : 6);
     if (dg === 'wanton') {
       await S.fetch('hairbrush', { ask: [M, 'Up. The hairbrush, from the chest.'], waitFace: 'concerned', presentFace: 'stern', present: [R, '…Here, Mama.'], back: [M, 'Back over my knee.', 'stern'] });
-      S.set({ strength: 1.85, pace: 1 }); await S.wait(0.8);
-      await S.say(M, 'Twelve. One for every few you trod down. Count them.', 'stern');
-      const nums = ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six…', 'Seven…', 'Eight…', 'Nine…', 'Ten…', 'Eleven…', 'Twelve… I’m sorry, Mama…'];
-      for (let k = 0; k < nums.length; k++) await count(nums[k], k === 4 ? 'concerned' : k === 11 ? 'calm' : null);
-      S.set({ implement: 'hand' });
+      await wantonBrush(S);
     }
     await marenReckon(S, how);
     if (how.also) await how.also(S);
@@ -1087,10 +1105,12 @@ const gardenCorrection = async (S, how) => {
     back: [M, 'Back over my knee.', 'stern'],
   });
   S.set({ strength: 1.8, pace: 1 }); await S.wait(0.8);
-  await S.say(M, dg === 'wanton' ? 'Twelve: for every bed, and for the lie. Count them.' : 'Six. Count them, and then it’s done with.', 'stern');
+  if (dg === 'wanton') { await wantonBrush(S, true); }
+  else {
+  await S.say(M, 'Six. Count them, and then it’s done with.', 'stern');
   await S.say(R, '…Yes, Mama.');
-  { const nums = dg === 'wanton' ? ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six…', 'Seven…', 'Eight…', 'Nine…', 'Ten…', 'Eleven…', 'Twelve… I’m sorry, Mama…'] : ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six… I’m sorry, Mama…'];
-    for (let k = 0; k < nums.length; k++) await count(nums[k], k === 2 ? 'concerned' : k === nums.length - 1 ? 'calm' : null); }
+  { const nums = ['One…', 'Two…', 'Three…', 'Four…', 'Five…', 'Six… I’m sorry, Mama…'];
+    for (let k = 0; k < nums.length; k++) await count(nums[k], k === 2 ? 'concerned' : k === nums.length - 1 ? 'calm' : null); } }
   await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) { S.set({ implement: 'hand' }); await how.also(S); }      // (anything else to be said over her, before the last word)
   await S.say(M, 'I know you are. It’s done. Up you get.', 'calm');
