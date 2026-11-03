@@ -115,14 +115,16 @@ test('an errand of her mother’s left undone is asked again the next day, unles
   assert.equal(chores.buttDry(), false, 'fetched: the butt full again');
 });
 
-test('the garden left only for want of the water: her mother speaks of it as the well’s, not the garden over again', () => {
-  const S = globalThis.Story, text = l => l.map(x => x.text || '').join(' | ');
-  const both = text(S.dayTalk('yes', { errand: { id: 'well', state: 'broken' }, garden: false, gardenDry: true }));
-  assert.match(both, /stood dry all day/); assert.doesNotMatch(both, /And the garden\?/); assert.doesNotMatch(both, /let it slide\./);
-  const owed = text(S.dayTalk('yes', { errand: { id: 'eggs', state: 'done' }, garden: false, gardenDry: true }));
-  assert.match(owed, /the well’s to answer for, not the garden’s/); assert.doesNotMatch(owed, /I didn’t get to it/);
-  const plain = text(S.dayTalk('yes', { errand: { id: 'well', state: 'broken' }, garden: false, gardenDry: false }));
-  assert.match(plain, /let it slide/); assert.match(plain, /I didn’t get to it/, 'a garden simply left: both, as before');
+test('her day, told: the errand and the garden as hers to say, or her mother’s to ask; the garden left for want of the water, the well’s', () => {
+  require('../js/garden.js'); const Report = require('../js/report.js');
+  const { w, chores, save, cal } = world(); w.chores = chores;
+  chores.answer('well', 'yes'); cal.advance(11 * 60 - cal.minute); chores.tick(null); cal.until('19:30'); chores.tick(null);
+  const ts = Report.topics(null, w, 'supper'), by = id => ts.find(t => t.id === id);
+  assert.ok(by('errand:broken'), 'the well let slide: hers to own');
+  assert.match(by('errand:broken').tell.map(l => l.text).join(' '), chores.gardenDry() ? /stood dry all day/ : /let it slide/);
+  assert.ok(by('garden:left'), 'the garden left: hers to say, or asked');
+  save.change(s => { s.report = { day: cal.day, said: ['errand:broken'] }; }, { report: true });
+  assert.ok(!Report.topics(null, w, 'supper').some(t => t.id === 'errand:broken'), 'told once: not offered again');
 });
 
 test('the pot: never taken from the hearth; at the forge till fetched; three days there, and it’s an errand', () => {

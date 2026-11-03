@@ -230,7 +230,7 @@ function create(w) {
     if (id) change(c => { c.asked = (c.asked || []).filter(x => x !== id).concat(id); });      // (asked: for the order they're first asked in)
     await P.converse(S.breakfast(e, ctx), { shot: ['red', 'mother'] });
     if (cal.lay) await weekly(P);      // (Lay day: the week reckoned, after breakfast)
-    if (root.Loaf) { await root.Loaf.eat(P, w, 'breakfast'); await root.Loaf.shopAsk(P, w, id); }      // (breakfast's piece of the loaf; and the shopping, if there's any, on top of the day's errand)
+    if (root.Loaf) { await root.Loaf.eat(P, w, 'breakfast'); await root.Loaf.shopAsk(P, w, id); await root.Loaf.heelOut(P, w); }      // (breakfast's piece of the loaf; and the shopping, if there's any, on top of the day's errand)
     w.refresh();
   }
   // Her answer to the day's errand: 'yes' (a promise, to begin by its time), 'little' (an honest no: nothing against her), 'wont' (wilful, and

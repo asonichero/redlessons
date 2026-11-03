@@ -146,7 +146,8 @@ async function evening(P, w, force) {
   const st = stateOf(w), cal = w.cal, S = root.Story, p = st.pending;
   if (!P || !P.npc) return false;
   if (!p) return false;
-  // (the day she was sent home: as soon as she's in)
+  // (the day she was sent home: hers to tell her mother, in her day's telling (js/report.js); not now)
+  if (p.day === cal.day && p.told === null) return false;
   if (p.day === cal.day && p.told === null) {
     let told = null;
     await P.wait(0.6); await P.approach();
@@ -166,6 +167,10 @@ async function evening(P, w, force) {
   }
   return false;
 }
+// (in her day's telling, the day she was sent home: told, or kept back: js/report.js)
+const tellable = w => { const p = stateOf(w).pending; return !!(p && p.day === w.cal.day && p.told === null); };
+async function own(P, w) { change(w, s => { s.pending = null; }); await P.converse(root.Story.pieOwned(), { shot: ['red', 'mother'] }); await root.Evening.owe(P, w, 'pie', { withheld: false }); return true; }
+function keep(w) { change(w, s => { if (s.pending) s.pending.told = false; }); }
 async function correct(P, w, how) {
   const S = root.Story;
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.pieMaren(Sc, how) }], fade: on => w.fade(on) });
@@ -174,7 +179,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { ready, dare, actions, evening, correct, objective, stateOf, AGAIN_AFTER };
+const api = { tellable, own, keep, ready, dare, actions, evening, correct, objective, stateOf, AGAIN_AFTER };
 root.Pie = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

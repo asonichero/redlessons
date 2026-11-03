@@ -42,7 +42,16 @@ test('shopping: named over breakfast on top of the errand, not one itself; at su
   await Loaf.shopAsk(P, w, 'well'); assert.ok(P.said.some(t => /on top of that/.test(t)));
   assert.deepEqual(Loaf.shopping(w), { asked: true, done: false });
   w.save.change(s => { s.chores.bread.got = 5; }); assert.deepEqual(Loaf.shopping(w), { asked: true, done: true });
-  const S = globalThis.Story, base = { garden: null, errand: { id: 'well', state: 'done' } };
-  assert.ok(S.dayTalk('yes', Object.assign({}, base, { shop: { asked: true, done: true } })).some(l => /twice grateful/.test(l.text || '')));
-  assert.ok(S.dayTalk('yes', Object.assign({}, base, { shop: { asked: true, done: false } })).some(l => /Never mind/.test(l.text || '')));
+  const Report = require('../js/report.js'); w.save.change(s => { s.chores = Object.assign(s.chores, { day: 5, errand: { id: 'well', state: 'done', by: 600 } }); });
+  let t = Report.topics(null, w, 'supper').find(x => x.id === 'shop'); assert.match(t.tell.map(l => l.text).join(' '), /twice grateful/);
+  w.save.change(s => { s.chores.bread.got = 0; }); t = Report.topics(null, w, 'supper').find(x => x.id === 'shop'); assert.match(t.tell.map(l => l.text).join(' '), /Never mind/);
+});
+
+test('owned up to the ducks: the heel is hers for them, the morning it’s all that’s left', async () => {
+  const w = world(), P = player(1);
+  w.save.change(s => { s.chores.bread = { left: 0.55, fed: 0.45 }; s.chores.loaf = { day: 5, state: 'back' }; });
+  await Loaf.evening(P, w, { table: true });
+  assert.ok(w.save.state.flags['heel-for-ducks'] != null); assert.ok(P.said.some(t => /had the heel/.test(t)));
+  w.save.change(s => { s.chores.bread.left = 0.2; }); await Loaf.eat(P, w, 'breakfast');
+  assert.ok(Loaf.bread(w).heelDue, 'down to the heel: due in her basket');
 });

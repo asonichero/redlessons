@@ -24,8 +24,8 @@
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const flat = p => new V3(p.x, 0, p.z), yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
-const LOAF = 'the loaf', LOAVES = 'the loaves', FRESH = 'a fresh loaf';
-const PER = { breakfast: 0.15, dinner: 0.15, supper: 0.15 }, FED = 0.45, HEEL = 0.15;      // (a meal's piece of it; the ducks' share; the heel, not enough for another meal)
+const LOAF = 'the loaf', LOAVES = 'the loaves', FRESH = 'a fresh loaf', HEEL = 'the heel';      // (HEEL: the loaf's last, hers for the ducks, once she's owned up to them: in her basket the morning it's all that's left)
+const PER = { breakfast: 0.15, dinner: 0.15, supper: 0.15 }, FED = 0.45, HEEL_LEFT = 0.15;      // (a meal's piece of it; the ducks' share; the heel, not enough for another meal)
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
 const chores = w => w.save.state.chores || {};
 const change = (w, fn) => w.save.change(s => { s.chores = s.chores || {}; fn(s.chores); }, { chores: true });
@@ -36,7 +36,7 @@ const bread = w => Object.assign({ left: 1, fed: 0, need: false, carrying: false
 const setBread = (w, fn) => change(w, c => { c.bread = Object.assign({ left: 1, fed: 0, need: false, carrying: false }, c.bread); fn(c.bread); });
 // (on the board, where her mother can see it: not taken today, or put back)
 const onBoard = w => { const l = chores(w).loaf; return bread(w).left > 0 && !(l && l.day === w.cal.day && ['taken', 'ducks', 'kept', 'gone', 'asked'].includes(l.state)); };
-const breadIn = P => { const b = basket(P), c = (b && b.contents) || []; return c.includes(LOAF) ? LOAF : c.includes(LOAVES) ? LOAVES : null; };
+const breadIn = P => { const b = basket(P), c = (b && b.contents) || []; return c.includes(LOAF) ? LOAF : c.includes(LOAVES) ? LOAVES : c.includes(HEEL) ? HEEL : null; };
 
 // Peter on the green. → true if it was the ducks' talk (the rest of his talk is js/villagers.js's).
 async function peter(P, w, f, V) {
@@ -62,15 +62,16 @@ async function feed(P, w, f, V, what) {
   if (f) f.motion.face(yawTo(f.motion.pos, pond));
   const throwing = { on: true }, toss = async (mo, at, h) => { while (throwing.on) { await mo.reach(h, at.clone().setY(9)); await P.wait(0.25); await mo.release(h); await P.wait(0.6 + Math.random() * 0.5); } };
   const going = [toss(m, me.clone().lerp(pond, 0.2), 'L')]; if (f) going.push(toss(f.motion, him.clone().lerp(pond, 0.2), 'R'));      // (hers with her left: the basket's on her right arm)
-  const left = bread(w).left, all = what !== LOAF || left - FED < HEEL;      // (the loaf: a good share of it, or what's left, if that's little enough; the loaves: both)
+  const left = bread(w).left, all = what !== LOAF || left - FED < HEEL_LEFT, heel = what === HEEL;      // (the loaf: a good share of it, or what's left, if that's little enough; the loaves: both)
   await P.converse(S.ducksFed(what, !all), { shot: ['red', 'peter'] });
   throwing.on = false; await Promise.all(going);
   const b = basket(P);
   if (all) { if (b && root.Chores) root.Chores.takeOut(b, what); if (b && b === P.bag) change(w, c => { if (c.bag) c.bag.contents = b.contents.slice(); }); }
-  if (what === LOAF && all) { change(w, c => { c.loaf = { day: w.cal.day, state: 'ducks' }; }); setBread(w, x => { x.left = 0; x.fed = 0; }); }
+  if (heel) { /* (the heel: hers, and given) */ }
+  else if (what === LOAF && all) { change(w, c => { c.loaf = { day: w.cal.day, state: 'ducks' }; }); setBread(w, x => { x.left = 0; x.fed = 0; }); }
   else if (what === LOAF) { change(w, c => { c.loaf = { day: w.cal.day, state: 'taken', fed: true }; }); setBread(w, x => { x.left = Math.max(0, x.left - FED); x.fed = (x.fed || 0) + FED; }); }      // (still in her basket, gone down: back on the board, and her mother will see)
-  else change(w, c => { if (c.errand && c.errand.id === 'bread') c.errand.state = 'fed'; });      // (her mother's errand: nothing to hand over now)
-  w.rep.add('naughty', what === LOAVES ? 1 : 0.5, what === LOAVES ? 'Mama’s loaves, thrown to the ducks' : 'Mama’s loaf, thrown to the ducks');
+  else if (!heel) change(w, c => { if (c.errand && c.errand.id === 'bread') c.errand.state = 'fed'; });      // (her mother's errand: nothing to hand over now)
+  if (!heel) w.rep.add('naughty', what === LOAVES ? 1 : 0.5, what === LOAVES ? 'Mama’s loaves, thrown to the ducks' : 'Mama’s loaf, thrown to the ducks');      // (the heel's hers to give: no harm in it)
   w.rep.add('mischievous', 0.5, 'feeding the ducks with Peter'); w.rep.trusts('peter', 1);
   w.cal.advance(15); w.refresh();
   if (P.talk) P.talk.muse(S.ducksAfter(what, !all), { face: 'wince' });
@@ -100,7 +101,7 @@ async function evening(P, w, o) {
     else { w.rep.add('naughty', 0.5, 'saying she didn’t know where the loaf was'); change(w, x => { x.loaf.state = 'kept'; }); setBread(w, x => { x.left = 0; x.fed = 0; x.need = true; }); }      // (as good as gone: another to be fetched)
     return false;
   }
-  const ducks = l.state === 'ducks';
+  const ducks = l.state === 'ducks'; if (ducks) heelLeave(w);
   await P.converse(S.loafGone(ducks), { shot: ['red', 'mother'] });
   change(w, x => { x.loaf.state = 'asked'; }); setBread(w, x => { x.left = 0; x.fed = 0; x.need = true; });
   await root.Evening.owe(P, w, 'loaf', { ducks });
@@ -118,28 +119,59 @@ async function diminished(P, w, near) {
     const C = w.chores; if (C && C.slid) C.slid('eating between meals');
     return false;
   }
-  w.rep.add('naughty', 0.5, 'Mama’s loaf, to the ducks');
+  w.rep.add('naughty', 0.5, 'Mama’s loaf, to the ducks'); heelLeave(w);
   await root.Evening.owe(P, w, 'loaf', { ducks: true, part: true });
   return true;
 }
 // A meal's piece of it, off the board (not there to eat, nothing). Down to the heel, her mother says so: another, from Mistress Pennock.
 async function eat(P, w, meal) {
   if (!onBoard(w)) return;
-  const b = bread(w), left = Math.max(0, b.left - (PER[meal] || 0.2)), out = left < HEEL;
-  setBread(w, x => { x.left = out ? 0 : left; if (out) x.need = true; }); show(P, w);
+  const b = bread(w), left = Math.max(0, b.left - (PER[meal] || 0.2)), out = left < HEEL_LEFT;
+  setBread(w, x => { x.left = out ? 0 : left; if (out) { x.need = true; x.heelDue = true; } }); show(P, w);
   if (out && meal !== 'breakfast') { if (P && P.talk && root.Story.loafOut) await P.converse(root.Story.loafOut(w.cal.minute < H('11:30')), { shot: ['red', 'mother'] }); if (w.refresh) w.refresh(); }
 }
 // (whether her mother will have something to say of it at this meal: missed, gone down, or down to the heel)
 function asks(w, meal) {
   const c = chores(w), l = c.loaf && c.loaf.day === w.cal.day ? c.loaf : null, b = bread(w);
-  if (onBoard(w)) return b.fed > 0 || b.left - (PER[meal] || 0.2) < HEEL;
+  if (onBoard(w)) return b.fed > 0 || b.left - (PER[meal] || 0.2) < HEEL_LEFT;
   return !!(l && (l.state === 'taken' || l.state === 'ducks' || l.state === 'gone'));
+}
+// What there is to tell of the loaf today, if anything (js/report.js): 'taken' (off the board, in her basket), 'fed' (some of it to the
+// ducks, the rest back on the board or in her basket), 'ducks' (all of it); or null.
+function tellable(w) {
+  const c = chores(w), d = w.cal.day, l = c.loaf && c.loaf.day === d ? c.loaf : null, b = bread(w);
+  if (l && (l.state === 'ducks' || l.state === 'gone')) return 'ducks';
+  if (b.fed > 0) return 'fed';
+  if (l && l.state === 'taken') return 'taken';
+  return null;
+}
+// Said herself, before she was asked: put back if it's in her basket, and what comes of it (the ducks: a correction owed, as owning up to it
+// when asked).
+async function own(P, w, kind) {
+  const S = root.Story, b = basket(P), inBasket = !!(b && (b.contents || []).includes(LOAF));
+  if (inBasket) putBack(P, w);
+  await P.converse(S.loafOwned(kind), { shot: ['red', 'mother'] });
+  if (kind === 'taken') { w.rep.add('naughty', -0.5, 'owning up to the loaf, and putting it back'); change(w, x => { x.loaf = Object.assign({}, x.loaf, { state: 'back' }); }); return false; }
+  if (kind !== 'taken') heelLeave(w);
+  if (kind === 'fed') { setBread(w, x => { x.fed = 0; }); change(w, x => { if (x.loaf && x.loaf.day === w.cal.day) x.loaf.state = 'back'; }); await root.Evening.owe(P, w, 'loaf', { ducks: true, part: true }); return true; }
+  change(w, x => { x.loaf = Object.assign({}, x.loaf, { state: 'asked' }); }); setBread(w, x => { x.left = 0; x.fed = 0; x.need = true; });
+  await root.Evening.owe(P, w, 'loaf', { ducks: true }); return true;
 }
 // (as much of it as is left, to see: the loaf on the board shortened, cut, down to the heel: js/cottage.js's setLeft)
 function show(P, w) { const it = P && P.world && P.world.items && P.world.items.find(x => x.kind === 'loaf'); if (it && it.obj.userData.setLeft) it.obj.userData.setLeft(bread(w).left); }
 // Shopping: not an errand, but named over breakfast on top of whatever the day's is (so far, only a fresh loaf, when it's run out): her mother
 // asks it, and remembers it at supper (shopping(w): { day, done }).
 function shopping(w) { const b = bread(w), d = w.cal.day; return b.need || b.carrying || b.got === d ? { asked: b.shopDay === d, done: b.got === d } : null; }
+// (owned up to the ducks: her mother's leave, from then on, for the heel; set where she's owned it: own, and the asked-for truth)
+const heelLeave = w => w.save.flag('heel-for-ducks', w.cal.day);
+// (a morning the heel's all that's left, and she has her mother's leave: into her basket, for the ducks)
+async function heelOut(P, w) {
+  const fl = w.save.state.flags || {}, b = bread(w); if (fl['heel-for-ducks'] == null || !b.heelDue) return;
+  const bk = basket(P); if (!bk || !root.Chores) return;
+  root.Chores.putIn(bk, HEEL); if (bk === P.bag) change(w, c => { if (c.bag) c.bag.contents = bk.contents.slice(); });
+  setBread(w, x => { x.heelDue = false; });
+  if (P.talk && root.Story.heelGiven) await P.converse(root.Story.heelGiven(), { shot: ['red', 'mother'] });
+}
 async function shopAsk(P, w, errand) {
   const b = bread(w); if (!b.need || b.carrying) return;
   setBread(w, x => { x.shopDay = w.cal.day; });
@@ -196,7 +228,7 @@ async function correct(P, w, how) {
   return r;
 }
 
-const api = { shopping, shopAsk, show, peter, feed, evening, eat, asks, fresh, actions, objective, bread, onBoard, correct, breadIn, LOAF, LOAVES, FRESH, PER };
+const api = { heelOut, heelLeave, HEEL, tellable, own, shopping, shopAsk, show, peter, feed, evening, eat, asks, fresh, actions, objective, bread, onBoard, correct, breadIn, LOAF, LOAVES, FRESH, PER };
 root.Loaf = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

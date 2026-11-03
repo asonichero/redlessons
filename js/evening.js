@@ -60,15 +60,13 @@ async function home(P, w, o) {
     await raise(P, w);      // (what she's to be set right for, said now)
     await reprieves(P, w);
     if (excused) { await P.wait(0.4); await P.approach(); await P.converse(S.excusedHome(), { shot: ['red', 'mother'] }); }
-    // (what her mother's heard or found, if nothing's owed already tonight: the rest waits)
-    if (!owes(w) && root.Pie) await root.Pie.evening(P, w, true);
-    if (!owes(w) && root.AbneyPromise) await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
-    if (!owes(w) && root.Garden && w.chores && w.chores.on()) await root.Garden.evening(P, w, true);
-    if (!owes(w) && root.Loaf && w.chores && w.chores.on()) await root.Loaf.evening(P, w);      // (the loaf off the board: js/loaf.js)
+    // (what her mother's heard from others since: raised now, whatever else is owed tonight; all of it seen to together)
+    if (root.Pie) await root.Pie.evening(P, w, true);
+    if (root.AbneyPromise) await root.AbneyPromise.evening(P, w);      // (a promise to Mistress Abney broken: she's told her)
+    if (root.Garden && w.chores && w.chores.on()) await root.Garden.evening(P, w, true, { witnessOnly: true });      // (heard from the village: she lied about her flowers, and her mother knows; her own look round's asked in her day's telling)
     if (!owes(w) && P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
     // (then the evening as it always goes: supper at the table, and her day)
     if (P !== w.P) return;
-    if (root.Loaf && w.chores && w.chores.on()) await root.Loaf.eat(P, w, 'supper');      // (supper's piece of the loaf, if it's on the board)
     const table = await supper(P, w, { owed: owes(w), late, home: !!o.athome });      // (home: she's been in, and her mother calls her to it)
     // (and last, what's owed: told to wash for supper, and then it's seen to. Or, nothing owed, up from the table, and a wash at the dresser
     // when she's ready: and supper, and bed)
@@ -320,11 +318,12 @@ async function curfewCorrect(P, w, how) {
 }
 // ── What someone else has already dealt with: her mother's heard (they told her), or Red tells her now; or she keeps it back, and her
 // mother hears of it in a day or two. A reprieve, every time.
+// (only those kept back, that her mother's heard of since: the rest are hers to tell in her day's telling: js/report.js)
 async function reprieves(P, w) {
   const S = root.Story, st = stateOf(w), day = w.cal.day;
   let said = false; const notAll = async () => { const o = (stateOf(w).owed || [])[0]; if (o && !said && S.reprieveNotAll) { said = true; await P.converse(S.reprieveNotAll(o.kind), { shot: ['red', 'mother'] }); } };      // (something else still owed: not let go with it)
-  for (const c of st.corrected.filter(x => !x.raised)) {
-    const heard = c.informs || (c.withheld && day - c.day >= 2);
+  for (const c of st.corrected.filter(x => !x.raised && x.withheld)) {
+    const heard = c.withheld && day - c.day >= 2;
     if (heard) { await P.wait(0.4); await P.approach(); await P.converse(S.reprieve(c, c.withheld ? 'late' : 'heard'), { shot: ['red', 'mother'] }); change(w, s => { const x = s.corrected.find(y => y.id === c.id); x.raised = true; }); await notAll(); continue; }
     if (c.withheld) continue;
     let told = false;
@@ -333,6 +332,15 @@ async function reprieves(P, w) {
     if (told) { await P.converse(S.reprieve(c, 'reported'), { shot: ['red', 'mother'] }); await notAll(); }
     change(w, s => { const x = s.corrected.find(y => y.id === c.id); if (told) x.raised = true; else x.withheld = true; });
   }
+}
+// (corrections by someone else, today's, not yet spoken of: hers to tell (told), or her mother's to raise if she's been told (heard), or kept
+// back (withheld): js/report.js)
+const freshCorrections = w => (stateOf(w).corrected || []).filter(x => !x.raised && !x.withheld);
+async function reprieveSaid(P, w, c, how) {
+  const S = root.Story;
+  if (how === 'withheld') { change(w, s => { const x = s.corrected.find(y => y.id === c.id); if (x) x.withheld = true; }); return; }
+  await P.converse(S.reprieve(c, how), { shot: ['red', 'mother'] }); change(w, s => { const x = s.corrected.find(y => y.id === c.id); if (x) x.raised = true; });
+  const o = (stateOf(w).owed || [])[0]; if (o && S.reprieveNotAll) await P.converse(S.reprieveNotAll(o.kind), { shot: ['red', 'mother'] });
 }
 // ── Master William's asked her mother: next time, might he see to it himself? Red's to say; her mother decides by it (maren.willie).
 async function blessing(P, w) {
@@ -365,9 +373,11 @@ async function supper(P, w, ctx) {
     shop: root.Loaf && root.Loaf.shopping ? (s0 => s0 && s0.asked ? s0 : null)(root.Loaf.shopping(w)) : null,      // (the shopping asked at breakfast: done, or not)
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   w.save.change(s => { s.evening.today = day; }, { evening: true });      // (for her thoughts in bed, after)
-  await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });
+  await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });      // (her mother's question, and what she raises first: dinner missed)
+  if (root.Report && w.chores && w.chores.on()) await root.Report.run(P, w, { when: 'supper' });      // (her day, told as she will; what her mother knows of asked: js/report.js)
+  if (root.Loaf && w.chores && w.chores.on()) await root.Loaf.eat(P, w, 'supper');      // (supper's piece of the loaf, if it's on the board)
+  await P.converse(S.dayEnd(how, Object.assign({}, day, { owed: owes(w) })), { shot: ['red', 'mother'] });
   if (w.chores && w.chores.weekWarn) await w.chores.weekWarn(P);      // (nearing the line for the week: her word on it)
-  if (day.shop && day.shop.done && day.errand && ['done', 'carrying'].includes(day.errand.state)) w.rep.trusts('maren', 0.5);      // (both: twice grateful)
   await Promise.all(peeling.map(j => j.done()));
   if (w.capacity) w.capacity.add(how === 'late' ? 4 : how === 'yes' ? 10 : 15, 'supper');      // (supper, with her mother: sat still, more; late, it's long since eaten)
   w.cal.advance(how === 'yes' ? 40 : 20);
@@ -398,7 +408,7 @@ function caught(w, who) {
   w.refresh(); return n;
 }
 
-const api = { seeTo, abed, actions, tableDue, washDue, curfewNudge, nudge, home, record, watchman, objective, caught, stateOf, night, owe, owes };
+const api = { freshCorrections, reprieveSaid, seeTo, abed, actions, tableDue, washDue, curfewNudge, nudge, home, record, watchman, objective, caught, stateOf, night, owe, owes };
 root.Evening = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
