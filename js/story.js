@@ -653,7 +653,7 @@ const VILLAGE = {
     any: [
       [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Miller let me off early. Said I was grinding my teeth louder than the stones.' },
         { who: 'red', face: 'cheeky', text: 'And you came straight here. To the green. Where the well is.' }, { who: 'georgie', face: 'bashful', text: 'It’s… a nice green.' }],
-      [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Father’s still abed. Up all night walking the lanes, then sleeps through the day like a cat. Mother says she married a lantern.' },
+      [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Father’s still abed. Up all night walking the lanes, then sleeps through the day like a cat. Mother used to say she married a lantern.' },
         { who: 'red', face: 'smile', text: 'He used to growl at us out of the window.' }, { who: 'georgie', face: 'smile', text: 'He still does. Only now he means it.' }],
       [{ who: 'georgie', face: 'bashful', listen: { red: 'calm' }, text: 'Rose. Does Agnes ever… say anything? About anybody?' },
         { who: 'red', face: 'cheeky', text: 'Agnes says a great deal about everybody, Georgie.' }, { who: 'georgie', face: 'pout', text: 'That’s no help at all.' }],
@@ -1710,7 +1710,43 @@ const agnesGeorgieAfter = rose => [
   { text: rose ? 'He said it, and it stopped, there and then, and she had hold of him before the word was finished.' : 'After, they sit on the trunk together, his head on her shoulder, her arm round him, both of them crying and pretending not to.' },
   { who: 'georgie', face: 'teary', listen: { agnes: 'calm' }, text: 'I felt it. I did. I’m sorry, Agnes.' },
   { who: 'agnes', face: 'teary', listen: { georgie: 'teary' }, text: 'I know. I know you are, now. It’s done. It’s put down.' },
+];
+// (and before she goes: a word to Georgie, if she'll give it, and Agnes tells him why she can; or she goes quietly. ctx.tell())
+const georgieCommiserate = ctx => [
+  { choose: [
+    { text: 'Georgie… for what it’s worth, I know how that feels.', face: 'shy', then: [{ run: ctx.tell },
+      { who: 'georgie', face: 'teary', listen: { red: 'shy' }, text: 'You… what?' },
+      { who: 'agnes', face: 'calm', listen: { georgie: 'teary' }, text: 'She does. It’s hers to tell, not mine, but she does. Better than you, Georgie Dunn.' },
+      { who: 'red', face: 'shy', listen: { georgie: 'shy' }, text: 'Mama takes me in hand, when I’ve earned it. I asked her to. It helps, after. It does.' },
+      { who: 'georgie', face: 'bashful', listen: { red: 'shy' }, text: 'Rose Ridley. And there was me thinking you’d laugh.' },
+      { who: 'red', face: 'smile', listen: { georgie: 'bashful' }, text: 'Never at this.' }] },
+    { text: 'Say nothing, and leave them be.', face: 'calm', then: [] },
+  ] },
   { who: 'agnes', face: 'calm', listen: { red: 'smile' }, text: 'Go on, Rose. We’re all right. Thank you. I mean it.' },
+];
+// Georgie in the village, after Agnes has had him in hand, Red not having said she knows: something in how he sits, or stands, or won't;
+// and her chance to say it now. (n: which time; ctx.tell())
+const georgieHint = (n, ctx) => [
+  [{ who: 'georgie', face: 'wince', listen: { red: 'calm' }, text: 'No, I’ll stand, thanks. I’ve been sat at the mill all morning.' }, { who: 'red', face: 'shy', thought: true, text: 'He hasn’t. He’s been at the well with Agnes since nine.' }],
+  [{ who: 'georgie', face: 'bashful', listen: { red: 'calm' }, text: 'Don’t ask. Agnes and me had words, is all. Well. She had words.' }],
+  [{ who: 'georgie', face: 'wince', listen: { red: 'calm' }, text: 'Careful how you clap a man on the back, Rose. Or anywhere, today.' }],
+][n % 3].concat([{ choose: [
+  { text: 'Georgie. I know how it feels. Truly.', face: 'shy', then: [{ run: ctx.tell },
+    { who: 'georgie', face: 'surprised', listen: { red: 'shy' }, text: 'You do?' },
+    { who: 'red', face: 'shy', listen: { georgie: 'surprised' }, text: 'Mama takes me in hand. I asked her to. So whatever Agnes gave you, I’ve had the like, and you’ll live.' },
+    { who: 'georgie', face: 'bashful', listen: { red: 'shy' }, text: '…Huh. Well. That’s a comfort, somehow. Don’t tell Agnes I said so.' }] },
+  { text: 'Say nothing.', face: 'calm', then: [{ who: 'red', face: 'calm', thought: true, text: 'Not today. It’s his, not mine.' }] },
+] }]);
+// The Thatchers at the door with her mother, as Red comes in for her dinner, after the fair: fond, as of her when she was small; and her
+// mother, when they've gone, asks if she minds them knowing. (She doesn't. Shyly.)
+const thatchersCall = () => [
+  { who: 'thatcherWife', face: 'smile', listen: { red: 'shy' }, text: 'Here she is. Rose, love, you were a picture at the fair. I said to Maren, she walks like she did at six, all chin, and twice as pleased with herself.' },
+  { who: 'thatcher', face: 'smile', listen: { red: 'shy' }, text: 'She’s settled. That’s what it is. Like our Agnes, lately. Something’s settled.' },
+  { who: 'thatcherWife', face: 'calm', listen: { mother: 'smile' }, text: 'Well, we’ll leave you to your dinner. Maren. Rose.' },
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'They’ve eyes, the Thatchers. And they’re fond of you, and they’ve Agnes, who they know is happier than she was. Would you mind them knowing, love? Why?' },
+  { who: 'red', face: 'shy', listen: { mother: 'calm' }, text: '…No, Mama. I wouldn’t mind. Not them.' },
+  { who: 'mother', face: 'smile', listen: { red: 'shy' }, text: 'Then I’ll save you the blushes, and have a word with Mistress Thatcher next time I see her. You needn’t say a thing.' },
+  { who: 'red', face: 'smile', thought: true, text: 'It’ll be nice for Mama to have someone to talk to about it, besides me. I have so many.' },
 ];
 const woodLeaving = () => 'Asked for, a word, and the after. They’ll be all right.';
 // (Agnes, back at the well, the first time after: yes (and whether Red was there, or meant to be and wasn't), or no)
@@ -2640,5 +2676,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

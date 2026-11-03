@@ -75,10 +75,26 @@ function sitDown(P) {
 // Dinner: the two of them at the table, on the stools, their plates before them; Red's account of her morning, and then her mother's word on it.
 // how: 'entered' (Red's come in at dinner time: straight to the table, under a fade), 'arrived' (Red's in already, and her mother comes in
 // from the farm, glad to find her: a word, and then the table), 'home' (her mother home anyway, at her needlework: the same, without the door).
+// ── After the fair, the first dinner Red comes in to: Master and Mistress Thatcher with her mother, saying their goodbyes; fond of her, as of
+// when she was small. When they've gone, her mother asks if she'd mind them knowing; and she'll tell Mistress Thatcher herself (off, after).
+const thatchersDue = w => { const F = root.Fair && root.Fair.stateOf ? root.Fair.stateOf(w) : null, fl = w.save.state.flags || {};
+  return !!(F && F.day && w.cal.day > F.day && fl['thatchers-know'] == null && !w.cal.lay); };
+async function thatchers(P, w) {
+  const C = root.Correction, THREE = root.THREE, V3 = THREE.Vector3, mm = P.npcMotion, m = P.motion, looks = root.Looks && root.Looks.load ? root.Looks.load() : {};
+  const yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z), CAST = { thatcher: { name: 'Master Thatcher', voice: 'smith', tint: '#5a4a34', bg: '#e6e0d0' }, thatcherWife: { name: 'Mistress Thatcher', voice: 'pennock', tint: '#6a8a4a', bg: '#e8eedc' } };
+  const figs = [];
+  for (const [k, dx] of [['thatcherWife', -7], ['thatcher', 7]]) { const f = C.figure(P, k, looks[k]), side = new V3(Math.cos(mm.yaw), 0, -Math.sin(mm.yaw)), fwd = new V3(Math.sin(mm.yaw), 0, Math.cos(mm.yaw));
+    const at = P.collide(mm.pos.clone().setY(0).addScaledVector(fwd, 12).addScaledVector(side, dx), 3.2); f.m.warp(at, yawTo(at, m.pos)); f.rig.root.position.copy(at); figs.push(f); P.talk.cast[k] = Object.assign({ rig: f.rig, side: 'right' }, CAST[k]); }
+  mm.face(yawTo(mm.pos, m.pos));
+  try { await P.converse(root.Story.thatchersCall(), { shot: ['red', 'thatcherWife'] }); }
+  finally { for (const f of figs) f.remove(); delete P.talk.cast.thatcher; delete P.talk.cast.thatcherWife; }
+  w.save.flag('thatchers-know', w.cal.day);
+}
 async function dinner(P, w, how) {
   const S = root.Story, THREE = root.THREE, V3 = THREE.Vector3, m = P.motion, mm = P.npcMotion, W = P.world, c = w.save.state.chores || {}, d = w.cal.day;
   change(w, s => { s.dinner = d; });
   if (!mm) return;
+  if (thatchersDue(w) && how === 'entered') { await thatchers(P, w); }      // (after the fair: the Thatchers at the door with her mother, as she comes in)
   if (how !== 'entered') { mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await P.converse(S.dinnerCall(how), { shot: ['red', 'mother'] }); }
   // (to the table, under a fade: both sat, plates before them)
   if (w.fade) await w.fade(true);

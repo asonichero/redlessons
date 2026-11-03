@@ -159,6 +159,7 @@ async function scene(P, w, figs) {
   const back = Q.collide(c.clone().addScaledVector(sq.side3, -14), 3.2); Q.motion.warp(back, yawTo(back, c)); Q.rig.root.position.copy(back);
   two.georgie.rig.setExpr('teary', 30);
   await Q.converse(S.agnesGeorgieAfter(r && r.rose), { shot: ['agnes', 'georgie'] });
+  await Q.converse(S.georgieCommiserate({ tell: () => w.rep.tell('georgie', 1) }), { shot: ['red', 'georgie'] });      // (a word to him, and Agnes tells him why she can say it; or she leaves them be)
   change(w, s => { s.settled = 'yes'; s.missed = false; });
   w.rep.trusts('agnes', 1); w.rep.trusts('georgie', 1); settle(w);
   w.cal.advance(45);

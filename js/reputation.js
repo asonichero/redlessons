@@ -11,11 +11,25 @@
 //   rep.trusts('pennock', 1) · rep.trust('pennock') · rep.tell('pennock', 1) · rep.openness('pennock') · rep.village() (0..1, how far it's known)
 //   rep.disclose('hulda-cabin') · rep.disclosed('hulda-cabin') · rep.disclosure() (how much he has)
 //   rep.minds(who) → the stat a figure minds most (FIGURES)
+//   rep.aware(who) → whether Red can take it that they know (told, or as good as: AWARE) · rep.unaware() → who sleeps in the village and doesn't ·
+//   rep.allAware() (everyone who sleeps in the village: so the Watchman can see to her where he finds her, and nobody asks after)
 (function (root) {
 'use strict';
 const STATS = ['wilful', 'mischievous', 'naughty'];
 // The village: who counts toward how far it's known (her mother and grandmother aside: they always know), by how much they talk.
 const VILLAGE = { peter: 1, tom: 1.2, smith: 1, pennock: 1.4, baker: 0.6, abney: 1.6, abneyDaughter: 0.6, halloran: 0.8, willie: 1.2, georgie: 1, agnes: 1.4, bo: 0.8, ferrierMistress: 1 };
+// Who sleeps in the village (Peter, the Hallorans and Bo live out: they don't count toward what's seen there of a night).
+const SLEEPS_IN = ['tom', 'smith', 'ferrierMistress', 'pennock', 'baker', 'abney', 'abneyDaughter', 'willie', 'georgie', 'agnes', 'thatchers'];
+// Known without being told, as Red can fairly take it: Mistress Ferrier, once her husband and Tom both know (the smith thinks nothing of it,
+// and Tom can't keep a thing to himself); Bess, once her mother knows, or after her hints enough times over (state.bessTalk); Master
+// Pennock, his wife's knowing standing for his (she keeps Red's confidence even from him; he'd never bring it up); the Thatchers, once
+// her mother's spoken to Mistress Thatcher (flag thatchers-know: js/maren.js).
+const AWARE = {
+  ferrierMistress: (o, s) => (o.tom || 0) >= 1 && (o.smith || 0) >= 1,
+  abneyDaughter: (o, s) => (o.abney || 0) >= 1 || ((s.bessTalk && s.bessTalk.n) || 0) >= 3,
+  baker: (o, s) => (o.pennock || 0) >= 1,
+  thatchers: (o, s) => !!(s.flags && s.flags['thatchers-know'] != null),
+};
 // Who minds what, among those who'll take her in hand.
 const FIGURES = {
   maren: { minds: 'wilful' }, hulda: { minds: 'mischievous' }, smith: { minds: 'wilful' }, pennock: { minds: 'naughty' },
@@ -48,11 +62,14 @@ function create(save) {
     disclosed: topic => !!S().wolfe[topic],
     disclosure() { let n = 0; for (const t in S().wolfe) n += WOLFE[t] || 1; return n; },
     minds: who => (FIGURES[who] && FIGURES[who].minds) || 'wilful',
+    aware: who => (S().open[who] || 0) >= 1 || !!(AWARE[who] && AWARE[who](S().open || {}, S())),
+    unaware: () => SLEEPS_IN.filter(who => !rep.aware(who)),
+    allAware: () => !rep.unaware().length,
   };
   return rep;
 }
 
-const api = { create, STATS, VILLAGE, FIGURES, WOLFE, KNOWN };
+const api = { create, STATS, VILLAGE, FIGURES, WOLFE, KNOWN, SLEEPS_IN };
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 root.Reputation = api;
 })(typeof window !== 'undefined' ? window : globalThis);

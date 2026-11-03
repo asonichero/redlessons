@@ -94,3 +94,15 @@ test('after a giver’s first correction of her: her skirt’s lifted before the
   assert.ok(lap.seen.length && lap.seen.every(x => x.skirt === 'up'), 'up from the first stroke: ' + lap.seen.map(x => x.skirt).join(','));
   const first = fakeLap(); await D.run(first, 'firm', quick); assert.equal(first.seen[0].skirt, 'down', 'the first time: through its stages');
 });
+
+test('who can be taken to know: told, or as good as (Mistress Ferrier, Bess, Master Pennock, the Thatchers); and those who sleep out don’t count', () => {
+  const Save = require('../js/save.js'), Reputation = require('../js/reputation.js');
+  const save = Save.create({ key: 't', storage: Save.memory() }), rep = Reputation.create(save);
+  assert.ok(!rep.allAware()); assert.ok(!Reputation.SLEEPS_IN.includes('peter') && !Reputation.SLEEPS_IN.includes('bo') && !Reputation.SLEEPS_IN.includes('halloran'));
+  rep.tell('tom', 1); assert.ok(!rep.aware('ferrierMistress')); rep.tell('smith', 1); assert.ok(rep.aware('ferrierMistress'), 'Tom and his father both');
+  rep.tell('pennock', 1); assert.ok(rep.aware('baker'), 'his wife’s knowing stands for his');
+  save.change(s => { s.bessTalk = { n: 3 }; }); assert.ok(rep.aware('abneyDaughter'), 'after her hints');
+  for (const k of ['abney', 'willie', 'agnes', 'georgie']) rep.tell(k, 1);
+  assert.deepEqual(rep.unaware(), ['thatchers']);
+  save.flag('thatchers-know', 9); assert.ok(rep.allAware());
+});
