@@ -236,7 +236,11 @@ function create(stage, opts) {
     finally {
       el.classList.remove('on', 'thought'); portrait = null; playing = false; document.body.classList.remove('talking'); if (voice) { voice.stop(); voice = null; }
       for (const k in cast) relax(k, o.hold || 9000); unlook();
-      if (o.keepCamera && !follows) stage.controls.enabled = mine.enabled; else { handing = mine; giveBack = setTimeout(() => { handing = null; stage.go(mine.pos, mine.look, 900); giveBack = setTimeout(() => { giveBack = null; stage.controls.enabled = mine.enabled; }, 950); }, 900); }      // (held a moment: another conversation straight after carries on from here)
+      // (after it: the camera stays where the conversation left it, and she's the player's again from there; only o.returnCam takes it back to
+      // where it was before (the Fowlers' gate, Peter beyond: the shot that shows him))
+      if (o.keepCamera && !follows) stage.controls.enabled = mine.enabled;
+      else if (o.returnCam) { handing = mine; giveBack = setTimeout(() => { handing = null; stage.go(mine.pos, mine.look, 900); giveBack = setTimeout(() => { giveBack = null; stage.controls.enabled = mine.enabled; }, 950); }, 900); }
+      else { handing = mine; giveBack = setTimeout(() => { handing = null; giveBack = null; stage.controls.enabled = mine.enabled; }, 250); }      // (held a moment: another conversation straight after carries on from here)
     }
     return picks;
   }

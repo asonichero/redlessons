@@ -61,7 +61,7 @@ async function atGate(P, w) {
     // (the gate swung open; and he points out the boy, wherever he is)
     W.holdingGate.target = 1; change(w, s => { s.letIn = w.cal.day; });
     fw.motion.face(Math.atan2(pe.motion.pos.x - fw.motion.pos.x, pe.motion.pos.z - fw.motion.pos.z)); await P.wait(0.8);
-    await P.converse(S.letIn(pe.where), { shot: ['red', 'fowler'] });
+    await P.converse(S.letIn(pe.where), { shot: ['red', 'fowler'], returnCam: true });      // (and back to the view up the yard, Peter in it)
     w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met.fowler = true; s.fowlers.talked.fowler = w.cal.day; }, { fowlers: true });
     // (and back to his own work: the garden, walked to)
     const g = sp.garden; fw.motion.goTo(g.at, g.yaw, { speed: 0.5 }).then(() => { if (!fw.held) return; fw.held = false; fw.where = 'garden'; fw.motion.lookAt(g.look); });
