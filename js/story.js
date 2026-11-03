@@ -393,7 +393,8 @@ const nightThoughts = o => {
   if (o.kind === 'fairClean') out.push(['smile', 'Not a mark on it, all day. She looked at me like I was the fair.']);
   else if (o.kind === 'fairOwned') out.push(['calm', 'A mark on the hem, and I told her, and she just said thank you. We’ll mend it in the morning.']);
   if (fairNight) out.push(['smile', 'The fiddle going, and the lanterns, and everyone out on the green.'], ['wince', 'And Agnes’s face, when Georgie ran. In front of everyone. I keep seeing it.']);
-  if (o.kind && !/^fair/.test(o.kind)) {
+  if (o.kind === 'kept') out.push(['smile', 'Bess asleep in her chair before the carrier came, and her mother’s face when she saw her. Better than well, she said.'], ['calm', 'A promise kept. It feels like something I made with my hands.']);      // (home after sitting with Bess: nothing to be set right for)
+  else if (o.kind && !/^fair/.test(o.kind)) {
     out.push(r && r.rose ? ['shy', 'I said my name, and she stopped. Straight away, the way she promised.']
       : r && (r.tooHarsh || r.peak >= 1) ? ['teary', 'It still stings. But she held me after till I’d cried it all out, and that’s the bit I’ll remember.']
       : ['shy', 'It still stings. Less than it did.']);
@@ -411,7 +412,7 @@ const nightThoughts = o => {
   else out.push(['calm', 'Not my best day. Not my worst, either.']);
   if (d.herb) out.push(['smile', d.herb.name.charAt(0).toUpperCase() + d.herb.name.slice(1) + '. I’ll remember what Grandmother said about it, I will.']);
   if (d.peter) out.push(['shy', 'Peter, at the beech. I wonder if he’ll be there tomorrow.']);
-  out.push(['calm', 'Her arm’s heavy over me, and the fire’s just embers.'], 'sleep', ['smile', o.kind ? 'I’ll be good tomorrow. Probably.' : 'Tomorrow, then.']);
+  out.push(['calm', 'Her arm’s heavy over me, and the fire’s just embers.'], 'sleep', ['smile', o.kind && o.kind !== 'kept' ? 'I’ll be good tomorrow. Probably.' : 'Tomorrow, then.']);
   return out;
 };
 
