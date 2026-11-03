@@ -138,7 +138,7 @@ function larder(P, w) {
   put(T.ell(1.5, 1.1, 2.2, 12, 8), '#c98a44', -1, 1.2, 0);      // (the end of a loaf)
   put(new THREE.CylinderGeometry(1.3, 1.3, 1, 3), '#f0d070', 1.4, 0.9, 0.3).rotation.y = 0.4;      // (a wedge of cheese)
   g.position.set(x, tb.y, z); P.stage.scene.add(g);
-  const out = () => bakeryDay(w) && (!allDay(w) || at(w) === 'farm') && stateOf(w).dinner !== w.cal.day;      // (her bakery day: on the table from breakfast, whether her mother's out or at her sewing)
+  const out = () => bakeryDay(w) && (allDay(w) ? at(w) === 'farm' : w.cal.minute >= DINNER) && stateOf(w).dinner !== w.cal.day;      // (her bakery day: out at the farm, left from the morning; home at her sewing, put out at dinner time)
   P.tick(() => { g.visible = out(); });
   (W.actions = W.actions || []).push({ label: 'Eat the bread and cheese', at: new V3(x, tb.y + 2, z), when: () => out() && !P.busy,
     run: async () => { const m = P.motion, c = new V3(x, 0, z), to = P.collide(m.pos.clone().setY(0).sub(c).setLength(9).add(c), 3.2); await Promise.race([m.goTo(to, Math.atan2(c.x - to.x, c.z - to.z)), P.wait(4)]); change(w, s => { s.dinner = w.cal.day; });
