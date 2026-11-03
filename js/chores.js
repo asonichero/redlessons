@@ -438,7 +438,7 @@ function create(w) {
     for (const M of [root.Fair, root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }
     { const V = w.P && w.P.villagers, t = V && V.dareObjective && V.dareObjective(); if (t) out.unshift(t); }      // (Tom's dare, taken: js/villagers.js)      // (walked home by the Watchman; sent home by Mistress Pennock; Bess tonight; Peter at the beech; Grandmother's herbs)
     if (root.Maren && root.Maren.allDay(w)) { if (cal.minute >= H('11:30') && cal.minute < root.Maren.HOME && root.Maren.stateOf(w).dinner !== cal.day) out.push('Bread and cheese on the table at home, when you want it.'); }      // (her mother out all day)
-    else if (root.Maren && cal.minute >= H('11:30') && cal.minute < root.Maren.BACK && root.Maren.stateOf(w).dinner !== cal.day) out.push('Home for dinner with Mama, at half past twelve.');      // (she's back from the farm for it)
+    else if (root.Maren && !(root.Fair && root.Fair.isFair(w)) && cal.minute < root.Maren.BACK && root.Maren.stateOf(w).dinner !== cal.day) out.push('Home for dinner with Mama, at half past twelve.');      // (from the morning, on the days there's dinner at home)      // (she's back from the farm for it)
     const k = root.Work && root.Work.current(w), left = k && (e || k.mode === 'picked') ? root.Work.leftOf(k).filter(t => t.kind !== 'service') : null;
     const orders = k && root.InnShift ? (((save.state.work || {}).svc || {}).orders || []).filter(x => x && x.state === 'waiting') : [];      // (the carrier's men's, as they call them)
     if ((left && left.length) || orders.length) {      // (at work: every task still to do, each its own line; a timed one, when she's back)

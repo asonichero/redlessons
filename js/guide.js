@@ -19,18 +19,23 @@ function goal(w) {
   if (root.Fair && root.Fair.objective(w)) return { area: 'home', who: 'mother' };      // (home by four, for the fitting)
   if (root.Pie && root.Pie.objective(w)) return { area: 'home', who: 'mother' };
   if (root.AbneyPromise && root.AbneyPromise.objective(w)) return { area: 'inn', who: 'bess' };
-  if (root.Peter && root.Peter.objective(w)) return { area: 'wood', spot: 'beech' };
-  const ch = w.chores, e = ch && ch.on() && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id];
-  if (E) {
-    if (e.state === 'accepted' || (e.state === 'broken' && E.shift)) {
-      const has_ = w.P && (E.needs === 'basket' ? !!(root.Chores && root.Chores.basketOf(w.P)) : ch.has(w.P, E));
-      if (E.needs === 'basket' && !has_ && ch.basketWhere) { const b = ch.basketWhere(w.P); if (b && b.at) return { area: b.area, at: b.at }; }      // (her basket: where she put it down, out of doors; set by indoors, it goes out with her)
-      if (E.needs && w.area === 'home' && !has_) return { area: 'home', spot: E.needs };      // (what the errand wants, from where it's kept)
-      return { area: E.area || 'village', spot: E.place }; }      // (a shift: its door, in the village)
-    if (e.state === 'carrying') return { area: 'home', who: 'mother' };
+  // The rest of her day: what's under way first (Grandmother's herb, being fetched or taken to her; what's carried home to Mama), then the
+  // rest by when they're due (dinner at half past twelve, Peter at the beech at his hour, the errand by its time, the garden by dusk). All can be
+  // begun; only the most pressing is marked.
+  const ch = w.chores, e = ch && ch.on() && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id], cands = [];
+  const add = (goal, at, active) => { if (goal) cands.push({ goal, at: at == null ? 24 * 60 : at, active: !!active }); };
+  if (root.Herbs && root.Herbs.objective(w)) { const s = root.Herbs.stateOf(w); add(s.asked && !s.have ? { area: 'wood', herb: s.asked } : { area: 'cabin', who: 'gran' }, null, true); }
+  if (E && e.state === 'carrying') add({ area: 'home', who: 'mother' }, null, true);
+  { const M = root.Maren; if (M && ch && ch.on() && !(M.allDay && M.allDay(w)) && !cal.lay && M.stateOf(w).dinner !== cal.day && cal.minute < M.BACK) add({ area: 'home', who: 'mother' }, M.DINNER); }      // (home for dinner, from the morning)
+  { const pm = root.Peter && root.Peter.objective(w) && root.Peter.stateOf ? root.Peter.stateOf(w).meet : null; if (root.Peter && root.Peter.objective(w)) add({ area: 'wood', spot: 'beech' }, pm && pm.at); }
+  if (E && (e.state === 'accepted' || (e.state === 'broken' && E.shift))) {
+    const has_ = w.P && (E.needs === 'basket' ? !!(root.Chores && root.Chores.basketOf(w.P)) : ch.has(w.P, E)), by = e.by || H(E.by);
+    if (E.needs === 'basket' && !has_ && ch.basketWhere && (() => { const b = ch.basketWhere(w.P); return b && b.at; })()) { const b = ch.basketWhere(w.P); add({ area: b.area, at: b.at }, by); }      // (her basket: where she put it down, out of doors)
+    else if (E.needs && w.area === 'home' && !has_) add({ area: 'home', spot: E.needs }, by);      // (what the errand wants, from where it's kept)
+    else add({ area: E.area || 'village', spot: E.place }, by);      // (a shift: its door, in the village)
   }
-  if (ch && ch.on() && !ch.gardenTended() && cal.minute < H('19:00')) return { area: 'village', spot: 'garden' };
-  if (root.Herbs && root.Herbs.objective(w)) { const s = root.Herbs.stateOf(w); return s.asked && !s.have ? { area: 'wood', herb: s.asked } : { area: 'cabin', who: 'gran' }; }
+  if (ch && ch.on() && !ch.gardenTended() && cal.minute < H('19:00')) add({ area: 'village', spot: 'garden' }, H('19:00'));
+  if (cands.length) { cands.sort((a, b) => (b.active - a.active) || (a.at - b.at)); return cands[0].goal; }
   if (off('maren.chores')) return { area: 'home', who: 'mother' };
   return null;
 }

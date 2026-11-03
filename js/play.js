@@ -321,8 +321,11 @@ function create(view, opts) {
   async function sitOn(seat) {
     // Up to the seat (round the table, or whatever's between), turn her back to it, and sit.
     const f = new V3(Math.sin(seat.facing), 0, Math.cos(seat.facing)), front = collide(flat(seat.at).addScaledVector(f, 4.5 * sc + 2), R * 0.5);
-    for (const q of around(front, R * 0.8)) await m.goTo(q, null);
-    await m.goTo(front, seat.facing); await m.sit(seat); sitting = seat;
+    for (const q of around(front, R * 0.8)) await Promise.race([m.goTo(q, null), wait(4)]);
+    await Promise.race([m.goTo(front, seat.facing), wait(4)]);
+    // (held up on the way: set before the seat, so she sits from there, and stands up there again, never back where she started)
+    if (Math.hypot(m.pos.x - front.x, m.pos.z - front.z) > 2) { m.auto = null; m.warp(front, seat.facing); rig.root.position.copy(m.pos); }
+    await m.sit(seat); sitting = seat;
   }
   async function lieDown() { await m.lie(sitting); lying = true; }
   async function getUp() { await m.stand(); sitting = null; lying = false; }

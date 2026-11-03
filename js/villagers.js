@@ -267,7 +267,7 @@ function attach(P, w) {
       // tree); not, a word, and no harm done. Only sitting with her brings Bess's trust)
       if (key === 'bess' && !P.sitting) { let sit = false; await P.converse(S.bessInvite({ sit: () => { sit = true; } }), { shot: ['red', key] });
         if (!sit) { change(s => { s.met[key] = true; }); return; }
-        const seat = seats(SEAT.inn).sort((a, b) => a.at.distanceTo(f.motion.pos) - b.at.distanceTo(f.motion.pos))[0]; if (seat) await P.sitOn(seat); }
+        const seat = seats(SEAT.inn).sort((a, b) => a.at.distanceTo(f.motion.pos) - b.at.distanceTo(f.motion.pos))[0]; if (seat) { const m = P.motion, out = flat(m.pos).sub(flat(f.motion.pos)); if (out.lengthSq() < 1) out.set(0, 0, 1); const back = P.collide(flat(m.pos).add(out.setLength(10)), 3.2 * P.rig.scaleW); await Promise.race([m.goTo(back, null), P.wait(3)]); await P.sitOn(seat); } }      // (a step back from her first, clear of the table, then round to the bench)
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
       const ctx = { fairWeek: !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), wd: weekday(cal.day), pieTaken: !!(root.Pie && root.Pie.stateOf(w).tries > 0), part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone, tomAtTub: !!((station('tom', cal.day, cal.minute) || {}).stand === 'tub'),
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };

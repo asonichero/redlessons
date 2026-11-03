@@ -318,7 +318,7 @@ async function blessing(P, w) {
 // → the table (up(): stood again, cleared), still sat at it.
 async function supper(P, w, ctx) {
   const S = root.Story; let how = null; ctx = ctx || {};
-  await P.wait(0.4); await P.approach();
+  if (!(P.talk && P.talk.handing)) { await P.wait(0.4); await P.approach(); }      // (straight on from her word at the door: no pause, no turning about)
   await P.converse(S.supperCall(ctx), { shot: ['red', 'mother'] });
   await w.fade(true);
   const table = root.Maren.atTable(P, w, { peel: !ctx.late }); P.stage.camera.updateMatrixWorld();

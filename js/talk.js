@@ -276,7 +276,7 @@ function create(stage, opts) {
   }
   // (done with: its box, its keys)
   function destroy() { root.removeEventListener('keydown', keys, true); el.remove(); clearTimeout(autoT); for (const k in rest) clearTimeout(rest[k]); if (voice) voice.stop(); if (playing) document.body.classList.remove('talking'); playing = false; }
-  return { play, settle, next, muse, caption, captionOff, face, relax, destroy, get playing() { return playing; }, el, cast };
+  return { play, settle, next, muse, caption, captionOff, face, relax, destroy, get playing() { return playing; }, get handing() { return !!handing; }, el, cast };      // (handing: a conversation's just ended, its camera held a moment for one to follow on)
 }
 
 root.Talk = { create };
