@@ -402,7 +402,7 @@ function build(scene, opts) {
     const ln = new THREE.Group(); ln.position.set(-15, 36, 3); f.add(ln); box(ln, 0.6, 0.6, 3, 0, 2, -1.4, iron, { ink: 0 }); box(ln, 2.6, 3.4, 2.6, 0, 0, 0, iron, { ink: 0.04 });
     const lg = new THREE.Mesh(new THREE.BoxGeometry(2, 2.6, 2.7), new THREE.MeshBasicMaterial({ color: srgb('#3a3028') })); ln.add(lg); lamps.push(lg.material);
     root_.updateMatrixWorld(true); const fp = new V3(-45, 0, 19).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: fp.x - 12, x1: fp.x + 12, z0: fp.z - 6, z1: fp.z + 6 });
-    for (const at of [-58, -32, 24]) { const p = new V3(at, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: p.x - 9, x1: p.x + 9, z0: p.z - 2.5, z1: p.z + 2.5 }); world.seats.push({ name: 'the bench outside the inn', at: p.clone().setY(5.6), facing: 0, kind: 'stool' }); }
+    for (const at of [-58, -32, 24]) { const p = new V3(at, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x0: p.x - 9, x1: p.x + 9, z0: p.z - 2.5, z1: p.z + 2.5 }); world.seats.push({ name: 'the bench outside the inn', at: p.clone().setY(5.6), facing: 0, kind: 'stool', noSit: true }); }      // (noSit: the villagers'; not one of Red's, crowding the inn door)
     const bp = new V3(12, 0, 9).applyMatrix4(f.matrixWorld); world.obstacles.push({ x: bp.x, z: bp.z, r: 7 }); }
 
   // ── The bakery: the oven, a domed stone hump against its south end with its own little flue; loaves set out on the board under the window. ──
