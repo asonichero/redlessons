@@ -2602,19 +2602,14 @@ const wolfeMeet = ctx => [
 ];
 const wolfeGone = () => [{ who: 'red', face: 'shy', thought: true, text: 'He never said his name. And I never thought to ask it.' }];
 // Willie Winkie's blessing: her mother, of an evening after his first catch (ctx: { yes(), no() }).
+// After his first catch: her mother's spoken with Master William, and told him her hour. (His offer to see to it himself comes later, in
+// Act 2, with her mother's blessing then: docs/quest-plan.md.)
 const willieBlessing = ctx => [
   { who: 'mother', face: 'calm', listen: { red: 'calm' }, text: 'Master William stopped me this morning, on his way home from his round.' },
   { who: 'red', face: 'wince', text: 'Oh no.' },
-  { who: 'mother', face: 'smile', listen: { red: 'wince' }, text: 'Not that. Or, not only that. He says, the next time he finds you out after the bell, and he says he will, he’d as soon see to it himself, here, at our hearth, as hand you over to me like a parcel. If you were willing. And if I was.' },
-  { who: 'red', face: 'surprised', text: 'Master William?' },
-  { who: 'mother', face: 'calm', listen: { red: 'surprised' }, text: 'He’s a fair man, love. Gruff. But fair. And he asked, which is more than most would. What do you think?' },
-  { choose: [
-    { text: 'If you trust him, Mama… I think I’d let him.', face: 'shy', then: [{ run: ctx.yes },
-      { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Then I’ll tell him yes. But it’s yours to say, every time. Your name stops him the same as it stops me.' }] },
-    { text: 'I’d rather it was only ever you, Mama.', face: 'shy', then: [{ run: ctx.no },
-      { who: 'mother', face: 'tender', listen: { red: 'shy' }, text: 'Then it’s only me, and I’ll tell him so. He’ll understand. He asked so you could say no.' }] },
-  ] },
-  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'And I told him your hour’s nine, not the village’s ten. So he’ll be looking out for you from nine, now, bell or no bell.' },
+  { who: 'mother', face: 'calm', listen: { red: 'wince' }, text: 'Not to complain. I filled him in, that’s all. Your hour’s nine, not the village’s ten: I told him so.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'So he’ll be looking out for you from nine, now, bell or no bell. And he’ll walk you to my door, the same as before.' },
+  { who: 'red', face: 'shy', text: '…Yes, Mama.' },
 ];
 // Peter notices she's changed (ctx: { all(), some(), none() }).
 const peterNotices = ctx => [

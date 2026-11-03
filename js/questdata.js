@@ -58,7 +58,7 @@ const lines = [
     s('walk', '1.1', 'Home before dark', 'wood', 'maren', { hint: 'Home, along the path.', scene: 'ch1.walk' }),
     s('homecoming', '1.1', 'The homecoming', 'home', 'maren', { hint: 'Home. Her mother is waiting.', scene: 'ch1.homecoming' }),
     s('chores', '1.2', 'Chores agreed', 'home', 'maren', { hint: 'Talk to her mother about what’s hers to do.', talk: true }),
-    s('willie', '1.2', 'Willie Winkie’s blessing', 'home', 'maren', { when: { flag: 'willie-catch-1' } }),      // (after his first catch, whenever it comes: not held for the act's later steps)
+    s('willie', '1.2', 'Master William told her hour', 'home', 'maren', { when: { flag: 'willie-catch-1' } }),      // (after his first catch, whenever it comes: not held for the act's later steps)
     s('mending', '2.2', 'The mending for the Shoe', 'home', 'maren'),
     s('confinement', '2.2', 'Weeks at the Abneys’', 'inn', 'maren'),
     s('note', '2.3', 'Sent with the note', 'home', 'maren', { when: { done: 'wolfe.note' } }),
@@ -166,7 +166,7 @@ const gates = [
   { id: 'shoe', name: 'The Shoe', requires: { all: [{ done: 'shoe.lucy' }, { done: 'maren.mending' }] } },
   { id: 'silence', name: 'Hulda’s silence', requires: { done: 'abney.confinement' } },
   { id: 'note', name: 'The forged note', requires: { any: [{ disclosure: { gte: 4 } }, { flag: 'hulda-letters' }] } },
-  { id: 'willie', name: 'Willie Winkie’s offer', requires: { all: [{ flag: 'willie-catch-2' }, { village: { gte: 0.5 } }, { flag: 'maren-blesses-willie' }] } },
+  { id: 'willie', name: 'Willie Winkie’s offer', requires: { all: [{ flag: 'willie-catch-2' }, { village: { gte: 0.5 } }] } },      // (her mother's blessing is asked as part of his offer, then)
   { id: 'villagers', name: 'Rotating villagers', requires: { village: { gte: 0.6 } } },
   { id: 'abney', name: 'Mistress Abney takes her in hand', requires: { all: [{ trust: 'abney', gte: 3 }, { open: 'abney', gte: 1 }] } },
   { id: 'holt', name: 'Holt’s trust', requires: { all: [{ trust: 'holt', gte: 3 }, { open: 'holt', gte: 1 }] } },

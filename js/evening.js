@@ -344,13 +344,12 @@ async function reprieveSaid(P, w, c, how) {
   await P.converse(S.reprieve(c, how), { shot: ['red', 'mother'] }); change(w, s => { const x = s.corrected.find(y => y.id === c.id); if (x) x.raised = true; });
   const o = (stateOf(w).owed || [])[0]; if (o && S.reprieveNotAll) await P.converse(S.reprieveNotAll(o.kind), { shot: ['red', 'mother'] });
 }
-// ── Master William's asked her mother: next time, might he see to it himself? Red's to say; her mother decides by it (maren.willie).
+// ── After his first catch: her mother's told Master William Red's hour (maren.willie). His offer to see to it himself, and her mother's
+// blessing for it, are Act 2's (docs/quest-plan.md).
 async function blessing(P, w) {
-  let yes = false;
   await P.wait(0.4); await P.approach();
-  await P.converse(root.Story.willieBlessing({ yes: () => { yes = true; }, no: () => {} }), { shot: ['red', 'mother'] });
+  await P.converse(root.Story.willieBlessing({}), { shot: ['red', 'mother'] });
   w.save.flag('willie-knows-curfew', w.cal.day);      // (and he knows her hour now: nine, not the village's ten)
-  if (yes) { w.save.flag('maren-blesses-willie', w.cal.day); w.rep.tell('willie', 1); }
   w.complete('maren.willie');
 }
 // ── Supper: her mother calls her to the table, and under a fade they're sat at it, on the stools, facing each other across it, a bowl of

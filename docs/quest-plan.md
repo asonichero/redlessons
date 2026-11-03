@@ -131,7 +131,7 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 1. **1.1** The homecoming, the safe word, the first correction.
 2. **1.2** Agreed chores that aren't too grown: Mary's garden, small errands, curfew.
 3. **1.2** The fair dress (below).
-4. **1.3** Decides whether to give Willie Winkie her blessing, after his first catch.
+4. **1.2** After his first catch, tells Willie Winkie Red's hour (nine, not the village's ten). Her blessing for him to see to it himself comes with his offer, in Act 2.
 5. **2.2** Hands Red the mending for the Shoe. Then Mistress Abney's daughter's confinement keeps Maren and Red busy in the village for weeks, so Hulda's silence passes unseen. Scripted, not a player choice.
 6. **2.3** Receives the forged note and sends Red without thinking through the danger.
 7. **3.1** When Holt brings Red home, Maren pours out apologies to them both. Holt says she shares the blame; she agrees and asks him to hold her to account. Red, and the player, witness it.
@@ -283,7 +283,7 @@ These figures have no steps to complete, but each has a job in every phase so th
 
 | Who | Act 1 | Act 2 | Act 3 |
 | --- | --- | --- | --- |
-| Willie Winkie | On his rounds every night. Red rarely breaks curfew yet. First catch (any time from 1.2): he walks her home for Maren to deal with; she's corrected for the curfew. | Tom's dusk dares make catches likelier. From the second catch, if Red is open and Maren has given her blessing, he offers to deal with her himself: agreed between him and Red alone, never procedural, never on his round. He walks her home and it's done there, by her own fire, with her own slipper from the hearth, his cape set aside; then Maren puts the kettle on. | Saw a figure in the wood at night. The village's authority when Wolfe is brought to account. |
+| Willie Winkie | On his rounds every night. Red rarely breaks curfew yet. First catch (any time from 1.2): he walks her home for Maren to deal with; she's corrected for the curfew. | Tom's dusk dares make catches likelier. From the second catch, if Red is open, he offers to deal with her himself, and Maren's blessing is asked then: agreed between him and Red alone, never procedural, never on his round. He walks her home and it's done there, by her own fire, with her own slipper from the hearth, his cape set aside; then Maren puts the kettle on. | Saw a figure in the wood at night. The village's authority when Wolfe is brought to account. |
 | Master Fowler | Peter's grandfather, at the smallholding: warns about the wood, asks after Hulda. | Notices Hulda hasn't been by. | Tells Peter, which starts 3.2; at the gathering. |
 | The Ferriers, Mistress Pennock, Mistress Abney (once complete) | From 1.3: background figures. Each still corrects her in the open world, weighted by the stat they care about most. | Same; also supply the errand (cake, wine). | Called back as leads and help in the search. |
 | Rotating villagers | Only once village-wide openness is high enough. | Same. | Witnesses; the crowd at the end. |
@@ -305,7 +305,7 @@ Twelve gates hold the story in order. The three act gates are hard; the rest ope
 | Hulda's silence | Wolfe step 3 | Mistress Abney's daughter's confinement keeping Red in the village (2.2) |
 | The forged note | Wolfe step 4 | Enough disclosure to Wolfe to make it convincing; otherwise he uses what Hulda's intercepted letters said |
 | Agnes holds Georgie to account | Agnes and Georgie step 5 | The fair passed; Agnes's trust high, and Red's disclosure to her; Georgie's trust high, and his own yes; Red taken in hand by someone besides her mother (Mistress Pennock or Mistress Abney) |
-| Willie Winkie's offer | His Act 2 behaviour | A second catch, Red open village-wide, and Maren's blessing |
+| Willie Winkie's offer | His Act 2 behaviour | A second catch and Red open village-wide (Maren's blessing asked in it) |
 | Rotating villagers | Open-world corrections | Village-wide openness past a threshold |
 | Each middle-tier figure | Taking her in hand | Trust built, then Red's own disclosure to them |
 | Halloran at the end | Standing with Rose | Enough of Rose's thread done |
