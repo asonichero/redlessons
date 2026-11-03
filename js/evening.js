@@ -34,7 +34,7 @@ const change = (w, fn) => w.save.change(s => { stateOf(w); fn(s.evening); }, { e
 // Someone else has corrected her (by: their key; informs: they'll tell her mother themselves).
 function record(w, o) { change(w, s => { s.corrected.push({ id: o.what + '-' + w.cal.day, what: o.what, by: o.by, day: w.cal.day, informs: !!o.informs, known: false, raised: false }); }); }
 const watchman = w => stateOf(w).walking === night(w.cal) ? 'walking' : null;
-const objective = w => watchman(w) ? (stateOf(w).walkingBy === 'georgie' ? 'Home, with Georgie Dunn at your heels.' : 'Home, with Master William at your heels.') : washDue(w) ? 'Wash at the dresser, when you’re ready for supper.' : abed(w) ? 'Bed, when you’re ready.' : null;
+const objective = w => watchman(w) ? (stateOf(w).walkingBy === 'georgie' ? 'Home, with Georgie Dunn at your heels.' : 'Home, with Master William at your heels.') : washDue(w) ? 'Wash at the dresser, when you’re ready for supper.' : null;
 
 async function home(P, w, o) {
   o = o || {};
@@ -371,7 +371,7 @@ function caught(w, who) {
   w.refresh(); return n;
 }
 
-const api = { actions, tableDue, washDue, curfewNudge, nudge, home, record, watchman, objective, caught, stateOf, night, owe, owes };
+const api = { abed, actions, tableDue, washDue, curfewNudge, nudge, home, record, watchman, objective, caught, stateOf, night, owe, owes };
 root.Evening = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -53,6 +53,7 @@ function pointOf(w, P, g) {
   const W = P.world;
   if (g.area !== w.area) { const name = wayOut(w.AREAS, w.area, g.area); const ex = name && W.exits.find(e => e.name === name);
     if (!ex) return null; const gate = W.gate && W.gate.to === name && W.gate.at; return (gate || ex.at).clone(); }      // (a gate: at the gate itself, not past it)
+  if (g.who === 'mother' && P.npcAway) return null;      // (her mother out: nobody to mark; she's where she's to be till her mother's in)
   if (g.who === 'mother' || g.who === 'gran' || (g.who && P.npc && P.npc.key === g.who)) return P.npcMotion ? P.npcMotion.pos.clone() : null;
   if (g.who) { const f = P.figure(g.who); return f ? f.motion.pos.clone() : null; }
   if (g.at) return g.at.clone();
