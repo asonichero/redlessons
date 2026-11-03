@@ -177,7 +177,8 @@ function attach(P, w) {
   async function sitWithBess() {
     let yes = false; await P.converse(S.bessOffer({ yes: () => { yes = true; } }), { shot: ['red', 'bess'] }); if (!yes) return;
     const chair = W.bessChair, seat = W.seats.filter(x => x.name === 'the bench').sort((a, b) => a.at.distanceTo(chair.at) - b.at.distanceTo(chair.at))[0];
-    if (seat) await P.sitOn(seat);
+    if (seat) { const to = Math.atan2(chair.at.x - seat.at.x, chair.at.z - seat.at.z), d = a => Math.abs(Math.atan2(Math.sin(a - to), Math.cos(a - to)));      // (astride the bench whichever way faces Bess: her back to the table, if that's the way)
+      await P.sitOn(d(seat.facing) <= d(seat.facing + Math.PI) ? seat : Object.assign({}, seat, { facing: seat.facing + Math.PI })); }
     for (let k = 0; k < 2; k++) {
       const n = (w.save.state.bessTalk || {}).n || 0, beats = lines.bess || [], beat = beats[n] || (lines.bessAgain || [])[(n + k) % Math.max(1, (lines.bessAgain || []).length)] || [];
       await P.converse(beat, { shot: ['red', 'bess'] }); if (n < beats.length) w.save.change(x => { x.bessTalk = { n: n + 1 }; });
