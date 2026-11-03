@@ -378,7 +378,7 @@ const nightThoughts = o => {
   else out.push(['calm', 'Not my best day. Not my worst, either.']);
   if (d.herb) out.push(['smile', d.herb.name.charAt(0).toUpperCase() + d.herb.name.slice(1) + '. I’ll remember what Grandmother said about it, I will.']);
   if (d.peter) out.push(['shy', 'Peter, at the beech. I wonder if he’ll be there tomorrow.']);
-  out.push(['calm', 'Her arm’s heavy over me, and the fire’s just embers.'], 'sleep', ['smile', o.kind ? 'Tomorrow, I’ll start again. Little Red.' : 'Tomorrow, then.']);
+  out.push(['calm', 'Her arm’s heavy over me, and the fire’s just embers.'], 'sleep', ['smile', o.kind ? 'I’ll be good tomorrow. Probably.' : 'Tomorrow, then.']);
   return out;
 };
 
@@ -554,6 +554,41 @@ const owedRaise = kind => kind === 'maintenance' ? enough() : kind === 'wood' ? 
   { who: 'red', face: 'shy', text: 'I know, Mama. I meant to be out of it.' },
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Out of the wood before the light goes. That’s been the rule since you could walk. We’ll see to it after supper.' }] : [];
 // The maintenance correction: her hand only, not long, the shape of her days put back in place. (js/correction.js runs it: as the homecoming's.)
+// ── What her mother holds against her besides (S.held: how naughty, how wilful she's found her lately, short of the week's three that make a
+// maintenance correction): not let go with the rest. Any of it, and it's her drawers down for the last of it, if they aren't already; the more
+// of it, the longer. Brought home by the Watchman (how.willie), the hairbrush besides: a spell of it, not counted. Said before the last word.
+const marenReckon = async (S, how) => {
+  const M = 'corrector', R = 'subject', held = S.held || 0, brush = !!(how && how.willie && !how.brushed);
+  if (held < 1 && !brush) return;
+  const naughty = (() => { const W_ = root.__world; return W_ && W_.rep ? W_.rep.stat('naughty') >= W_.rep.stat('wilful') : true; })();
+  if (S.lap.st.drawers !== 'down') {
+    await S.say(M, held >= 1 ? (naughty ? 'And that’s not the half of it, is it. The mischief you’ve been up to lately, one thing after another.' : 'And that’s not the half of it. The answering back, the things let slide, the face you pull when I ask.') : 'And you were brought to my door by the Watchman. That’s not the end of it yet.', 'stern');
+    await S.gesture('drawers'); await S.wait(0.5);
+    await S.say(R, 'Mama, no— please—');
+    await S.say(M, 'Yes. All of it, Little Red, not only tonight’s.', 'stern');
+  }
+  S.set({ implement: 'hand', strength: 1.8 + Math.min(held, 8) * 0.03, pace: 1.7 });
+  if (held >= 1) {
+    const n = 6 + Math.round(Math.min(held, 8) * 2);
+    await S.step([M, naughty ? 'You know better. You’ve known better all along, and you’ve done it anyway.' : 'When I tell you a thing, it’s to be done. Not argued, not put off, not forgotten.'], Math.ceil(n / 2));
+    await S.step([R, 'I know— ow— I’ll be better, Mama—'], 4);
+    await S.step([M, 'You will. This is to help you remember it, the next time.'], Math.floor(n / 2));
+  }
+  if (brush) {
+    await S.fetch('hairbrush', {
+      ask: [M, 'Up you get. The hairbrush, from the chest. For Master William’s walk to my door.'],
+      waitFace: 'concerned', presentFace: 'stern',
+      present: [R, '…Here, Mama.'],
+      back: [M, 'Back over my knee, Little Red.', 'stern'],
+    });
+    S.set({ strength: 1.85, pace: 1.15 }); await S.wait(0.8);
+    await S.say(M, 'You’ll not count these. Just take them, and think about whose lantern brought you home.', 'stern');
+    await S.step([R, 'Mama— oh—'], 6);
+    await S.step([M, 'Out past the bell, where anything might find you. Home on a Watchman’s arm.'], 6);
+    await S.smacks(2);
+    S.set({ implement: 'hand' });
+  }
+};
 const maintenanceCorrection = async (S, how) => {
   const M = 'corrector', R = 'subject';
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3, pace: 1.3 });
@@ -569,6 +604,7 @@ const maintenanceCorrection = async (S, how) => {
   await S.step([R, 'Yes, Mama!'], 4);
   await S.step([M, 'That’s the shape of your days, Little Red. It holds you. Let it.'], 10);
   await S.smacks(8);
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how && how.also) await how.also(S);
   await S.say(M, 'There. That’s done, and you’re set right. Up you get.', 'calm');
   await S.wait(1.2);
@@ -892,6 +928,7 @@ const gardenCorrection = async (S, how) => {
   await S.step([M, 'Somebody grew every one of those. Somebody knelt in the mud for them.'], 10);
   if (!lied) {
     await S.smacks(8);
+    await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
     if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
     await S.say(M, 'There. You owned it, and that’s the end of it. Up you get.', 'calm');
     await S.wait(1.2); return;
@@ -915,6 +952,7 @@ const gardenCorrection = async (S, how) => {
   await S.say(M, 'Six. Count them, and then it’s done with.', 'stern');
   await S.say(R, '…Yes, Mama.');
   await count('One…'); await count('Two…'); await count('Three…', 'concerned'); await count('Four…'); await count('Five…'); await count('Six… I’m sorry, Mama…', 'calm');
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) { S.set({ implement: 'hand' }); await how.also(S); }      // (anything else to be said over her, before the last word)
   await S.say(M, 'I know you are. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
@@ -1175,6 +1213,7 @@ const loafCorrection = async (S, how) => {
   await S.step([R, 'It wasn’t— ow— it wasn’t like that—'], 4);
   await S.step([M, 'Bread costs. Somebody baked it, and somebody paid for it, and neither of them was you.'], 10);
   await S.smacks(6);
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
@@ -1207,6 +1246,7 @@ const pieMaren = async (S, how) => {
   } else {
     await S.smacks(8);
   }
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) await how.also(S);      // (anything else to be said over her, before the last word)
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
@@ -1250,7 +1290,9 @@ const georgieBrings = n => [
 const willieBrings = n => [
   { who: 'willie', face: 'calm', listen: { mother: 'stern' }, text: n > 1 ? 'Evening, Mistress Ridley. Miss Rose again, I’m afraid. On the green, past the bell.' : 'Evening, Mistress Ridley. I found Miss Rose out on the green, past the bell. I’ve walked her home.' },
   { who: 'mother', face: 'stern', listen: { willie: 'calm' }, text: 'Thank you, William. I’ll see to her.' },
-  { who: 'willie', face: 'calm', listen: { mother: 'calm' }, text: 'I don’t doubt it. Goodnight, Mistress. Miss Rose.' },
+  { who: 'willie', face: 'calm', listen: { mother: 'calm' }, text: 'I don’t doubt it. Goodnight, Mistress.' },
+  { who: 'red', face: 'shy', listen: { willie: 'calm' }, text: n > 1 ? 'I’m sorry, Master William. Again. You’d better things to do than walk me home.' : 'I’m sorry, Master William. For being out past the bell, and keeping you from your round to bring me home.' },
+  { who: 'willie', face: 'calm', listen: { red: 'shy' }, text: n > 1 ? 'I had. Mind it’s the last time. Goodnight, Miss Rose.' : 'Said, and taken. Mind the bell, after this. Goodnight, Miss Rose.' },
   ];
 // Home after the bell. (how.willie: brought home)
 const curfewTalk = how => [
@@ -1276,6 +1318,7 @@ const curfewCorrection = async (S, how) => {
   }
   await S.step([M, 'Home by the bell. Every night. That’s the shape of it.'], 8);
   await S.smacks(8);
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) await how.also(S);      // (a "won't" at supper, on top of it)
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
@@ -1290,6 +1333,8 @@ const curfewAfter = how => [
 // heard of it in the village, Red having kept it back).
 const DEALT = { pie: 'the pie', dare: 'the dare with Tom', abney: 'what you asked of her', shift: 'the work left undone' };
 const dealt = c => c.what === 'shift' ? (c.by === 'abney' ? 'the evening at the inn' : 'her list, left half done') : DEALT[c.what] || c.what;
+// (a reprieve for one thing, and something else still owed tonight: that isn't let go with it)
+const reprieveNotAll = kind => [{ who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'That’s that one seen to. It doesn’t see to ' + ({ garden: 'my flowers', loaf: 'my loaf', curfew: 'the bell', maintenance: 'the rest of your week', promise: 'your word to Mistress Abney', dress: 'that dress', wood: 'the wood' }[kind] || 'the other thing') + ', mind. That’s still to come, tonight.' }];
 const reprieve = (c, how) => {
   const who = FULL[c.by] || 'someone', what = dealt(c);
   if (c.what === 'pie' && how === 'heard') return pieMotherKnows();
@@ -1382,6 +1427,7 @@ const willieDealt = () => [
 ];
 const supperCall = ctx => ctx.late ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Supper’s long since eaten. Come and sit down at the table.' }]
   : ctx.owed ? [{ who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Come and sit. The potatoes still want peeling, whatever else.' }]
+  : ctx.home ? [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'Six o’clock, love. Leave that, and come and sit with me. Supper wants starting.' }]
   : [{ who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'There you are! Come and sit with me, love. Supper wants starting.' }];
 const supper = ctx => ctx.late ? [{ run: ctx.late }] : [      // (late: supper long since eaten; she's sat down, and her day asked after)
   ctx.owed ? { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Here. There’s a knife by you. Will you help me with them?' }
@@ -1688,6 +1734,7 @@ const dressCorrection = async (S, how) => {
   if (how.hid) { await S.step([M, 'And then to stand there and tell me it was fine.'], 10); await S.step([R, 'I’m sorry! I didn’t want you to be sad—'], 4); }
   else await S.step([M, 'The quick way, every time. The quick way’s what spoils things.'], 10);
   await S.smacks(how.spoilt ? 8 : 6);
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how.also) await how.also(S);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
@@ -2090,6 +2137,7 @@ const promiseCorrection = async (S, how) => {
   S.set({ strength: 1.95, pace: 1.85 });
   await S.step([M, 'When you give your word, you keep it. Even when something better comes along. Especially then.'], 12);
   await S.smacks(8);
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how && how.also) await how.also(S);      // (anything else to be said over her, before the last word)
   await S.say(M, 'There. It’s done. Tomorrow you go to the Wheatsheaf, and you say sorry to them both.', 'calm');
   await S.wait(1.2);
@@ -2107,6 +2155,7 @@ const woodCorrection = async (S, how) => {
   S.set({ strength: 1.65, pace: 1.6 });
   await S.step([M, 'I stood on that step and watched the edge of the trees, and the light going, and you not coming.'], 10);
   await S.smacks(8);
+  await marenReckon(S, how);      // (what else she's holding against her, besides this: js/correction.js's S.held)
   if (how && how.also) await how.also(S);
   await S.say(M, 'There. It’s done. Up you get.', 'calm');
   await S.wait(1.2);
@@ -2571,5 +2620,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, excusedHome, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -141,16 +141,22 @@ function attach(P, w) {
     const s = cur(); if (s && !leftOf(s).length && s.until && !s.back) allDone = true;      // (all of it done before she's back: and then she is, at her hour (once this task's let go: see the tick))
     else { w.refresh(); if (ID === 'inn') maybeOffer(); }
   }
+  // (at the inn: straight into it, where it's done, not walked over to from wherever she was; its word said to be read, once a shift)
+  const jump = async (at, yaw) => { const p = P.collide(at.clone().setY(0), 3.2); m.auto = null; m.warp(p, yaw == null ? m.yaw : yaw); P.rig.root.position.copy(p); };
+  const place = (at, yaw, o) => ID === 'inn' ? jump(at, yaw) : arrive(at, yaw, o);
+  const once = new Set();
+  const tell = async said => { if (!said) return; if (ID !== 'inn') { say(...said); return; } const k = said[0]; if (once.has(k)) return; once.add(k);
+    if (talk && talk.cast[sh.boss]) await P.converse([{ who: sh.boss, face: said[1] || 'calm', listen: { red: 'calm' }, text: said[0] }], { shot: false, keepCamera: true }); };
   async function doTask(t) {
     const top = W.tableTops && W.tableTops[t.id];      // (a table at the inn: wiped from whichever side she's come to it, at the edge nearest her)
     if (top) { const q = new V3(Math.max(top.x0, Math.min(top.x1, m.pos.x)), 0, Math.max(top.z0, Math.min(top.z1, m.pos.z))), out = m.pos.clone().setY(0).sub(q); if (out.lengthSq() < 0.01) out.set(0, 0, 1); out.normalize();
-      const at = P.collide(q.clone().addScaledVector(out, 6), 3.2); await arrive(at, Math.atan2(q.x - at.x, q.z - at.z)); q.y = top.y; const side = new V3(out.z, 0, -out.x);
-      const said = lines[t.line || t.id]; if (said) say(...said);
+      const at = P.collide(q.clone().addScaledVector(out, 6), 3.2); await place(at, Math.atan2(q.x - at.x, q.z - at.z)); q.y = top.y; const side = new V3(out.z, 0, -out.x);
+      await tell(lines[t.line || t.id]);
       for (let k = 0; k < 3; k++) await reachAt(q.clone().addScaledVector(out, -1.5).addScaledVector(side, (k - 1) * 4), k % 2 ? 'L' : 'R', 0.6);
       if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work'); markDone(t.id); return; }
-    const sp = spots[t.place] || spots.floor; if (!byBroom(t) && t.kind !== 'tea') { await arrive(sp.at, sp.yaw); m.lookAt(sp.look); }
-    const said = lines[t.line || t.id]; if (said) say(...said);
-    if (t.kind === 'tea') { await arrive(sp.at, sp.yaw); m.lookAt(sp.look); await reachAt(sp.look); const cup = cupProp(); P.stage.scene.add(cup.obj); m.hold(cup, 'hang'); m.lookAt(null); carrying = { id: 'tea', it: cup, t }; w.refresh(); return; }
+    const sp = spots[t.place] || spots.floor; if (!byBroom(t) && t.kind !== 'tea') { await place(sp.at, sp.yaw); m.lookAt(sp.look); }
+    if (t.kind !== 'tea') await tell(lines[t.line || t.id]);      // (Bess's tea: her word for it when it's brought her, not as it's poured)
+    if (t.kind === 'tea') { await place(sp.at, sp.yaw); m.lookAt(sp.look); await reachAt(sp.look); const cup = cupProp(); P.stage.scene.add(cup.obj); m.hold(cup, 'hang'); m.lookAt(null); carrying = { id: 'tea', it: cup, t }; w.refresh(); return; }
     await (KINDS[t.kind] || KINDS.reach)(sp, t);
     m.lookAt(null);
     if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work');      // (a shift wears her down, task by task)
@@ -158,8 +164,8 @@ function attach(P, w) {
   }
   async function giveTea() {
     const c = carrying, sp = spots.bess; if (!c || !sp) return;
-    await arrive(sp.at, sp.yaw); m.lookAt(sp.look); await m.reach('R', sp.look.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await m.release('R'); m.lookAt(null);
-    carrying = null; const said = lines.tea; if (said) say(...said);
+    await place(sp.at, sp.yaw); m.lookAt(sp.look); await m.reach('R', sp.look.clone()); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await m.release('R'); m.lookAt(null);
+    carrying = null; await tell(lines.tea);
     markDone('tea');
   }
   // Bess, now and then, with nobody waiting: will she sit a minute? On the bench nearest her chair; a piece of Bess's story, and then another
@@ -184,7 +190,7 @@ function attach(P, w) {
   const peel = { take: async () => { const p = W.work.peel; await arrive(p.at, p.yaw); await reachAt(p.look, 'R', 0.2); (W.peel || []).forEach(o => { o.visible = false; }); const it = peelProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
     put: async () => { const p = W.work.peel; await arrive(p.at, p.yaw); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); (W.peel || []).forEach(o => { o.visible = true; }); } };
   // (the broom, from where it leans by the door, and back)
-  const broom = { take: async () => { const b = W.work.broom; await arrive(b.at, b.yaw); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = false; }); const it = broomProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
+  const broom = { take: async () => { const b = W.work.broom; await place(b.at, b.yaw); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = false; }); const it = broomProp(); P.stage.scene.add(it.obj); m.hold(it, 'front'); },
     put: async () => { const b = W.work.broom; await arrive(b.at, b.yaw); const it = m.drop(); if (it) P.stage.scene.remove(it.obj); await reachAt(b.look, 'R', 0.2); (W.broom || []).forEach(o => { o.visible = true; }); } };
   const KINDS = {
     knead: async sp => { for (let k = 0; k < 4; k++) { const p = sp.look.clone().add(new V3((k % 2 ? 1.5 : -1.5), 0, 0)); await Promise.all([m.reach('L', p.clone().add(new V3(-1.2, 0, 0))), m.reach('R', p)]); await P.wait(0.5); await Promise.all([m.release('L'), m.release('R')]); } },

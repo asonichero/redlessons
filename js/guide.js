@@ -25,13 +25,13 @@ function goal(w) {
   const ch = w.chores, e = ch && ch.on() && w.save.state.chores && w.save.state.chores.errand, E = e && root.Story.ERRANDS[e.id], cands = [];
   const add = (goal, at, active) => { if (goal) cands.push({ goal, at: at == null ? 24 * 60 : at, active: !!active }); };
   if (root.Herbs && root.Herbs.objective(w)) { const s = root.Herbs.stateOf(w); if (s.asked) add(!s.have ? { area: 'wood', herb: s.asked } : { area: 'cabin', who: 'gran' }, null, true); }      // (Grandmother's herb, asked for; a visit, not yet asked, is only a reminder, and isn't marked)
-  if (E && e.state === 'carrying') add({ area: 'home', who: 'mother' }, null, true);
+  if (E && e.state === 'carrying') add(E.carry === 'butt' ? { area: 'home', spot: 'buttHome' } : { area: 'home', who: 'mother' }, null, true);      // (the water: back in its place by the hearth)
   { const M = root.Maren; if (M && ch && ch.on() && !(M.allDay && M.allDay(w)) && !cal.lay && M.stateOf(w).dinner !== cal.day && cal.minute < M.BACK) add({ area: 'home', who: 'mother' }, M.DINNER); }      // (home for dinner, from the morning)
   { const pm = root.Peter && root.Peter.objective(w) && root.Peter.stateOf ? root.Peter.stateOf(w).meet : null; if (root.Peter && root.Peter.objective(w)) add({ area: 'wood', spot: 'beech' }, pm && pm.at); }
   if (E && (e.state === 'accepted' || (e.state === 'broken' && E.shift))) {
     const has_ = w.P && (E.needs === 'basket' ? !!(root.Chores && root.Chores.basketOf(w.P)) : ch.has(w.P, E)), by = e.by || H(E.by);
     if (E.needs === 'basket' && !has_ && ch.basketWhere && (() => { const b = ch.basketWhere(w.P); return b && b.at; })()) { const b = ch.basketWhere(w.P); add({ area: b.area, at: b.at }, by); }      // (her basket: where she put it down, out of doors)
-    else if (E.needs && w.area === 'home' && !has_) add({ area: 'home', spot: E.needs }, by);      // (what the errand wants, from where it's kept)
+    else if (E.needs && E.needs !== 'basket' && w.area === 'home' && !has_) add({ area: 'home', spot: E.needs }, by);      // (her basket's in her hand at home: no going to the pegs for it)      // (what the errand wants, from where it's kept)
     else add({ area: E.area || 'village', spot: E.place }, by);      // (a shift: its door, in the village)
   }
   if (ch && ch.on() && !ch.gardenTended() && cal.minute < H('19:00')) add({ area: 'village', spot: 'garden' }, H('19:00'));
@@ -60,6 +60,7 @@ function pointOf(w, P, g) {
   if (g.spot === 'garden' && root.Garden && root.Garden.inside(P.motion.pos)) return null;      // (in the garden, its own marks show what's to do)
   if (g.spot === 'basin') return W.basin ? W.basin.at.clone().setY(0) : null;
   if (g.spot === 'table') { const t = W.surfaces.find(s => s.name === 'the table'); return t ? new V3((t.x0 + t.x1) / 2, 0, (t.z0 + t.z1) / 2) : null; }
+  if (g.spot === 'buttHome') { const it = W.items.find(x => x.kind === 'butt'); return it && it.home ? it.home.clone().setY(0) : null; }
   if (g.spot === 'basket') { const it = W.items.find(x => x.kind === 'basket' && x.peg && !x.away); return it ? it.obj.position.clone() : null; }
   if (g.spot === 'peg') { const pg = W.pegs.find(x => !x.item); return pg ? pg.at.clone() : null; }
   if (g.spot === 'pot' || g.spot === 'butt') { const it = W.items.find(x => x.kind === g.spot && !x.away); return it ? it.obj.position.clone() : null; }

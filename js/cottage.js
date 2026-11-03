@@ -337,8 +337,9 @@ function build(scene, opts) {
   { const pc = piece('chair', wall), seatY = T.seatFor('gerda'), ch = T.makeChair(seatY); pc.g.add(ch); world.chair = ch;      // (the chair itself, not its piece: the piece is shown and hidden with its wall each frame)
     const seat = { name: 'the chair', at: pc.P(0, seatY, 1.8), facing: pc.ry, kind: 'chair' }, foot = pc.area(-4.7, 4.7, -3.2, 6.6); world.seats.push(seat); world.obstacles.push(foot);
     // (moved, for her mother's needlework, to the hearth: beside the fire, turned toward it; and back under the peg rail for meals: world.moveChair)
-    const home = { x: pc.g.position.x, z: pc.g.position.z, ry: pc.g.rotation.y }, HEARTH = { x: 14, z: 22, ry: Math.atan2(-16, 12) };
-    world.moveChair = where => { const t = where === 'hearth' ? HEARTH : home; pc.g.position.set(t.x, 0, t.z); pc.g.rotation.y = t.ry; pc.g.updateMatrix(); pc.g.updateMatrixWorld(true); pc.g.userData.box = null;
+    const home = { x: pc.g.position.x, z: pc.g.position.z, ry: pc.g.rotation.y }, HEARTH = { x: 14, z: 22, ry: Math.atan2(-16, 12) }, wallOf = pc.g.parent;
+    // (by the hearth it's the floor's, out in the room: not hidden with the wall it stands against at home, as the camera comes round)
+    world.moveChair = where => { const t = where === 'hearth' ? HEARTH : home, to = where === 'hearth' ? floorG : wallOf; if (pc.g.parent !== to) to.add(pc.g); pc.g.position.set(t.x, 0, t.z); pc.g.rotation.y = t.ry; pc.g.updateMatrix(); pc.g.updateMatrixWorld(true); pc.g.userData.box = null;
       seat.at = pc.P(0, seatY, 1.8); seat.facing = t.ry; Object.assign(foot, pc.area(-4.7, 4.7, -3.2, 6.6)); world.chairAt = where === 'hearth' ? 'hearth' : 'home'; };
     world.chairAt = 'home'; }
 

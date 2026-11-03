@@ -226,7 +226,7 @@ function build(scene, opts) {
 
   // ── The ground: grass everywhere; the green's turf; the lanes of trodden earth.
   { const g = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), toonMap(vt.grass)); g.rotation.x = -Math.PI / 2; g.position.y = -0.02; g.receiveShadow = true; root_.add(g); }
-  const GREEN = { x: 0, z: 22, rx: 150, rz: 96 };
+  const GREEN = { x: 0, z: 22, rx: 150, rz: 96 }, FX = -1;      // (FX: the green's things mirrored east to west: the bell on the Dunns' side, where the Watchman can get to it)
   { const gg = new THREE.CircleGeometry(1, 64); gg.scale(GREEN.rx, GREEN.rz, 1); const m = new THREE.Mesh(gg, toonMap(vt.turf)); m.rotation.x = -Math.PI / 2; m.position.set(GREEN.x, 0.02, GREEN.z); m.receiveShadow = true; root_.add(m); }
   // A lane: a ribbon of earth along a smooth curve through its points, w wide. → its samples (for keeping to it, and for what stands along it)
   const lanes = [];
@@ -307,7 +307,7 @@ function build(scene, opts) {
     world.homeDoor = at; }
 
   // ── The green: the well, the old lime tree with a bench round it, the curfew bell on its frame. ──
-  { const wl = new V3(GREEN.x + 46, 0, GREEN.z + 30), g = new THREE.Group(); g.position.copy(wl); root_.add(g);
+  { const wl = new V3(GREEN.x + FX * 46, 0, GREEN.z + 30), g = new THREE.Group(); g.position.copy(wl); root_.add(g);
     solid(g, new THREE.CylinderGeometry(6, 6.6, 6, 18, 1, true), toonMap(rep(vt.rubble, 2, 0.3)), 0, 3, 0, { ink: 0.1 }).material.side = THREE.DoubleSide;
     solid(g, new THREE.TorusGeometry(6.2, 0.9, 6, 18).rotateX(Math.PI / 2), ashlar, 0, 6.2, 0, { ink: 0.06 });
     const water = new THREE.Mesh(new THREE.CircleGeometry(5.6, 18), new THREE.MeshBasicMaterial({ color: srgb('#1e2a30') })); water.rotation.x = -Math.PI / 2; water.position.y = 2; g.add(water);
@@ -318,7 +318,7 @@ function build(scene, opts) {
     solid(g, new THREE.CylinderGeometry(1.4, 1.1, 2.2, 10), oakDk, 0, 7.6, 0, { ink: 0.05 }); pole(g, new V3(0, 8.6, 0), new V3(0, 12, 0), 0.06, iron, { ink: 0 });
     world.obstacles.push({ x: wl.x, z: wl.z, r: 8 }); solids.push({ x0: wl.x - 9.5, x1: wl.x + 9.5, z0: wl.z - 7, z1: wl.z + 7, top: 21, lift: true }); }      // (the camera kept out of its roof and posts: lifted over, not pulled in)
   // The lime tree: broad, old, its trunk ringed by a bench.
-  const TREE = new V3(GREEN.x - 60, 0, GREEN.z - 6);
+  const TREE = new V3(GREEN.x - FX * 60, 0, GREEN.z - 6);
   { const g = new THREE.Group(); g.position.copy(TREE); root_.add(g); const bark = toonMap(rep(textures().oak, 2, 3));
     solid(g, new THREE.CylinderGeometry(4.2, 5.6, 46, 14), bark, 0, 23, 0, { ink: 0.14 });
     solids.push({ x0: TREE.x - 6, x1: TREE.x + 6, z0: TREE.z - 6, z1: TREE.z + 6, top: 30, lift: true });      // (nor inside its trunk)
@@ -334,7 +334,7 @@ function build(scene, opts) {
       at: new V3(TREE.x + Math.cos(an) * 12.2, 5.6, TREE.z + Math.sin(an) * 12.2), facing: Math.atan2(Math.cos(an), Math.sin(an)), kind: 'stool' }); }
   }
   // The curfew bell: a small bell under a little pitched roof, on a frame of two posts, its rope hanging; rung at nine.
-  const BELL = new V3(GREEN.x + 92, 0, GREEN.z - 46);
+  const BELL = new V3(GREEN.x + FX * 92, 0, GREEN.z - 46);
   { const g = new THREE.Group(); g.position.copy(BELL); root_.add(g);
     for (const sx of [-1, 1]) { box(g, 2, 30, 2, sx * 6, 15, 0, oak); box(g, 1.4, 8, 1.4, sx * 6, 4, sx * 2.4, oak, { rot: [sx * 0.5, 0, 0] }); }
     box(g, 15, 1.8, 2.4, 0, 30, 0, oak);
@@ -473,7 +473,7 @@ function build(scene, opts) {
 
   // ── The stocks, at the green's east end: two oak posts, a pair of boards with holes for the ankles (the upper lifts, on its pin), and a plank
   // seat behind them, weathered. (Only to look at, for now.)
-  { const S0 = new V3(GREEN.x + 112, 0, GREEN.z + 6), g = new THREE.Group(); g.position.copy(S0); g.rotation.y = -0.35; root_.add(g); const old = T.mat('#6e5a44');
+  { const S0 = new V3(GREEN.x + FX * 112, 0, GREEN.z + 6), g = new THREE.Group(); g.position.copy(S0); g.rotation.y = -0.35 * FX; root_.add(g); const old = T.mat('#6e5a44');
     for (const sx of [-1, 1]) { box(g, 2.4, 13, 2.4, sx * 11, 6.5, 0, old); box(g, 3, 1.2, 3, sx * 11, 13.4, 0, old); }
     const holes = canvasTex(128, 32, (x, w, h) => { x.fillStyle = '#7a6448'; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(40,28,18,0.25)'; for (let i = 0; i < 8; i++) x.fillRect(0, i * 4 + 1, w, 1);
       x.fillStyle = '#2a1e14'; for (const cx of [22, 46, 82, 106]) { x.beginPath(); x.arc(cx, h, 7, Math.PI, 0); x.fill(); } });
@@ -486,7 +486,7 @@ function build(scene, opts) {
 
   // ── The pond, on the green's south side: still water in a grassy hollow, reeds at its edge, stones, and the ducks.
   const ducks = [];
-  const POND = new V3(GREEN.x - 22, 0, GREEN.z + 50);
+  const POND = new V3(GREEN.x - FX * 22, 0, GREEN.z + 50);
   { const P0 = POND, RX = 30, RZ = 19, g = new THREE.Group(); g.position.copy(P0); root_.add(g);
     const bank = new THREE.Mesh(new THREE.CircleGeometry(1, 40).scale(RX + 5, RZ + 4, 1), T.mat('#6a7a3e')); bank.rotation.x = -Math.PI / 2; bank.position.y = 0.06; bank.receiveShadow = true; g.add(bank);
     const pondT = canvasTex(128, 128, (x, w, h) => { const gr = x.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w / 2); gr.addColorStop(0, '#3e5e6a'); gr.addColorStop(1, '#5a7e7a'); x.fillStyle = gr; x.fillRect(0, 0, w, h);
@@ -633,7 +633,7 @@ function build(scene, opts) {
   root_.updateMatrixWorld(true);
   const before = (h, side, at, out) => { const f = h.face(side), p = new V3(at, 0, out || 9).applyMatrix4(f.matrixWorld).setY(0), q = new V3(at, 0, 0).applyMatrix4(f.matrixWorld).setY(0);
     return { at: p, yaw: Math.atan2(q.x - p.x, q.z - p.z), look: q.clone().setY(20) }; };
-  const wellAt = new V3(GREEN.x + 46, 0, GREEN.z + 30);
+  const wellAt = new V3(GREEN.x + FX * 46, 0, GREEN.z + 30);
   world.spots = {
     garden: { at: V(-336, -397), yaw: Math.PI / 2, look: new V3(-300, 1, -414) },      // (just in at the gate of Maren's garden, the rows before her)
     well: { at: wellAt.clone().add(V(0, 12)), yaw: Math.PI, look: wellAt.clone().setY(8) },
@@ -642,9 +642,9 @@ function build(scene, opts) {
     // (where the village's people are found: js/villagers.js)
     anvil: before(forge, 'front', 8, 17), tub: before(forge, 'front', -30, 16), bakeryDoor: before(bakery, 'front', 14, 4), counter: before(bakery, 'front', -24, 10),
     pieSill: before(bakery, 'front', -15, 10), innDoor: before(inn, 'front', -6, 4), pennocksDoor: before(ne, 'front', -10, 6), ferriersDoor: before(millLane, 'front', 10, 6), thatchers: before(thatchers, 'front', 20, 8), dunnsDoor: before(dunns, 'front', -16, 6),
-    wellSide: { at: wellAt.clone().add(V(10, -8)), yaw: Math.atan2(-10, 8), look: wellAt.clone().setY(8) },
+    wellSide: { at: wellAt.clone().add(V(FX * 10, -8)), yaw: Math.atan2(-FX * 10, 8), look: wellAt.clone().setY(8) },
     pondSide: { at: POND.clone().add(V(0, 26)), yaw: Math.PI, look: POND.clone().setY(2) },
-    wellNear: { at: wellAt.clone().add(V(-16, 14)), yaw: Math.atan2(16, -14), look: wellAt.clone().setY(8) },      // (near enough to the well to be seen there, and to see who's at it)
+    wellNear: { at: wellAt.clone().add(V(-FX * 16, 14)), yaw: Math.atan2(FX * 16, -14), look: wellAt.clone().setY(8) },      // (near enough to the well to be seen there, and to see who's at it)
     bell: { at: BELL.clone().add(V(0, 9)), yaw: Math.PI, look: BELL.clone().setY(14) },
     meadowGate: { at: GATE.clone().add(V(22, 22)), yaw: Math.PI * 0.25, look: GATE.clone().setY(10) },      // (just in at the meadow gate: where Peter comes and goes)
     millGate: { at: MILL[Math.floor(MILL.length * 0.8)].clone(), yaw: 0, look: MILL[MILL.length - 1].clone().setY(10) },      // (the lane south, toward the mill: where the miller's lad comes and goes)
@@ -659,7 +659,7 @@ function build(scene, opts) {
   world.lanes = lanes.map(l => l.S);      // (every lane and path, as points six apart: the ways the village's people walk)
   // (somewhere to walk to: along the street and the lanes round the green, and on the green itself)
   world.wander = [STREET, LOOP].flatMap(S => S.filter((_, i) => i % 9 === 4).map(p => p.clone())).filter(p => p.x > -380 && p.x < 400)
-    .concat([V(GREEN.x - 20, GREEN.z - 40), V(GREEN.x + 60, GREEN.z - 10), V(GREEN.x + 10, GREEN.z + 20), V(GREEN.x - 100, GREEN.z + 10)]);
+    .concat([V(GREEN.x - FX * 20, GREEN.z - 40), V(GREEN.x + FX * 60, GREEN.z - 10), V(GREEN.x + FX * 10, GREEN.z + 20), V(GREEN.x - FX * 100, GREEN.z + 10)]);
   // (the Watchman's round: down the street from Maren's, round the green by the loop, and back, a lantern in his hand)
   world.round = STREET.filter((_, i) => i % 6 === 0 && STREET[i].x > -400 && STREET[i].x < 420).concat(LOOP.filter((_, i) => i % 6 === 0).reverse());
 

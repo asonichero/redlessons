@@ -37,7 +37,11 @@ function attach(P, w, o) {
   let carrying = null, hinted = {}, said = {};
   const arrive = async (at, yaw) => { const to = flat(at); await Promise.race([m.goTo(to, yaw), P.wait(7)]);      // (put there, if the way's not found: never left short of it)
     if (Math.hypot(m.pos.x - to.x, m.pos.z - to.z) > 2.5) { m.auto = null; const p = P.collide(to, 3.2); m.warp(p, yaw == null ? m.yaw : yaw); P.rig.root.position.copy(p); } };
-  const say = (who, text, face) => talk && talk.cast[who] && talk.caption(who, text, { face: face || 'calm', wait: s => P.wait(s) });
+  // (what's said, queued and played as lines to be read, one after another, when she's between things: never over each other)
+  const queue = [];
+  const say = (who, text, face) => { if (talk && talk.cast[who]) queue.push({ who, face: face || 'calm', listen: { red: 'calm' }, text }); };
+  const muse = (text, face) => queue.push({ who: 'red', face: face || 'calm', thought: true, text });
+  P.tick(() => { if (queue.length && !P.busy && !(talk && talk.playing)) { const ls = queue.splice(0); P.act(() => P.converse(ls, { shot: false, keepCamera: true })); } });
   const bess = () => P.figure('bess');
 
   // The men in at the door, each to his place on the benches, and sat; or already there (back in, mid-evening).
@@ -67,16 +71,16 @@ function attach(P, w, o) {
     if (!o.active()) return;
     if (!svc()) change(s => { s.arrive = Math.max(w.cal.minute + 5, (work().start || w.cal.minute) + ARRIVE); });
     const s = svc(); if (!due()) return;
-    if (!men.ned) { for (let i = 0; i < MEN.length; i++) spawn(i, true); if (!said.in) { said.in = true; P.wait(4).then(() => { say('ned', lines.inNed || 'Evening, Bess!', 'smile'); P.wait(3).then(() => say('bess', lines.inBess || 'Behave, all of you.', 'cheeky')); }); } }
+    if (!men.ned) { for (let i = 0; i < MEN.length; i++) spawn(i, true); if (!said.in) { said.in = true; P.wait(4).then(() => { say('ned', lines.inNed || 'Evening, Bess!', 'smile'); say('bess', lines.inBess || 'Behave, all of you.', 'cheeky'); }); } }
     if (P.busy || (talk && talk.playing)) return;
     const t = w.cal.minute - s.arrive;
     // (the next order, called when it's time)
-    const next = ORDERS.find((x, i) => !s.orders[i] && t >= x[2]);
+    const next = !carrying && !open().length && !queue.length ? ORDERS.find((x, i) => !s.orders[i] && t >= x[2]) : null;      // (one at a time: the next called once the last's been seen to)
     if (next) { const i = ORDERS.indexOf(next); change(v => { v.orders[i] = { who: next[0], want: next[1], at: w.cal.minute, state: 'waiting' }; });
       const call = (lines.calls && lines.calls[next[0] + ':' + next[1]]) || (next[1] === 'ale' ? 'Ale here, miss!' : 'Is there stew?');
       say(next[0], call, 'smile');
-      if (!hinted[next[1]] && lines.hint && lines.hint[next[1]]) { hinted[next[1]] = true; P.wait(3).then(() => say('bess', lines.hint[next[1]], 'calm')); }
-      if (i === 2 && lines.robert && !said.robert) { said.robert = true; P.wait(6).then(() => { say('amos', lines.robert[0], 'concerned'); if (P.talk) P.wait(3).then(() => P.talk.muse(lines.robert[1], { face: 'shy' })); }); }
+      if (!hinted[next[1]] && lines.hint && lines.hint[next[1]]) { hinted[next[1]] = true; say('bess', lines.hint[next[1]], 'calm'); }
+      if (i === 2 && lines.robert && !said.robert) { said.robert = true; say('amos', lines.robert[0], 'concerned'); muse(lines.robert[1], 'shy'); }
       w.refresh(); }
     // (kept waiting: Bess up out of her chair to see to it herself)
     const late = s.orders.findIndex(x => x && x.state === 'waiting' && w.cal.minute - x.at > PATIENCE && !(carrying && carrying.i === s.orders.indexOf(x)));
@@ -87,7 +91,7 @@ function attach(P, w, o) {
     const f = bess(), seat = W.bessChair, x = svc().orders[i];
     say('bess', lines.up || 'I’ll get it myself.', 'pout');
     if (f && seat) { await f.motion.stand(); await P.wait(2.5); f.motion.sit(seat); }
-    if (P.talk) P.talk.muse((lines.upRed || [])[Math.min((svc().up || 1) - 1, 1)] || 'She’s on her feet.', { face: 'wince' });
+    muse((lines.upRed || [])[Math.min((svc().up || 1) - 1, 1)] || 'She’s on her feet.', 'wince');
     if (carrying && carrying.i === i) { const it = m.drop(); if (it) P.stage.scene.remove(it.obj); carrying = null; }
     w.refresh();
   }

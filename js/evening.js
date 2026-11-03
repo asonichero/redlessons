@@ -69,7 +69,7 @@ async function home(P, w, o) {
     // (then the evening as it always goes: supper at the table, and her day)
     if (P !== w.P) return;
     if (root.Loaf && w.chores && w.chores.on()) await root.Loaf.eat(P, w, 'supper');      // (supper's piece of the loaf, if it's on the board)
-    const table = await supper(P, w, { owed: owes(w), late });
+    const table = await supper(P, w, { owed: owes(w), late, home: !!o.athome });      // (home: she's been in, and her mother calls her to it)
     // (and last, what's owed: told to wash for supper, and then it's seen to. Or, nothing owed, up from the table, and a wash at the dresser
     // when she's ready: and supper, and bed)
     if (owes(w)) { await settle(P, w, table); return; }
@@ -258,7 +258,8 @@ async function lateHome(P, w, walked) {
   await P.wait(0.4); await P.approach();
   if (st.dealt === n) {      // (he's taken her in hand himself, on the way: her mother only hears of it)
     await P.converse(S.willieDealt(), { shot: ['red', 'mother'] });
-    change(w, s => { s.abed = n; s.ate = 0; s.tonight = { kind: 'willie' }; }); w.refresh(); return;
+    change(w, s => { s.abed = n; s.ate = n; s.tonight = { kind: 'willie' }; }); if (w.capacity) w.capacity.add(8, 'bread and cheese'); w.refresh();
+    if (P === w.P) await toBed(P, w, { kind: 'willie' }); return;      // (bread and cheese, and bed: it's taken as read)
   }
   w.rep.add('wilful', 1, walked ? 'out after the curfew bell, and brought home' : 'home after the curfew bell');
   await P.converse(S.curfewTalk(how), { shot: ['red', 'mother'] });
@@ -270,8 +271,10 @@ async function lateHome(P, w, walked) {
   if (P !== w.P) return;
   await aftercare(P, w, r, S.curfewAfter(how));
   await w.fade(false);
-  change(w, s => { s.owed = (s.owed || []).filter(x => x.kind !== 'curfew'); s.abed = n; s.ate = 0; s.tonight = { kind: 'curfew', r: r ? { rose: !!r.rose, tooHarsh: !!r.tooHarsh, peak: r.peak || 0 } : null }; });
+  const tonight = { kind: 'curfew', r: r ? { rose: !!r.rose, tooHarsh: !!r.tooHarsh, peak: r.peak || 0 } : null };
+  change(w, s => { s.owed = (s.owed || []).filter(x => x.kind !== 'curfew'); s.abed = n; s.ate = n; s.tonight = tonight; }); if (w.capacity) w.capacity.add(8, 'bread and cheese');
   w.refresh();
+  if (P === w.P) await toBed(P, w, tonight);      // (the bread and cheese her mother spoke of, taken as read: and bed)
 }
 // ── In the wood after dusk (js/world.js marks it): her mother's own rule, the wood's, apart from the village's curfew.
 async function dressCorrect(P, w, how) {
@@ -295,14 +298,15 @@ async function curfewCorrect(P, w, how) {
 // mother hears of it in a day or two. A reprieve, every time.
 async function reprieves(P, w) {
   const S = root.Story, st = stateOf(w), day = w.cal.day;
+  let said = false; const notAll = async () => { const o = (stateOf(w).owed || [])[0]; if (o && !said && S.reprieveNotAll) { said = true; await P.converse(S.reprieveNotAll(o.kind), { shot: ['red', 'mother'] }); } };      // (something else still owed: not let go with it)
   for (const c of st.corrected.filter(x => !x.raised)) {
     const heard = c.informs || (c.withheld && day - c.day >= 2);
-    if (heard) { await P.wait(0.4); await P.approach(); await P.converse(S.reprieve(c, c.withheld ? 'late' : 'heard'), { shot: ['red', 'mother'] }); change(w, s => { const x = s.corrected.find(y => y.id === c.id); x.raised = true; }); continue; }
+    if (heard) { await P.wait(0.4); await P.approach(); await P.converse(S.reprieve(c, c.withheld ? 'late' : 'heard'), { shot: ['red', 'mother'] }); change(w, s => { const x = s.corrected.find(y => y.id === c.id); x.raised = true; }); await notAll(); continue; }
     if (c.withheld) continue;
     let told = false;
     await P.wait(0.4); await P.approach();
     await P.converse(S.reportIt(c, { tell: () => { told = true; } }), { shot: ['red', 'mother'] });
-    if (told) await P.converse(S.reprieve(c, 'reported'), { shot: ['red', 'mother'] });
+    if (told) { await P.converse(S.reprieve(c, 'reported'), { shot: ['red', 'mother'] }); await notAll(); }
     change(w, s => { const x = s.corrected.find(y => y.id === c.id); if (told) x.raised = true; else x.withheld = true; });
   }
 }

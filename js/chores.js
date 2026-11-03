@@ -269,7 +269,9 @@ function create(w) {
     // (home with it: back on the hearth, where it lives)
     if (area === 'home' && c.potAt === 'carrying' && basketOf(P) && (basketOf(P).contents || []).includes(POT) && !(e && e.id === 'potback' && e.state === 'carrying')) { const it = W.items.find(x => x.kind === 'pot'); if (it) out.push({ label: 'Put the pot back on the hearth', at: it.obj.position.clone().setY(4), run: () => potHome(P) }); }
     if (root.Loaf) out.push(...root.Loaf.actions(P, w, area));      // (a fresh loaf, fetched from the counter; the loaf, back on the board: js/loaf.js)
-    if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npc && !P.npcAway) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
+    if (area === 'home' && e && e.state === 'carrying' && m.carry && m.carry.home && m.carry.kind === e.carry) { const it = m.carry;      // (the water: back in its place by the hearth, whether she's in or not)
+      out.push({ label: 'Put ' + (e.carryName || NAME[e.carry]) + ' back by the hearth', at: it.home.clone().setY(4), run: async () => { const to = P.collide(it.home.clone().setY(0).add(m.pos.clone().setY(0).sub(it.home.clone().setY(0)).setLength(6)), 3.2); await Promise.race([m.goTo(to, Math.atan2(it.home.x - to.x, it.home.z - to.z)), P.wait(5)]); m.auto = null; handOver(P, e); if (P.npc && !P.npcAway && e.back) await P.converse([e.back], { shot: ['red', 'mother'] }); else if (P.talk) P.talk.muse(S.leftForMama(e.key), { face: 'calm' }); } }); }
+    else if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npc && !P.npcAway) out.push({ label: 'Give Mama ' + (e.carryName || NAME[e.carry]), at: P.npcMotion.pos.clone().setY(18), run: () => giveHome(P, e) });
     // (her mother out at the farm: left on the table for her, and the errand's done)
     else if (area === 'home' && e && e.state === 'carrying' && (m.carry || basketOf(P)) && P.npcAway) { const tb = P.world.surfaces.find(s => s.name === 'the table');
       if (tb) out.push({ label: 'Leave ' + (e.carryName || NAME[e.carry]) + ' on the table for Mama', at: new V3((tb.x0 + tb.x1) / 2, tb.y + 2, (tb.z0 + tb.z1) / 2), run: () => leaveHome(P, e, tb) }); }
@@ -348,15 +350,20 @@ function create(w) {
     const lines = e.met.map(l => l.give ? { run: async () => {      // (the pie handed over: out from under its cloth, and into his hands)
       m.reach('L', mid()); await f.motion.reach('R', mid()); if (b) takeOut(b, PIE); m.release('L'); await f.motion.release('R'); } } : l);
     await P.converse(lines, { shot: ['red', 'willie'] });
-    await V.walkTo('willie', door.clone().addScaledVector(out, 1), null);
-    V.letGo('willie');      // (in again: no station of his till the bell, so in at his door, and gone)
+    { const to = door.clone().addScaledVector(out, 1); f.motion.face(yawTo(f.motion.pos, to)); await Promise.race([f.motion.goTo(to, null), P.wait(2.5)]); }      // (a step back over his own threshold: straight in, no turning about)
+    { const A = root.GameAudio; if (A && A.thud) A.thud(0.3); }
+    if (V.inNow) V.inNow('willie'); else V.letGo('willie');      // (in again: no station of his till the bell, so in at his door, and gone)
     await P.converse(e.after, { shot: false, keepCamera: true });
   }
   // The well: the pail let down and drawn up, three times, and tipped into the butt at her feet; then it's full. Agnes Thatcher's at the well
   // too, and talks the while.
   async function pails(P, e) {
-    const m = P.motion, b = holding(P, 'butt'), sp = P.world.spots[e.place], f = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw));
-    if (!b) return; m.drop(); b.obj.position.copy(m.pos.clone().setY(0).addScaledVector(f, 5.5).addScaledVector(new V3(f.z, 0, -f.x), 4)); b.obj.rotation.set(0, m.yaw, 0);
+    const m = P.motion, b = holding(P, 'butt'), sp = P.world.spots[e.place];
+    // (square to the well, whatever way she came at it: in her place before it, facing it)
+    if (sp && sp.at) { if (Math.hypot(m.pos.x - sp.at.x, m.pos.z - sp.at.z) > 2) { m.auto = null; m.warp(sp.at.clone().setY(0), m.yaw); P.rig.root.position.copy(m.pos); }
+      const lk = sp.look || sp.at; await m.face(Math.atan2(lk.x - m.pos.x, lk.z - m.pos.z)); }
+    const f = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw));
+    if (!b) return; m.drop(); b.obj.position.copy(m.pos.clone().setY(0).addScaledVector(f, 0.5).addScaledVector(new V3(f.z, 0, -f.x), 6)); b.obj.rotation.set(0, m.yaw, 0);      // (set down at her side, clear of the well's wall)
     const well = (sp && sp.at ? sp.at.clone() : m.pos.clone()).addScaledVector(f, 6).setY(10), butt = b.obj.position.clone().setY(6);
     const n = (st().fills || 0) + 1; change(c => { c.fills = n; });
     const V = P.villagers, agnes = V && V.summon && !(root.Agnes && root.Agnes.away(w)) ? V.summon('agnes', 'wellSide') : null;      // (not after the fair, till it's settled: she keeps away from the well)
@@ -422,7 +429,7 @@ function create(w) {
   // (what she's brought, out of her hands and her mother's: and the errand's done)
   function handOver(P, e) {
     if (e.key === 'potback') { change(c => { c.potAt = null; }); const pot = P.world.items && P.world.items.find(x => x.kind === 'pot'); if (pot) { pot.away = false; pot.obj.visible = true; } }      // (Mama's pot: on the hearth again)
-    const b = basketIn(P), it = P.motion.carry;
+    const it = P.motion.carry, b = it && it.kind === e.carry && it.kind !== 'basket' ? null : basketIn(P);      // (the butt in her hands: that, not her basket set by at the table)
     if (b) takeOut(b, e.carryName || NAME[e.carry]);      // (the eggs out of it, and her basket hers again)
     else if (it && it.home) { P.motion.drop(); fill(it, false); it.keep = false; it.obj.position.copy(it.home); it.obj.rotation.set(0, 0, 0); }      // (the butt: her mother takes it, and it's back by the hearth, emptied into the big one)
     else { const x = P.motion.drop(); if (x) x.obj.visible = false; }

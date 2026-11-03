@@ -70,7 +70,7 @@ function attach(P, w) {
   for (let i = 0; i < STALLS.length - 1; i++) g.add(bunting(T, new V3(STALLS[i].x + 7.6, 15.2, ROW_Z + 3.6), new V3(STALLS[i + 1].x - 7.6, 15.2, ROW_Z + 3.6), 5));
   // (the dancing ground: bunting across it from the lime tree to a pole, and the fiddler's crate)
   { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 22, 8), T.mat('#6a4a30')); pole.position.set(DANCE.x + 34, 11, DANCE.z - 8); pole.add(new THREE.Mesh(T.hullGeo(pole.geometry, 0.05), T.INKM[0])); g.add(pole);
-    g.add(bunting(T, new V3(-60, 20, 16), new V3(DANCE.x + 34, 21, DANCE.z - 8), 12)); W.obstacles.push({ x: DANCE.x + 34, z: DANCE.z - 8, r: 1.5 });
+    g.add(bunting(T, new V3(60, 20, 16), new V3(DANCE.x + 34, 21, DANCE.z - 8), 12)); W.obstacles.push({ x: DANCE.x + 34, z: DANCE.z - 8, r: 1.5 });
     const crate = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); crate.position.set(FIDDLE.x, 1.5, FIDDLE.z); crate.add(new THREE.Mesh(T.hullGeo(crate.geometry, 0.06), T.INKM[0])); g.add(crate); }
   W.spots.dance = { at: DANCE.clone(), yaw: 0, look: DANCE.clone().setY(10) };
   W.spots.danceEdge = { at: DANCE.clone().add(new V3(18, 0, 10)), yaw: yawTo(DANCE.clone().add(new V3(18, 0, 10)), DANCE), look: DANCE.clone().setY(10) };

@@ -308,6 +308,7 @@ function create(view, ui) {
   function sleepAction() {
     const P_ = P; if (!P_ || !['evening', 'dusk', 'night'].includes(cal.part)) return [];
     const bed = P_.world.seats.find(s => s.kind === 'bed'); if (!bed) return [];
+    return [];      // (no going to bed of her own accord: the evening takes her there, after supper, or after what's owed)
     return [{ label: 'Sleep until morning', at: bed.at, run: async () => { if (root.Evening && chores && chores.on()) await root.Evening.home(P_, w, { bed: true }); else await morning(); } }];      // (her mother's word with her first: js/evening.js; then the night)
   }
 
@@ -344,6 +345,7 @@ function create(view, ui) {
     if (P.npcAway !== away) { P.npcGo(away, first ? null : new V3(-10, 0, 21)); if (!away && !first) dinnerHow = 'arrived'; }
     if (!away && idle && !P.busy && !P.npcMoving && root.Fair && root.Fair.isFair(w) && cal.minute >= root.Fair.ENDS && root.Evening && root.Evening.stateOf(w).done !== root.Evening.night(cal)) { P.act(() => root.Evening.home(P, w, {})); return; }      // (fair night: her mother in from her stall, and Red home before her)
     if (!away && idle && !P.busy && !P.npcMoving && root.Fair && root.Fair.fittingDue(w)) { P.act(() => root.Fair.fitting(P, w)); return; }      // (the fitting, from four on the Fifth day of the fair's week)
+    if (!away && idle && !P.busy && !P.npcMoving && root.Evening && chores && chores.on() && cal.minute >= 18 * 60 && !(root.Fair && root.Fair.isFair(w)) && root.Evening.stateOf(w).done !== root.Evening.night(cal) && root.Evening.stateOf(w).abed !== root.Evening.night(cal)) { P.act(() => root.Evening.home(P, w, { athome: true })); return; }      // (six o'clock, and Red already in: her mother calls her to supper)
     if (!away && idle && !P.busy && !P.npcMoving && root.Maren.dinnerDue(w)) { const how = dinnerHow; P.act(() => root.Maren.dinner(P, w, how)); }
     else if (!away && idle && !P.busy && !P.npcMoving && root.Maren.at(w) === 'needle' && !(P.npcMotion && P.npcMotion.seat)) root.Maren.sitDown(P);      // (at her needlework: in the chair by the hearth)
   }

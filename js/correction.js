@@ -144,9 +144,14 @@ async function run(P, o) {
     // (on her feet beside the chair, facing her; the camera on the room, the chair and the chest both in it)
     const G = lap.giverRig, gp = G.root.getWorldPosition(new V3()), gf = new V3(0, 0, 1).applyQuaternion(G.root.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
     const before = P.collide(gp.clone().addScaledVector(gf, 13).setY(0), 3.4); m.warp(before, yawTo(before, gp)); r.root.position.copy(before);
-    // (low, from the hearth, across the room: the chair, and the chest beyond it)
-    const hearth = P.world.hearthCam || [4, 7, 34]; P.camHeld = true;
-    st.go(new V3(hearth[0], hearth[1], hearth[2]), new V3(12, 11, -10), 0); for (let i = 0; i < 30; i++) P.frame(1 / 60);
+    // (from beside her mother's chair, a little behind it and at her shoulder: her mother in the near corner of it, waiting, and Red across the
+    // room at the chest; on whichever side of her has the room for it)
+    P.camHeld = true;
+    { const ch0 = P.world.chest, cp = ch0 ? ch0.front.clone().setY(0) : gp.clone().addScaledVector(gf, 40), d = cp.clone().sub(flat(gp)).normalize(), sc = G.scaleW;
+      const spot = s => flat(gp).addScaledVector(d, -11 * sc).add(new V3(-d.z, 0, d.x).multiplyScalar(s * 12 * sc)), fit = s => { const a = spot(s); return P.collide(a.clone(), 3).distanceTo(a); };
+      const at0 = spot(fit(1) <= fit(-1) ? 1 : -1);
+      st.go(at0.setY(17 * sc), flat(gp).lerp(cp, 0.62).setY(11 * sc), 0); }
+    for (let i = 0; i < 30; i++) P.frame(1 / 60);
     await fade(false);
     // (slowly across to it, rubbing her left cheek with her left hand: a moment's respite, and she makes the most of it)
     const rub = () => { const p = r.rear.L.getWorldPosition(new V3()), back = new V3(-Math.sin(m.yaw), 0, -Math.cos(m.yaw)), t = performance.now() / 1000;
@@ -190,7 +195,10 @@ async function run(P, o) {
     let lifted = false;
     const lift = async () => { if (!liftFirst || lifted || ended()) return; lifted = true; if (lap.st.skirt !== 'up') await lap.gesture('skirt'); };
     const smacks = async n => { if (!n || ended()) return; await lift(); if (ended()) return; lap.run(n); await wait(0.3); for (let i = 0; i < 900 && lap.busy() && !ended(); i++) await wait(0.1); };
-    const S = { lap, corrector: c, subject: sub,
+    // (held: what the corrector holds against her besides, how naughty and wilful she's been found lately: her mother's, from the village's
+    // reckoning of her (js/reputation.js); js/story.js's marenReckon answers it, before the end)
+    const held = o.held != null ? o.held : (() => { const W_ = root.__world; return c.id === 'maren' && W_ && W_.rep ? W_.rep.stat('naughty') + W_.rep.stat('wilful') : 0; })();
+    const S = { lap, corrector: c, subject: sub, held,
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
       step: async (l, n) => { if (ended()) throw STOP; await Promise.all([l ? line(l[0], l[1], l[2]) : null, smacks(n)]); if (ended()) throw STOP; },
       smacks: async n => { await smacks(n); if (ended()) throw STOP; },

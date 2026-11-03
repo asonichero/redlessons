@@ -201,7 +201,7 @@ function attach(P, w) {
     // (wandering, or the Watchman's round: a while where they are, then on)
     if (f.want && (f.want.wander || f.want.round) && !m.auto && clock > f.wait) {
       let to;
-      if (f.want.round) { f.ri = ((f.ri || 0) + 1) % W.round.length; to = W.round[f.ri]; }
+      if (f.want.round) { f.ri = ((f.ri || 0) + 1) % W.round.length; to = W.round[f.ri]; f.path = [to.clone()]; f.i = 0; f.endYaw = null; f.speed = 0.5; return; }      // (straight on along his round, point to point: no doubling back to the nearest way)
       else { const near = W.wander.filter(p => p.distanceTo(m.pos) > 30 && p.distanceTo(m.pos) < 220); to = (near.length ? near : W.wander)[Math.floor(Math.random() * (near.length || W.wander.length))]; }
       walk(f, to, null);
     }
@@ -211,7 +211,7 @@ function attach(P, w) {
     if (!f.want) { gone(f); return; }      // (in at their door)
     if (f.goal && f.goal.seat) { const seat = f.goal.seat; f.goal = null; f.motion.warp(f.motion.pos, seat.facing); f.motion.sit(seat); return; }
     if (f.want.wander) f.wait = clock + 3 + Math.random() * 8;
-    else if (f.want.round) f.wait = clock + 0.5;
+    else if (f.want.round) f.wait = clock;
     else if (f.want.stand) f.motion.face(standYaw(f.key, sp[f.want.stand]));
   }
 
@@ -386,7 +386,7 @@ function attach(P, w) {
   function willieWatch() {
     const key = watchKey(), f = figs[key]; if (!f || !f.want || f.follow || f.held || f.scene || !root.Evening || root.Evening.watchman(w) || P.busy) return;
     if (!pastHers(key) || !(f.want.round || f.want.stand === 'bell')) return;
-    const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < 110) P.act(() => catchHer(f));
+    const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < (P.sitting ? 150 : 110)) P.act(() => catchHer(f));      // (sat still on a bench, as plain as walking: further, if anything, with his lantern up)
   }
   // (half past nine: the bell, three strokes, rung by him)
   let rung = 0;
@@ -398,16 +398,19 @@ function attach(P, w) {
   // Seen: he calls to her to stop where she is, and comes to her; then the two of them to her door, him a few steps behind. (Georgie, on Lay
   // night: the same, awkwardly)
   async function catchHer(f) {
-    if (!f) return; hold(f); f.scene = {};
+    if (!f) return; hold(f); f.scene = {}; f.path = null; f.motion.auto = null;      // (stopped where he is, for what he has to say)
     const who = f.key, n = root.Evening.caught(w, who), m = P.motion, G = who === 'georgie';
+    let home = false;
     try {
+      if (P.sitting) await P.getUp();
       f.motion.face(yawTo(f.motion.pos, m.pos));
       await P.converse(G ? S.georgieCalls(n) : S.willieCalls(n), { shot: false, keepCamera: true });
       await m.face(yawTo(m.pos, f.motion.pos));
       const near = P.collide(flat(m.pos).add(flat(f.motion.pos).sub(flat(m.pos)).setLength(14)), 3.2);
       await Promise.race([walkTo(who, near, yawTo(near, m.pos), 0.8), P.wait(20)]); f.path = null; f.motion.auto = null; f.motion.face(yawTo(f.motion.pos, m.pos));
-      await P.converse(G ? S.georgieCatch(n) : S.willieCatch(n), { shot: ['red', who] }); }
+      await P.converse(G ? S.georgieCatch(n) : S.willieCatch(n), { shot: ['red', who] }); home = true; }
     finally { f.scene = null; f.held = false; f.follow = true; f.path = null; }
+    if (home && P === w.P) await w.go('home', 'door', { walked: true });      // (and the walk itself let go by: straight to her door, him with her)
   }
   if (W.gate) W.gate.barred = () => !!(root.Evening && root.Evening.watchman(w));
   if (root.Evening && root.Evening.watchman(w) && cal.curfew()) { const f0 = () => figs[root.Evening.stateOf(w).walkingBy || 'willie']; setTimeout(() => { const f = f0(); if (f) f.follow = true; }, 0); }      // (still walking her home, as she comes back out)
@@ -439,7 +442,7 @@ function attach(P, w) {
     tomWatch(dt); willieWatch(); bellWatch(); promiseWatch();
   });
   update(true);
-  return { dareObjective, actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release };
+  return { dareObjective, actions, station, here: key => figs[key] || null, figs, net, stop: off, talkTo, tomStops: () => figs.tom && tomStops(figs.tom), summon, walkTo, letGo, lead, hold, release, inNow: key => { const f = figs[key]; if (f) gone(f); } };      // (inNow: in at their door this moment, from where they stand on its step)
 }
 
 const api = { attach, station, PEOPLE, tomFree, tomComes, hash, layNight, weekday, slack };
