@@ -133,7 +133,7 @@ function create(view, ui) {
     // (a scene may take over the light, or stop time passing, while it plays)
     light(fn) { lightFn = fn; }, time(on) { timeOn = on; },
     wait: s => (P ? P.wait(s) : new Promise(r => setTimeout(r, s * 1000))),
-    fairProgress, RATE, restartDay: () => restartDay(), canRestart: () => canRestart(), go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
+    fairProgress, debugInfo, debugSet, RATE, restartDay: () => restartDay(), canRestart: () => canRestart(), go, newGame, resume, startAt, journal, refresh, morning, tableau, tableauMusic,
   };
 
   // The days: the garden and the errands (js/chores.js), once the chores are agreed.
@@ -170,6 +170,22 @@ function create(view, ui) {
     rows.push({ label: 'Gates met', done: met, note: met ? (s.day ? '' : 'the days are set the next morning') : '' });
     if (s.day) { rows.push({ label: 'Planting finishes', done: d >= s.planted, note: names(s.planted) }); rows.push({ label: 'Fitting', done: !!s.fitted, note: names(F.fitDay(w)) + ' at four' }); rows.push({ label: 'The fair', done: d > s.day, note: names(s.day) + (d < s.day ? ' (' + (s.day - d) + ' days)' : '') }); }
     return { day: d, phase: F ? F.phase(w) : null, rows };
+  }
+  // (debug, the rest of it: everyone's trust, every step of the story and the save's flags, each to be changed from the HUD's "!")
+  const DBG_WHO = ['maren', 'hulda', 'peter', 'fowler', 'tom', 'smith', 'pennock', 'baker', 'abney', 'abneyDaughter', 'agnes', 'georgie', 'willie', 'holt', 'bo'];
+  function debugInfo() {
+    const tr = save.state.trust || {}, P_ = (root.QuestData && root.QuestData.PEOPLE) || {}, who = [...new Set(DBG_WHO.concat(Object.keys(tr)))];
+    return { fair: fairProgress(),
+      trust: who.map(k => ({ who: k, name: (P_[k] && P_[k].name) || (k === 'bo' ? 'Bo' : k), value: Math.round((tr[k] || 0) * 10) / 10 })),
+      quests: Object.values(q.lines).map(l => ({ id: l.id, name: l.name, steps: l.steps.map(st => ({ ref: l.id + '.' + st.id, title: st.title || st.id, done: q.done(l.id + '.' + st.id), optional: !!st.optional })) })),
+      flags: Object.keys(save.state.flags || {}).sort().map(k => ({ key: k, value: save.state.flags[k] })) };
+  }
+  // (o: { trust: who, by } · { quest: ref, done } · { flag: key, on }: on, it's today's)
+  function debugSet(o) {
+    if (o.trust) rep.trusts(o.trust, o.by);
+    if (o.quest) { if (o.done) q.complete(o.quest); else { const [li, si] = o.quest.split('.'); save.change(s => { if (s.quests[li]) delete s.quests[li][si]; }, { quest: o.quest }); } }
+    if (o.flag) save.change(s => { s.flags = s.flags || {}; if (o.on) s.flags[o.flag] = cal.day; else delete s.flags[o.flag]; }, { flag: o.flag });
+    refresh();
   }
   function journal() {
     const ph = q.phaseOf(q.phase()), names = {}; for (const l of q.lines ? Object.values(q.lines) : []) names[l.id] = l.name;

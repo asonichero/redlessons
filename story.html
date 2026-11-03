@@ -115,7 +115,7 @@ const card = () => { hud.show(false); const c = document.createElement('div'); c
   document.body.appendChild(c); requestAnimationFrame(() => c.classList.add('on'));
   $('goon').onclick = async () => { c.remove(); hud.show(true); await world.morning(); }; $('totitle').onclick = () => location.reload(); };
 // The world (js/world.js), and the controls and menus (js/hud.js) for whichever place she's in.
-const hud = Hud.create({ get: () => world.P, title: () => location.reload(), restartDay: () => world.restartDay(), canRestart: () => world.canRestart(), journal: () => world.journal(), debug: () => world.fairProgress ? world.fairProgress() : null,
+const hud = Hud.create({ get: () => world.P, title: () => location.reload(), restartDay: () => world.restartDay(), canRestart: () => world.canRestart(), journal: () => world.journal(), debug: () => world.debugInfo ? world.debugInfo() : null, debugSet: o => world.debugSet(o),
   links: [{ label: 'Correction test', href: 'lap.html' }, { label: 'Room editor', href: 'rooms.html' }, { label: 'Character editor', href: 'editor.html' }] });
 hud.show(false);
 const world = window.__ch = window.__world = World.create($('view'), { objective: t => hud.objective(t), quests: list => hud.quests(list), trust: (who, n) => hud.trust(who, n), basket: list => hud.basket(list), capacity: v => hud.capacity(v), clock: (t, ph) => hud.clock(t, ph), fade, card });

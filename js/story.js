@@ -1317,7 +1317,7 @@ const ducksAsk = (what, ctx) => what === 'the heel' ? [
   { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Then come on. Before the brown one sees us.' },
   { run: ctx.yes },
 ] : [
-  { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: what === 'the loaves' ? 'Is that Master Pennock’s bread? It smells like it. Oh, Red, the ducks would think it was the fair.' : 'Is that a loaf in your basket? Oh, Red. The ducks would think it was the fair.' },
+  { who: 'peter', face: 'smile', listen: { red: 'shy' }, text: what === 'the loaves' ? 'Is that Master Pennock’s bread? It smells like it. Oh, Red, the ducks would think it was the fair.' : what === 'a fresh loaf' ? 'Is that one of Mistress Pennock’s? Still warm, I bet. Oh, Red, the ducks would think it was the fair.' : 'Is that a loaf in your basket? Oh, Red. The ducks would think it was the fair.' },
   { choose: [
     { text: 'Just a little, then.', face: 'cheeky', then: [{ run: ctx.yes }, { who: 'peter', face: 'smile', listen: { red: 'smile' }, text: 'Come on, then. Before they see us and riot.' }] },
     { text: 'I can’t. It’s Mama’s.', face: 'shy', then: [{ who: 'peter', face: 'calm', listen: { red: 'shy' }, text: 'No. Course not. Another time.' }] },
@@ -1331,7 +1331,7 @@ const ducksFed = (what, part) => [
   part ? { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: 'That’s half of it gone, Red. You’d best keep the rest. For your mother.' }
     : { who: 'peter', face: 'bashful', listen: { red: 'shy' }, text: what === 'the loaves' ? 'That’s… that’s all of it, Red. Both of them.' : 'That’s the last of it.' },
 ];
-const ducksAfter = (what, part) => what === 'the heel' ? 'Every crumb of the heel, and nobody’s loaf but theirs. That felt better.' : part ? 'Half Mama’s loaf. Back on the board with the rest, and she’ll see it’s gone down.' : what === 'the loaves' ? 'Both loaves. Gone. Mama sent me for those.' : 'Every crumb of it. Mama’s supper loaf.';
+const ducksAfter = (what, part) => what === 'the heel' ? 'Every crumb of the heel, and nobody’s loaf but theirs. That felt better.' : part && what === 'a fresh loaf' ? 'A good piece off the fresh loaf. It’ll go on the board like that, and she’ll see it’s not whole.' : part ? 'Half Mama’s loaf. Back on the board with the rest, and she’ll see it’s gone down.' : what === 'the loaves' ? 'Both loaves. Gone. Mama sent me for those.' : 'Every crumb of it. Mama’s supper loaf.';
 // Owned up to, before she was asked (kind: 'taken' | 'fed' | 'ducks'): her mother's answer.
 const loafOwned = kind => kind === 'taken' ? [
   { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Then it goes back on the board, now. And you don’t take what isn’t yours, even in this house.' },
@@ -1342,16 +1342,16 @@ const loafOwned = kind => kind === 'taken' ? [
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'You could have waited, you know, and had the heel. From now on, when it’s down to the heel, it’s yours for them. No need to take what isn’t.' },
 ];
 // The loaf back on the board, gone down since she cut from it: what happened to it? (ctx.hungry(): the lie; ctx.ducks(): the truth)
-const loafDiminished = ctx => [
-  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'This loaf’s gone down since I last cut it. A good deal down. Rose?' },
+const loafDiminished = (ctx, fresh) => [      // (fresh: the loaf just home from Mistress Pennock's counter, not whole)
+  { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: fresh ? 'This is the loaf from Mistress Pennock’s? It’s not whole. There’s a good piece gone off the end of it, and it’s not been cut. Rose?' : 'This loaf’s gone down since I last cut it. A good deal down. Rose?' },
   { choose: [
     { text: 'I was hungry, Mama. I had some.', face: 'shy', then: [{ run: ctx.hungry },
-      { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Half a loaf, between meals, and not a word to me. You know better than that.' },
+      { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: fresh ? 'On the way home, off a loaf that was for all of us, and not a word to me. You know better than that.' : 'Half a loaf, between meals, and not a word to me. You know better than that.' },
       { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'You eat at the table, when it’s put in front of you. Not whenever you fancy. That’s wilful, and I’ll count it so.' },
       { who: 'red', face: 'shy', text: 'Yes, Mama.' },
       { who: 'red', face: 'wince', thought: true, text: 'The ducks had it. And now I’ve a lie to carry about besides.' }] },
     { text: 'I fed it to the ducks, Mama. With Peter.', face: 'wince', then: [{ run: ctx.ducks },
-      { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: 'To the ducks. My bread, off my board, to the ducks.' },
+      { who: 'mother', face: 'stern', listen: { red: 'wince' }, text: fresh ? 'To the ducks. A loaf I paid for, before it was even through my door.' : 'To the ducks. My bread, off my board, to the ducks.' },
       { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Thank you for the truth. You’ll still answer for the bread, this evening.' },
       { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'You could have waited, you know, and had the heel. From now on, when it’s down to the heel, it’s yours for them. No need to take what isn’t.' }] },
   ] },
@@ -1403,8 +1403,8 @@ const loafCorrection = async (S, how) => {
   const M = 'corrector', R = 'subject', more = how.bakery ? 0.2 : 0;
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.4 + more, pace: 1.35 });
   await S.wait(0.8);
-  await S.say(M, how.bakery ? 'Two loaves, Little Red. That I sent you for.' : 'The loaf off my board, Little Red. That you knew was for supper.', 'stern');
-  await S.step([M, 'Taken without asking. That’s the first of it.'], 8);
+  await S.say(M, how.bakery ? 'Two loaves, Little Red. That I sent you for.' : how.fresh ? 'A fresh loaf, Little Red. Off Mistress Pennock’s counter, and half of it never through my door.' : 'The loaf off my board, Little Red. That you knew was for supper.', 'stern');
+  await S.step([M, how.fresh ? 'Fetched for the house, and shared out on the way. That’s the first of it.' : 'Taken without asking. That’s the first of it.'], 8);
   await S.step([R, 'I know, Mama—'], 4);
   await S.gesture('skirt'); await S.wait(0.4);
   S.set({ strength: 1.6 + more, pace: 1.55 });

@@ -63,7 +63,7 @@ const CSS = `
 #hCam { right: 12px; top: 70px; width: 52px; height: 52px; display: flex !important; } #hCam svg { width: 27px; height: 27px; }
 #hHelp { right: 12px; bottom: 12px; width: 46px; height: 46px; } #hHelp svg { width: 24px; height: 24px; }
 #hud #hDebug { right: 64px; bottom: 12px; width: 46px; height: 46px; display: flex; font: bold 22px Georgia, serif; color: #f3e4b0; } body.talking #hDebug, body.correcting #hDebug { opacity: 0; pointer-events: none; }
-#hDebugCard .rows { font: 15px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0; } #hDebugCard .row b { font-weight: normal; } #hDebugCard .row.ok b { color: #9fd08a; } #hDebugCard .row small { display: block; color: #c9b8a8; font-style: italic; margin: 0 0 4px 1.4em; }
+#hDebugCard .hCard { width: min(440px, 94vw); } #hDebugCard .hCard .row.dt { display: flex; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; margin: 2px 0; } #hDebugCard .row.dt span { display: flex; align-items: center; gap: 8px; } #hDebugCard .row.dt button { width: 30px; margin: 0; padding: 2px 0; text-align: center; } #hDebugCard .row.dt i { min-width: 34px; text-align: center; font-style: normal; } #hDebugCard .dq { display: block; font-size: 13px; color: #d8c8b8; } #hDebugCard .dq.ok { color: #9fd08a; } #hDebugCard .dq em { color: #a89888; font-size: 11px; } #hDebugCard .rows { font: 15px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0; } #hDebugCard .row b { font-weight: normal; } #hDebugCard .row.ok b { color: #9fd08a; } #hDebugCard .row small { display: block; color: #c9b8a8; font-style: italic; margin: 0 0 4px 1.4em; }
 #hStick { position: absolute; left: 22px; bottom: 26px; width: 130px; height: 130px; border-radius: 50%; background: rgba(30,20,22,0.45); border: 2px solid rgba(230,196,106,0.55);
   touch-action: none; display: none; pointer-events: auto; }
 #hKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(230,196,106,0.75); pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
@@ -264,13 +264,32 @@ function create(opts) {
   $('hDiary').addEventListener('click', e => { e.stopPropagation(); diary(true); });
   $('hBasket').addEventListener('click', e => { e.stopPropagation(); basketCard(true); });
   $('hHelp').addEventListener('click', e => { e.stopPropagation(); showSheet(); });
-  // (debug: the way to the fair, its gates and days: opts.debug() → { day, phase, rows: [{ label, done, note }] })
-  const dbgEl = screen('hDebugCard', '<h2>Toward the fair</h2><div class="rows"></div><div class="x">Tap or click anywhere, or press Esc, to close</div>');
-  const esc_ = t => String(t == null ? '' : t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  $('hDebug').addEventListener('click', e => { e.stopPropagation(); const g = opts.debug ? opts.debug() : null; if (!g) return;
-    dbgEl.querySelector('.rows').innerHTML = '<div class="row"><small>Day ' + g.day + (g.phase ? ' · ' + esc_(g.phase) : '') + '</small></div>' + g.rows.map(r => '<div class="row' + (r.done ? ' ok' : '') + '"><b>' + (r.done ? '✓ ' : '○ ') + esc_(r.label) + '</b>' + (r.note ? '<small>' + esc_(r.note) + '</small>' : '') + '</div>').join('');
-    dbgEl.classList.add('on'); });
-  dbgEl.addEventListener('click', () => dbgEl.classList.remove('on'));
+  // (debug: the way to the fair, its gates and days; everyone's trust; every step of the story, done or not; the save's flags. opts.debug() →
+  // { fair: { day, phase, rows: [{ label, done, note }] }, trust: [{ who, name, value }], quests: [{ id, name, steps: [{ ref, title, done }] }],
+  // flags: [{ key, value }] }; opts.debugSet({ trust, by } | { quest, done } | { flag, on }). The game's held while it's open, as when paused.)
+  const dbgEl = screen('hDebugCard', '<h2>Debug</h2><div class="tabs"><button data-t="fair">Fair</button><button data-t="trust">Trust</button><button data-t="story">Story</button><button data-t="flags">Flags</button></div>' +
+    '<div class="rows"></div><button class="primary" data-k="close">Close</button>');
+  const esc_ = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let dbgTab = 'fair', dbgOn = false, dbgWas = false, dbgFlags = new Set();      // (dbgFlags: the flags seen this time open, so one turned off stays to be turned on again)
+  function dbgHold(on) { const p = P(), st = p && p.stage; if (on === dbgOn) return; dbgOn = on; if (st) { if (on) { dbgWas = st.held; st.held = true; } else st.held = dbgWas; } held.clear(); axes(); }
+  function drawDebug() {
+    const g = opts.debug ? opts.debug() : null, rows = dbgEl.querySelector('.rows'); if (!g) return;
+    dbgEl.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === dbgTab));
+    const f = g.fair || g;
+    if (dbgTab === 'fair') rows.innerHTML = '<div class="row"><small>Day ' + f.day + (f.phase ? ' · ' + esc_(f.phase) : '') + '</small></div>' + (f.rows || []).map(r => '<div class="row' + (r.done ? ' ok' : '') + '"><b>' + (r.done ? '✓ ' : '○ ') + esc_(r.label) + '</b>' + (r.note ? '<small>' + esc_(r.note) + '</small>' : '') + '</div>').join('');
+    else if (dbgTab === 'trust') rows.innerHTML = (g.trust || []).map(t => '<div class="row dt"><b>' + esc_(t.name) + '</b><span><button data-tr="' + t.who + '" data-by="-1">−</button><i>' + t.value + '</i><button data-tr="' + t.who + '" data-by="1">+</button></span></div>').join('');
+    else if (dbgTab === 'story') rows.innerHTML = (g.quests || []).map(l => '<div class="row"><small>' + esc_(l.name) + '</small>' + l.steps.map(st => '<label class="dq' + (st.done ? ' ok' : '') + '"><input type="checkbox" data-q="' + st.ref + '"' + (st.done ? ' checked' : '') + '> ' + esc_(st.title) + (st.optional ? ' <em>(optional)</em>' : '') + '</label>').join('') + '</div>').join('');
+    else { for (const x of g.flags || []) dbgFlags.add(x.key); const on = {}; for (const x of g.flags || []) on[x.key] = x.value;
+      rows.innerHTML = [...dbgFlags].sort().map(k => '<label class="dq' + (k in on ? ' ok' : '') + '"><input type="checkbox" data-fl="' + esc_(k) + '"' + (k in on ? ' checked' : '') + '> ' + esc_(k) + (k in on ? ' <em>' + esc_(on[k]) + '</em>' : '') + '</label>').join('') || '<div class="row"><small>No flags yet.</small></div>'; }
+  }
+  function debug(on) { dbgEl.classList.toggle('on', on); dbgHold(on); if (on) { dbgFlags = new Set(); drawDebug(); } }
+  $('hDebug').addEventListener('click', e => { e.stopPropagation(); if (opts.debug && opts.debug()) debug(true); });
+  dbgEl.addEventListener('click', e => { const t = e.target, d = t.dataset || {};
+    if (t === dbgEl || d.k === 'close') return debug(false);
+    if (d.t) { dbgTab = d.t; drawDebug(); return; }
+    if (d.tr && opts.debugSet) { opts.debugSet({ trust: d.tr, by: +d.by }); drawDebug(); } });
+  dbgEl.addEventListener('change', e => { const t = e.target, d = t.dataset || {}; if (!opts.debugSet) return;
+    if (d.q) opts.debugSet({ quest: d.q, done: t.checked }); else if (d.fl) opts.debugSet({ flag: d.fl, on: t.checked }); drawDebug(); });
   // (how she's holding up, said in words for a moment, tapped or clicked)
   let capT = 0; $('hCap').addEventListener('click', e => { e.stopPropagation(); const say = $('hCapSay'); say.textContent = $('hCap').title; say.classList.add('on'); clearTimeout(capT); capT = setTimeout(() => say.classList.remove('on'), 2200); });
 
@@ -297,7 +316,7 @@ function create(opts) {
   setInterval(axes, 200);      // (the scene can change under the keys)
   const typing = e => /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'range' && e.target.type !== 'checkbox';
   addEventListener('keydown', e => {
-    if (e.code === 'Escape') { if (sheet.classList.contains('on')) sheet.classList.remove('on'); else if (setEl.classList.contains('on')) setEl.classList.remove('on'); else if (!el.classList.contains('hide')) pause(!paused); e.preventDefault(); e.stopImmediatePropagation(); return; }
+    if (e.code === 'Escape') { if (dbgEl.classList.contains('on')) debug(false); else if (sheet.classList.contains('on')) sheet.classList.remove('on'); else if (setEl.classList.contains('on')) setEl.classList.remove('on'); else if (!el.classList.contains('hide')) pause(!paused); e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (paused || sheet.classList.contains('on')) { e.stopImmediatePropagation(); return; }      // (nothing reaches the game, nor the conversation, while the menu's up)
   }, true);
   addEventListener('keydown', e => {

@@ -36,7 +36,7 @@ const bread = w => Object.assign({ left: 1, fed: 0, need: false, carrying: false
 const setBread = (w, fn) => change(w, c => { c.bread = Object.assign({ left: 1, fed: 0, need: false, carrying: false }, c.bread); fn(c.bread); });
 // (on the board, where her mother can see it: not taken today, or put back)
 const onBoard = w => { const l = chores(w).loaf; return bread(w).left > 0 && !(l && l.day === w.cal.day && ['taken', 'ducks', 'kept', 'gone', 'asked'].includes(l.state)); };
-const breadIn = P => { const b = basket(P), c = (b && b.contents) || []; return c.includes(LOAF) ? LOAF : c.includes(LOAVES) ? LOAVES : c.includes(HEEL) ? HEEL : null; };
+const breadIn = P => { const b = basket(P), c = (b && b.contents) || []; return c.includes(LOAF) ? LOAF : c.includes(LOAVES) ? LOAVES : c.includes(FRESH) ? FRESH : c.includes(HEEL) ? HEEL : null; };      // (FRESH: the one from Mistress Pennock's counter, on its way home)
 
 // Peter on the green. → true if it was the ducks' talk (the rest of his talk is js/villagers.js's).
 async function peter(P, w, f, V) {
@@ -65,7 +65,7 @@ async function feed(P, w, f, V, what) {
   if (f) f.motion.face(yawTo(f.motion.pos, pond));
   const throwing = { on: true }, toss = async (mo, at, h) => { while (throwing.on) { await mo.reach(h, at.clone().setY(9)); await P.wait(0.25); await mo.release(h); await P.wait(0.6 + Math.random() * 0.5); } };
   const going = [toss(m, me.clone().lerp(pond, 0.2), 'L')]; if (f) going.push(toss(f.motion, him.clone().lerp(pond, 0.2), 'R'));      // (hers with her left: the basket's on her right arm)
-  const left = bread(w).left, all = what !== LOAF || left - FED < HEEL_LEFT, heel = what === HEEL;      // (the loaf: a good share of it, or what's left, if that's little enough; the loaves: both)
+  const left = bread(w).left, all = what === FRESH ? false : what !== LOAF || left - FED < HEEL_LEFT, heel = what === HEEL;      // (the fresh loaf: a share of it, the rest still to go home)      // (the loaf: a good share of it, or what's left, if that's little enough; the loaves: both)
   await P.converse(S.ducksFed(what, !all), { shot: ['red', 'peter'] });
   throwing.on = false; await Promise.all(going);
   const b = basket(P);
@@ -73,8 +73,9 @@ async function feed(P, w, f, V, what) {
   if (heel) { /* (the heel: hers, and given) */ }
   else if (what === LOAF && all) { change(w, c => { c.loaf = { day: w.cal.day, state: 'ducks' }; }); setBread(w, x => { x.left = 0; x.fed = 0; }); }
   else if (what === LOAF) { change(w, c => { c.loaf = { day: w.cal.day, state: 'taken', fed: true }; }); setBread(w, x => { x.left = Math.max(0, x.left - FED); x.fed = (x.fed || 0) + FED; }); }      // (still in her basket, gone down: back on the board, and her mother will see)
+  else if (what === FRESH) setBread(w, x => { x.freshFed = FED; });      // (still in her basket, a share gone: on the board it's not whole, and her mother will see)
   else if (!heel) change(w, c => { if (c.errand && c.errand.id === 'bread') c.errand.state = 'fed'; });      // (her mother's errand: nothing to hand over now)
-  if (!heel) w.rep.add('naughty', what === LOAVES ? 1 : 0.5, what === LOAVES ? 'Mama’s loaves, thrown to the ducks' : 'Mama’s loaf, thrown to the ducks');      // (the heel's hers to give: no harm in it)
+  if (!heel) w.rep.add('naughty', what === LOAVES ? 1 : 0.5, what === LOAVES ? 'Mama’s loaves, thrown to the ducks' : what === FRESH ? 'the fresh loaf from the counter, half thrown to the ducks' : 'Mama’s loaf, thrown to the ducks');      // (the heel's hers to give: no harm in it)
   w.rep.add('mischievous', 0.5, 'feeding the ducks with Peter'); w.rep.trusts('peter', 1);
   w.cal.advance(15); w.refresh();
   if (P.talk) P.talk.muse(S.ducksAfter(what, !all), { face: 'wince' });
@@ -115,15 +116,16 @@ async function evening(P, w, o) {
 async function diminished(P, w, near) {
   const S = root.Story; let how = null;
   await near();
-  await P.converse(S.loafDiminished({ hungry: () => { how = 'lie'; }, ducks: () => { how = 'truth'; } }), { shot: ['red', 'mother'] });
-  setBread(w, x => { x.fed = 0; });
+  const fr = !!bread(w).freshPart;      // (the fresh one, home from the counter not whole: hers to notice, the same)
+  await P.converse(S.loafDiminished({ hungry: () => { how = 'lie'; }, ducks: () => { how = 'truth'; } }, fr), { shot: ['red', 'mother'] });
+  setBread(w, x => { x.fed = 0; x.freshPart = false; });
   if (how === 'lie') {
     w.rep.add('naughty', 0.5, 'saying she ate Mama’s loaf, when the ducks had it');
     const C = w.chores; if (C && C.slid) C.slid('eating between meals');
     return false;
   }
   w.rep.add('naughty', 0.5, 'Mama’s loaf, to the ducks'); heelLeave(w);
-  await root.Evening.owe(P, w, 'loaf', { ducks: true, part: true });
+  await root.Evening.owe(P, w, 'loaf', { ducks: true, part: true, fresh: fr });
   return true;
 }
 // A meal's piece of it, off the board (not there to eat, nothing). Down to the heel, her mother says so: another, from Mistress Pennock.
@@ -211,7 +213,7 @@ async function board(P, w) {
   const b = basket(P), it = P.world.items.find(x => x.kind === 'loaf'), m = P.motion; if (!it) return;
   const at = it.obj.position.clone(); await up(P, at, 6); await m.reach('R', at.clone().setY(at.y + 2)); await P.wait(0.3); await m.release('R');
   if (b && root.Chores) root.Chores.takeOut(b, FRESH); if (b && b === P.bag) change(w, c => { if (c.bag) c.bag.contents = b.contents.slice(); });
-  fresh(w); show(P, w); change(w, c => { if (c.loaf && c.loaf.day === w.cal.day && c.loaf.state !== 'taken') c.loaf.state = 'back'; });
+  { const gone = bread(w).freshFed || 0; fresh(w); if (gone) setBread(w, x => { x.left = 1 - gone; x.fed = gone; x.freshFed = 0; x.freshPart = true; }); } show(P, w); change(w, c => { if (c.loaf && c.loaf.day === w.cal.day && c.loaf.state !== 'taken') c.loaf.state = 'back'; });
   it.away = false; it.obj.visible = true; w.refresh();
 }
 const objective = w => { const b = bread(w); return b.carrying ? 'Put the fresh loaf on the board at home.' : b.need && w.cal.lay ? null : b.need ? (w.cal.minute < H('12:30') ? 'Fetch a fresh loaf from Mistress Pennock’s counter.' : 'Fetch a fresh loaf from Mistress Pennock’s counter, in the morning.') : null; };
