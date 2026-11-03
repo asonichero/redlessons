@@ -1,6 +1,6 @@
 // Little Red’s Lessons — the village, from outside: the green with its well, its old lime tree and the curfew bell; round it the inn, the bakery
 // and the forge, and the cottages: Maren's and Red's nearest the meadow and the way to the wood, the Thatchers', the Dunns'. Lanes of trodden
-// earth between them, low stone walls and hurdle fences, gardens, and beyond it all hedges and fields and trees. Built as the cottage and the
+// earth between them, hurdle fences, gardens, and beyond it all hedges and fields and trees. Built as the cottage and the
 // cabin are (js/cottage.js's kit: limewashed daub in an oak frame on a stone footing, thick thatch, the same textures and ink), at the same
 // scale: the cottage's walls here are the room's own (Maren's door, her windows and her chimney where they are inside).
 //
@@ -384,13 +384,9 @@ function build(scene, opts) {
   garden(-50, 280, 30, 330, { side: 0, at: 20 }, 'veg');      // (the Thatchers')
   garden(-346, 70, -310, 160, { side: 1, at: 30 }, 'veg');      // (the Dunns')
   garden(140, -282, 240, -240, { side: 2, at: 50 }, 'veg');      // (the cottage past the inn)
-  // (dry stone walls along the street and the lanes, set back off their edges, with gaps for the paths)
+  // (dry stone walls along the street and the lanes: taken out, as only in the way; along() kept for any wanted again)
   const along = (S, i0, i1, side, off, h, skip) => { for (let i = i0; i < i1; i += 4) { const a = S[i], b = S[Math.min(i1, i + 4)], d = b.clone().sub(a).normalize(), n = new V3(d.z, 0, -d.x).multiplyScalar(side * off);
       const pa = a.clone().add(n), pb = b.clone().add(n); if (skip && skip.some(q => pa.distanceTo(q) < 22 || pb.distanceTo(q) < 22)) continue; if (solids.some(sd => pa.x > sd.x0 && pa.x < sd.x1 && pa.z > sd.z0 && pa.z < sd.z1)) continue; wallSeg(pa, pb, h, rubble); } };
-  along(STREET, 2, 9, 1, 18, 5, [V(-396, -340), V(-230, -168)]);      // (the street's north side, from the meadow gate to the cottages)
-  along(STREET, Math.floor(STREET.length * 0.78), STREET.length - 3, -1, 18, 6);      // (and its south side, out toward the east gate)
-  along(STREET, Math.floor(STREET.length * 0.8), STREET.length - 3, 1, 18, 6, [V(492, 6)]);      // (a gap in it for the way up to the pinfold)
-  along(MILL, Math.floor(MILL.length * 0.45), MILL.length - 3, 1, 16, 5); along(MILL, Math.floor(MILL.length * 0.45), MILL.length - 3, -1, 16, 5);
   // (an orchard north of the street past the inn: old apple trees in rows, windfalls under them)
   const orchard = []; for (let i = 0; i < 4; i++) for (let k = 0; k < 4; k++) orchard.push([300 + k * 46 + (i % 2) * 18, -300 + i * 40]);
 
