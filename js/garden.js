@@ -56,6 +56,9 @@ function plan(day) {
 }
 const MAREN_TENDS = 0.2;
 // (her mother's day in the garden: no work for Red)
+// (trodden flowers her mother spoke of at dinner: she's set them straight by supper (state.garden.mended: the day she did), so the garden's Red's
+// again tomorrow)
+const mended = (w, day) => { const g = stateOf(w); return !!g.mended && day <= g.mended && (w.cal.day > g.mended || w.cal.minute >= 18 * 60); };
 function offToday(w) { const g = stateOf(w), d = w.cal.day; if (root.Fair && root.Fair.isFair(w)) return 'fair'; return g.rest === d ? 'after' : hash(d, 500) < MAREN_TENDS ? 'maren' : null; }
 
 // ── Building it (js/village.js gives it the village's root; the fence is the village's own).
@@ -201,7 +204,7 @@ function attach(P, w) {
     const g = stateOf(w);
     for (const wd of weeds) wd.g.visible = !g.pulled.includes(wd.i);
     const today = plan(cal.day); for (const r of FLOWERS) G.water(r.id, !!g.watered[r.id] || !today.dry.includes(r.id));      // (watered, or wet from the night's rain, or not wanting it today)
-    for (const f of G.flowers) G.tread(f.id, !!g.trampled[f.id]);
+    for (const f of G.flowers) G.tread(f.id, !!g.trampled[f.id] && !mended(w, g.trampled[f.id]));      // (mended by her mother, if she spoke of it at dinner: standing again from supper)
     G.can.obj.visible = g.can === 'butt'; G.trowel.obj.visible = g.trowel === 'bench';
     if (g.can !== 'butt' && !m.carry) { const c = canProp(); P.stage.scene.add(c.obj); m.hold(c, 'hang'); }      // (still in her hands, if she went off with it)
     if (g.trowel !== 'bench' && !m.carry) { const t = trowelProp(); P.stage.scene.add(t.obj); m.hold(t, 'hang'); }
@@ -382,7 +385,7 @@ async function correct(P, w, how) {
   const S = root.Story;
   await P.converse(S.gardenTakeInHand(how), { shot: ['red', 'mother'] });
   const r = await root.Correction.run(P, { corrector: 'maren', turns: [{ subject: 'red', script: Sc => S.gardenCorrection(Sc, how) }], fade: on => w.fade(on) });
-  change(w, s => { s.rest = w.cal.day + 1; });      // (tomorrow she sees to the garden herself, and sets her flowers straight)
+  if (!mended(w, w.cal.day)) change(w, s => { s.rest = w.cal.day + 1; });      // (tomorrow she sees to the garden herself, and sets her flowers straight; unless she spoke of it at dinner, and has already)
   w.rep.settle('naughty', 0.6);
   if (r && r.rose) w.save.flag('rose-said', w.cal.day);
   return r;
