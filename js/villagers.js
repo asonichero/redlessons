@@ -394,6 +394,7 @@ function attach(P, w) {
   function willieWatch() {
     const key = watchKey(), f = figs[key]; if (!f || !f.want || f.follow || f.held || f.scene || !root.Evening || root.Evening.watchman(w) || P.busy) return;
     if (!pastHers(key) || !(f.want.round || f.want.stand === 'bell')) return;
+    { const fl = save.state.flags || {}; if (fl['willie-told-promise'] === cal.day && cal.minute < H('22:30')) return; }      // (her mother's told him: she's sitting with Bess tonight, and about late for it; Mistress Abney sees her home)
     const red = P.motion.pos; if (Math.hypot(red.x - f.motion.pos.x, red.z - f.motion.pos.z) < (P.sitting ? 150 : 110)) P.act(() => catchHer(f));      // (sat still on a bench, as plain as walking: further, if anything, with his lantern up)
   }
   // (half past nine: the bell, three strokes, rung by him)

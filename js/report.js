@@ -43,7 +43,9 @@ function topics(P, w, when) {
   const G = root.Garden, gHers = ch && ch.on && ch.on() && G && !G.offToday(w);
   if (gHers) {
     const gp = G.progress(w), done = ch.gardenTended ? ch.gardenTended() : gp.done, dry = ch.gardenDry && ch.gardenDry();
-    if (done) out.push({ id: 'garden:done', label: 'And the garden’s done.', noticed: sup, tell: [M('smile', sup ? 'I saw. The bells look pleased with themselves.' : 'Already? Good girl.', 'smile')], raise: [M('smile', 'I saw the garden’s done. The bells look pleased with themselves.', 'smile')] });
+    const trod = G.trodden ? G.trodden(w).length : 0;      // (her flowers trodden down, more than a slip: no praise for the rest of it)
+    if (done && trod > 3) out.push({ id: 'garden:done', label: 'The weeding’s done, and the rows watered.', noticed: false, tell: [M('stern', 'The weeding. Yes.', 'shy')] });
+    else if (done) out.push({ id: 'garden:done', label: 'And the garden’s done.', noticed: sup, tell: [M('smile', sup ? 'I saw. The bells look pleased with themselves.' : 'Already? Good girl.', 'smile')], raise: [M('smile', 'I saw the garden’s done. The bells look pleased with themselves.', 'smile')] });
     else if (!sup && gp.begun) out.push({ id: 'garden:begun', label: 'I’ve made a start on the garden.', noticed: false, tell: [M('calm', 'Then finish it this afternoon.')] });
     else if (!sup) out.push({ id: 'garden:untouched', label: 'I haven’t got to the garden yet.', noticed: false, tell: [M('stern', 'Before dark, mind. I’ll look when I’m home.', 'shy')] });
     else if (sup) out.push({ id: 'garden:left', label: dry ? 'The flowers went without, Mama. The butt was dry.' : 'I didn’t get to the garden, Mama.', noticed: true,
@@ -76,6 +78,10 @@ function topics(P, w, when) {
   const Ev = root.Evening;
   for (const cc of (Ev && Ev.freshCorrections ? Ev.freshCorrections(w) : [])) out.push({ id: 'corrected:' + cc.id, label: (FULL[cc.by] || 'Someone') + ' took me in hand today, Mama.', noticed: !!cc.informs,
     own: async P_ => { await Ev.reprieveSaid(P_, w, cc, 'reported'); }, raise: async P_ => { await Ev.reprieveSaid(P_, w, cc, 'heard'); }, unsaid: () => Ev.reprieveSaid(P, w, cc, 'withheld') });
+  // A promise to Mistress Abney, to sit with Bess: hers to tell her mother, before the evening comes (her hour lifted for it, and Master William told)
+  { const AP = root.AbneyPromise, ps = AP && AP.stateOf ? AP.stateOf(w) : null;
+    if (ps && ps.day && ps.day >= d && !ps.kept && !ps.broken && !ps.mamaTold) out.push({ id: 'promise', label: 'Mistress Abney’s asked me to sit with Bess ' + (ps.day > d ? 'tomorrow evening' : 'this evening') + ', till she’s back. I said I would.', noticed: false,
+      tell: S.promiseToldMama(), after: () => { w.save.change(s => { s.promise.mamaTold = d; }, { promise: true }); w.save.flag('willie-told-promise', ps.day); } }); }
   // A dare the village is talking of: the bell rung in broad day (heard by dinner, or supper), a knock at the Dunns' (by supper).
   const fl = w.save.state.flags || {}, dare = fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null;
   if (dare) out.push({ id: 'dare', label: dare === 'bell' ? 'I rang the curfew bell, Mama. Tom dared me.' : 'I knocked at the Dunns’ and ran. Tom dared me.', noticed: dare === 'bell' || sup,
