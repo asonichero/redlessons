@@ -432,7 +432,7 @@ function create(w) {
     if (e.key === 'potback') { change(c => { c.potAt = null; }); const pot = P.world.items && P.world.items.find(x => x.kind === 'pot'); if (pot) { pot.away = false; pot.obj.visible = true; } }      // (Mama's pot: on the hearth again)
     const it = P.motion.carry, b = it && it.kind === e.carry && it.kind !== 'basket' ? null : basketIn(P);      // (the butt in her hands: that, not her basket set by at the table)
     if (b) takeOut(b, e.carryName || NAME[e.carry]);      // (the eggs out of it, and her basket hers again)
-    else if (it && it.home) { P.motion.drop(); fill(it, false); it.keep = false; it.obj.position.copy(it.home); it.obj.rotation.set(0, 0, 0); }      // (the butt: her mother takes it, and it's back by the hearth, emptied into the big one)
+    else if (it && it.home) { const out = !P.npc || P.npcAway; P.motion.drop(); fill(it, out); it.keep = false; it.obj.position.copy(it.home); it.obj.rotation.set(0, 0, 0); if (out) change(c => { c.buttWaiting = true; }); }      // (the butt: back by the hearth; emptied into the big one by her mother, there and then, or when she's home)
     else { const x = P.motion.drop(); if (x) x.obj.visible = false; }
     change(c => { c.errand.state = 'done'; c.errand.told = true; if (e.key === 'well') c.cans = 0; }); if (e.key === 'bread' && root.Loaf) root.Loaf.fresh(w); cal.advance(5); w.refresh();      // (Master Pennock's loaves: a whole one on the board)
   }
@@ -457,6 +457,7 @@ function create(w) {
     if (P && held && !P.motion.carry) regive(P, held);      // (whatever she had in her hands, still in them)
     if (P) { const b = st().bag; P.bag = b && b.at === w.area && SETBY.includes(w.area) ? b : null; }      // (her basket, set by in here)
     away(P);
+    if (P && w.area === 'home' && st().buttWaiting) { const b = P.world.items && P.world.items.find(x => x.kind === 'butt'); if (b && b !== P.motion.carry) fill(b, true); }      // (still full by the hearth, her mother not yet in to see to it)
     if (P && w.area !== 'home') for (const l of st().left || []) if (l.area === w.area) {      // (what she put down here, where she put it)
       const it = prop(l.kind, { empty: !l.full, contents: l.contents }); it.keep = false; it.leftId = l.id; it.obj.position.set(l.x, 0, l.z); P.stage.scene.add(it.obj); P.world.items.push(it); }
     const e = errand(); if (!e || !P) return;
@@ -466,7 +467,8 @@ function create(w) {
   // Each moment: the time gone by an errand not begun (a broken promise, and she knows it); the garden still untended at dusk.
   function tick(P) {
     if (!on()) return;
-    if (P && w.area === 'home' && !(typeof document !== 'undefined' && document.body.classList.contains('correcting'))) takeUp(P);      // (her basket: in her hand at home, but at table and for a correction)
+    if (P && w.area === 'home' && !(typeof document !== 'undefined' && document.body.classList.contains('correcting'))) takeUp(P);
+    if (P && w.area === 'home' && st().buttWaiting && P.npc && !P.npcAway) { const b = P.world.items && P.world.items.find(x => x.kind === 'butt'); if (b && b !== P.motion.carry) { fill(b, false); change(x => { x.buttWaiting = false; }); } }      // (her mother in: the little butt into the big one)      // (her basket: in her hand at home, but at table and for a correction)
     const e = errand(), c = st();
     { const c0 = st(); if (c0.pieIn === cal.day && w.area !== 'home' && P.talk) { change(x => { x.pieIn = -1; }); P.talk.muse('Mama’s pie in my basket, under a cloth. Still warm.', { face: 'smile' }); } }      // (put in as she went out of the door)
     if (e && e.state === 'accepted' && cal.minute > e.by + (e.shift ? SHIFT_SLACK : e.fails ? 0 : GRACE)) {      // (a shift has a quarter of an hour's grace; an errand, its half hour, unspoken; the Dunns' pie, none: he's gone out)
