@@ -97,16 +97,20 @@ async function raise(P, w) {
 // (each correction's own → its result: and after it, the words said in the aftercare)
 const CORRECT = { maintenance: (P, w, how) => w.chores.maintenance(P, w, how), curfew: (P, w, how) => curfewCorrect(P, w, how), pie: (P, w, how) => root.Pie.correct(P, w, how), promise: (P, w, how) => root.AbneyPromise.correct(P, w, how), garden: (P, w, how) => root.Garden.correct(P, w, how), loaf: (P, w, how) => root.Loaf.correct(P, w, how), dress: (P, w, how) => dressCorrect(P, w, how), wood: (P, w, how) => woodCorrect(P, w, how) };
 const AFTER = { maintenance: (how, r) => root.Story.afterMaintenance(r), curfew: how => root.Story.curfewAfter(how), pie: how => root.Story.pieMarenAfter(how), promise: () => root.Story.promiseAfter(), garden: how => root.Story.afterGarden(how), loaf: how => root.Story.loafAfter(how), dress: how => root.Story.dressAfter(how), wood: () => root.Story.woodAfter() };
+// (the rest of what's owed, folded into the correction under way: said over her before the end; and none of it left over. → how, with also)
+function foldIn(w, how, o) {
+  const S = root.Story, rest = (stateOf(w).owed || []).filter(x => x !== o && CORRECT[x.kind] && x.kind !== o.kind && !(o.kind === 'maintenance' && x.kind === 'curfew'));
+  change(w, s => { s.owed = []; });
+  if (rest.length && S.owedAlso) { const was = how.also; how.also = async Sc => { if (was) await was(Sc); for (const x of rest) { await Sc.step(['corrector', S.owedAlso(x.kind, x.how, Math.max(0, w.cal.day - (x.day || w.cal.day))), 'stern'], 8); await Sc.smacks(4); } }; }
+  return how;
+}
 async function settle(P, w, table) {
   // (setting her right covers the bell too, if that's owed as well tonight: the rest waits)
   // (tonight's own first, the most recent of it; anything older, or else owed, folded into it, said over her before the end: not left to tangle)
   const list = stateOf(w).owed || [], todays = list.filter(x => x.day === w.cal.day && CORRECT[x.kind]), S = root.Story;
   const o = list.find(x => x.kind === 'maintenance') || todays[todays.length - 1] || list.find(x => CORRECT[x.kind]) || list[0];
   if (!o || !CORRECT[o.kind]) { change(w, s => { s.owed = (s.owed || []).slice(1); }); if (table) { await w.fade(true); table.up(); await w.fade(false); } return; }
-  const rest = list.filter(x => x !== o && CORRECT[x.kind] && x.kind !== o.kind && !(o.kind === 'maintenance' && x.kind === 'curfew'));
-  change(w, s => { s.owed = []; });
-  const how = Object.assign({}, o.how);
-  if (rest.length && S.owedAlso) { const was = how.also; how.also = async Sc => { if (was) await was(Sc); for (const x of rest) { await Sc.step(['corrector', S.owedAlso(x.kind, x.how, Math.max(0, w.cal.day - (x.day || w.cal.day))), 'stern'], 8); await Sc.smacks(4); } }; }
+  const how = foldIn(w, Object.assign({}, o.how), o);
   await stood(P, w, table);
   const now = S.owedNow(o.kind, how); if (now.length) await P.converse(now, { shot: ['red', 'mother'] });
   lapAfter(r_ => AFTER[o.kind](how, r_));      // (the aftercare on her lap, still in the chair: held, or sat up)
@@ -179,6 +183,8 @@ async function aftercare(P, w, r, lines) {
 // ── Bed: the two of them in it, her mother's arm over her, the fire low; Red's thoughts on the day; asleep; and the morning. (o: the
 // correction tonight, if there was one: { kind, r })
 async function toBed(P, w, o) {
+  // (nothing owed is slept on: whatever's still to be seen to, it's seen to now, before bed, all of it together)
+  if (owes(w) && P === w.P) { await settle(P, w, null); return; }
   o = o || {}; const st = P.stage, talk = P.talk, S = root.Story;
   if (!root.Bed || !P.world.seats.some(s => s.kind === 'bed')) { await w.morning(); return; }
   await w.fade(true);
@@ -271,6 +277,7 @@ async function lateHome(P, w, walked) {
   if (P === w.P && w.q.stateOf && w.q.stateOf('maren.willie') === 'offered') await blessing(P, w);      // (after his first catch: whether he may see to it himself, next time)
   await P.converse(S.owedNow('curfew', how).slice(2), { shot: ['red', 'mother'] });
   lapAfter(() => S.curfewAfter(how));
+  foldIn(w, how, { kind: 'curfew' });      // (anything else owed today, seen to in the same: nothing slept on)
   const r = await curfewCorrect(P, w, how); if (root.Correction) root.Correction.next = null;
   if (w.capacity) w.capacity.add(15, 'set right');
   if (P !== w.P) return;
