@@ -1244,11 +1244,11 @@ function make(id, look, opts) {
   // and shoulders; or, with the cloak on and the hood down, the cloak and the bunched hood.
   const cloakOn = id === 'red' && look.outfit !== 'No cloak', hoodDown = cloakOn && look.outfit !== 'Hood up', CW = Math.max(K.cloakWidth, K.chestWidth, K.armGirth * 0.95);
   const colliders = [{ c: new V3(0, 5.4, 0), r: new V3(3.1 * K.chestWidth + 0.5, 5.4, 2.1 * TD * K.chestWidth + 0.5) },
-    { c: new V3(0, 7.2, -0.2), r: new V3(3.7 * K.chestWidth + 0.5, 2.6, 2.2 * TD * K.chestWidth + 0.6) }];      // (and her shoulders and the blades of her back, which the first can't reach: the hair's never through them, however her head tips back)
+    { c: new V3(0, 7.2, -0.2), r: new V3(3.7 * K.chestWidth + 0.5, 2.6, 2.2 * TD * K.chestWidth + 0.6), back: true }];      // (and her shoulders and the blades of her back, which the first can't reach: the hair's never through them, however her head tips back. The back hair's only: the locks in front lie over her shoulders, not held off them, out before her face)
   if (hoodDown) colliders.push({ c: new V3(0, 5.6, 0), r: new V3(4.2 * CW + 0.4, 5.6, 3.35 * TD * CW + 0.4) }, { c: new V3(0, 8.25, -2.45), r: new V3(2.2, 1.5, 1.4) });
   const lc = new V3();
   // (shrink: the front strands lie closer, over her chest, so they drape over it rather than being held off it)
-  const inside = (pW, shrink) => { rig.torso.worldToLocal(lc.copy(pW)); let pen = 0; for (const k of colliders) { const q = lc.clone().sub(k.c).divide(k.r.clone().subScalar(shrink || 0)), l = q.length(); if (l < 1) pen += 1 - l; } return pen; };
+  const inside = (pW, shrink) => { rig.torso.worldToLocal(lc.copy(pW)); let pen = 0; for (const k of colliders) { if (k.back && shrink) continue; const q = lc.clone().sub(k.c).divide(k.r.clone().subScalar(shrink || 0)), l = q.length(); if (l < 1) pen += 1 - l; } return pen; };
   const penOf = d => { const sh = d.front ? 0.6 : 0; d.g.updateMatrixWorld(true); let p = 0; for (const f of [0.25, 0.5, 0.75, 1]) p += inside(d.g.localToWorld(tip.set(0, -d.len * f, 0)), sh); return p; };      // (all down its length, not only its middle and end: near the nape too)
   rig.tick = dt => {
     dt = clamp(dt || 1 / 60, 0, 0.1); t += dt;
@@ -1276,10 +1276,12 @@ function make(id, look, opts) {
       if (penAt(tx, tz) > 0) {
         let best = null;
         for (const [k, ux, uz] of [[0, 1, 0], [1, -1, 0], [2, 0, 1], [3, 0, -1]]) {
-          for (let a = 0.03; a <= 1.5; a += 0.03) if (penAt(tx + ux * a, tz + uz * a) <= 0) { const cost = a + (k === d.way ? 0 : 0.12) - (d.front && k === 0 ? 0.25 : 0); if (!best || cost < best.cost) best = { cost, k, x: tx + ux * a, z: tz + uz * a }; break; }
+          const reach = d.front || d.sx ? 1.5 : ux > 0 ? 0 : uz ? 0.45 : 1.5;      // (the back hair: out behind her, or a little to the side, never swung round over her shoulder and before her face)
+          for (let a = 0.03; a <= reach; a += 0.03) if (penAt(tx + ux * a, tz + uz * a) <= 0) { const cost = a + (k === d.way ? 0 : 0.12) - (d.front && k === 0 ? 0.25 : 0); if (!best || cost < best.cost) best = { cost, k, x: tx + ux * a, z: tz + uz * a }; break; }
         }
         if (best) { d.way = best.k; tx = best.x; tz = best.z; }
       }
+      if (!d.front && !d.sx) tz = clamp(tz, -0.6, 0.6);
       if (d.front && d.seg > 0) tx = Math.min(tx, 0.55);                              // (the lower half of a front strand drapes; it never juts out)
       d.tx = d.tx == null ? tx : lerp(d.tx, tx, 1 - Math.exp(-dt * 12)); d.tz = d.tz == null ? tz : lerp(d.tz, tz, 1 - Math.exp(-dt * 12));      // (eased, so the rest place never jumps)
       d.vx += (60 * (d.tx - d.ax) - 9 * d.vx) * dt; d.ax += d.vx * dt; d.vz += (60 * (d.tz - d.az) - 9 * d.vz) * dt; d.az += d.vz * dt;
