@@ -171,7 +171,7 @@ What he wants: Hulda's craft, for his own gain rather than for what she uses it 
 2. **1.2** Their friendship as it is now; meetings at the beech.
 3. **1.3** Notices she's changed. Asks, and she decides how much to tell him.
 4. **2.1** Paused until she's met the Barrows.
-5. **2.2** Their first try at holding each other to account as equals, modelled on what she saw at the Barrows'.
+5. **2.2** Their first try at holding each other to account as equals, modelled on what she saw at the Barrows'. If she didn't tell him the whole of it when he noticed she'd changed in 1.3 (she said only that she and her mother had come to an understanding, or that she was just the same), she tells him now, after the Barrows and before they try: what she and her mother have, that she asked for it, and what she saw at the Barrows'. He can't hold her to account as an equal on half a story.
 6. **2.3** Optional, and only after step 5: later, the two of them exploring it as **Peter and Rose**, not Little Red. Peter's deftness with ropes and knots, the fowler's trade, becomes part of how they experiment. It's careful and agreed between them, and true to him: steady hands, knots that come loose with one pull, a knife always within reach, and her word stopping it at once. They may want a word of their own for it; *Beech*, for the R and P on the tree, would fit. At the Shoe, by contrast, her word is the house's own, Red.
 7. **2.3** Uneasy about the stranger in the wood, and says so.
 8. **3.2** The first to say something is wrong with Hulda's silence: his grandfather has noticed she's stopped coming by.
