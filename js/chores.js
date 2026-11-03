@@ -93,6 +93,9 @@ function create(w) {
   // (the garden's butt dry, while the water from the well is owed or let slide today, till it's fetched)
   const buttDry = () => { const c = st(), e = c.errand; if (e && e.id === 'well' && e.state === 'done') return false;
     return c.owing === 'well' || !!(e && e.id === 'well' && ['broken', 'missed', 'little', 'wont'].includes(e.state)); };
+  // (the garden left only for want of water: the weeds and the jobs done, the flowers all that's left, and the butt dry. Then it's the well
+  // that's let slide, not the garden: her mother says so, as one thing)
+  const gardenDry = () => { if (st().garden || !buttDry() || !root.Garden) return false; const p = root.Garden.progress(w); return p.dry.length > 0 && !p.weeds && !p.jobs.length; };
   const on = () => w.q.done('maren.chores');      // (once they're agreed)
   const errand = () => { const e = st().errand; return e && E[e.id] ? Object.assign({ key: e.id }, E[e.id], e) : null; };
   const clock = m => root.Calendar.clockOf(m).replace(/ in the (morning|afternoon|evening)| at night/, '');
@@ -378,7 +381,7 @@ function create(w) {
     else if (e && e.state === 'done' && !e.told) out.push(...S.marenAsks(e, { told: () => change(cc => { cc.errand.told = true; }) }));
     else out.push(...S.marenChat(cal.day, cal.part, { errand: e, asked: !!c.errand }));
     const garden = !c.garden && cal.minute < H('19:00') && !(root.Garden && root.Garden.offToday(w));
-    if (garden) out.push(...S.marenGarden());
+    if (garden) out.push(...(gardenDry() ? S.marenGardenDry() : S.marenGarden()));      // (only the flowers left, the butt dry: the water's what wants fetching)
     else if (cal.minute < H('18:00')) out.push(...S.marenSupper());
     return out;
   }
@@ -404,6 +407,9 @@ function create(w) {
       if (due() && root.Evening && !root.Evening.owes(w, 'maintenance')) root.Evening.owe(null, w, 'maintenance', {});      // (the third in a week: her mother will set her right, this evening)
       if (P && P.talk) for (const [face, text] of S.broken(e)) P.talk.muse(text, { face });
       w.refresh();
+    }
+    if (!c.garden && c.missed !== cal.day && cal.minute >= H('19:00') && gardenDry()) {      // (left only for want of the water: the well's to answer for, not the garden)
+      change(cc => { cc.missed = cal.day; }); if (P && P.talk) P.talk.muse('The flowers. Dry, because the butt is. Because of me, and the well.', { face: 'wince' });
     }
     if (!c.garden && c.missed !== cal.day && cal.minute >= H('19:00')) {
       change(cc => { cc.missed = cal.day; }); rep.add('naughty', 0.5, 'Mama’s garden left untended');
@@ -443,7 +449,7 @@ function create(w) {
     else parts.push('Nothing asked today.');
     return { name: 'Today', state: 'offered', step: { title: parts[1], hint: parts[0] } };
   }
-  return { owing, buttDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  return { owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };

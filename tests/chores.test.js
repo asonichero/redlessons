@@ -112,3 +112,13 @@ test('an errand of her mother’s left undone is asked again the next day, unles
   chores.answer('well', 'yes'); save.change(s => { s.chores.errand.state = 'done'; }, { chores: true });
   assert.equal(chores.buttDry(), false, 'fetched: the butt full again');
 });
+
+test('the garden left only for want of the water: her mother speaks of it as the well’s, not the garden over again', () => {
+  const S = globalThis.Story, text = l => l.map(x => x.text || '').join(' | ');
+  const both = text(S.dayTalk('yes', { errand: { id: 'well', state: 'broken' }, garden: false, gardenDry: true }));
+  assert.match(both, /stood dry all day/); assert.doesNotMatch(both, /And the garden\?/); assert.doesNotMatch(both, /let it slide\./);
+  const owed = text(S.dayTalk('yes', { errand: { id: 'eggs', state: 'done' }, garden: false, gardenDry: true }));
+  assert.match(owed, /the well’s to answer for, not the garden’s/); assert.doesNotMatch(owed, /I didn’t get to it/);
+  const plain = text(S.dayTalk('yes', { errand: { id: 'well', state: 'broken' }, garden: false, gardenDry: false }));
+  assert.match(plain, /let it slide/); assert.match(plain, /I didn’t get to it/, 'a garden simply left: both, as before');
+});
