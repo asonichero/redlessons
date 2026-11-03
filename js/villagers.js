@@ -312,6 +312,7 @@ function attach(P, w) {
     let spent = 0;
     // (fair week: on the bellows dawn to dusk, he's said so: no dares, but he'll still come and tell her his stories)
     const ctx = {
+      fairLine: fairWeek && v.talked.tom !== cal.day,      // (his word on the week, as if she'd gone up to him)
       kind, busy: !!(w.chores && w.chores.objective()), errand: w.chores && w.chores.objective(), first: !v.met.tom, dares: v.dares, chats: v.chats || 0,
       afterPie: !!(w.q.done && w.q.done('tom.pie')) && !(save.state.flags || {})['dare-after-pie'],      // (the first dare after the pie: she thinks twice)
       mins: n => { spent += n; cal.advance(n); w.refresh(); },

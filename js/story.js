@@ -924,10 +924,10 @@ const tomStops = ctx => {
       ] },
     ];
   }
-  return [hello, M(3), { choose: [
+  return [hello].concat(ctx.fairLine && FAIR_WEEK.tom ? FAIR_WEEK.tom : [], [M(3), { choose: [      // (fairLine: the fair's week, his word on it first, the first time she sees him that day)
     { text: 'I can’t stop, Tom. Truly.', face: 'shy', then: out },
     { text: 'Why? What’s it to you?', face: 'cheeky', then: [M(2)].concat(middle) },
-  ] }];
+  ] }]);
 };
 // (his stories, in turn: each its own, and a little more of him in each)
 const TOM_CHATS = [
