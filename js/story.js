@@ -1616,7 +1616,13 @@ const dinner = r => {
   if (!r.trodden && !r.later) out.push(...dinnerEnd(r));      // (her flowers trodden, the loaf: she asks about them first, js/garden.js, js/loaf.js, and then this)
   return out;
 };
-const dinnerEnd = r => [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: r.needle === 'afternoon' ? 'I’ve my needlework this afternoon, so I’ll be here if you want me.' : 'And back up to the Hallorans’ for me. Supper at six.' }];
+const dinnerEnd = r => [{ who: 'mother', face: 'calm', listen: { red: 'calm' }, text: ({
+  needle: 'I’ve my needlework this afternoon, so I’ll be here if you want me.',
+  dress: 'And this afternoon it’s your dress again. Don’t wander far. Supper at six.',
+  homeWeek: 'I’m home this afternoon: the fair’s week, and a deal to do. Supper at six.',
+  gran: 'I’m up to your grandmother’s this afternoon. Back by five, and supper at six.',
+  farm: 'And back up to the Hallorans’ for me. Supper at six.',
+})[r.after || (r.needle === 'afternoon' ? 'needle' : 'farm')] }];
 const leftForMama = key => key === 'well' ? 'The water butt back by the hearth, full. Mama will see it when she’s home.' : 'On the table, for Mama when she’s home.';
 // How she's holding up (js/capacity.js), as she crosses each line: k 'low', 'worn', 'spent'; out: out of doors.
 const capacityThought = (k, out) => k === 'low' ? (out ? 'I’m flagging. A sit somewhere quiet would help. Or home, for a bit.' : 'I’m flagging. A sit by the hearth, maybe.')

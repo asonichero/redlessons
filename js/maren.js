@@ -107,6 +107,9 @@ async function dinner(P, w, how) {
   const herb = root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null;
   const given = w.chores && w.chores.handIn ? w.chores.handIn(P) : null;      // (what she's brought home: handed over in the talk)
   const r = { given, garden: gp ? (gp.done ? 'done' : gp.begun ? 'begun' : 'untouched') : null, errand: e && !given ? { id: c.errand.id, state: c.errand.state, by: root.Calendar.clockOf(H(e.by)) } : null, trodden, herb, needle: needlework(d) };
+  // (where she'll be this afternoon, said as it is: the farm; her needlework, or the dress, at home; Lay day, Grandmother's; the fair's week, home)
+  { const F = root.Fair, ph = F && F.phase ? F.phase(w) : null, fs = F && F.sessions ? F.sessions(w).find(([x]) => x === d) : null;
+    r.after = w.cal.lay ? 'gran' : ph === 'week' ? (fs && fs[1] === 'afternoon' ? 'dress' : 'homeWeek') : r.needle === 'afternoon' ? 'needle' : 'farm'; }
   // (what she's brought home, handed over; then her morning, told as she will, and what her mother's seen asked about: js/report.js)
   await P.converse([{ who: 'mother', face: 'smile', listen: { red: 'calm' }, text: 'Well, then. Tell me your morning.' }].concat(given || []), { shot: ['red', 'mother'] });
   if (root.Report) await root.Report.run(P, w, { when: 'dinner' });
