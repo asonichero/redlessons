@@ -86,3 +86,11 @@ test('amber, where the house has one: answered, and gentler after', async () => 
   await D.run(lap, 'light', { corrector: 'brannock', subject: 'red', context: 'shoe', sleep: quick.sleep, say: (t, k) => said.push(k) });
   assert.ok(said.includes('amber')); assert.ok(lap.seen[lap.seen.length - 1].strength < 0.85);
 });
+
+test('after a giver’s first correction of her: her skirt’s lifted before they begin, and stays so', async () => {
+  const lap = fakeLap(), said = [];
+  const r = await D.run(lap, 'firm', { lifted: true, sleep: quick.sleep, say: (t, k) => said.push(k) });
+  assert.equal(r.hits, D.total('firm')); assert.equal(said[0], 'skirt', 'the word for it, first');
+  assert.ok(lap.seen.length && lap.seen.every(x => x.skirt === 'up'), 'up from the first stroke: ' + lap.seen.map(x => x.skirt).join(','));
+  const first = fakeLap(); await D.run(first, 'firm', quick); assert.equal(first.seen[0].skirt, 'down', 'the first time: through its stages');
+});

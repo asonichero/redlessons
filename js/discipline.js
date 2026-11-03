@@ -50,8 +50,10 @@ async function run(lap, tier, env) {
   // (a check-in, where the house has one: answered, and gentler from then on)
   const checkIn = async () => { if (!lap.st.amber) return; lap.st.amber = false; ease *= 0.75; tell('amber'); await sleep(1800); };
   let prev = null, chat = 0, used = false;
+  // (lifted: not her first from this giver; her skirt lifted before they begin, and kept so)
+  if (env.lifted && !stopped()) { tell('skirt'); if (lap.gesture) await lap.gesture('skirt'); else lap.set({ skirt: 'up' }); prev = { skirt: 'up', drawers: 'up' }; }
   for (let k = 0; k < script.length; k++) {
-    const st = script[k]; if (stopped()) break;
+    const st0 = script[k], st = env.lifted && st0.skirt === 'down' ? Object.assign({}, st0, { skirt: 'up' }) : st0; if (stopped()) break;
     const implNow = !!own && k >= from, implPrev = !!own && k - 1 >= from && k > 0;
     lap.set({ skirt: st.skirt, drawers: st.drawers, implement: implNow ? own : 'hand', strength: st.str * ease });
     if (implNow) used = true;

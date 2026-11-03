@@ -237,6 +237,10 @@ The controls and menus (`js/hud.js`) are the same in every walking scene and fol
 
 ## Corrections, generalised (`js/correction.js`, `js/correctors.js`, `js/implements.js`)
 
+**After the first.** A giver's first correction of Red runs through its stages (skirt down, then lifted, then drawers, as it goes); every one from them after that, they lift her skirt before they begin, before the first stroke, and it stays up (the game keeps count per giver: `save.state.corrected`).
+
+**Fair day**: no cloak, out of doors or in, and none in her corrections while she's in the dress: the fair dress says what the cloak does.
+
 Anyone can take anyone in hand, in the room where the story is. `Correction.run(play, { corrector, turns, watchers, context, player })`:
 
 - **The corrector** (`js/correctors.js`): who they are (a figure), their seat, the stat they mind, their lines in their own voice (drafts, to be written as the story is), and their own implement. Correctors use their hand, or their own second implement; there's no standard one. Which, and from when, is the story's to say (a turn's `implement`, `implementFrom`), never the tier's.

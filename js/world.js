@@ -121,6 +121,8 @@ function create(view, ui) {
   cal.lifted = () => !!(root.Fair && w && root.Fair.curfewLifted(w));      // (fair day: her curfew lifted till the fair ends at ten)
   let areaName = null, P = null, going = null, lightFn = null, timeOn = true, sinceSave = 0, sceneNow = null;
   const q = root.Quests.create(save, root.QuestData, { rep, cal, area: () => areaName });
+  // (how many times each giver has corrected her: after the first, they lift her skirt before they begin (js/correction.js))
+  if (root.Correction) root.Correction.history = { count: id => (save.state.corrected || {})[id] || 0, add: id => save.change(s => { s.corrected = Object.assign({}, s.corrected, { [id]: ((s.corrected || {})[id] || 0) + 1 }); }, { corrected: true }) };
   const fade = async (on, text) => { if (ui.fade) await ui.fade(on, text); };
   const w = {
     save, cal, rep, q, AREAS, SCENES,
@@ -180,7 +182,10 @@ function create(view, ui) {
       areaName = name; lightFn = null; timeOn = true; sceneNow = sc;
       if (name === 'cabin') save.change(s => { s.green = Object.assign({ day: 0, n: {} }, s.green, { seen: cal.day }); }, { green: true });      // (up at her grandmother's: her mother asks after it, when it's been a while)
       // (out of her door, anywhere but home, she's in her cloak: Little Red, once Grandmother's given it her; unless the story says otherwise (how.noCloak))
-      if (name !== 'home' && q.done('hulda.cloak') && !(how && how.noCloak) && root.Looks) { const l = root.Looks.load(); if (l.red && l.red.outfit === 'No cloak') { l.red.outfit = 'Hood down'; root.Looks.save(l); } }
+      // (fair day: no cloak, out of doors or in: the fair dress says what the cloak does)
+      const fairDress = !!(root.Fair && root.Fair.isFair(w));
+      if (name !== 'home' && q.done('hulda.cloak') && root.Looks) { const l = root.Looks.load(), want = fairDress || (how && how.noCloak) ? 'No cloak' : l.red && l.red.outfit === 'No cloak' ? 'Hood down' : null;
+        if (l.red && want && l.red.outfit !== want) { l.red.outfit = want; root.Looks.save(l); } }
       let opts = baseOpts(name, entry);
       if (sc && sc.prepare) opts = sc.prepare(opts, w, step) || opts;
       P = root.Play.create(view, opts);

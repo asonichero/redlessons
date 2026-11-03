@@ -77,7 +77,7 @@ async function run(P, o) {
   o = o || {};
   const st = P.stage, talk = P.talk, fade = o.fade || (async () => {}), wait = s => P.wait(s), A = root.GameAudio, Cs = root.Correctors;
   const el = ui(), hint = document.getElementById('corrHint'), looks = root.Looks ? root.Looks.load() : {};
-  if (!o.asRose && looks.red && looks.red.outfit === 'No cloak') looks.red = Object.assign({}, looks.red, { outfit: 'Hood down' });      // (Little Red, in her cloak, across the lap: unless the story's taken it off her (asRose))
+  if (!o.asRose && !P.gown && looks.red && looks.red.outfit === 'No cloak') looks.red = Object.assign({}, looks.red, { outfit: 'Hood down' });      // (in the fair dress: no cloak; the dress says as much)      // (Little Red, in her cloak, across the lap: unless the story's taken it off her (asRose))
   const c = Cs.corrector(o.corrector || 'maren'), player = o.player || 'red';
   const turns = o.turns || [{ subject: 'red', tier: o.tier || 'light', implement: o.implement, implementFrom: o.implementFrom }];
   if (A && A.stopMusic) A.stopMusic(3);      // (no music under it)
@@ -175,7 +175,7 @@ async function run(P, o) {
     frame.visible = true; lap.set({ implement: id }); view(ANGLES[angle], 0);
     await wait(0.3); lap.pause(false); await fade(false);
   }
-  async function scripted(script, lap, c, sub, castKey) {
+  async function scripted(script, lap, c, sub, castKey, liftFirst) {
     const subKey = sub.id === player && talk.cast.red ? 'red' : 'subject', subWas = talk.cast[subKey];
     talk.cast[subKey] = Object.assign({ name: sub.display || sub.names[0], side: 'left', voice: sub.rig === 'red' ? 'red' : sub.voice || sub.id }, subWas || {}, { rig: lap.subjectRig });      // (display: the name over their lines, where it isn't the first they're called by)
     lap.set({ noHarsh: true });      // (the story's own: only her word stops it, never the pain model's "too harsh")
@@ -184,7 +184,11 @@ async function run(P, o) {
     // (hers: pitched up toward where her cries are by now (see lap.speechPitch), and in place of any she'd make while it's said)
     const line = (who, text, face) => { const k = keyOf(who), hers = k === subKey;
       return talk.caption(k, text.replace(/\{name\}/g, sub.names[0]).replace(/\{word\}/g, sub.word), { face, wait, pitch: hers ? lap.speechPitch() : null, speaking: hers ? s => lap.hush(s) : null }); };
-    const smacks = async n => { if (!n || ended()) return; lap.run(n); await wait(0.3); for (let i = 0; i < 900 && lap.busy() && !ended(); i++) await wait(0.1); };
+    // (liftFirst: after this giver's first correction of her, they lift her skirt before they begin, every time: before the first stroke, whatever
+    // the script set it to; and its own lifting later is already done)
+    let lifted = false;
+    const lift = async () => { if (!liftFirst || lifted || ended()) return; lifted = true; if (lap.st.skirt !== 'up') await lap.gesture('skirt'); };
+    const smacks = async n => { if (!n || ended()) return; await lift(); if (ended()) return; lap.run(n); await wait(0.3); for (let i = 0; i < 900 && lap.busy() && !ended(); i++) await wait(0.1); };
     const S = { lap, corrector: c, subject: sub,
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
       step: async (l, n) => { if (ended()) throw STOP; await Promise.all([l ? line(l[0], l[1], l[2]) : null, smacks(n)]); if (ended()) throw STOP; },
@@ -192,10 +196,10 @@ async function run(P, o) {
       // (a stroke, and then the line: a count, or what's said in answer to it, once it's landed)
       after: async (l, n) => { await smacks(n == null ? 1 : n); if (ended()) throw STOP; if (l) await line(l[0], l[1], l[2]); if (ended()) throw STOP; },
       wait: async secs => { await wait(secs); if (ended()) throw STOP; },
-      set: o2 => lap.set(o2),
+      set: o2 => lap.set(lifted && o2.skirt === 'down' ? Object.assign({}, o2, { skirt: 'up' }) : o2),
       // (the giver's hand: lifting the skirt, drawing the drawers down, or soothing: see js/lap.js's gesture)
       face: f => { if (f) talk.face(castKey, f); },      // (the corrector's face, between lines; it stays until another is set)
-      gesture: async (kind, o3) => { if (ended()) throw STOP; await lap.gesture(kind, o3); if (ended()) throw STOP; },
+      gesture: async (kind, o3) => { if (ended()) throw STOP; if (kind === 'skirt' && (lifted || lap.st.skirt === 'up')) { lifted = true; return; } await lap.gesture(kind, o3); if (ended()) throw STOP; },
       // Sent to fetch the implement: up off the lap and across the room for it, as she is (the colour, the clothes and the hurt held as they
       // are), back to present it, and told back into place. o: { ask, present, back } — the lines, as [who, text, face].
       fetch: async (id, o2) => { if (ended()) throw STOP; await fetchIt(id, o2 || {}, lap, line, subKey); if (ended()) throw STOP; },
@@ -227,12 +231,15 @@ async function run(P, o) {
       hint.textContent = (mine ? (sub.lights ? 'Red stops it, at any moment; amber checks in: the buttons, or R and A. ' : 'Her name stops it, at any moment: the sign, or R. ') : '') + 'Drag to look round; right-drag, or two fingers, to move the view.';
       await wait(0.3); await fade(false);
       el.classList.add('on'); if (mine && i === 0) { hint.classList.add('on'); setTimeout(() => hint.classList.remove('on'), 7000); }
-      const r = t.script ? await scripted(t.script, lap, c, sub, castKey) : await root.Discipline.run(lap, t.tier || 'light', {
-        corrector: c, subject: sub, implement: t.implement, implementFrom: t.implementFrom, corner: !!(t.corner && corners.length),
+      // (has this giver corrected her before? then her skirt's lifted before they begin (js/correction.js's history, kept by the game's world))
+      const H_ = root.Correction.history, again = sub.id === player && !!H_ && H_.count(c.id) > 0;
+      const r = t.script ? await scripted(t.script, lap, c, sub, castKey, again) : await root.Discipline.run(lap, t.tier || 'light', {
+        lifted: again, corrector: c, subject: sub, implement: t.implement, implementFrom: t.implementFrom, corner: !!(t.corner && corners.length),
         say: (text, kind, k) => { const f = FACES[kind]; return talk.caption(castKey, text, { face: Array.isArray(f) ? f[(k || 0) % f.length] : f, wait }); },
         sleep: ms => wait(ms / 1000),
       });
       r.subject = sub.id; r.marks = Object.assign({}, lap.st.marks); results.push(r);
+      if (sub.id === player && H_) H_.add(c.id);      // (one more from this giver)
       if (r.stopped || r.tooHarsh) { stoppedAll = true; break; }
       // To the corner, after the turn (until their next, or the end), marks and all.
       if (t.corner && corners.length) {
@@ -297,5 +304,7 @@ async function run(P, o) {
   return Object.assign({}, first, { turns: results, afterPlayed });
 }
 
-root.Correction = { run, ui, figure, toCorner, set next(v) { nextAfter = v; }, get next() { return nextAfter; } };
+// (history: how many times each giver has corrected her, { count(id), add(id) }: set by the game's world, from the save (js/world.js); none on
+// a page of its own, the correction test)
+root.Correction = { run, ui, figure, toCorner, history: null, set next(v) { nextAfter = v; }, get next() { return nextAfter; } };
 })(typeof window !== 'undefined' ? window : globalThis);
