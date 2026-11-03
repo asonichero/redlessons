@@ -339,7 +339,7 @@ function create(view, ui) {
     if (areaName === 'home' && root.Maren && P.npcGo) marenDay(idle);
     // (the wood by dusk: out of it, and within the village's bounds, before the light goes; still on the path at seven, and it's owed. The
     // village's curfew is the village's own, later)
-    if (areaName === 'wood' && chores && chores.on() && idle && cal.dark() && save.state.woodLate !== cal.day && root.Evening) {
+    if (areaName === 'wood' && chores && chores.on() && idle && cal.dark() && save.state.woodLate !== cal.day && root.Evening && !(P.world.inWood && !P.world.inWood(P.motion.pos))) {      // (in the wood itself: the meadow, out past its edge, is open ground, and on her way)
       save.change(s => { s.woodLate = cal.day; }, { woodLate: true }); rep.add('wilful', 1, 'in the wood after dusk');
       if (!root.Evening.owes(w, 'wood')) root.Evening.owe(null, w, 'wood', {});
       if (P.talk) P.talk.muse('The light’s going. I should have been out of the wood by now. Mama’s going to know.', { face: 'wince' }); refresh(); }

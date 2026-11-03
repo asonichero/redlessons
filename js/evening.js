@@ -38,6 +38,8 @@ const objective = w => watchman(w) ? (stateOf(w).walkingBy === 'georgie' ? 'Home
 
 async function home(P, w, o) {
   o = o || {};
+  // (nothing's carried from one day to the next: anything owed from before today is a leftover of older saves, and let go)
+  if ((stateOf(w).owed || []).some(x => (x.day || 0) < w.cal.day)) change(w, s => { s.owed = (s.owed || []).filter(x => (x.day || 0) >= w.cal.day); });
   const cal = w.cal, S = root.Story, st = stateOf(w), excused = !!(root.AbneyPromise && root.AbneyPromise.excused(w)), late = cal.curfew() && !excused && !o.athome, walked = !!watchman(w);      // (excused: walked home by Mistress Abney, after sitting with Bess)
   if (!P || !P.npc) return;
   // (fair day: her mother's at her stall till ten; the night's word once they're both in, after it: js/fair.js)

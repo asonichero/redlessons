@@ -62,7 +62,7 @@ const CSS = `
 #hMenu { right: 12px; top: 10px; width: 52px; height: 52px; display: flex !important; } #hMenu svg { width: 26px; height: 26px; stroke-width: 2.4; }
 #hCam { right: 12px; top: 70px; width: 52px; height: 52px; display: flex !important; } #hCam svg { width: 27px; height: 27px; }
 #hHelp { right: 12px; bottom: 12px; width: 46px; height: 46px; } #hHelp svg { width: 24px; height: 24px; }
-#hDebug { right: 64px; bottom: 12px; width: 46px; height: 46px; display: flex; font: bold 22px Georgia, serif; color: #f3e4b0; } body.talking #hDebug, body.correcting #hDebug { opacity: 0; pointer-events: none; }
+#hud #hDebug { right: 64px; bottom: 12px; width: 46px; height: 46px; display: flex; font: bold 22px Georgia, serif; color: #f3e4b0; } body.talking #hDebug, body.correcting #hDebug { opacity: 0; pointer-events: none; }
 #hDebugCard .rows { font: 15px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0; } #hDebugCard .row b { font-weight: normal; } #hDebugCard .row.ok b { color: #9fd08a; } #hDebugCard .row small { display: block; color: #c9b8a8; font-style: italic; margin: 0 0 4px 1.4em; }
 #hStick { position: absolute; left: 22px; bottom: 26px; width: 130px; height: 130px; border-radius: 50%; background: rgba(30,20,22,0.45); border: 2px solid rgba(230,196,106,0.55);
   touch-action: none; display: none; pointer-events: auto; }

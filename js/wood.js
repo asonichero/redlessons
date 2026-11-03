@@ -282,7 +282,9 @@ function build(scene, opts) {
   // (the ways out: the village at the far end; back in at her grandmother's door. And where she comes in: from the cabin's door, or from the
   // village end, a little way in, facing along the path into the wood)
   const inAt = gate.at.clone().add(new V3(0, 0, -8));      // (in at the meadow gate, it behind her, facing across the meadow to the wood)
-  const world = { items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: cabin && cabin.world ? cabin.world.door : null, chest: null, constrain, bounds: null, gate, herbs, signpost,
+  // (the wood itself, not the meadow beyond its edge: where 'out of the wood before dark' means anything: js/world.js)
+  const inWood = p => !(p.z > S[N].z - 30 && Math.abs(p.x) < 245);
+  const world = { inWood, items: [], pegs: [], seats: [], surfaces: [], obstacles: world_obstacles, door: cabin && cabin.world ? cabin.world.door : null, chest: null, constrain, bounds: null, gate, herbs, signpost,
     exits: [{ name: 'the village', get at() { return gate.beyond; }, r: 6, when: () => gate.open > 0.6 }, { name: 'the cabin', at: new V3(-10, 0, 41), r: 4.5, when: () => !cabin || cabin.world.door.open > 0.6 }, { name: 'the Fowlers’', at: new V3(MX + 22, 0, FORK.z), r: 9 }],
     entries: { cabin: { at: [-12, 52], yaw: 0 }, village: { at: [inAt.x, inAt.z], yaw: Math.PI }, fowlers: { at: [MX - 4, FORK.z - 2], yaw: -Math.PI / 2 }, log: { at: [spots.log.at.x - spots.log.side3.x * 8, spots.log.at.z - spots.log.side3.z * 8], yaw: Math.atan2(spots.log.side3.x, spots.log.side3.z) } } };      // (log: by the fallen tree, facing it)      // (fowlers: back along the fork's lane, toward the meadow)
   for (const k in spots) if (spots[k].seat) world.seats.push(spots[k].seat);
