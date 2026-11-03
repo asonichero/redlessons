@@ -70,7 +70,9 @@ function wood(P, w) {
 function objective(w) {
   if (!on(w)) return null; const s = stateOf(w);
   if (s.asked) { const h = herb(s.asked); return s.have ? 'Take ' + h.name + ' to Grandmother.' : 'Grandmother’s errand: ' + h.name + (told(w) ? ', ' + h.where : '') + '.'; }
-  return s.day !== w.cal.day && w.cal.minute < 18 * 60 ? 'Visit Grandmother, when there’s time.' : null;      // (every day, while there's a herb for her to ask)
+  // (the first three herbs, every day; after them, only once her mother's reminded her (nudged: that evening's day), till she's been up)
+  const seen = (w.save.state.green || {}).seen || 0, nudged = s.nudged && seen < s.nudged;
+  return (s.n < 3 || nudged) && s.day !== w.cal.day && w.cal.minute < 18 * 60 ? 'Visit Grandmother, when there’s time.' : null;
 }
 
 // ── A social call (once the first three herbs are learnt): as she comes in, her grandmother's greeting (how long it's been; whether she

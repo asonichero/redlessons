@@ -406,6 +406,7 @@ async function supper(P, w, ctx) {
     shop: root.Loaf && root.Loaf.shopping ? (s0 => s0 && s0.asked ? s0 : null)(root.Loaf.shopping(w)) : null,      // (the shopping asked at breakfast: done, or not)
     dare: fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null, peter: fl['met-peter'] === d, herb: root.Herbs && root.Herbs.stateOf(w).day === d ? root.Herbs.HERBS[root.Herbs.stateOf(w).n - 1] : null };
   w.save.change(s => { s.evening.today = day; }, { evening: true });      // (for her thoughts in bed, after)
+  if (day.gran) w.save.change(s => { s.herbs = Object.assign({ n: 0, asked: null, have: false, day: 0 }, s.herbs, { nudged: d }); }, { herbs: true });      // (her mother's reminded her: on her list again, till she's been up)
   await P.converse(S.dayTalk(how, day), { shot: ['red', 'mother'] });      // (her mother's question, and what she raises first: dinner missed)
   if (root.Report && w.chores && w.chores.on()) await root.Report.run(P, w, { when: 'supper' });      // (her day, told as she will; what her mother knows of asked: js/report.js)
   if (root.Loaf && w.chores && w.chores.on()) await root.Loaf.eat(P, w, 'supper');      // (supper's piece of the loaf, if it's on the board)
