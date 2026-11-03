@@ -225,6 +225,7 @@ Fearless, wry, and a watcher ("You learn a great deal, sitting"). Practically, s
    - **Yes:** he asks Agnes to hold him to account. Red sets the terms with both of them: where, his word to stop it, and whether she's there (Agnes asks her to be). It's done in the wood, off the herb path, away from the village's eyes and ears: Agnes and Georgie, Red watching. Then the after, the two of them; and the well is the well again.
    - **No:** he says sorry, and means it, and it isn't enough. Agnes is civil to him; the well is quieter than it was.
    No blessing is asked of anyone: it's between the two of them, and his yes is all the authority it needs.
+   **Settled, the first way** (character detail): from then on it's Agnes who holds Georgie to account, never the other way round. They begin a slow courtship, and she takes him in hand whenever he goes too quickly, for breaking the rules they've agreed between them, and for his attitude in general. Their rules, and how often she enforces them, are private between the two of them; Red doesn't witness it again (no plans for that).
 6. **2.x** Gossip and errands; a friend Red confides in about Peter. If step 5 went the first way, Peter may say so when it's their turn (2.2): "Like Agnes and Georgie?"
 7. **3.2–3.3** Something seen at the mill, if a lead is needed there (Georgie); at the gathering when Rose speaks (Agnes).
 

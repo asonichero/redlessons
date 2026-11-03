@@ -10,6 +10,8 @@
 //     she would; and the after, the two of them. The well's the well again.
 //   • no: he says sorry, and means it, and it isn't enough. Agnes is civil to him; back at the well, quieter than it was.
 // No blessing is asked of anyone: it's between the two of them, and his yes is all the authority it needs. Either way, settled (agnes.settled).
+// (Settled the first way: Agnes holds him to account from then on, never he her; a slow courtship, his corrections hers for going too quickly,
+// for the rules they keep between them, and for his attitude. Private to them: Red doesn't see it again. docs/quest-plan.md)
 //
 //   Agnes.morning(w) (each morning: the kiss, heard of if she didn't see it) · Agnes.station(w, key, min) (js/villagers.js: where Agnes is,
 //   and where she and Georgie aren't, the afternoon in the wood) · Agnes.talk(P, w, key) (js/villagers.js: → true when it was this line's talk)
