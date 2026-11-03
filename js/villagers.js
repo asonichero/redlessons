@@ -373,7 +373,8 @@ function attach(P, w) {
   }
   function walkTo(key, at, yaw, speed) {
     const f = figs[key]; if (!f) return Promise.resolve();
-    return new Promise(res => { f.scene = f.scene || {}; f.scene.arrived = res; walk(f, at, yaw); f.speed = speed; });
+    return new Promise(async res => { f.scene = f.scene || {}; if (f.sat) { untake(f); f.motion.auto = null; await f.motion.stand(); }      // (sat: up off the bench first, and then to it)
+      f.scene.arrived = res; walk(f, at, yaw); f.speed = speed; });
   }
   function letGo(key, awayToday) {
     const f = figs[key]; if (awayToday) change(s => { s.away = s.away || {}; s.away[key] = cal.day; });

@@ -184,6 +184,21 @@ function create(view, opts) {
   let npcAway = false, npcMoving = null;
   function npcGo(away, door) {
     if (!mom || away === npcAway) return; npcAway = away;
+    // (the cottage's own door, where it has one: opened, she comes in over the threshold and down the steps, and it's shut behind her; or out
+    // the same way. Elsewhere, the point given)
+    const D = W.door, DW = W.doorway, thud = () => { const A = root.GameAudio; if (A && A.thud) A.thud(0.3); };
+    if (door && D && DW && !D.knock) {
+      const run2 = async () => {
+        if (away) { mm.auto = null; await Promise.race([mm.goTo(collide(DW.foot.clone(), 3.6, 'npc'), null), wait(8)]); D.target = 1; thud(); await wait(0.5);
+          await Promise.race([mm.goTo(DW.at.clone(), null), wait(3)]); if (npcAway) { mom.root.visible = false; mm.warp(new V3(0, 0, -900), 0); } await wait(0.3); D.target = 0; thud(); return; }
+        D.target = 1; thud(); await wait(0.6);
+        const home = new V3(NPC.at[0], 0, NPC.at[1]); mom.root.visible = true; mm.warp(DW.at.clone(), Math.atan2(DW.inward.x, DW.inward.z)); mom.root.position.copy(mm.pos);
+        await Promise.race([mm.goTo(DW.foot.clone(), null), wait(1.1)]); if (Math.hypot(mm.pos.x - DW.foot.x, mm.pos.z - DW.foot.z) > 2) { mm.auto = null; mm.warp(DW.foot.clone(), mm.yaw); mom.root.position.copy(mm.pos); }      // (down the steps: held up on them, set at their foot)
+        D.target = 0; thud();
+        await Promise.race([mm.goTo(home, NPC.yaw), wait(10)]);
+      };
+      npcMoving = run2().then(() => { npcMoving = null; }); return;
+    }
     const run = async () => {
       if (away) { if (door) { mm.auto = null; await Promise.race([mm.goTo(collide(door.clone(), 3.6, 'npc'), null), wait(8)]); } if (npcAway) { mom.root.visible = false; mm.warp(new V3(0, 0, -900), 0); } }
       else { const home = new V3(NPC.at[0], 0, NPC.at[1]); mom.root.visible = true; if (door) { mm.warp(collide(door.clone(), 3.6, 'npc'), Math.PI); mom.root.position.copy(mm.pos); await Promise.race([mm.goTo(home, NPC.yaw), wait(10)]); } else { mm.warp(home, NPC.yaw); mom.root.position.copy(home); } }
