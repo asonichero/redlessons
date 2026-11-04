@@ -366,6 +366,17 @@ function create(rig, opts) {
     if (m.carry) m.carryW = approach(m.carryW, 1, 5, dt); else m.carryW = approach(m.carryW, 0, 5, dt);
     if (m.carryW > 0.01 && lieW < 0.5) {
       const hy = r.hips.position.y;
+      // (a long-handled thing, a broom or a hoe ('pole'): its head on the ground ahead and a little to her right, the handle up across her to
+      // her left shoulder; her left hand high on it, her right lower down, as it's held to work; working (m.stroke), drawn back and forth)
+      if (m.carryStyle === 'pole' && m.carry && m.carry.obj) {
+        m.strokeT = (m.strokeT || 0) + dt; const st_ = m.stroke ? Math.sin(m.strokeT * 5) * 2.4 : 0;
+        const foot = local(-1.4, 0.4, 10.5 + st_), top = local(1.8, hy + 10, -1.2), dir = top.clone().sub(foot);
+        const at = h => foot.clone().addScaledVector(dir, clamp((h - foot.y) / (dir.y || 1), 0, 1));
+        const fw = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw)), y = dir.clone().normalize(), z = fw.clone().addScaledVector(y, -fw.dot(y)).normalize(), x = y.clone().cross(z);
+        const it = m.carry; it.obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); it.obj.position.copy(foot);
+        const wy = h => r.root.localToWorld(new V3(0, h, 0)).y;
+        for (const [s, sd, h] of [['L', 1, hy + 5.2], ['R', -1, hy + 1.2]]) { const base = qa(s); armIK(r, s, at(wy(h)), pole(sd, true)); blendArm(s, base, m.carryW * (1 - sitW * 0.3)); }
+      } else
       for (const [s, sd] of [['L', 1], ['R', -1]]) {
         if (m.carryStyle === 'hang' && s === 'L') continue;
         const base = qa(s), W = m.carryStyle === 'hang' ? local(sd * 3.4, hy + 1.6, 1.6) : local(sd * 1.5, hy + 4.6 - crouch * 2, 4.4);
@@ -496,7 +507,7 @@ function create(rig, opts) {
     if (opts.ground) { const g = opts.ground(m.pos) || 0, k = 1 - Math.exp(-dt * 14); m.gy = m.gy == null ? g : m.gy + (g - m.gy) * k;
       const w = (1 - ease(m.sitW)) * (1 - ease(m.lieW)); if (w > 0 && Math.abs(m.gy) > 0.001) { rig.root.position.y += m.gy * w; rig.root.updateMatrixWorld(true); } }
     // Carried things follow the hand (or both hands), upright.
-    if (m.carry) {
+    if (m.carry && m.carryStyle !== 'pole') {      // (a pole's placed with her hands, above)
       const r = rig, g = m.carryStyle === 'hang' ? r.handR.localToWorld(new V3(0, -0.9, 0)) : r.handR.localToWorld(new V3(0, -0.9, 0)).lerp(r.handL.localToWorld(new V3(0, -0.9, 0)), 0.5);
       const it = m.carry; it.obj.quaternion.copy(yawQ(m.yaw + (it.spin || 0))); it.obj.position.copy(g).sub(it.grip.clone().applyQuaternion(it.obj.quaternion));
     }

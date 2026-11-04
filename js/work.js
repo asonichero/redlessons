@@ -65,10 +65,10 @@ function stashed(w) { const s = stateOf(w); if (!s.basket) return null; const b 
 // The broom, held in front of her, the head down at the floor ahead.
 function broomProp() {
   const T = root.Toon, g = new THREE.Group(), oak = T.mat('#8a6a42'), straw = T.mat('#c8a860');
-  const d = new V3(0, -10, 8), len = d.length(), h = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, len, 6), oak); h.position.copy(d).multiplyScalar(0.5); h.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.clone().normalize());
+  const h = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 24, 6), oak); h.position.y = 16;      // (its head at the origin, the handle up its y: held as a pole, js/motion.js)
   h.add(new THREE.Mesh(T.hullGeo(h.geometry, 0.05), T.INKM[0])); g.add(h);
-  const head = new THREE.Mesh(new THREE.ConeGeometry(2.4, 5, 10, 1, true).scale(1, 1, 0.45), straw); head.material.side = THREE.DoubleSide; head.position.copy(d).add(new V3(0, -1.2, 1)); head.rotation.x = -0.5; g.add(head);
-  return { obj: g, name: 'the broom', grip: new V3(0, 0, 0), radius: 2, keep: true, style: 'front' };
+  const head = new THREE.Mesh(new THREE.ConeGeometry(2.4, 5, 10, 1, true).scale(1, 1, 0.45), straw); head.material.side = THREE.DoubleSide; head.position.y = 2.5; g.add(head);
+  return { obj: g, name: 'the broom', grip: new V3(0, 0, 0), radius: 2, keep: true, style: 'pole' };
 }
 // The peel (Mistress Pennock's paddle for the oven), and a board of loaves, to carry.
 function peelProp() {
@@ -199,7 +199,7 @@ function attach(P, w) {
     shape: async sp => { for (let k = 0; k < 3; k++) await reachAt(sp.look.clone().add(new V3((k - 1) * 4, 0, 1)), k % 2 ? 'L' : 'R', 0.6); },
     oven: async sp => { await peel.take(); await arrive(sp.at, sp.yaw); for (let k = 0; k < 2; k++) { await reachAt(sp.look.clone().add(new V3((k - 0.5) * 3, 0, 0)), 'R', 0.7); } await peel.put(); },
     sweep: async sp => { const c = sp.at, br = W.work.broom;
-      if (br) { await broom.take(); for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) await arrive(P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2), null, { speed: 0.5 }); await broom.put(); return; }      // (with the broom, where there's one)
+      if (br) { await broom.take(); m.stroke = true; for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) await arrive(P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2), null, { speed: 0.5 }); m.stroke = false; await broom.put(); return; }      // (stroke: swept as she goes)      // (with the broom, where there's one)
       for (const [dx, dz] of [[14, 0], [14, -10], [-14, -10], [-14, 0], [0, 4]]) { const to = P.collide(c.clone().add(new V3(dx, 0, dz)), 3.2); m.reach('R', () => m.pos.clone().add(new V3(Math.sin(m.yaw) * 5, 0.5, Math.cos(m.yaw) * 5))); await arrive(to, null, { speed: 0.5 }); } await m.release('R'); },
     reach: async sp => reachAt(sp.look),
   };

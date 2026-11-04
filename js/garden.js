@@ -151,10 +151,10 @@ function build(parent, world) {
 // ground ahead; and leaning on the wall, its blade on the ground and its handle up against the thatch's eave.
 function hoeBlade(T, g, at, yaw) { const b = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.8, 0.25), T.mat('#6e7276')); b.position.copy(at); b.rotation.set(-0.35, yaw || 0, 0); b.add(new THREE.Mesh(T.hullGeo(b.geometry, 0.04), T.INKM[0])); b.castShadow = true; g.add(b); }
 function hoePole(T, g, a, b_) { const d = b_.clone().sub(a), h = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, d.length(), 6), T.mat('#9a7a4c')); h.position.copy(a).addScaledVector(d, 0.5); h.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.clone().normalize()); h.add(new THREE.Mesh(T.hullGeo(h.geometry, 0.05), T.INKM[0])); h.castShadow = true; g.add(h); }
-function hoeProp() {
-  const T = root.Toon, g = new THREE.Group(), d = new V3(0, -11, 14);
-  hoePole(T, g, d.clone().multiplyScalar(-0.3), d); hoeBlade(T, g, d.clone().add(new V3(0, -0.6, 0.4)));
-  return { obj: g, name: 'the hoe', kind: 'hoe', grip: new V3(0, 0, 0), radius: 2, keep: true, style: 'front' };
+function hoeProp() {      // (its blade at the origin, the handle up its y: held as a pole, js/motion.js)
+  const T = root.Toon, g = new THREE.Group();
+  hoePole(T, g, new V3(0, 0.5, 0), new V3(0, 27, 0)); hoeBlade(T, g, new V3(0, 0.4, 0.5));
+  return { obj: g, name: 'the hoe', kind: 'hoe', grip: new V3(0, 0, 0), radius: 2, keep: true, style: 'pole' };
 }
 function hoeLean() {
   const T = root.Toon, g = new THREE.Group();
@@ -271,7 +271,7 @@ function attach(P, w) {
   async function hoeRow(r) {
     const p = pathBeside(r.id, m.pos.x), west = Math.abs(m.pos.x - RX0) < Math.abs(m.pos.x - RX1), a = new V3(west ? RX0 + 1 : RX1 - 1, 0, p.z), b = new V3(west ? RX1 - 1 : RX0 + 1, 0, p.z);
     await m.goTo(a, yawTo(a, b)); m.lookAt(new V3(b.x, 1, r.z));
-    await m.goTo(b, yawTo(a, b), { speed: 0.3 }); m.lookAt(null);
+    m.stroke = true; await m.goTo(b, yawTo(a, b), { speed: 0.3 }); m.stroke = false; m.lookAt(null);      // (stroke: the blade drawn back and forth as she goes)
     change(w, g => { g.jobs[r.id] = true; }); spend(10); await finished();
   }
   async function pull(wd, p) {
