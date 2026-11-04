@@ -166,6 +166,7 @@ function create(w) {
   function regive(P, d) {
     const W = P.world;
     if (MAKE[d.kind]) { MAKE[d.kind](P, d); return; }      // (a story's own thing in her hands: the bluebells, js/chapter1.js)
+    if (!LEAVES.includes(d.kind)) return;      // (only what's made here: the garden's tools (the hoe, the can) are the garden's to hand back, js/garden.js; and an old save's trowel, gone, nothing)
     if (d.kind === 'pot' || d.kind === 'butt') { const it = W.items.find(x => x.kind === d.kind && !x.away);      // (home with it: the cottage's own, in her arms)
       if (it) { it.panel = null; P.motion.hold(it, 'front'); fill(it, d.full); it.keep = !!d.full; return; } }
     const it = hand(P, d.kind, { empty: (d.kind === 'basket' || d.kind === 'butt') && !d.full, contents: d.contents }); if (d.kind === 'butt') it.keep = !!d.full;
