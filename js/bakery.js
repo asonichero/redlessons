@@ -1,6 +1,6 @@
 // Little Red’s Lessons — the bakery, inside: Mistress Pennock's. Limewashed daub in an oak frame, as the cottage is, on a floor of worn flags; the
 // bread oven a great brick mouth in the back wall, glowing, its iron door hung open; the long kneading table down the middle of the back, floured,
-// the trough of dough under a cloth, the board clear for the afternoon's clearing down; racks of loaves on the left wall; sacks of flour stacked on the right; the door and the half-door counter in the
+// the board clear for the afternoon's clearing down, the flour bin and its sieve at its end; racks of loaves on the left wall; sacks of flour stacked on the right; the door and the half-door counter in the
 // front wall onto the street. A bench by the counter, where she sits to get her breath (and to take a boy across her knee).
 //
 //   const b = Bakery.build(scene)   → { group, update(camera), tick(dt), light(t), world, pieces }   (world as js/cottage.js's: seats, obstacles,
@@ -74,12 +74,11 @@ function build(scene) {
   }
   // ── The furniture, each piece about its own middle, set where the layout says; with the wall it's nearest (hidden with it), or the floor.
   const F = KIT.furnish(ROOM.layout(), PIECES), pieces = F.pieces, piece = F.piece, wall = KIT.nearWall(W, floorG, X0, X1, Z0, Z1);
-  // ── The kneading table, down the back of the room: floured, a trough of dough under a cloth; the board clear, the morning's baking done.
-  { const pc = piece('table', wall), g = pc.g, H = 15, L = 36, D = 11;
+  // ── The kneading table, down the back of the room: floured; the board clear, the morning's baking done.
+  { const pc = piece('table', wall), g = pc.g, H = 15, L = 24, D = 11;      // (shorter than it was: the flour bin by its end, in reach, not in the corner)
     box(g, L, 1.6, D, 0, H - 0.8, 0, toonMap(tx.oak));
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 1.6, H - 1.6, 1.6, sx * (L / 2 - 2), (H - 1.6) / 2, sz * (D / 2 - 1.5), oakDk);
     const dust = new THREE.Mesh(new THREE.PlaneGeometry(L - 6, D - 3), flour); dust.rotation.x = -Math.PI / 2; dust.position.set(-2, H + 0.02, 0); g.add(dust);
-    box(g, 14, 4, 7, 8, H + 2, 0, toonMap(tx.oak)); solid(g, new THREE.SphereGeometry(5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, 0.35, 0.65), T.mat('#e8dcc0'), 8, H + 4, 0, { ink: 0.05 });
     world.obstacles.push(pc.area(-L / 2, L / 2, -D / 2, D / 2));
     // (the flour bin at its end, lower than the table, the sieve over it: a sack poured in, and sifted through)
     box(g, 7, 9, 7, -L / 2 - 5, 4.5, 0, toonMap(tx.oak)); box(g, 6.4, 0.3, 6.4, -L / 2 - 5, 9.05, 0, flour);
@@ -149,9 +148,9 @@ function build(scene) {
   // (at a piece: x, z, the reach's height, in its own frame, and the way she faces in it; so they go with it wherever it's put)
   const at = (id, x, z, yaw, lx, ly, lz) => { const pc = pieces[id], p = pc.P(x, 0, z), l = pc.P(lx, ly, lz); return { at: new V3(p.x, 0, p.z), yaw: yaw + pc.ry, look: l }; };
   world.work = {
-    trough: at('table', 8, 10.5, Math.PI, 8, 17, 0), table: at('table', -9, 10.5, Math.PI, -9, 16, 0), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
+    trough: at('table', 5, 10.5, Math.PI, 5, 16, 0), table: at('table', 0, 10.5, Math.PI, 0, 16, 0), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
     oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: at('racks', 8, 0, -Math.PI / 2, 0, 16, 0), counter: spot(18, 26, 0, 18, 14, 35),
-    broom: world.work_broom, bin: at('table', -23, 9.5, Math.PI, -23, 10, 0), sacks: at('sacks', -13, -9, Math.PI / 2, -2, 6, -6),      // (bin: the flour bin at the table's end; sacks: before the stack, a sack taken up)
+    broom: world.work_broom, bin: at('table', -17, 9.5, Math.PI, -17, 10, 0), sacks: at('sacks', -13, -9, Math.PI / 2, -2, 6, -6),      // (bin: the flour bin at the table's end; sacks: before the stack, a sack taken up)
   };
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
   return { group: root_, update, tick, light, world, pieces, bounds: { X0, X1, Z0, Z1, EAVE } };
