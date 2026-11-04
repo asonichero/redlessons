@@ -234,7 +234,7 @@ function attach(P, w) {
   // ── Talking to them: whoever's near, once she's close (each their word for the time of day, or what's between them; trust a little, once a day).
   function actions() {
     const out = dareActions().concat(root.Pie && root.Pie.actions ? root.Pie.actions(P, w) : []);      // (the pie, Tom's dare taken: hers to take off the board)
-    for (const key in figs) { const f = figs[key]; if (f.held || f.watching || f.scene) continue;      // (on their way out of the village, or home, too: stopped for a word, and then on their way)
+    for (const key in figs) { const f = figs[key]; if (f.held || f.watching || f.scene) continue; if (w.chores && w.chores.errandWith && w.chores.errandWith(key)) continue;      // (an errand to see to with them: that, at its place, before any talk)      // (on their way out of the village, or home, too: stopped for a word, and then on their way)
       out.push({ label: 'Talk to ' + PEOPLE[key].name, at: f.motion.pos.clone().setY(18), run: () => talkTo(key) }); }
     return out;
   }

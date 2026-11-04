@@ -564,7 +564,14 @@ function create(w) {
     if (it.home && it.obj.position.distanceTo(it.home) > 3) return true;      // (left about somewhere: hers to bring back)
     const c = st(), e = c.errand; return !!(e && e.id === 'well' && c.day === cal.day && ['accepted', 'broken', 'carrying'].includes(e.state));
   }
-  return { canTake, weekReckon, weekly, weekWarn, WEEK, savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
+  // (an errand that's hers to see to with someone: till it's done, it's what there is to say to them; no passing the time of day first)
+  function errandWith(key) {
+    if (!on()) return false; const e = errand(), c = st();
+    if (e && e.who === key && !e.shift && ['accepted', 'working'].includes(e.state)) return true;
+    if (key === 'smith' && c.potAt === 'forge' && cal.day > (c.potSince || 0) && !cal.lay && cal.minute < H('18:00')) return true;      // (the pot, mended: asked for at the forge)
+    return false;
+  }
+  return { errandWith, canTake, weekReckon, weekly, weekWarn, WEEK, savedHand, takeUp, caught, owing, buttDry, gardenDry, pack, stowable, stow, has, handIn, through, setBy, maintenance, slid, leftAt, pickedUp, basketWhere, noBasket, canFilled, canOffer, offer, marenTalk, carried, forgot, remind, fill, on, breakfast, answer, wont, due, settled, shiftDone, fulfil, owes, objectives, gardenDone, gardenTended, actions, tick, dress, objective, journalLine, pick, prop, ERRANDS: E };
 }
 
 root.Chores = { create, prop, putIn, takeOut, basketOf, MAKE, PIE, POT, LOAF, INSIDE };
