@@ -11,7 +11,7 @@
 (function (root) {
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
-const COL = { flour: '#f4efe2', ash: '#6e6864' };
+const COL = { flour: '#ffffff', ash: '#5e5854' };
 function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h = Math.imul(h ^ (h >>> 16), 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
 
 // (the flour on the floor of a morning's baking: four to six patches, here and there across the open floor)
@@ -28,8 +28,8 @@ function attach(P, w, o) {
   const discs = new Map(), disc = (p, print) => { let g = discs.get(p); if (g) return g;
     const geo = print ? new THREE.CircleGeometry(1, 10).scale(0.7, 1.15, 1) : new THREE.CircleGeometry(1, 18); g = new THREE.Mesh(geo, mat(p.k, 0.8)); g.rotation.x = -Math.PI / 2; g.renderOrder = 2;
     if (print) g.rotation.z = -(p.yaw || 0); g.position.set(p.x, 0.12 + (print ? 0.02 : 0), p.z); scene.add(g); discs.set(p, g); return g; };
-  const show = () => { for (const p of st.patches) { const g = disc(p); g.scale.setScalar(p.r * (0.5 + 0.5 * p.a)); g.material.opacity = 0.85 * p.a; g.visible = p.a > 0.03; }
-    for (const p of st.prints) { const g = disc(p, true); g.scale.setScalar(sc * 1.1); g.material.opacity = 0.7 * p.a; g.visible = p.a > 0.03; } };
+  const show = () => { for (const p of st.patches) { const g = disc(p); g.scale.setScalar(p.r * (0.5 + 0.5 * p.a)); g.material.opacity = 0.95 * p.a; g.visible = p.a > 0.03; }
+    for (const p of st.prints) { const g = disc(p, true); g.scale.setScalar(sc * 1.1); g.material.opacity = 0.85 * p.a; g.visible = p.a > 0.03; } };
   const add = (k, x, z, r) => { st.patches.push({ k, x, z, r, a: 1 }); show(); o.save(); };
   // (how much is left to sweep: each patch by its size, each print a little)
   const dirt = () => st.patches.reduce((s, p) => s + p.a * p.r * p.r * 0.1, 0) + st.prints.reduce((s, p) => s + p.a * 0.3, 0);

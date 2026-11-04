@@ -20,7 +20,7 @@ function ui() { if (!document.getElementById('mgCss')) { const s = document.crea
 
 // (seen from her eyes, over the board: the camera close, her own figure out of the way, the controls not turning it)
 function close(P, at) {
-  const st = P.stage, f = new V3(Math.sin(at.yaw), 0, Math.cos(at.yaw)), eye = at.look.clone().addScaledVector(f, -9).add(new V3(0, 13, 0));
+  const st = P.stage, f = new V3(Math.sin(at.yaw), 0, Math.cos(at.yaw)), eye = at.look.clone().addScaledVector(f, -13).add(new V3(0, 15, 0));
   const was = { held: P.camHeld, vis: P.rig.root.visible, ctl: st.controls.enabled };
   P.camHeld = true; st.go(eye, at.look.clone(), 500); st.controls.enabled = false; P.rig.root.visible = false;
   return () => { P.camHeld = was.held; st.controls.enabled = was.ctl; P.rig.root.visible = was.vis; };
@@ -40,12 +40,13 @@ function scrub(P, at) {
   const g = new THREE.Group(); scene.add(g); const back = close(P, at), hint = ui(), cv = P.stage.renderer.domElement;
   // (the crusts: six to nine, dried dough stuck to the board)
   const crusts = []; const n = 6 + Math.floor(Math.random() * 4);
-  for (let k = 0; k < n; k++) { const m = new THREE.Mesh(T.ell(0.9 + Math.random() * 0.6, 0.35, 0.7 + Math.random() * 0.5, 9, 5), T.mat('#d9c49a')); m.position.copy(P_((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 6)); m.rotation.y = Math.random() * 6; g.add(m); crusts.push(m); }
+  for (let k = 0; k < n; k++) { const m = new THREE.Mesh(T.ell(1.3 + Math.random() * 0.7, 0.45, 1.0 + Math.random() * 0.6, 9, 5), T.mat('#c49a5e')); m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.06), T.INKM[0])); m.position.copy(P_((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 6)); m.rotation.y = Math.random() * 6; g.add(m); crusts.push(m); }
   // (the scraper, and then the cloth, under the pointer)
   const scraper = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 1.4), T.mat('#8a8e92')); scraper.add(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.5).translate(0, 0.5, -0.6), T.mat('#8a6a42'))); g.add(scraper);
   const cloth = new THREE.Mesh(T.ell(1.6, 0.4, 1.3, 9, 5), T.mat('#e8e0d0')); cloth.visible = false; g.add(cloth);
   // (the wiping: the board in a grid, each part smeared till the cloth's been over it)
   const cells = []; for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) { const q = new THREE.Mesh(new THREE.PlaneGeometry(3, 2.2), new THREE.MeshBasicMaterial({ color: '#c8b48a', transparent: true, opacity: 0.55, depthWrite: false })); q.rotation.x = -Math.PI / 2; q.rotation.z = -at.yaw; q.position.copy(P_(-7.5 + i * 3, -2.2 + j * 2.2)).setY(y - 0.1); q.visible = false; g.add(q); cells.push(q); }
+  api.now = { crusts, cells };      // (for a look in from outside: tests)
   return new Promise(res => {
     let phase = 'scrape', down = false;
     const say = () => { hint.textContent = phase === 'scrape' ? 'Scrape off the dried dough: click or touch each crust (' + crusts.length + ' left)' : 'Wipe the board down: drag the cloth over all of it'; };
@@ -54,7 +55,7 @@ function scrub(P, at) {
       if (phase === 'wipe' && down) for (const q of cells) if (q.visible && q.position.distanceTo(h.clone().setY(q.position.y)) < 2) { q.material.opacity -= 0.2; if (q.material.opacity < 0.08) q.visible = false; }
       if (phase === 'wipe' && !cells.some(q => q.visible)) finish(); };
     const press = e => { down = true; const h = onBoard(P, e, y); if (!h) return; move(e);
-      if (phase === 'scrape') { const c = crusts.find(c => c.position.distanceTo(h.clone().setY(c.position.y)) < 1.8); if (!c) return;
+      if (phase === 'scrape') { const c = crusts.find(c => c.position.distanceTo(h.clone().setY(c.position.y)) < 2.2); if (!c) return;
         c.scale.multiplyScalar(0.5); setTimeout(() => { g.remove(c); }, 160); crusts.splice(crusts.indexOf(c), 1); say();
         if (!crusts.length) { phase = 'wipe'; scraper.visible = false; cloth.visible = true; for (const q of cells) q.visible = true; say(); } } };
     const up = () => { down = false; };

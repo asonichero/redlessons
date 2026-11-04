@@ -1,6 +1,6 @@
 // Little Red’s Lessons — the bakery, inside: Mistress Pennock's. Limewashed daub in an oak frame, as the cottage is, on a floor of worn flags; the
 // bread oven a great brick mouth in the back wall, glowing, its iron door hung open; the long kneading table down the middle of the back, floured,
-// dough rising under a cloth; racks of loaves on the left wall; sacks of flour stacked on the right; the door and the half-door counter in the
+// the trough of dough under a cloth, the board clear for the afternoon's clearing down; racks of loaves on the left wall; sacks of flour stacked on the right; the door and the half-door counter in the
 // front wall onto the street. A bench by the counter, where she sits to get her breath (and to take a boy across her knee).
 //
 //   const b = Bakery.build(scene)   → { group, update(camera), tick(dt), light(t), world, pieces }   (world as js/cottage.js's: seats, obstacles,
@@ -74,13 +74,12 @@ function build(scene) {
   }
   // ── The furniture, each piece about its own middle, set where the layout says; with the wall it's nearest (hidden with it), or the floor.
   const F = KIT.furnish(ROOM.layout(), PIECES), pieces = F.pieces, piece = F.piece, wall = KIT.nearWall(W, floorG, X0, X1, Z0, Z1);
-  // ── The kneading table, down the back of the room: floured, a trough of dough under a cloth, loaves shaped and set to prove.
+  // ── The kneading table, down the back of the room: floured, a trough of dough under a cloth; the board clear, the morning's baking done.
   { const pc = piece('table', wall), g = pc.g, H = 15, L = 36, D = 11;
     box(g, L, 1.6, D, 0, H - 0.8, 0, toonMap(tx.oak));
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 1.6, H - 1.6, 1.6, sx * (L / 2 - 2), (H - 1.6) / 2, sz * (D / 2 - 1.5), oakDk);
     const dust = new THREE.Mesh(new THREE.PlaneGeometry(L - 6, D - 3), flour); dust.rotation.x = -Math.PI / 2; dust.position.set(-2, H + 0.02, 0); g.add(dust);
     box(g, 14, 4, 7, 8, H + 2, 0, toonMap(tx.oak)); solid(g, new THREE.SphereGeometry(5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, 0.35, 0.65), T.mat('#e8dcc0'), 8, H + 4, 0, { ink: 0.05 });
-    for (let k = 0; k < 5; k++) solid(g, T.ell(1.6, 1.0, 2.4, 10, 6), T.mat('#efe0c4'), -14 + k * 4, H + 1, -1, { ink: 0.04 });
     world.obstacles.push(pc.area(-L / 2, L / 2, -D / 2, D / 2));
     // (the flour bin at its end, lower than the table, the sieve over it: a sack poured in, and sifted through)
     box(g, 7, 9, 7, -L / 2 - 5, 4.5, 0, toonMap(tx.oak)); box(g, 6.4, 0.3, 6.4, -L / 2 - 5, 9.05, 0, flour);

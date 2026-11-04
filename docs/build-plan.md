@@ -87,7 +87,7 @@ The cottage, Hulda's cabin and the path through the wood exist. The village is t
 
 Each area needs a dusk and a night state for the curfew and for the danger in the wood.
 
-## The bakery shift, reworked (agreed design, not yet built)
+## The bakery shift, reworked (built: js/mess.js, js/minigame.js, js/work.js)
 
 Today the bakery is seven jobs in one cluster, each a press of E that jumps the clock, nothing that can go wrong, and time to spare. The aim is the hen level's way (asonichero/consequence, js/level.js): stakes come from how she works, and Mistress Pennock judges the state the bakery is left in. Everything stays in the existing room; nothing new is built outside it.
 
@@ -121,10 +121,11 @@ Today the bakery is seven jobs in one cluster, each a press of E that jumps the 
 
 **The room itself, true to the hour.** At the end of a morning's baking and selling the racks are sparse (full and varied only in fair week); no loaves by the hatch, the buns there instead. The racks are colour, not a task.
 
-**Questions still open:**
-- The head start (taken on mid-shift while she's out selling): which jobs, now the trough and racks are gone? Perhaps the boards and the sweep.
-- Does Mistress Pennock count the buns (a taken one noticed), or is a bun hers to take?
-- Controls for sweeping on a touch screen: hold the action button while walking?
+**Settled:**
+- The head start keeps the whole list. If Red's in the middle of a close-up task, Mistress Pennock waits till she's done. No distractions at the window.
+- The buns are counted. Owned up to before she counts (with the work done): chided, made a reward of, less trust for the shift, no bun after. Not owned: naughty, and a correction if she knows about Little Red, or Red's mother told (it counts toward the week) if she doesn't.
+- Slow is no fault, so long as the floor's no worse than she found it; only nothing or one job done, or more mess than at the start, counts against her.
+- Sweeping: hold the act button (E, Space, or the touch button). Q takes up and puts down (the broom, the paddle, a sack, the hoe, the can, things in the house); E does.
 
 ## Milestones
 
