@@ -327,16 +327,22 @@ function attach(P, w) {
     await P.converse(S.pennockLooks(f), shot);
     await P.converse(S.pennockAsks(f, { own: () => { owned = true; } }), shot);
     const all = k >= n && !f.dirty && !f.tools.length, idle = k <= 1 || f.worse;
-    // (the bun: owned up to, a reward made of it and less thanks for the rest; not, the tray counted, and naughty: corrected, if she knows, or
-    // Red's mother told)
+    // (the bun: owned up to, a reward made of it and less thanks for the rest; not, the tray counted, and naughty)
+    const hidden = f.bun && !owned;
     if (f.bun && owned) { await P.converse(S.pennockOwned(all), shot); w.rep.trusts('pennock', -0.5); }
-    else if (f.bun) { await P.converse(S.pennockCounts(), shot); w.rep.add('naughty', 1, 'taking a bun from Mistress Pennock’s tray, and not saying');
-      if (told && root.Correction) { await correct(S.pennockBunTake()); corrected = true; } else w.save.flag('pennock-bun', w.cal.day); }
-    // (the work)
+    else if (hidden) { await P.converse(S.pennockCounts(), shot); w.rep.add('naughty', 1, 'taking a bun from Mistress Pennock’s tray, and not saying'); }
+    // (what's owed, all together: the bun hidden, the list hardly begun, the floor left worse. If she knows about Little Red, one correction for
+    // the lot, the heavier the more of it (js/story.js's pennockBakeryRed); if not, the bun to Red's mother, the rest her word)
+    const owe = { bun: hidden, short: k <= 1, worse: f.worse };
+    if (idle && w.chores && w.chores.shiftDone && !picked) w.chores.shiftDone(sh.errand, { short: true });
+    if ((owe.bun || owe.short || owe.worse) && told && root.Correction) {
+      const [said] = SHORT.bakery(S), words = owe.bun ? S.pennockBunTake() : said(left, true, 0);
+      await correct(words, S.pennockBakeryRed(owe));
+    } else {
+      if (hidden) w.save.flag('pennock-bun', w.cal.day);
+      if (idle) { const [said] = SHORT.bakery(S); await P.converse(said(left, false, 0), shot); }
+    }
     if (idle) {
-      if (w.chores && w.chores.shiftDone && !picked) w.chores.shiftDone(sh.errand, { short: true });
-      const [said] = SHORT.bakery(S);
-      if (told && root.Correction && !corrected) await correct(said(left, true, 0)); else await P.converse(said(left, false, 0), shot);
     } else if (all) {
       if (picked) w.rep.trusts('pennock', 0.5); else if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand);
       const reward = !f.bun ? (s.basket ? 'basket' : 'eat') : null;
