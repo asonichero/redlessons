@@ -153,7 +153,7 @@ function hoeBlade(T, g, at, yaw) { const b = new THREE.Mesh(new THREE.BoxGeometr
 function hoePole(T, g, a, b_) { const d = b_.clone().sub(a), h = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, d.length(), 6), T.mat('#9a7a4c')); h.position.copy(a).addScaledVector(d, 0.5); h.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.clone().normalize()); h.add(new THREE.Mesh(T.hullGeo(h.geometry, 0.05), T.INKM[0])); h.castShadow = true; g.add(h); }
 function hoeProp() {      // (its blade at the origin, the handle up its y: held as a pole, js/motion.js)
   const T = root.Toon, g = new THREE.Group();
-  hoePole(T, g, new V3(0, 0.5, 0), new V3(0, 27, 0)); hoeBlade(T, g, new V3(0, 0.4, 0.5));
+  hoePole(T, g, new V3(0, 0.5, 0), new V3(0, 22, 0)); hoeBlade(T, g, new V3(0, 0.4, 0.5));
   return { obj: g, name: 'the hoe', kind: 'hoe', grip: new V3(0, 0, 0), radius: 2, keep: true, style: 'pole' };
 }
 function hoeLean() {

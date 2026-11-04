@@ -65,7 +65,7 @@ function stashed(w) { const s = stateOf(w); if (!s.basket) return null; const b 
 // The broom, held in front of her, the head down at the floor ahead.
 function broomProp() {
   const T = root.Toon, g = new THREE.Group(), oak = T.mat('#8a6a42'), straw = T.mat('#c8a860');
-  const h = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 24, 6), oak); h.position.y = 16;      // (its head at the origin, the handle up its y: held as a pole, js/motion.js)
+  const h = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 19, 6), oak); h.position.y = 13.5;      // (its head at the origin, the handle up its y: held as a pole, js/motion.js)
   h.add(new THREE.Mesh(T.hullGeo(h.geometry, 0.05), T.INKM[0])); g.add(h);
   const head = new THREE.Mesh(new THREE.ConeGeometry(2.4, 5, 10, 1, true).scale(1, 1, 0.45), straw); head.material.side = THREE.DoubleSide; head.position.y = 2.5; g.add(head);
   return { obj: g, name: 'the broom', grip: new V3(0, 0, 0), radius: 2, keep: true, style: 'pole' };

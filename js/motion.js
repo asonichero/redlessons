@@ -370,12 +370,12 @@ function create(rig, opts) {
       // her left shoulder; her left hand high on it, her right lower down, as it's held to work; working (m.stroke), drawn back and forth)
       if (m.carryStyle === 'pole' && m.carry && m.carry.obj) {
         m.strokeT = (m.strokeT || 0) + dt; const st_ = m.stroke ? Math.sin(m.strokeT * 5) * 2.4 : 0;
-        const foot = local(-1.4, 0.4, 10.5 + st_), top = local(1.8, hy + 10, -1.2), dir = top.clone().sub(foot);
+        const foot = local(-1.6, 0.4, 12 + st_), top = local(2.4, hy + 11, 2.6), dir = top.clone().sub(foot);
         const at = h => foot.clone().addScaledVector(dir, clamp((h - foot.y) / (dir.y || 1), 0, 1));
         const fw = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw)), y = dir.clone().normalize(), z = fw.clone().addScaledVector(y, -fw.dot(y)).normalize(), x = y.clone().cross(z);
         const it = m.carry; it.obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); it.obj.position.copy(foot);
         const wy = h => r.root.localToWorld(new V3(0, h, 0)).y;
-        for (const [s, sd, h] of [['L', 1, hy + 5.2], ['R', -1, hy + 1.2]]) { const base = qa(s); armIK(r, s, at(wy(h)), pole(sd, true)); blendArm(s, base, m.carryW * (1 - sitW * 0.3)); }
+        for (const [s, sd, h] of [['L', 1, hy + 5.6], ['R', -1, hy + 1.6]]) { const base = qa(s); armIK(r, s, at(wy(h)), pole(sd, true)); blendArm(s, base, m.carryW * (1 - sitW * 0.3)); }
       } else
       for (const [s, sd] of [['L', 1], ['R', -1]]) {
         if (m.carryStyle === 'hang' && s === 'L') continue;
