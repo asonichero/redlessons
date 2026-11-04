@@ -596,8 +596,10 @@ function build(scene, opts) {
   // (in Maren's garden, up against the cottage's back wall: the camera free to go where it would, and the cottage hidden while it's in the way)
   const inGarden = p => { const G = world.marenGarden; return !!G && p.x > G.X0 - 2 && p.x < G.X1 + 2 && p.z > G.Z0 - 2 && p.z < G.Z1 + 2; };
   const homeSolid = () => solids.find(s => s.home);
-  function homeInWay(from, cam) { const h = homeSolid(); if (!h) return false; const d = cam.clone().sub(from);
-    for (let k = 1; k <= 20; k++) if (inBox(h, from.clone().addScaledVector(d, k / 20))) return true; return false; }
+  function homeInWay(from, cam) { const h = homeSolid(), G = world.marenGarden; if (!h) return false;
+    if (G && cam.z > G.Z1 - 9) return true;      // (the camera over the eaves, or past them on the house's side: the thatch overhangs the garden)
+    const b = { x0: h.x0 - 8, x1: h.x1 + 8, z0: h.z0 - 8, z1: h.z1 + 8, top: h.top }, d = cam.clone().sub(from), eave = (h.eave || h.E || 40) - 4;      // (the thatch's overhang all round, from the eaves up)
+    for (let k = 1; k <= 24; k++) { const q = from.clone().addScaledVector(d, k / 24); if (inBox(h, q) || (q.y >= eave && inBox(b, q))) return true; } return false; }
   function keepCamera(camera, target) {
     const t = target, c = camera.position, d = c.clone().sub(t), these = solids.filter(s => !s.lift && !inBox(s, t) && !(s.home && inGarden(t))); let hit = 1;      // (not one she's up against, under its eaves; nor her own cottage, from the garden: hidden, rather, in follow)
     for (let k = 1; k <= 24; k++) { const p = t.clone().addScaledVector(d, k / 24); if (these.some(s => inBox(s, p))) { hit = (k - 1) / 24; break; } }
