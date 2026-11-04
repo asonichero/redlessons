@@ -114,7 +114,7 @@ function build(scene) {
 
   // Which walls show: those the camera is inside of.
   const cp = new V3();
-  function update(camera) { camera.getWorldPosition(cp); for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 2; }
+  function update(camera) { camera.getWorldPosition(cp); for (const p of panels) root.Cut.set(p.g, cp.clone().sub(p.p).dot(p.n) > 2); }
   let t = 0;
   function tick(dt) { t += dt; const d = world.door; if (d) { d.open += (d.target - d.open) * (1 - Math.exp(-dt * 5)); d.pivot.rotation.y = d.swing * d.open; d.other.rotation.y = -d.swing * d.open; } const k = 0.8 + 0.12 * Math.sin(t * 3.1) + 0.08 * Math.sin(t * 8.3); glow[0].color.setRGB(0.91 * k, 0.35 * k, 0.1 * k); if (glow.light) glow.light.intensity = 1.2 * k; }
   function light() {}

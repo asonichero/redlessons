@@ -285,26 +285,26 @@ function build(scene, opts) {
   const cp = new V3(), cd = new V3(), hp = new V3(), HO = new V3(0, -5, 0);      // (HO: from where a bunch hangs to its middle)
   function update(camera) {
     camera.getWorldPosition(cp);
-    for (const p of panels) p.g.visible = p.test(cp);
-    oakG.visible = opts.outside || (W.back.visible && W.right.visible);
-    limbG.visible = roofs.every(g => g.visible);
+    for (const p of panels) root.Cut.set(p.g, p.test(cp));
+    root.Cut.set(oakG, opts.outside || (root.Cut.shown(W.back) && root.Cut.shown(W.right)));
+    root.Cut.set(limbG, roofs.every(g => root.Cut.shown(g)));
     // (a bunch hanging in the camera's line of sight, or close to it, isn't drawn, so it never fills the view or hides who's talking)
     camera.getWorldDirection(cd);
-    for (const h of bunches) { h.getWorldPosition(hp).add(HO); const v = hp.sub(cp), along = v.dot(cd), off = v.addScaledVector(cd, -along).length(); h.visible = !(along > -4 && along < 60 && off < 7 + along * 0.18); }
-    const shown = o => { for (; o && o !== root_; o = o.parent) if (!o.visible) return false; return true; };
-    for (const it of world.items) it.obj.visible = !it.panel || shown(it.panel);
+    for (const h of bunches) { h.getWorldPosition(hp).add(HO); const v = hp.sub(cp), along = v.dot(cd), off = v.addScaledVector(cd, -along).length(); root.Cut.set(h, !(along > -4 && along < 60 && off < 7 + along * 0.18)); }
+    const shown = o => { for (; o && o !== root_; o = o.parent) if (!o.visible || !root.Cut.shown(o)) return false; return true; };
+    for (const it of world.items) root.Cut.set(it.obj, !it.panel || shown(it.panel));
   }
   // Seen from outside (the wood): a wall, a slope of the roof or the oak standing between the camera and her is cut away while it's there, so
   // she's never lost behind the cabin as she comes out of it (from, to: the camera and her, in the world).
-  const cutRay = new THREE.Raycaster(), cutParts = () => [...panels.map(p => p.g).filter(g => g !== floorG), oakG];
+  const cutRay = new THREE.Raycaster(); cutRay.layers.enableAll(); const cutParts = () => [...panels.map(p => p.g).filter(g => g !== floorG), oakG];
   let cutT = 0;
   function cut(from, to, dt) {
     if (!opts.outside || (cutT -= dt || 0) > 0) return; cutT = 0.1;
     const parts = cutParts(), c = root_.getWorldPosition(new V3());
-    if (!to || (to.distanceTo(c) > 160 && from.distanceTo(c) > 160)) { for (const g of parts) g.visible = true; return; }      // (no one to keep in view, or far off: all of it)
+    if (!to || (to.distanceTo(c) > 160 && from.distanceTo(c) > 160)) { for (const g of parts) root.Cut.set(g, true); return; }      // (no one to keep in view, or far off: all of it)
     const d = from.clone().sub(to), L = d.length();
     cutRay.set(to, d.normalize()); cutRay.near = 0.5; cutRay.far = L;
-    for (const g of parts) g.visible = cutRay.intersectObject(g, true).length === 0;      // (tested whether it's drawn or not: shown again once it's out of the way)
+    for (const g of parts) root.Cut.set(g, cutRay.intersectObject(g, true).length === 0);      // (tested whether it's drawn or not: shown again once it's out of the way)
   }
   function tick(dt) {
     const d = world.door; if (d) { d.open += (d.target - d.open) * (1 - Math.exp(-dt * 5)); d.pivot.rotation.y = d.swing * d.open; }

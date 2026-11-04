@@ -621,7 +621,7 @@ function build(scene, opts) {
     sheep.visible = world.flockPenned != null ? world.flockPenned : t > 0.62;      // (the flock penned for the night: from when Bo has them in, js/flock.js)
   }
   function follow(pos, dt, camera, at) {
-    if (camera) home.g.visible = !(inGarden(pos) && homeInWay(new V3(pos.x, 12, pos.z), camera.position));      // (hidden, from the garden, while it's between her and the camera)
+    if (camera) root.Cut.set(home.g, !(inGarden(pos) && homeInWay(new V3(pos.x, 12, pos.z), camera.position)));      // (hidden, from the garden, while it's between her and the camera)
     if (!api) return; const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
   }
   let clock = 0;

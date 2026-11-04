@@ -545,12 +545,12 @@ function build(scene, opts) {
   const cp = new V3();
   function update(camera) {
     camera.getWorldPosition(cp);
-    for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 2;      // (hidden as the camera comes within a couple of units of it, not only once it's through)
+    for (const p of panels) root.Cut.set(p.g, cp.clone().sub(p.p).dot(p.n) > 2);      // (hidden as the camera comes within a couple of units of it, not only once it's through)
     if (!pieces.boxed) { root_.updateMatrixWorld(true); pieces.boxed = true; }
-    for (const f of pieces) { const b = f.userData.box || (f.userData.box = new THREE.Box3().setFromObject(f).expandByScalar(3)); f.visible = !b.containsPoint(cp); }
+    for (const f of pieces) { const b = f.userData.box || (f.userData.box = new THREE.Box3().setFromObject(f).expandByScalar(3)); root.Cut.set(f, !b.containsPoint(cp)); }
     // (a thing on a wall's peg or a table goes with that wall, and with that table)
-    const shown = o => { for (; o && o !== root_; o = o.parent) if (!o.visible) return false; return true; };
-    for (const it of world.items) it.obj.visible = !it.away && (!it.panel || shown(it.panel));      // (away: out of the house for the day, the pot at the forge)
+    const shown = o => { for (; o && o !== root_; o = o.parent) if (!o.visible || !root.Cut.shown(o)) return false; return true; };
+    for (const it of world.items) { it.obj.visible = !it.away; root.Cut.set(it.obj, !it.panel || shown(it.panel)); }      // (away: out of the house for the day, the pot at the forge)
   }
   // The door and the chest's lid swing toward where they're going (0 shut, 1 open), easing.
   function tick(dt) {

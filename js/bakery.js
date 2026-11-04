@@ -136,7 +136,7 @@ function build(scene) {
 
   // Which walls show: those the camera is inside of (as the cottage's).
   const cp = new V3();
-  function update(camera) { camera.getWorldPosition(cp); for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 2; }
+  function update(camera) { camera.getWorldPosition(cp); for (const p of panels) root.Cut.set(p.g, cp.clone().sub(p.p).dot(p.n) > 2); }
   let t = 0;
   function tick(dt) {
     const d = world.door; if (d) { d.open += (d.target - d.open) * (1 - Math.exp(-dt * 5)); d.pivot.rotation.y = d.swing * d.open; }

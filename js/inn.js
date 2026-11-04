@@ -159,7 +159,7 @@ function build(scene) {
     world.obstacles.push({ x: X0 + 16, z: -29, r: 4.5 }); }
 
   const cp = new V3();
-  function update(camera) { camera.getWorldPosition(cp); for (const p of panels) p.g.visible = cp.clone().sub(p.p).dot(p.n) > 2; }
+  function update(camera) { camera.getWorldPosition(cp); for (const p of panels) root.Cut.set(p.g, cp.clone().sub(p.p).dot(p.n) > 2); }
   function tick(dt) {
     const d = world.door; if (d) { d.open += (d.target - d.open) * (1 - Math.exp(-dt * 5)); d.pivot.rotation.y = d.swing * d.open; }
     fire.t += dt; const ft = fire.t, flick = 0.5 + 0.25 * Math.sin(ft * 11.3) + 0.15 * Math.sin(ft * 23.7 + 1);

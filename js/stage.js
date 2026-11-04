@@ -27,6 +27,7 @@ function create(view, opts) {
   const sun = new THREE.DirectionalLight(srgb('#fff0d8'), 0.72); sun.position.set(-30, 60, 40); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);      // (soft-edged as they are, a quarter the texels of 4096 shows no difference at this size of figure)
   Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 260 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.06; sun.shadow.radius = 3;
+  sun.shadow.camera.layers.enable(1);      // (what the camera's had cut away out of its view still casts its shadow: js/toon.js's Cut)
   scene.add(sun); scene.add(sun.target);
   // The set: the cottage, unless the page brings its own (opts.set: scene → { group, update(camera), tick(dt), world }), or none.
   const cottage = opts.set ? opts.set(scene) : opts.room !== false && root.Cottage ? root.Cottage.build(scene) : null;

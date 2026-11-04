@@ -1431,6 +1431,14 @@ function makeChair(seatY, kind) {
   return g;
 }
 setTune(loadTune(), false); setShapes(loadShapes(), false);
+// Hidden from the camera only (a wall cut away, a thing in the way of the view): still there for the light, so its shadow still falls and the
+// room's light stays as it was. Done by layer: the camera sees layer 0, the sun's shadow camera both (js/stage.js). Cut.set(obj, shown) ·
+// Cut.shown(obj) (not cut away itself) · Cut.LAYER
+const Cut = { LAYER: 1, shown: o => !(o && o.userData && o.userData.cut),
+  set(o, show) { show = !!show; if (!o || !o.userData.cut === show && o.userData.cutSet) return; o.userData.cut = !show; o.userData.cutSet = true;
+    const walk = (k, top) => { if (!top && k.userData && k.userData.cut) return; k.layers.set(show ? 0 : Cut.LAYER); for (const c of k.children) walk(c, false); };      // (a part cut away in its own right stays so, whatever its parent does)
+    if (!show) { const all = k => { k.layers.set(Cut.LAYER); for (const c of k.children) all(c); }; all(o); } else walk(o, true); } };
+root.Cut = Cut;
 const Toon = { make, clipPass, idle, stance, sit, seatFor, makeChair, DIM, SPECS, EXPRS, TUNE, getTune, setTune, resetTune, VARY, SPEC0, varies, getShapes, setShapes, resetShapes, palette, shade, mat, flat, hullGeo, INKM, ell, lathe };
 root.Toon = Toon;
 })(typeof window !== 'undefined' ? window : globalThis);
