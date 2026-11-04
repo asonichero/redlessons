@@ -860,6 +860,8 @@ const VILLAGE = {
 };
 // A word with one of them. (The smith says something else once he's had her mother's pot; Willie's word depends on the bell.)
 // The fair's week (js/fair.js): everyone who works is busy getting ready, and says so. (key → a conversation; the first talk of the day)
+// (Tom's word on the fair week when his father's waiting on a dare of theirs: too tired to be wicked, he says; not quite)
+const TOM_FAIR_DARES = [{ who: 'tom', face: 'cheeky', listen: { red: 'cheeky' }, text: 'Every hinge and hook in the village wants seeing to before the stalls go up, and guess who’s on the bellows. I’m too tired to be wicked, Red. Nearly.' }];
 const FAIR_WEEK = {
   agnes: [{ who: 'agnes', face: 'smile', listen: { red: 'smile' }, text: 'Father’s had me splitting hurdles for the pens since dawn. The whole green’s to be cleared by Fifth day. And I’ve nothing to wear, Rose, nothing.' }, { who: 'red', face: 'smile', text: 'You’ve your green.' }, { who: 'agnes', face: 'pout', text: 'Everyone’s seen my green.' }],
   georgie: [{ who: 'georgie', face: 'calm', listen: { red: 'calm' }, text: 'Miller’s got me grinding for the bakery day and night. Twice the flour, for the fair. My arms have forgotten they were ever arms.' }, { who: 'red', face: 'cheeky', text: 'Will you dance, after?' }, { who: 'georgie', face: 'bashful', text: 'If my arms come back. And if… well. If.' }],
@@ -887,6 +889,7 @@ const villager = (key, ctx) => {
   if (ctx.first && V.first) return V.first;
   if (key === 'georgie' && ctx.part === 'dusk' && V.late) return V.late;
   // (the week: Lay day for the lads; Baking day at the bakery; Carrier's day at the inn; Peter down on an errand)
+  if (!ctx.today && ctx.fairWeek && key === 'tom' && ctx.smithWaits) return TOM_FAIR_DARES;      // (his father waiting on a dare: Tom can't let the week go by without one)
   if (!ctx.today && ctx.fairWeek && FAIR_WEEK[key]) return FAIR_WEEK[key];      // (the fair's week: getting ready)
   if (!ctx.today && ctx.wd === 7 && V.lay) return V.lay;
   if (!ctx.today && ctx.wd === 6 && V.baking) return V.baking;
@@ -925,7 +928,7 @@ const tomStops = ctx => {
       ] },
     ];
   }
-  return [hello].concat(ctx.fairLine && FAIR_WEEK.tom ? FAIR_WEEK.tom : [], [M(3), { choose: [      // (fairLine: the fair's week, his word on it first, the first time she sees him that day)
+  return [hello].concat(ctx.fairLine ? (ctx.smithWaits ? TOM_FAIR_DARES : FAIR_WEEK.tom || []) : [], [M(3), { choose: [      // (fairLine: the fair's week, his word on it first, the first time she sees him that day)
     { text: 'I can’t stop, Tom. Truly.', face: 'shy', then: out },
     { text: 'Why? What’s it to you?', face: 'cheeky', then: [M(2)].concat(middle) },
   ] }]);
