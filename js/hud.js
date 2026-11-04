@@ -182,8 +182,8 @@ function create(opts) {
   if (!opts.restartDay) pc.querySelector('[data-k=restart]').remove();
   const setEl = screen('hSettings', '');
   // (the controls as she's being played: the keys, or the touch screen's)
-  const KEYS = [['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd>, <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers (or click it)'],
-    ['<kbd>Q</kbd>', 'The other thing: put down what’s in her hands; lie down, on a bed'], ['Drag', 'Look round'], ['<kbd>C</kbd>, the camera button, or the wheel', 'Camera: near, medium or far'],
+  const KEYS = [['<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or arrows', 'Walk'], ['<kbd>Shift</kbd> (hold)', 'Run'], ['<kbd>E</kbd>, <kbd>Space</kbd> or <kbd>Enter</kbd>', 'Do what the gold chip offers (or click it); held, keep at it (sweeping)'],
+    ['<kbd>Q</kbd>', 'Take up, or put down (a broom, a tool, what’s in her hands); lie down, on a bed'], ['Drag', 'Look round'], ['<kbd>C</kbd>, the camera button, or the wheel', 'Camera: near, medium or far'],
     ['<kbd>J</kbd>, or the book', 'Her diary'], ['<kbd>B</kbd>, or the basket', 'What’s in her basket, while she carries it'], ['The bar by the diary', 'How she’s holding up'],
     ['In a conversation', '<kbd>Space</kbd>, <kbd>E</kbd> or a click: on; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>: choose'], ['<kbd>Esc</kbd>', 'Menu']];
   const TOUCH = [['The stick (left)', 'Walk; push it to the rim to run'], ['The big round button', 'Do what it says (the gold chip says it in full)'], ['The smaller one beside it', 'The other thing, when there is one: put down what’s in her hands; lie down'],
@@ -312,11 +312,12 @@ function create(opts) {
   $('hCam').addEventListener('click', e => { e.stopPropagation(); stepCam(); });
 
   // ── Keys ──
-  const held = new Set(); let rim = false;      // (rim: the touch stick pushed all the way out)
+  const held = new Set(); let rim = false, actDown = false;      // (actDown: the touch act button held)      // (rim: the touch stick pushed all the way out)
   function axes() {
     const p = P(); if (!p) return; const k = c => held.has(c) ? 1 : 0;
     if (sid == null) { p.input.move.x = k('KeyD') + k('ArrowRight') - k('KeyA') - k('ArrowLeft'); p.input.move.z = k('KeyW') + k('ArrowUp') - k('KeyS') - k('ArrowDown'); }
     p.input.run = held.has('ShiftLeft') || held.has('ShiftRight') || rim;
+    p.input.act = held.has('KeyE') || held.has('Space') || actDown;      // (the act held down: sweeping, as long as it's held, js/mess.js)
   }
   setInterval(axes, 200);      // (the scene can change under the keys)
   const typing = e => /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'range' && e.target.type !== 'checkbox';
@@ -350,7 +351,7 @@ function create(opts) {
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (b.classList.contains('off')) return; b.classList.add('down'); try { b.setPointerCapture(e.pointerId); } catch (x) { /* fine */ } if (root.GameAudio && GameAudio.init) GameAudio.init(); down(); });
     const end = () => { if (!b.classList.contains('down')) return; b.classList.remove('down'); if (up) up(); };
     b.addEventListener('pointerup', end); b.addEventListener('pointercancel', end); b.addEventListener('contextmenu', e => e.preventDefault()); };
-  press('hAct', () => { const p = P(); if (p) p.use(); });
+  press('hAct', () => { actDown = true; axes(); const p = P(); if (p) p.use(); }, () => { actDown = false; axes(); });
   press('hAlt', () => { const p = P(); if (p) p.use(true); });
 
   // ── Each frame: the chip and the buttons say what she can do now. ──

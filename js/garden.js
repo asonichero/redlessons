@@ -234,13 +234,13 @@ function attach(P, w) {
     const g = stateOf(w), out = [], atHoe = near(HOE_STAND, 14), hoeAt = new V3(HOE.x, 10, HOE.z + 1);
     if (!w.chores.on() || w.chores.gardenTended()) return out;
     const holding = m.carry && m.carry.name === 'the watering can', hoeHeld = m.carry && m.carry.kind === 'hoe', hoe = plan(cal.day).jobs.includes('onions') && !g.jobs.onions;
-    if (atHoe && g.hoe !== 'held' && hoe) out.push({ label: 'Take the hoe', at: hoeAt, run: m.carry ? () => P.handsFull() : takeHoe, full: !!m.carry });      // (her hands full: she'll have to put down what she has)
-    if (atHoe && hoeHeld && !hoe) out.push({ label: 'Lean the hoe back against the wall', at: hoeAt, run: putHoe });
+    if (atHoe && g.hoe !== 'held' && hoe) out.push({ label: 'Take the hoe', pick: true, at: hoeAt, run: m.carry ? () => P.handsFull() : takeHoe, full: !!m.carry });      // (her hands full: she'll have to put down what she has)
+    if (atHoe && hoeHeld && !hoe) out.push({ label: 'Lean the hoe back against the wall', pick: true, at: hoeAt, run: putHoe });
     // (the onions: from either end of the path beside them, as the flowers are watered; and down the whole row)
     if (hoeHeld && hoe) { const r = ROWS.find(q => q.id === 'onions'), p = pathBeside('onions', m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 - 10 && m.pos.x < RX1 + 10) out.push({ label: r.job, at: p.clone().setY(6), run: () => hoeRow(r) }); }
-    if (g.can === 'butt' && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', at: CAN.clone().setY(3), run: m.carry ? () => P.handsFull() : takeCan, full: !!m.carry });
+    if (g.can === 'butt' && progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Take the watering can', pick: true, at: CAN.clone().setY(3), run: m.carry ? () => P.handsFull() : takeCan, full: !!m.carry });
     if (holding && g.water < WATER_PER_FILL && progress(w).dry.length && near(BUTT, 12)) out.push({ label: 'Fill the can at the butt', at: BUTT.clone().setY(6), run: fill });
-    if (holding && !progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Put the can back by the butt', at: CAN.clone().setY(3), run: putCan });
+    if (holding && !progress(w).dry.length && near(CAN, 12)) out.push({ label: 'Put the can back by the butt', pick: true, at: CAN.clone().setY(3), run: putCan });
     if (holding && g.water > 0) for (const r of FLOWERS) if (plan(cal.day).dry.includes(r.id) && !g.watered[r.id]) { const p = pathBeside(r.id, m.pos.x); if (Math.abs(m.pos.z - p.z) < 4.5 && m.pos.x > RX0 - 10 && m.pos.x < RX1 + 10) out.push({ label: 'Water ' + r.name, at: p.clone().setY(12), run: () => water(r) }); }
     if (!m.carry) {
       for (const wd of weeds) if (!g.pulled.includes(wd.i)) { const p = pathBeside(wd.row, wd.x); if (near(p, 12)) out.push({ label: 'Pull up the weed', at: new V3(wd.x, 3, wd.z), run: () => pull(wd, p) }); }

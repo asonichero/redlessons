@@ -82,6 +82,10 @@ function topics(P, w, when) {
   { const AP = root.AbneyPromise, ps = AP && AP.stateOf ? AP.stateOf(w) : null;
     if (ps && ps.day && ps.day >= d && !ps.kept && !ps.broken && !ps.mamaTold) out.push({ id: 'promise', label: 'Mistress Abney’s asked me to sit with Bess ' + (ps.day > d ? 'tomorrow evening' : 'this evening') + ', till she’s back. I said I would.', noticed: false,
       tell: S.promiseToldMama(), after: () => { w.save.change(s => { s.promise.mamaTold = d; }, { promise: true }); w.save.flag('willie-told-promise', ps.day); } }); }
+  // A bun taken from Mistress Pennock's tray and not said (she knows nothing of Little Red, so it's come to her mother instead)
+  if ((w.save.state.flags || {})['pennock-bun'] === d) out.push({ id: 'bun', label: 'I took a bun from Mistress Pennock’s tray, and didn’t ask.', noticed: true,
+    tell: [M('stern', 'She told me. She’d sooner you’d asked; so would I. You know what she’d have said.', 'shy'), M('calm', 'Thank you for telling me yourself, at least.', 'shy')],
+    raise: [M('stern', 'Mistress Pennock tells me there was a bun short on her tray this afternoon.', 'wince'), R('wince', 'It was me. I’m sorry, Mama.'), M('stern', 'Taking without asking, from someone who trusts you in her kitchen. That’ll count, this week.', 'shy')] });
   // A dare the village is talking of: the bell rung in broad day (heard by dinner, or supper), a knock at the Dunns' (by supper).
   const fl = w.save.state.flags || {}, dare = fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null;
   if (dare) out.push({ id: 'dare', label: dare === 'bell' ? 'I rang the curfew bell, Mama. Tom dared me.' : 'I knocked at the Dunns’ and ran. Tom dared me.', noticed: dare === 'bell' || sup,

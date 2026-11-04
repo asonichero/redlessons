@@ -82,12 +82,18 @@ function build(scene) {
     box(g, 14, 4, 7, 8, H + 2, 0, toonMap(tx.oak)); solid(g, new THREE.SphereGeometry(5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, 0.35, 0.65), T.mat('#e8dcc0'), 8, H + 4, 0, { ink: 0.05 });
     for (let k = 0; k < 5; k++) solid(g, T.ell(1.6, 1.0, 2.4, 10, 6), T.mat('#efe0c4'), -14 + k * 4, H + 1, -1, { ink: 0.04 });
     world.obstacles.push(pc.area(-L / 2, L / 2, -D / 2, D / 2));
+    // (the flour bin at its end, lower than the table, the sieve over it: a sack poured in, and sifted through)
+    box(g, 7, 9, 7, -L / 2 - 5, 4.5, 0, toonMap(tx.oak)); box(g, 6.4, 0.3, 6.4, -L / 2 - 5, 9.05, 0, flour);
+    { const sv = solid(g, new THREE.CylinderGeometry(3, 3, 1.4, 16, 1, true), T.mat('#8a6a42'), -L / 2 - 5, 9.9, 0, { ink: 0.04 }); sv.material.side = THREE.DoubleSide;
+      const mesh = new THREE.Mesh(new THREE.CircleGeometry(2.9, 16), T.mat('#c8b890')); mesh.rotation.x = -Math.PI / 2; mesh.position.set(-L / 2 - 5, 9.4, 0); g.add(mesh); }
+    world.obstacles.push(pc.area(-L / 2 - 9, -L / 2 - 1, -4, 4));
     world.surfaces.push(Object.assign(pc.area(-L / 2 + 2, L / 2 - 2, -D / 2 + 1, D / 2 - 1), { y: H, name: 'the kneading table', panel: g, front: pc.turn(new V3(0, 0, 1)) }));
   }
-  // ── Racks of loaves: shelves, every one full (against the left wall, as it was).
+  // ── Racks of loaves: shelves, sparse by the afternoon, what's left of the morning's; full in the fair's week (against the left wall, as it was).
+  const full = (() => { const w = root.__world, F = root.Fair; return !!(w && F && F.phase && ['last', 'week'].includes(F.phase(w))); })();
   { const pc = piece('racks', wall), g = pc.g, z0 = -16, z1 = 16;
     for (const y of [8, 16, 24, 32]) { box(g, 7, 0.8, z1 - z0, 0, y, 0, toonMap(tx.oak));
-      const r = rnd(y * 7); for (let z = z0 + 2.5; z < z1 - 2; z += 4.2) solid(g, T.ell(1.6 + r() * 0.4, 1.1, 1.9, 10, 6), crust[Math.floor(r() * 3)], r() - 0.5, y + 1.4, z, { ink: 0.04 }); }
+      const r = rnd(y * 7); for (let z = z0 + 2.5; z < z1 - 2; z += 4.2) if (full || r() < 0.3) solid(g, T.ell(1.6 + r() * 0.4, 1.1, 1.9, 10, 6), crust[Math.floor(r() * 3)], r() - 0.5, y + 1.4, z, { ink: 0.04 }); }
     for (const z of [z0, z1]) box(g, 7, 36, 1.2, 0, 18, z, oakDk);
     world.obstacles.push(pc.area(-4, 4, z0, z1));
   }
@@ -100,7 +106,7 @@ function build(scene) {
   // ── The counter under the half-door: a broad board inside the hatch with loaves on it; the bench by it.
   { const g = W.front;
     box(g, 22, 1.4, 6, HATCH, 13, Z1 - 3, toonMap(tx.oak)); box(g, 22, 12, 1.4, HATCH, 6.5, Z1 - 5.5, oakDk);
-    for (let k = 0; k < 4; k++) solid(g, T.ell(1.7, 1.1, 2, 10, 6), crust[k % 3], HATCH - 7 + k * 4.6, 14.6, Z1 - 3, { ink: 0.04 });
+    { const glaze = T.mat('#c27a36'); box(g, 16, 0.5, 4.6, HATCH, 14, Z1 - 3, iron); for (let k = 0; k < 12; k++) solid(g, T.ell(1.1, 0.8, 1.1, 10, 6), glaze, HATCH - 6.6 + (k % 6) * 2.6, 14.9, Z1 - 4.2 + Math.floor(k / 6) * 2.4, { ink: 0.03 }); }      // (a tray of buns, twelve, where the loaves were: what's left of the morning, counted)
     world.obstacles.push({ x0: HATCH - 11, x1: HATCH + 11, z0: Z1 - 7, z1: Z1 });
   }
   { const pc = piece('bench', wall), g = pc.g;
@@ -146,7 +152,7 @@ function build(scene) {
   world.work = {
     trough: at('table', 8, 10.5, Math.PI, 8, 17, 0), table: at('table', -9, 10.5, Math.PI, -9, 16, 0), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
     oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: at('racks', 8, 0, -Math.PI / 2, 0, 16, 0), counter: spot(18, 26, 0, 18, 14, 35),
-    broom: world.work_broom,
+    broom: world.work_broom, bin: at('table', -23, 9.5, Math.PI, -23, 10, 0), sacks: at('sacks', -13, -9, Math.PI / 2, -2, 6, -6),      // (bin: the flour bin at the table's end; sacks: before the stack, a sack taken up)
   };
   world.bounds = { x0: X0 + 2.4, x1: X1 - 2.4, z0: Z0 + 2.4, z1: Z1 - 2.4 };
   return { group: root_, update, tick, light, world, pieces, bounds: { X0, X1, Z0, Z1, EAVE } };

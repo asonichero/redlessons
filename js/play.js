@@ -143,7 +143,7 @@ function create(view, opts) {
   }
 
   // ── Things to do: whatever's nearest in front of her, of the things she could do from where she is.
-  const input = { move: { x: 0, z: 0 }, run: false };
+  const input = { move: { x: 0, z: 0 }, run: false, act: false };      // (act: the act held down, js/hud.js: sweeping)
   const tired = { level: 0 };
   let encumbered = null;      // (when she last thought why she can't run)
   const loadThought = it => it.kind === 'butt' ? 'Not with the butt full. Run, and half of it’s down my skirt.' : it.kind === 'basket' && (it.contents || []).includes('the pot') ? 'Not with the pot in my basket. It’d have my arm out of its socket.' : 'Not carrying ' + (it.name || 'this') + '. I’ll walk.';      // (how worn she is: 0 fine, 1 low, 2 worn through (js/capacity.js))
@@ -164,7 +164,7 @@ function create(view, opts) {
     if (sitting) return [{ label: 'Get up', run: getUp, alt: sitting.kind === 'bed' && !m.carry ? lieDown : null, altLabel: 'Lie down', score: 0 }];
     // The door, and the chest.
     // (a set's or a scene's own things to do: { label, at, run })
-    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [], ...(W.more || []).map(f => f()))) if (!a.when || a.when()) add({ label: a.label, run: a.run, full: a.full }, a.at, a.reach);      // (W.more: a set's actions as they stand this moment)
+    for (const a of (W.actions || []).concat(opts.actions ? opts.actions() : [], ...(W.more || []).map(f => f()))) if (!a.when || a.when()) add({ label: a.label, run: a.run, full: a.full, pick: a.pick }, a.at, a.reach);      // (W.more: a set's actions as they stand this moment)
     if (W.door) { const d = W.door, p = wp(d.latch); add({ label: d.knock && !d.target ? 'Knock at ' + d.name : (d.target ? 'Shut ' : 'Open ') + d.name, run: () => useDoor() }, p); }      // (knock: a door that's someone else's, opened to her from inside)
     if (W.chest) { const c = W.chest, p = c.front.clone(); if (!(m.carry && c.target === 0)) add({ label: (c.target ? 'Close ' : 'Open ') + c.name, run: () => useChest() }, p); }
     // (her cloak: it stays on, only off when the story takes it (the shoe, later); if it's hung on its hook, taken down and put on)
@@ -172,7 +172,7 @@ function create(view, opts) {
       if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
     for (const it of W.items) if (!it.away && !it.fixed && it !== m.carry && !(opts.canTake && !opts.canTake(it))) {      // (canTake: the story's say on what's hers to pick up today)
-      const p = it.obj.position.clone().add(it.grip), into = !!(opts.stowable && opts.stowable(it)); add({ label: into ? 'Put ' + it.name + ' in your basket' : 'Take ' + it.name, run: m.carry && !into ? () => handsFull() : () => take(it), full: !!m.carry && !into }, p); }      // (into: what goes in her basket, the pot, the loaf; tools want her hands empty)
+      const p = it.obj.position.clone().add(it.grip), into = !!(opts.stowable && opts.stowable(it)); add({ label: into ? 'Put ' + it.name + ' in your basket' : 'Take ' + it.name, run: m.carry && !into ? () => handsFull() : () => take(it), full: !!m.carry && !into, pick: true }, p); }      // (pick: taking up and putting down are Q's; E is for doing)      // (into: what goes in her basket, the pot, the loaf; tools want her hands empty)
     if (!m.carry || m.carry.kind === 'basket') { for (const s of W.seats) if (!s.noSit) add({ label: 'Sit on ' + s.name, run: () => sitOn(s) }, s.at); }      // (her basket on her arm as she sits: she has it out of doors always)
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;
@@ -289,7 +289,9 @@ function create(view, opts) {
   async function putDown() { const it = m.carry; if (!it || it.keep) return; await putOn({ floor: true }); if (!W.items.includes(it)) W.items.push(it); if (opts.onPut) opts.onPut(it); }
   // (what Q does now: the offer's own other thing (lie down, on a bed); or, with something in her hands, put it down)
   // (shown: only when there's call for it, the offer something her hands are too full to take; Q puts it down whenever)
-  function altOf(shown) { const o = offer[0]; if (o && o.alt) return { label: o.altLabel || 'Lie down', run: o.alt }; if (m.carry && !m.carry.keep && !sitting && !lying && (!shown || (o && o.full))) return { label: 'Put ' + m.carry.name + ' down', run: putDown, down: true }; return null; }
+  // (Q, the hand's own button: the nearest thing to take up or put down (pick); else the offer's other thing, or what's in her hands put down)
+  const actOffer = () => offer.find(x => !x.pick) || null, pickOffer = () => offer.find(x => x.pick) || null;
+  function altOf(shown) { const pk = pickOffer(); if (pk) return { label: pk.label, run: pk.run, down: /^(Put|Lean)/.test(pk.label) }; const o = actOffer(); if (o && o.alt) return { label: o.altLabel || 'Lie down', run: o.alt }; if (m.carry && !m.carry.keep && !sitting && !lying && (!shown || (o && o.full))) return { label: 'Put ' + m.carry.name + ' down', run: putDown, down: true }; return null; }
   async function take(it) {
     const p = it.obj.position.clone().add(it.grip), s = approachFor(p);
     await Promise.race([m.goTo(s.at, yawTo(s.at, p)), wait(4)]); if (m.auto) { m.auto = null; m.face(yawTo(m.pos, p)); }      // (held up short of it (the hearth's stone in the way): reached for from where she's got to)
@@ -373,7 +375,7 @@ function create(view, opts) {
   // A conversation as a scene runs it, where they stand (or sit), the cast as they are now.
   async function converse(script, o) { talk.cast.red.rig = rig; return talk.play(script, o); }
   let offer = [];
-  function use(alt) { if (busy()) return; if (alt) { const a = altOf(); if (a) act(a.run); return; } const o = offer[0]; if (!o) return; act(o.run); }
+  function use(alt) { if (busy()) return; if (alt) { const a = altOf(); if (a) act(a.run); return; } const o = actOffer(); if (!o) return; act(o.run); }
 
   // ── Each frame.
   // (anything else that runs with the scene, frame by frame, and stops when it's paused: P.tick(fn) → a function to take it off again)
@@ -406,7 +408,7 @@ function create(view, opts) {
     } else camT.copy(st.controls.target);
     if (indoors && st.camera.position.y < 3) st.camera.position.y = 3; else aboveGround();
     offer = busy() ? [] : options();
-    if (opts.prompt) { const o = offer[0], a = altOf(true); const txt = doing ? '' : [o ? 'E  ' + o.label : '', a ? 'Q  ' + a.label : ''].filter(Boolean).join('   ·   '); if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
+    if (opts.prompt) { const o = actOffer(), a = altOf(true); const txt = doing ? '' : [o ? 'E  ' + o.label : '', a ? 'Q  ' + a.label : ''].filter(Boolean).join('   ·   '); if (opts.prompt.textContent !== txt) opts.prompt.textContent = txt; opts.prompt.classList.toggle('on', !!txt); }
   }
   st.start(frame);
   // What she wears: the skirt (on, lifted or off), and her outfit (her cloak, with the hood down or up, or none). The outfit is part of how she's
@@ -430,7 +432,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, setGown, get gown() { return gown; }, input, use, frame, tick, world: W, options: () => offer, get offer() { return offer[0] || null; }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
+  return { get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, setGown, get gown() { return gown; }, input, use, frame, tick, world: W, options: () => offer, get offer() { return actOffer(); }, get alt() { return busy() ? null : altOf(true); }, handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 
 root.Play = { create };

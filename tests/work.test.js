@@ -3,9 +3,10 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const Work = require('../js/work.js');
 
-test('the bakery: the whole list for the mill-run afternoon, a shorter one for a head start', () => {
-  assert.equal(Work.tasksOf({ id: 'bakery', mode: 'errand' }).length, 7);
-  assert.deepEqual(Work.tasksOf({ id: 'bakery', mode: 'picked' }).map(t => t.id), ['trough', 'boards', 'racks', 'sweep']);
+test('the bakery: the same list for the mill-run afternoon and a head start; the floor swept by hand', () => {
+  assert.deepEqual(Work.tasksOf({ id: 'bakery', mode: 'errand' }).map(t => t.id), ['boards', 'ash', 'sift', 'sponge', 'sweep']);
+  assert.deepEqual(Work.tasksOf({ id: 'bakery', mode: 'picked' }).map(t => t.id), ['boards', 'ash', 'sift', 'sponge', 'sweep']);
+  assert.equal(Work.SHIFTS.bakery.tasks.find(t => t.id === 'sweep').by, 'hand');
   for (const t of Work.SHIFTS.bakery.tasks) assert.ok(t.what, t.id + ' has a short name, for what’s left');
   assert.equal(Work.SHIFT_RATE, 1, 'a shift runs at a minute a second, slower than the day’s');
 });

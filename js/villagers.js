@@ -267,6 +267,10 @@ function attach(P, w) {
       if (key === 'georgie' && root.Agnes && root.Agnes.stateOf(w).settled === 'yes' && rep.openness('georgie') < 1 && v.talked.georgie !== cal.day && hash(cal.day, 61) < 0.6) {
         const n = v.georgieHints || 0; await P.converse(S.georgieHint(n, { tell: () => rep.tell('georgie', 1) }), { shot: ['red', key] });
         change(s => { s.georgieHints = n + 1; s.talked[key] = cal.day; s.met[key] = true; }); if (!today) rep.trusts(key, 0.5); return; }
+      // (the morning after a sponge set out of time: the bread flat, and she says so, the once)
+      { const fl = save.state.flags || {}; if (key === 'pennock' && fl['sponge-flat'] === cal.day && fl['sponge-flat-said'] !== cal.day) { save.flag('sponge-flat-said', cal.day);
+        await P.converse([{ who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'The bread was flat this morning, Rose. Like boots. That sponge was never kneaded properly.' }, { who: 'red', face: 'shy', text: 'I’m sorry, Mistress Pennock.' }, { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Well. In time with it, next time: push, fold, turn. It’s a dance, not a fight.' }], { shot: ['red', key] });
+        change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; } }
       if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)
       // (Bess, on her bench: she asks Red to sit. Sat beside her, they talk, and Red's to get up when she will (as on the bench round the lime
       // tree); not, a word, and no harm done. Only sitting with her brings Bess's trust)

@@ -2008,6 +2008,45 @@ const dayEnd = (how, day) => {
   return out;
 };
 
+// ── The bakery shift's end (js/work.js): Mistress Pennock's look round, her question, and her verdict. f: what she finds: { k, n (jobs done,
+// of), worse (more mess than she left), dirty (any left), prints, tools (left out: names), bun (one taken), owned (said so first) }
+const P_ = (face, text, red) => ({ who: 'pennock', face, listen: { red: red || 'calm' }, text }), R_ = (face, text) => ({ who: 'red', face, text });
+const pennockLooks = f => [P_('calm', 'Well, then. Let’s have a look at you.', 'shy')]
+  .concat(f.dirty ? [P_(f.worse ? 'stern' : 'calm', f.worse ? (f.prints ? 'Flour and ash from one end to the other, and your boots in it. That floor’s worse than I left it.' : 'More on that floor than when I went out. How’s that, now?') : f.prints ? 'Footprints, look: you’ve walked it about.' : 'A bit left on the floor, there.', 'shy')] : [P_('smile', 'Floor’s clean. Properly clean.', 'smile')])
+  .concat(f.tools.length ? [P_('calm', 'And ' + f.tools.join(' and ') + ' not where they live.', 'shy')] : []);
+// ("How did it go, Rose?": the bun, owned up to before she counts the tray; or not)
+const pennockAsks = (f, ctx) => [P_('calm', 'How did it go, Rose?', 'calm')].concat(f.bun ? [{ choose: [
+  { text: 'I had one of the buns, Mistress Pennock. I’m sorry. I was flagging.', face: 'shy', then: [{ run: ctx.own }] },
+  { text: f.k >= f.n ? 'All done, Mistress Pennock.' : 'I did what I could.', face: 'calm', then: [] },
+] }] : [R_(f.k >= f.n ? 'smile' : 'shy', f.k >= f.n ? 'All done, Mistress Pennock.' : f.k <= 1 ? 'I… didn’t get far.' : 'Not all of it. I did what I could.')]);
+// (the tray counted: one short)
+const pennockCounts = () => [P_('calm', 'Now then. Twelve buns on that tray when I went out.', 'shy'), P_('stern', 'Eleven.', 'wince'), R_('wince', '…'), P_('stern', 'You could have asked, Rose. You could at least have said.', 'shy')];
+// (not said, and she knows Little Red: what comes of it)
+const pennockBunTake = () => [P_('stern', 'Taken without asking, and not a word to me. You asked me to treat you as your mother would, Rose. So: come here.', 'wince')];
+// (owned up: chided, and made a reward of; none after)
+const pennockOwned = good => [P_('calm', good ? 'Well. You’d done the work for it, I suppose. Call it your wages, and ask next time.' : 'You’d no business, with the work not done. But you said so. Ask, next time.', 'shy'), R_('shy', 'Yes, Mistress Pennock.')];
+// (the verdict: all of it, well; some, and no harm; little or worse)
+const pennockGood = bun => [P_('smile', 'Well, Rose. That’s a good afternoon’s work, and done properly. Thank you, love.', 'smile')].concat(bun ? [P_('smile', bun === 'basket' ? 'Here: a bun for your basket. You’ve earned it.' : 'Here: a bun. Go on, eat it; you’ve earned it.', 'smile'), R_('smile', 'Thank you, Mistress Pennock!')] : []);
+const pennockSome = () => [P_('calm', 'Not all of it, but what’s done is done well, and no mess made of the rest. I’ll finish. Thank you, love.', 'calm')];
+// (the buns on the counter, by the hatch: hers to argue over (both sides), and take one or leave them)
+const bunsAsk = (n, ctx) => [
+  { who: 'red', face: 'shy', thought: true, text: n ? 'Another one? She’ll miss two. She’ll certainly miss two.' : 'The buns. Still warm, and I’m flagging.' },
+  { who: 'red', face: 'cheeky', thought: true, text: 'I’ve worked for it. She’d give me one anyway, at the end. She always says take a bun.' },
+  { who: 'red', face: 'wince', thought: true, text: 'But she counts them. She always counts them. And she’d want to be asked.' },
+  { choose: [
+    { text: 'Take one, and eat it.', face: 'cheeky', then: [{ run: ctx.take }] },
+    { text: 'Leave them be.', face: 'calm', then: [{ who: 'red', face: 'calm', thought: true, text: 'Not without asking.' }] },
+  ] },
+];
+// (all done before she's back: the oven, and wait; or not yet)
+const ovenWait = ctx => [
+  { who: 'red', face: 'smile', thought: true, text: 'That’s the list. Everything done, and no sound of her yet.' },
+  { choose: [
+    { text: 'Sit by the oven till she’s back.', face: 'smile', then: [{ run: ctx.wait }] },
+    { text: 'Not yet: I’ll look it all over first.', face: 'calm', then: [] },
+  ] },
+];
+
 // ── Work, played (js/work.js): the boss's word at the start, while each task is done ([text, face]: said as she works, nothing waits on it),
 // the customers at the counter, and at the end.
 const WORK = {
@@ -2015,25 +2054,25 @@ const WORK = {
     start: [
       { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love. Apron’s on the hook. Master Pennock’s been at it since four and he’s gone to his bed, so it’s you and me and the mess he’s left.' },
       { who: 'red', face: 'calm', text: 'Where do you want me?' },
-      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The trough first, then the boards, then the oven. And tomorrow’s flour and the sponge before you go. I’ll tell you as we go.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The boards first, then the oven. And tomorrow’s flour and the sponge before you go, and the floor. I’ll tell you as we go.' },
     ],
     trough: ['Scrape it right into the corners. Leave a crust of old dough and tomorrow’s bread tastes of yesterday.', 'calm'],
     boards: ['Hot water and the brush, with the grain, not across it. My mother used to say you could tell a girl’s temper by her bread. I say by her boards.', 'smile'],
-    ash: ['Rake it to the front and out into the bucket. Mind your sleeves: it holds its heat longer than you’d think.', 'stern'],
+    ash: ['Rake it out with the paddle, and mind where it lands: it’ll all want sweeping after. Mind your sleeves, too: it holds its heat longer than you’d think.', 'stern'],
     racks: ['What’s left goes on the end shelf, for the Hallorans and the bargain hunters. Nothing’s wasted in this house.', 'calm'],
     sift: ['Through the fine sieve, and shake it, don’t press. Flour gets everywhere: in the cracks, in my hair, in Master Pennock’s moustache. He says it keeps him handsome.', 'smile'],
     sponge: ['A handful of this morning’s dough in the warm water, and the flour on top. Cover it, and by four tomorrow it’ll be up and wanting him.', 'calm'],
-    sweep: ['And the floor, last thing, out of the door. Then we’re done, and you can sit.', 'smile'],
+    sweep: ['The floor, every speck of it. Sweep it last, or you’ll be sweeping it twice: and mind you don’t walk the flour about.', 'smile'],
     // (asked for at breakfast: the mill run's hers today, so it's the list, and Red left to it)
     list: [
       { who: 'pennock', face: 'smile', listen: { red: 'smile' }, text: 'There you are, love, and on the hour. I’ve the mill run to do, and Master Pennock’s in his bed, so it’s you and the list.' },
-      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The trough, the boards, the oven raked, the racks cleared, tomorrow’s flour sifted, the sponge set, and the floor. I’ll be back by half past three.' },
+      { who: 'pennock', face: 'calm', listen: { red: 'calm' }, text: 'The boards, the oven raked out, tomorrow’s flour sifted, the sponge set, and the floor swept clean. I’ll be back by half past three, and I’ll look.' },
       { who: 'red', face: 'calm', text: 'All of it, by then?' },
       { who: 'pennock', face: 'smile', listen: { red: 'shy' }, text: 'All of it, by then. You’ll manage. No dawdling at the window, mind: I’ll know.' },
     ],
     // (picked up at the counter: a head start for her, while she's still selling)
     picked: [
-      { who: 'red', face: 'calm', thought: true, text: 'Her list’s chalked on the board by the door. The trough, the boards, the racks, the floor.' },
+      { who: 'red', face: 'calm', thought: true, text: 'Her list’s chalked on the board by the door. The boards, the oven, the flour, the sponge, the floor.' },
       { who: 'red', face: 'smile', thought: true, text: 'As much of it as I can before she’s done at the counter.' },
     ],
     waiting: [{ who: 'red', face: 'smile', thought: true, text: 'All done, and not a sound of her yet. I’ll sit by the oven where it’s warm, and wait.' }],
@@ -2876,5 +2915,5 @@ const abneyAfter = r => r && r.rose ? [
   { who: 'abney', face: 'stern', listen: { red: 'smile' }, text: 'Bess.' },
 ];
 
-root.Story = { abneyHome, excusedDay, excusedEnd, promiseToldMama, gardenWantonLie, granCall, granTea, fairAnnounce, heelGiven, dayEnd, pieOwned, loafOwned, gardenOwned, weekDue, weekGood, weekFine, weekClose, weekWarn, owedAlso, shopAsk, georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
+root.Story = { pennockBunTake, pennockLooks, pennockAsks, pennockCounts, pennockOwned, pennockGood, pennockSome, bunsAsk, ovenWait, abneyHome, excusedDay, excusedEnd, promiseToldMama, gardenWantonLie, granCall, granTea, fairAnnounce, heelGiven, dayEnd, pieOwned, loafOwned, gardenOwned, weekDue, weekGood, weekFine, weekClose, weekWarn, owedAlso, shopAsk, georgieCommiserate, georgieHint, thatchersCall, pieAside, pieTell, reprieveNotAll, loafDiminished, loafOut, loafCounter, dinnerEnd, bessOffer, bessStay, abneyShortGood, abneyShortHalf, abneyIdled, abneyIdledRed, georgieCalls, georgieCatch, georgieBrings, needThought, abneyShort, abneyShortRed, abneyShortAfter, dinnerCall, dinner, leftForMama, capacityThought, owedRaise, owedLater, ducksWish, ducksAsk, ducksFed, ducksAfter, loafAsk, loafGone, loavesGone, loafCorrection, loafAfter, bessFrock, fairBreakfast, fittingCall, fitting, woodCorrection, woodAfter, eveningAsk, eveningOut, friendsOut, granAsk, granCake, fairDanceAsk, fairDance, fairKiss, fairDress, agnesFound, agnesAway, agnesTell, georgieAshamed, georgieChooses, georgieSorry, agnesTerms, agnesWaiting, woodBefore, agnesGeorgie, agnesGeorgieAfter, woodLeaving, agnesBack, fairHome, fairOwned, fairFound, dressCorrection, dressAfter, fairTalk, fairAsk, fairGive, fairEwe, owedNow, supperCall, nightThoughts, breadEaten, curfewStern, willieDealt, peterAsksNote, beechPassing, bessInvite, handsFull, basketLeft, granCallsIn, pennockShort, pennockShortRed, pennockShortAfter, curfewNudge, boHello, boHelp, boThanks, agnesWell, marenMissed, needReminder, shiftOffer, shiftLeft, loafStopped, potFetched, shiftMissed, herbAskAgain, herbThanks, villagerTrust, marenReminds, marenAsks, marenChat, marenGarden, marenGardenDry, marenSupper, willieCalls, dayTalk, tomDared, huldaLighter, signpost, forkShut, basketReminder, holtMeet, holtGone, wolfeMeet, wolfeGone, willieBlessing, peterNotices, tomTold, smithAsk, smithCaught, smithIndoors, smithTom, smithRed, smithAfter, pennockTrust, abneyOpen, abneyInHand, abneyAfter, herbAsk, herbGathered, herbGiven, herbLater, herbWaiting, letIn, peterFirst, fowlerSends, abneyIdle, abneyAsks, tempted, temptedAfter, sitWithBess, abneyBack, promiseFoundOut, promiseCorrection, promiseAfter, firstVisit, walkWithPeter, peterNote, beechMeeting, FOWLERS, fowlers, WORK, willieCatch, willieBrings, curfewTalk, curfewCorrection, curfewAfter, reprieve, reportIt, supper, pieDare, pieCaught, pieForge, pieBakery, pieTom, pieRed, pieAfter, pieMotherKnows, pieHome, pieFoundOut, pieMaren, pieMarenAfter, pennockIdle, trodden, gardenFine, gardenAsk, gardenBoots, gardenBelieved, gardenReport, gardenTakeInHand, gardenCorrection, afterGarden, VILLAGE, villager, tomStops, tomCost, homecoming, homecomingCorrection, walkStop, STOPS, ERRANDS, breakfast, enough, maintenanceCorrection, afterMaintenance, GARDEN, broken, afterCorrection, bedtime, chores, marenIdle, grandmother, granAgain, WALK, SPOTS };
 })(typeof window !== 'undefined' ? window : globalThis);
