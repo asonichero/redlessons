@@ -1258,15 +1258,13 @@ const pennockShortRed = async S => {
 };
 // The bakery's correction, for whatever there was: the bun taken and not said (how.bun), the list hardly begun (how.short), the floor left worse
 // than she found it (how.worse). Each spoken to in turn; the more of them, the more of it: one, her hand, the skirt down and then lifted; two,
-// her drawers down besides; all three, and six with the paddle to finish. (S.again, not her first from Mistress Pennock: the skirt's lifted from
-// the start, and with more than one thing, her drawers down from the start too)
+// her drawers down besides; all three, and six with the paddle to finish. (Not her first from Mistress Pennock: the skirt's lifted from the
+// start (js/correction.js), and it goes on over her drawers till they come down)
 const pennockBakeryRed = how => async S => {
   const M = 'corrector', R = 'subject', n = (how.bun ? 1 : 0) + (how.short ? 1 : 0) + (how.worse ? 1 : 0);
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3 + n * 0.1, pace: 1.3 + n * 0.05 });
   await S.wait(0.6);
   await S.say(M, n > 1 ? 'Over you come. There’s more than one thing to settle, and we’ll settle them all.' : 'Over you come.', 'calm');
-  // (not her first time across Mistress Pennock's knee, and more than one thing to answer for: her drawers down from the start, as the skirt is)
-  if (S.again && n > 1) { await S.gesture('drawers'); await S.wait(0.5); await S.say(R, 'Mistress Pennock—', 'wince'); await S.say(M, 'You know why. All of it, Rose.', 'stern'); }
   const parts = [];
   if (how.bun) parts.push(async () => { await S.step([M, 'A bun off my tray, and not a word. If you’d asked, I’d have said yes. You know I would.', 'stern'], 8); await S.step([R, 'I know— I’m sorry—'], 4); await S.step([M, 'Taking is one thing. Saying nothing is the part I mind.'], 8); });
   if (how.short) parts.push(async () => { await S.step([M, 'When I leave you with my bakery, I need to know it’ll be done. Not half done. Not barely begun.', 'stern'], 10); await S.step([R, 'Yes, Mistress Pennock—'], 4); });
