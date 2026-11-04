@@ -101,7 +101,7 @@ const AREAS = {
   },
 };
 
-const RATE = 2;      // (game minutes a second, while she's about: a day from seven to the bell in seven minutes)
+const RATE = 4 / 3;      // (game minutes a second, while she's about: the walk from her door to the bakery twenty minutes; a day from seven to the bell in about ten and a half)
 // At her grandmother's door, from the path: she knocks, and her grandmother calls her in (as in the tale: lift the latch), and the door swings
 // in for her. (An unseen voice: her grandmother's, from inside.)
 async function knockAtGran(P) {
