@@ -252,6 +252,7 @@ function build(scene, opts) {
     windows: [{ side: 'left', at: 6 - 4, y: 14, w: 14, h: 12, box: true }, { side: 'right', at: -(8 - 4), y: 14, w: 14, h: 12, box: true },      // (where they are inside: centred 27 up from her floor, which is 7 below the ground)
       { side: 'front', at: 30, y: 16, w: 10, h: 9 }, { side: 'back', at: 20, y: 17, w: 10, h: 9 }],
     chimney: { x: -2 + 4.5, z: (80 + 4) / 2 - 3, w: 10, d: 7 } });
+  home.g.userData.keep = true; solids[solids.length - 1].home = true;      // (hers kept whole, not merged: hidden from the camera when it's in the garden behind it, js/garden.js)
   // Her neighbours' along the street toward the green: a small cottage, roses round its door.
   const nextDoor = house({ x: -150, z: -226, w: 86, d: 62, eave: 44, ridge: 78, walls: 'frame',
     doors: [{ side: 'front', at: -14, w: 12, colour: '#7a3a3a' }], windows: [{ side: 'front', at: 16, y: 16, w: 12, h: 10, box: true }, { side: 'left', at: 0, y: 16, w: 9, h: 8 }],
@@ -592,8 +593,13 @@ function build(scene, opts) {
 
   // ── The camera, outdoors: kept out of the houses (in front of whatever's between it and her), so a wall or a roof never fills the view. ──
   const inBox = (s, p) => !(p.x < s.x0 || p.x > s.x1 || p.z < s.z0 || p.z > s.z1 || p.y > s.top);
+  // (in Maren's garden, up against the cottage's back wall: the camera free to go where it would, and the cottage hidden while it's in the way)
+  const inGarden = p => { const G = world.marenGarden; return !!G && p.x > G.X0 - 2 && p.x < G.X1 + 2 && p.z > G.Z0 - 2 && p.z < G.Z1 + 2; };
+  const homeSolid = () => solids.find(s => s.home);
+  function homeInWay(from, cam) { const h = homeSolid(); if (!h) return false; const d = cam.clone().sub(from);
+    for (let k = 1; k <= 20; k++) if (inBox(h, from.clone().addScaledVector(d, k / 20))) return true; return false; }
   function keepCamera(camera, target) {
-    const t = target, c = camera.position, d = c.clone().sub(t), these = solids.filter(s => !s.lift && !inBox(s, t)); let hit = 1;      // (not one she's up against, under its eaves)
+    const t = target, c = camera.position, d = c.clone().sub(t), these = solids.filter(s => !s.lift && !inBox(s, t) && !(s.home && inGarden(t))); let hit = 1;      // (not one she's up against, under its eaves; nor her own cottage, from the garden: hidden, rather, in follow)
     for (let k = 1; k <= 24; k++) { const p = t.clone().addScaledVector(d, k / 24); if (these.some(s => inBox(s, p))) { hit = (k - 1) / 24; break; } }
     if (hit < 1) c.copy(t).addScaledVector(d, Math.max(0.12, hit));
     // (the small things, the well and the like: never inside them, lifted over the top instead, so it isn't pulled in on her back)
@@ -613,6 +619,7 @@ function build(scene, opts) {
     sheep.visible = world.flockPenned != null ? world.flockPenned : t > 0.62;      // (the flock penned for the night: from when Bo has them in, js/flock.js)
   }
   function follow(pos, dt, camera, at) {
+    if (camera) home.g.visible = !(inGarden(pos) && homeInWay(new V3(pos.x, 12, pos.z), camera.position));      // (hidden, from the garden, while it's between her and the camera)
     if (!api) return; const s = api.sun; s.target.position.copy(pos); s.position.copy(pos).add(new V3(-30, 60, 40)); s.target.updateMatrixWorld();
   }
   let clock = 0;
