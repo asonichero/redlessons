@@ -99,7 +99,7 @@ async function call(P, w) {
   await P.converse(S.granCall(since, knows, { help: () => { pick = 'help'; }, visit: () => { pick = 'visit'; } }), shot);
   if (pick === 'help') { await P.converse(talk(w), shot); return; }
   await P.converse(S.granTea(news(w), knows), shot);
-  w.cal.advance(30); if (w.capacity) w.capacity.add(10, 'tea with her grandmother'); w.rep.trusts('hulda', 0.25); if (w.refresh) w.refresh();
+  w.cal.advance(30); if (w.capacity) w.capacity.add(10, 'tea with her grandmother'); if (!!(P.talk && P.talk.fresh)) w.rep.trusts('hulda', 0.25); if (w.refresh) w.refresh();
 }
 
 const api = { callDue, call, news, talk, wood, objective, stateOf, next, told, HERBS };

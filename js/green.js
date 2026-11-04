@@ -29,7 +29,7 @@ async function invite(P, w, key) {
   w.cal.advance(Math.max(0, Math.min(60, HOME - w.cal.minute)));
   await P.wait(0.4); await w.fade(false);
   await P.converse(S.eveningOut(key, which), { shot: false, keepCamera: true });
-  w.rep.trusts(key, 1); if (key === 'agnes') w.rep.trusts('georgie', 0.5); if (key === 'tom') w.rep.add('mischievous', 0.5, 'an evening out with Tom');
+  if (!!(P.talk && P.talk.fresh)) { w.rep.trusts(key, 1); if (key === 'agnes') w.rep.trusts('georgie', 0.5); } if (key === 'tom') w.rep.add('mischievous', 0.5, 'an evening out with Tom');      // (an evening out: trust for it if it held something new)
   if (w.capacity) w.capacity.add(10, 'an evening with friends');
   w.refresh(); return true;
 }

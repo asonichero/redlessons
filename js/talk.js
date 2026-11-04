@@ -212,7 +212,13 @@ function create(stage, opts) {
   root.addEventListener('keydown', keys, true);
 
   let playing = false;
+  // (what's been heard before: each line's words, by a short hash, kept by the game (root.Heard: { has, add }, js/world.js). fresh: whether the
+  // last conversation had anything in it she hadn't heard before, for trust that's only earned by what's new)
+  let fresh = false;
+  const hashOf = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+  const heard = line => { const H = root.Heard, t = line && line.text; if (!H || !t || line.thought) return; const k = hashOf((line.who || '') + ':' + t); if (!H.has(k)) { fresh = true; H.add(k); } };
   async function play(script, o) {
+    fresh = false;
     o = o || {}; still = o.still || []; apart = o.apart || []; captionOff(); playing = true; el.classList.remove('muse'); const picks = []; document.body.classList.add('talking');      // (a page can hide its own controls meanwhile; a caption still up is done with, so its ending can't take the box away mid-conversation)
     // (if the last one's still handing the camera back, it's the player's: this one gives it back to them too, rather than keeping it held)
     const follows = !!(giveBack && handing);      // (straight on from the last: the camera stays where it is, and the player's view is the one from before that)
@@ -225,13 +231,13 @@ function create(stage, opts) {
         if (line.run) { el.classList.remove('on'); portrait = null; unlook(); await line.run(); continue; }      // (the box steps aside while things happen)
         if (line.shot) { settle(line.shot); continue; }
         if (line.choose) {
-          if (line.text) await show(line); else { speaker(line.who || (cast.red ? 'red' : null)); textEl.textContent = ''; }      // (a choice on its own is hers to make: her portrait)
+          if (line.text) { heard(line); await show(line); } else { speaker(line.who || (cast.red ? 'red' : null)); textEl.textContent = ''; }      // (a choice on its own is hers to make: her portrait)
           const k = await choose(line.choose); picks.push(k);
           if (line.choose[k].face) face(line.who || 'red', line.choose[k].face);      // (a choice can set the chooser's face)
           if (line.choose[k].then) await runList(line.choose[k].then);
           continue;
         }
-        await show(line);
+        heard(line); await show(line);
       }
     };
     try { await runList(script); }
@@ -282,7 +288,7 @@ function create(stage, opts) {
   }
   // (done with: its box, its keys)
   function destroy() { root.removeEventListener('keydown', keys, true); el.remove(); clearTimeout(autoT); for (const k in rest) clearTimeout(rest[k]); if (voice) voice.stop(); if (playing) document.body.classList.remove('talking'); playing = false; }
-  return { play, settle, next, muse, caption, captionOff, face, relax, destroy, get playing() { return playing; }, get handing() { return !!handing; }, el, cast };      // (handing: a conversation's just ended, its camera held a moment for one to follow on)
+  return { play, settle, next, muse, caption, captionOff, face, relax, destroy, get fresh() { return fresh; }, get playing() { return playing; }, get handing() { return !!handing; }, el, cast };      // (handing: a conversation's just ended, its camera held a moment for one to follow on)
 }
 
 root.Talk = { create };

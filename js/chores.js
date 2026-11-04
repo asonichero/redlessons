@@ -404,7 +404,7 @@ function create(w) {
       if (P.talk && !agnes) P.talk.muse(['One.', 'Two. My arms…', 'Three, and full.'][k], { face: k === 2 ? 'smile' : 'calm' });
     }
       if (agnes && talking) await m.face(Math.atan2(agnes.motion.pos.x - m.pos.x, agnes.motion.pos.z - m.pos.z)); };
-    if (agnes) { await Promise.all([draw(), P.converse(S.agnesWell(n - 1), { shot: ['red', 'agnes'], still: ['red'] }).then(r => { talking = false; return r; })]); V.letGo('agnes'); rep.trusts('agnes', 0.5); }      // (she talks; Red draws)
+    if (agnes) { await Promise.all([draw(), P.converse(S.agnesWell(n - 1), { shot: ['red', 'agnes'], still: ['red'] }).then(r => { talking = false; return r; })]); V.letGo('agnes'); if (!!(P.talk && P.talk.fresh)) rep.trusts('agnes', 0.5); }      // (she talks; Red draws)
     else await draw();
     fill(b, true); const p = b.obj.position.clone().add(b.grip); m.lookAt(p);
     m.reach('L', p.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(-2.4))); await m.reach('R', p.clone().add(new V3(f.z, 0, -f.x).multiplyScalar(2.4)));

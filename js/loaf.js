@@ -77,7 +77,7 @@ async function feed(P, w, f, V, what) {
   else if (what === FRESH) setBread(w, x => { x.freshFed = FED; });      // (still in her basket, a share gone: on the board it's not whole, and her mother will see)
   else if (!heel) change(w, c => { if (c.errand && c.errand.id === 'bread') c.errand.state = 'fed'; });      // (her mother's errand: nothing to hand over now)
   if (!heel) w.rep.add('naughty', what === LOAVES ? 1 : 0.5, what === LOAVES ? 'Mama’s loaves, thrown to the ducks' : what === FRESH ? 'the fresh loaf from the counter, half thrown to the ducks' : 'Mama’s loaf, thrown to the ducks');      // (the heel's hers to give: no harm in it)
-  w.rep.add('mischievous', 0.5, 'feeding the ducks with Peter'); w.rep.trusts('peter', 1);
+  w.rep.add('mischievous', 0.5, 'feeding the ducks with Peter'); if (!!(P.talk && P.talk.fresh)) w.rep.trusts('peter', 1);
   w.cal.advance(15); w.refresh();
   if (P.talk) P.talk.muse(S.ducksAfter(what, !all), { face: 'wince' });
 }

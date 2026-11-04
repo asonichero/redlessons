@@ -242,7 +242,7 @@ function attach(P, w) {
     for (let k = 0; k < 2; k++) {
       const n = (w.save.state.bessTalk || {}).n || 0, beats = lines.bess || [], beat = beats[n] || (lines.bessAgain || [])[(n + k) % Math.max(1, (lines.bessAgain || []).length)] || [];
       await P.converse(beat, { shot: ['red', 'bess'] }); if (n < beats.length) w.save.change(x => { x.bessTalk = { n: n + 1 }; });
-      w.rep.trusts('bess', 0.25); if (w.capacity) w.capacity.add(5, 'sitting with Bess'); w.cal.advance(10);
+      if (!!(P.talk && P.talk.fresh)) w.rep.trusts('bess', 0.25); if (w.capacity) w.capacity.add(5, 'sitting with Bess'); w.cal.advance(10);
       if (k === 0) { let more = false; await P.converse(S.bessStay({ yes: () => { more = true; } }), { shot: ['red', 'bess'] }); if (!more) break; }
     }
     if (P.sitting) await P.getUp(); w.refresh();

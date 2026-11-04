@@ -259,19 +259,19 @@ function attach(P, w) {
       if (key === 'tom' && root.InHand && root.InHand.tomWants(w)) { await root.InHand.tellTom(P, w); return; }      // (she might tell him: js/inhand.js)
       if (key === 'smith' && root.InHand && root.InHand.smithWants(w)) { await root.InHand.askSmith(P, w); return; }      // (the same standard as Tom)
       const v = vs(), first = !v.met[key], today = v.talked[key] === cal.day;
-      if (root.FairDay && await root.FairDay.talk(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (fair day: an errand asked, or given)
-      if (root.Agnes && await root.Agnes.talk(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (Agnes and Georgie, after the fair: js/agnes.js)
-      if (root.Green && await root.Green.invite(P, w, key)) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (of an evening, on the green: js/green.js)
-      if (key === 'bess' && root.Fair && root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', key] }); w.save.flag('bess-frock', cal.day); if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (after the fitting: her own frock, as a girl)
+      if (root.FairDay && await root.FairDay.talk(P, w, key)) { if (!today && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (fair day: an errand asked, or given)
+      if (root.Agnes && await root.Agnes.talk(P, w, key)) { if (!today && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (Agnes and Georgie, after the fair: js/agnes.js)
+      if (root.Green && await root.Green.invite(P, w, key)) { if (!today && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (of an evening, on the green: js/green.js)
+      if (key === 'bess' && root.Fair && root.Fair.frockDue(w)) { await P.converse(S.bessFrock(), { shot: ['red', key] }); w.save.flag('bess-frock', cal.day); if (!today && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (after the fitting: her own frock, as a girl)
       // (Georgie, after Agnes has had him in hand, Red not having said she knows: a hint of it, now and then, and her chance to say it)
       if (key === 'georgie' && root.Agnes && root.Agnes.stateOf(w).settled === 'yes' && rep.openness('georgie') < 1 && v.talked.georgie !== cal.day && hash(cal.day, 61) < 0.6) {
         const n = v.georgieHints || 0; await P.converse(S.georgieHint(n, { tell: () => rep.tell('georgie', 1) }), { shot: ['red', key] });
-        change(s => { s.georgieHints = n + 1; s.talked[key] = cal.day; s.met[key] = true; }); if (!today) rep.trusts(key, 0.5); return; }
+        change(s => { s.georgieHints = n + 1; s.talked[key] = cal.day; s.met[key] = true; }); if (!today && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5); return; }
       // (the morning after a sponge set out of time: the bread flat, and she says so, the once)
       { const fl = save.state.flags || {}; if (key === 'pennock' && fl['sponge-flat'] === cal.day && fl['sponge-flat-said'] !== cal.day) { save.flag('sponge-flat-said', cal.day);
         await P.converse([{ who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'The bread was flat this morning, Rose. Like boots. That sponge was never kneaded properly.' }, { who: 'red', face: 'shy', text: 'I’m sorry, Mistress Pennock.' }, { who: 'pennock', face: 'calm', listen: { red: 'shy' }, text: 'Well. In time with it, next time: push, fold, turn. It’s a dance, not a fight.' }], { shot: ['red', key] });
         change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; } }
-      if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)
+      if (key === 'peter' && root.Loaf && await root.Loaf.peter(P, w, f, { walkTo })) { if (!today && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5); change(s => { s.talked[key] = cal.day; s.met[key] = true; }); return; }      // (the ducks: js/loaf.js)
       // (Bess, on her bench: she asks Red to sit. Sat beside her, they talk, and Red's to get up when she will (as on the bench round the lime
       // tree); not, a word, and no harm done. Only sitting with her brings Bess's trust)
       if (key === 'bess' && !P.sitting) { let sit = false; await P.converse(S.bessInvite({ sit: () => { sit = true; } }), { shot: ['red', key] });
@@ -284,7 +284,7 @@ function attach(P, w) {
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });
-      if (!today && key !== 'willie' && (key !== 'bess' || P.sitting)) rep.trusts(key, 0.5);      // (a little trust, the first talk of the day: Bess's, only sat with her)
+      if (!today && key !== 'willie' && (key !== 'bess' || P.sitting) && !!(P.talk && P.talk.fresh)) rep.trusts(key, 0.5);      // (a little trust, the first talk of the day, if she's heard something new: Bess's, only sat with her)
       change(s => { s.talked[key] = cal.day; s.met[key] = true; });
       if (ctx.brokenPromise && key === 'abney') w.save.change(s => { s.promise.sorry = cal.day; }, { promise: true });      // (said sorry, to her face)
       if (key === 'tom' && w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
@@ -313,7 +313,7 @@ function attach(P, w) {
     // (his idea about the pies, when he has it: js/pie.js plays it out)
     if (root.Pie && root.Pie.ready(w)) { try { if (P.sitting) await P.getUp(); await near(); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
     const v = vs(), fairWeek = !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), smithWaits = !!(root.InHand && (root.InHand.agreed(w) || root.InHand.smithSees(w))), dare = (!fairWeek || smithWaits) && hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
-    let spent = 0;
+    let spent = 0, chat = false;
     // (fair week: on the bellows dawn to dusk, he's said so: no dares, but he'll still come and tell her his stories. Unless she's asked his
     // father to hold her to his standard and it's waiting on a dare: then he can't resist (smithWaits), and his word on the week says so)
     const ctx = {
@@ -322,11 +322,11 @@ function attach(P, w) {
       afterPie: !!(w.q.done && w.q.done('tom.pie')) && !(save.state.flags || {})['dare-after-pie'],      // (the first dare after the pie: she thinks twice)
       mins: n => { spent += n; cal.advance(n); w.refresh(); },
       accept: () => { change(s => { s.dare = { kind, day: cal.day, until: cal.minute + 90 }; }); if (w.q.done && w.q.done('tom.pie')) save.flag('dare-after-pie', cal.day); },      // (hers to do now: js/villagers.js's dare actions)
-      chatted: () => { rep.trusts('tom', 0.5); change(s => { s.chats = (s.chats || 0) + 1; }); },      // (his story heard out: the next time, another)
+      chatted: () => { chat = true; change(s => { s.chats = (s.chats || 0) + 1; }); },      // (his story heard out: the next time, another; trust for it, if it was new to her, after)
     };
     try {
       await near();
-      await P.converse(S.tomStops(ctx), { shot: ['red', 'tom'] });
+      await P.converse(S.tomStops(ctx), { shot: ['red', 'tom'] }); if (chat && !!(P.talk && P.talk.fresh)) rep.trusts('tom', 0.5);
       change(s => { s.met.tom = true; s.talked.tom = cal.day; });
       if (w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
       if (ctx.busy && spent >= 20 && P.talk) P.talk.muse(S.tomCost(spent), { face: 'wince' });
@@ -355,7 +355,7 @@ function attach(P, w) {
   async function crow(kind) {
     const f = figs.tom; change(s => { s.dare = null; }); if (!f) return;
     f.watching = false; await meet(f, 13);
-    try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); rep.trusts('tom', 0.5); } finally { release(f); }      // (a dare done, and he's seen it: he thinks the more of her)
+    try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); if (!!(P.talk && P.talk.fresh)) rep.trusts('tom', 0.5); } finally { release(f); }      // (a dare done, and he's seen it: he thinks the more of her)
     w.refresh();
     if (root.InHand && (root.InHand.agreed(w) || root.InHand.smithSees(w))) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js; asked beforehand or not)
   }

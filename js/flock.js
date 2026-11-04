@@ -148,7 +148,7 @@ function attach(P, w) {
     const f = st(); if (!bo || scattered || boBusy || P.busy || f.talked === cal.day) return [];
     return [{ label: 'Talk to Bo', at: bo.motion.pos.clone().setY(18), run: async () => {
       change(x => { x.talked = cal.day; }); if (!(save.state.flags || {})['bo-met']) save.flag('bo-met', cal.day); boBusy = true; const m = P.motion; await m.face(yawTo(m.pos, bo.motion.pos));
-      await P.converse(S.boHello(cal.day), { shot: ['red', 'bo'] }); rep.trusts('bo', 0.5); boBusy = false; } }];
+      await P.converse(S.boHello(cal.day), { shot: ['red', 'bo'] }); if (!!(P.talk && P.talk.fresh)) rep.trusts('bo', 0.5); boBusy = false; } }];
   }
   // (for the list and the guide: the strays still out, when she's said she'll help)
   function goal() { const f = st(); if (!scattered || f.help !== 'yes') return null; const s = nearestLoose(P.motion.pos); return s ? s.obj.position.clone() : null; }

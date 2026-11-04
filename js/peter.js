@@ -78,7 +78,7 @@ function firstTalk(P, w, fw, pe) {
 // meadow, and her day her own again. (figs: the Fowlers' figures, held)
 async function sendHome(P, w) {
   const S = root.Story;
-  change(w, s => { s.visited = w.cal.day; }); w.rep.trusts('peter', 0.5);
+  change(w, s => { s.visited = w.cal.day; }); if (!!(P.talk && P.talk.fresh)) w.rep.trusts('peter', 0.5);
   w.save.change(s => { s.fowlers = s.fowlers || { met: {}, talked: {} }; s.fowlers.met.peter = s.fowlers.met.fowler = true; s.fowlers.talked.peter = s.fowlers.talked.fowler = w.cal.day; }, { fowlers: true });
   w.cal.advance(30);
   // (Peter put beside her the moment the meadow's built, under the fade)
@@ -149,7 +149,7 @@ function wood(P, w) {
     const st = stateOf(w), n = st.met;
     await P.converse(S.beechMeeting(n, { owed: st.owed }), { shot: ['red', 'peter'] });
     await notices(P, w);
-    w.cal.advance(40); w.rep.trusts('peter', 0.5);
+    w.cal.advance(40); if (!!(P.talk && P.talk.fresh)) w.rep.trusts('peter', 0.5);
     await w.fade(true);      // (and he goes, under a fade: she's on her own again at the beech after)
     change(w, s => { s.meet = null; s.met++; s.owed = false; }); w.save.flag('met-peter', w.cal.day);
     if (stateOf(w).met >= 2 && w.q.stateOf && w.q.stateOf('peter.friends') === 'offered') w.complete('peter.friends');
