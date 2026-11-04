@@ -370,8 +370,10 @@ function create(rig, opts) {
       // her left shoulder; her left hand high on it, her right lower down, as it's held to work; working (m.stroke), drawn back and forth)
       if (m.carryStyle === 'pole' && m.carry && m.carry.obj) {
         m.strokeT = (m.strokeT || 0) + dt; const st_ = m.stroke ? Math.sin(m.strokeT * 5) * 2.4 : 0;
-        const foot = local(-1.6, 0.4, 12 + st_), top = local(2.4, hy + 11, 2.6), dir = top.clone().sub(foot);
-        const at = h => foot.clone().addScaledVector(dir, clamp((h - foot.y) / (dir.y || 1), 0, 1));
+        // (raking (m.rakeAt, a point to rake from: the oven's mouth): the handle level from her hip, the blade in at it, drawn out and thrust in)
+        const rk = m.rakeAt, pull = rk ? 0.5 + 0.5 * Math.sin(m.strokeT * 3) : 0, back = rk ? rk.clone().sub(r.root.localToWorld(new V3(0, rk.y, 0))).setY(0).normalize() : null;
+        const foot = rk ? rk.clone().addScaledVector(back, -pull * 7) : local(-1.6, 0.4, 12 + st_), top = rk ? local(0.8, hy + 3.5, -2) : local(2.4, hy + 11, 2.6), dir = top.clone().sub(foot);
+        const at = h => rk ? foot.clone().addScaledVector(dir, h > hy + 3 ? 0.9 : 0.6) : foot.clone().addScaledVector(dir, clamp((h - foot.y) / (dir.y || 1), 0, 1));      // (raking: the hands along the handle, near its end)
         const fw = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw)), y = dir.clone().normalize(), z = fw.clone().addScaledVector(y, -fw.dot(y)).normalize(), x = y.clone().cross(z);
         const it = m.carry; it.obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); it.obj.position.copy(foot);
         const wy = h => r.root.localToWorld(new V3(0, h, 0)).y;

@@ -146,7 +146,7 @@ function attach(P, w) {
   // (the oven raked out, the paddle in her hands: the ash, in front of the oven's mouth, where she'll walk through it if she isn't careful)
   async function rake(t) {
     const sp = spots.oven; await place(sp.at, sp.yaw); m.lookAt(sp.look); await tell(lines.ash);
-    m.stroke = true; await P.wait(2.6); m.stroke = false; m.lookAt(null);
+    m.rakeAt = sp.look.clone().setY(10); await P.wait(3.2); m.rakeAt = null; m.lookAt(null);      // (the paddle into the oven's mouth, and the ash drawn out: js/motion.js)
     if (mess) { const f = new V3(Math.sin(sp.yaw), 0, Math.cos(sp.yaw)), sd = new V3(f.z, 0, -f.x);
       for (const [a, d, r] of [[-4, 5, 3.4], [3.5, 6, 3], [0, 2.5, 2.6]]) { const q = sp.at.clone().addScaledVector(f, d).addScaledVector(sd, a); mess.add('ash', q.x, q.z, r); } }
     if (w.capacity) w.capacity.add(-t.mins * 0.08, 'work'); markDone(t.id);
