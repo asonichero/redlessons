@@ -190,6 +190,7 @@ function create(view, ui) {
     // check would only break it again), and its step undone)
     if (o.flag === 'abney-promise-broken' && !o.on) { save.change(s => { if (s.promise) Object.assign(s.promise, { broken: false, told: false, kept: false, sitting: false, day: s.day }); if (s.minute > 18 * 60 + 30 || s.minute < 17 * 60 + 30) s.minute = 18 * 60; delete (s.flags || {})['abney-promise-broken'];
       if (s.quests && s.quests.abney) delete s.quests.abney.promise; }, { promise: true, time: true }); }
+    if (o.go && AREAS[o.go[0]]) go(o.go[0], o.go[1]);      // (somewhere else: a place, and the way in)
     if (o.day != null || o.minute != null) save.change(s => { if (o.day != null) s.day = Math.max(1, Math.round(o.day)); if (o.minute != null) s.minute = Math.max(0, Math.min(24 * 60 - 1, Math.round(o.minute))); }, { time: true });      // (the day and the time, written over)
     refresh();
   }

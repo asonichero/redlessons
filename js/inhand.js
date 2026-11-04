@@ -37,14 +37,20 @@ async function askSmith(P, w) {
   if (yes) { w.rep.tell('smith', 2); w.rep.trusts('smith', 0.5); change(w, s => { s.agreed = w.cal.day; }); }
   w.refresh(); return yes;
 }
+// (Tom told, Red not answering to the smith yet: the next dare's his to see, and hers to choose what comes of it: js/story.js's smithSees)
+const smithSees = w => st(w, 'tom.smith') === 'offered' && !stateOf(w).agreed;
 async function caught(P, w, kind) {
-  const S = root.Story, V = P.villagers, m = P.motion; if (!V || !agreed(w)) return false;
+  const S = root.Story, V = P.villagers, m = P.motion; if (!V || !(agreed(w) || smithSees(w))) return false;
+  const first = !agreed(w);      // (not asked beforehand: he says what he'll do, and she chooses)
   const smith = V.here('smith') || V.summon('smith', 'anvil'), tom = V.here('tom');
   V.hold && V.hold(smith); if (tom) V.hold(tom);
   const near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 16, 0, Math.cos(m.yaw) * 16)), 3.2);
   await Promise.race([V.walkTo('smith', near, yawTo(near, m.pos)), P.wait(8)]);
   smith.motion.face(yawTo(smith.motion.pos, m.pos)); await m.face(yawTo(m.pos, smith.motion.pos));
-  await P.converse(S.smithCaught(kind), { shot: ['red', 'smith'] });
+  if (first) { let told = false; await P.converse(S.smithSees(kind, { tell: () => { told = true; }, leave: () => {} }), { shot: ['red', 'smith'] });
+    if (!told) { w.save.flag('smith-told', w.cal.day); V.letGo('smith'); if (tom) V.letGo('tom', true); w.refresh(); return true; }      // (off home, the two of them, and her mother told)
+    w.rep.tell('smith', 2); w.rep.trusts('smith', 0.5); change(w, s => { s.agreed = w.cal.day; }); }
+  else await P.converse(S.smithCaught(kind), { shot: ['red', 'smith'] });
   V.letGo('smith'); if (tom) V.letGo('tom', true);
   await w.go('forge', 'door');
   const Q = w.P; if (!Q) return true;
@@ -89,7 +95,7 @@ async function afterShift(P, w, id) {
   return false;
 }
 
-const api = { tomWants, tellTom, smithWants, askSmith, agreed, caught, afterShift, stateOf };
+const api = { smithSees, tomWants, tellTom, smithWants, askSmith, agreed, caught, afterShift, stateOf };
 root.InHand = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

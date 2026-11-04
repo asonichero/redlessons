@@ -280,7 +280,7 @@ function attach(P, w) {
           const to = Math.atan2(f.motion.pos.x - seat.at.x, f.motion.pos.z - seat.at.z), dd = a => Math.abs(Math.atan2(Math.sin(a - to), Math.cos(a - to)));      // (facing her, whichever way the bench is sat)
           await P.sitOn(dd(seat.facing) <= dd(seat.facing + Math.PI) ? seat : Object.assign({}, seat, { facing: seat.facing + Math.PI })); } }      // (a step back from her first, clear of the table, then round to the bench)
       const ch = save.state.chores, potDone = !!(ch && ch.day === cal.day && ch.errand && ch.errand.id === 'pot' && ch.errand.state === 'done');
-      const ctx = { smithWaits: !!(root.InHand && root.InHand.agreed(w)), fairWeek: !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), wd: weekday(cal.day), pieTaken: !!(root.Pie && root.Pie.stateOf(w).tries > 0), part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone, tomAtTub: !!((station('tom', cal.day, cal.minute) || {}).stand === 'tub'),
+      const ctx = { smithWaits: !!(root.InHand && (root.InHand.agreed(w) || root.InHand.smithSees(w))), fairWeek: !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), wd: weekday(cal.day), pieTaken: !!(root.Pie && root.Pie.stateOf(w).tries > 0), part: cal.part, day: cal.day, first, today, errand: w.chores && w.chores.objective(), dares: v.dares, curfew: cal.curfew(), working: !!(f.want && f.want.stand), potDone, tomAtTub: !!((station('tom', cal.day, cal.minute) || {}).stand === 'tub'),
         brokenPromise: !!(root.AbneyPromise && root.AbneyPromise.stateOf(w).broken && !root.AbneyPromise.stateOf(w).sorry) };
       const script = S.villager(key, ctx).filter(l => !l.who || l.who === 'red' || figs[l.who]);      // (only those who are there to say it)
       await P.converse(script, { shot: ['red', key] });
@@ -312,7 +312,7 @@ function attach(P, w) {
     hold(f); change(s => { s.tom = { day: cal.day, done: true, tries: 0 }; });
     // (his idea about the pies, when he has it: js/pie.js plays it out)
     if (root.Pie && root.Pie.ready(w)) { try { if (P.sitting) await P.getUp(); await near(); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
-    const v = vs(), fairWeek = !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), smithWaits = !!(root.InHand && root.InHand.agreed(w)), dare = (!fairWeek || smithWaits) && hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
+    const v = vs(), fairWeek = !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), smithWaits = !!(root.InHand && (root.InHand.agreed(w) || root.InHand.smithSees(w))), dare = (!fairWeek || smithWaits) && hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0;
     // (fair week: on the bellows dawn to dusk, he's said so: no dares, but he'll still come and tell her his stories. Unless she's asked his
     // father to hold her to his standard and it's waiting on a dare: then he can't resist (smithWaits), and his word on the week says so)
@@ -357,7 +357,7 @@ function attach(P, w) {
     f.watching = false; await meet(f, 13);
     try { await P.converse(S.tomDared(kind), { shot: ['red', 'tom'] }); rep.trusts('tom', 0.5); } finally { release(f); }      // (a dare done, and he's seen it: he thinks the more of her)
     w.refresh();
-    if (root.InHand && root.InHand.agreed(w)) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js)
+    if (root.InHand && (root.InHand.agreed(w) || root.InHand.smithSees(w))) await root.InHand.caught(P, w, kind);      // (his father heard it from the anvil: js/inhand.js; asked beforehand or not)
   }
   async function ringBell() {
     const b = sp.bell, m = P.motion; await lead(b.at, b.yaw); m.lookAt(b.look);      // (by the ways about, from wherever she is)

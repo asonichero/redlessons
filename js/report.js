@@ -88,7 +88,11 @@ function topics(P, w, when) {
     raise: [M('stern', 'Mistress Pennock tells me there was a bun short on her tray this afternoon.', 'wince'), R('wince', 'It was me. I’m sorry, Mama.'), M('stern', 'Taking without asking, from someone who trusts you in her kitchen. That’ll count, this week.', 'shy')] });
   // A dare the village is talking of: the bell rung in broad day (heard by dinner, or supper), a knock at the Dunns' (by supper).
   const fl = w.save.state.flags || {}, dare = fl['rang-bell'] === d ? 'bell' : fl['woke-willie'] === d ? 'knock' : null;
-  if (dare) out.push({ id: 'dare', label: dare === 'bell' ? 'I rang the curfew bell, Mama. Tom dared me.' : 'I knocked at the Dunns’ and ran. Tom dared me.', noticed: dare === 'bell' || sup,
+  // (Master Ferrier caught them at it and said he'd have a word with her mother: and he has. Known, and no lying out of it)
+  if (dare && fl['smith-told'] === d) out.push({ id: 'dare', label: dare === 'bell' ? 'I rang the curfew bell, Mama. Tom dared me.' : 'I knocked at the Dunns’ and ran. Tom dared me.', noticed: true,
+    tell: [M('stern', 'I know. Master Ferrier was by on his way home with Tom by the ear. He said he’d left you to me.', 'wince'), M('calm', 'Thank you for telling me yourself, all the same.', 'shy')],
+    raise: [M('stern', 'Master Ferrier was by, on his way home with Tom by the ear.', 'wince'), M('stern', dare === 'bell' ? 'The curfew bell, in broad day. He says he left you to me.' : 'Master William’s door, and Master William woken. He says he left you to me.', 'shy'), R('shy', '…Yes, Mama.')] });
+  else if (dare) out.push({ id: 'dare', label: dare === 'bell' ? 'I rang the curfew bell, Mama. Tom dared me.' : 'I knocked at the Dunns’ and ran. Tom dared me.', noticed: dare === 'bell' || sup,
     tell: [M('stern', dare === 'bell' ? 'Half the green came out for that bell.' : 'You woke Master William, after his night on the lanes.', 'wince'), M('calm', 'Tom Ferrier’s idea, I don’t doubt. And your feet that did it. Thank you for telling me straight.', 'shy')],
     raise: async P_ => { let ans = null;
       await P_.converse([M('calm', dare === 'bell' ? 'Someone rang the curfew bell in broad day, I hear. Half the green came out.' : 'Somebody woke Master William today. Three knocks, and nobody there.', 'wince'), { choose: [
