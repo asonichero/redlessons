@@ -203,7 +203,7 @@ async function run(P, o) {
     const how_ = o.how || (root.Correction && root.Correction.how) || {}; if (root.Correction) root.Correction.how = null;
     const quicken = c.id !== 'maren' ? 0 : Math.min(0.35, Math.min(0.2, held * 0.025) + (how_.lied ? 0.1 : 0) + (how_.degree === 'wanton' ? 0.15 : how_.degree === 'careless' ? 0.07 : 0)
       + (how_.willie ? 0.1 : 0) + (how_.withheld ? 0.08 : 0) + (how_.bakery ? 0.05 : 0) + (how_.week ? Math.min(0.15, Math.max(0, (how_.week.score - 7) * 0.03)) : 0));
-    const S = { lap, corrector: c, subject: sub, held,
+    const S = { lap, corrector: c, subject: sub, held, again: !!liftFirst,      // (again: not this giver's first correction of her: the skirt lifted from the start (see lift); a script may go further)
       say: async (who, text, face) => { if (ended()) throw STOP; await line(who, text, face); if (ended()) throw STOP; },
       step: async (l, n) => { if (ended()) throw STOP; await Promise.all([l ? line(l[0], l[1], l[2]) : null, smacks(n)]); if (ended()) throw STOP; },
       smacks: async n => { await smacks(n); if (ended()) throw STOP; },

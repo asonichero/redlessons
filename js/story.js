@@ -1258,12 +1258,15 @@ const pennockShortRed = async S => {
 };
 // The bakery's correction, for whatever there was: the bun taken and not said (how.bun), the list hardly begun (how.short), the floor left worse
 // than she found it (how.worse). Each spoken to in turn; the more of them, the more of it: one, her hand, the skirt down and then lifted; two,
-// her drawers down besides; all three, and six with the paddle to finish.
+// her drawers down besides; all three, and six with the paddle to finish. (S.again, not her first from Mistress Pennock: the skirt's lifted from
+// the start, and with more than one thing, her drawers down from the start too)
 const pennockBakeryRed = how => async S => {
   const M = 'corrector', R = 'subject', n = (how.bun ? 1 : 0) + (how.short ? 1 : 0) + (how.worse ? 1 : 0);
   S.set({ skirt: 'down', drawers: 'up', implement: 'hand', strength: 1.3 + n * 0.1, pace: 1.3 + n * 0.05 });
   await S.wait(0.6);
   await S.say(M, n > 1 ? 'Over you come. There’s more than one thing to settle, and we’ll settle them all.' : 'Over you come.', 'calm');
+  // (not her first time across Mistress Pennock's knee, and more than one thing to answer for: her drawers down from the start, as the skirt is)
+  if (S.again && n > 1) { await S.gesture('drawers'); await S.wait(0.5); await S.say(R, 'Mistress Pennock—', 'wince'); await S.say(M, 'You know why. All of it, Rose.', 'stern'); }
   const parts = [];
   if (how.bun) parts.push(async () => { await S.step([M, 'A bun off my tray, and not a word. If you’d asked, I’d have said yes. You know I would.', 'stern'], 8); await S.step([R, 'I know— I’m sorry—'], 4); await S.step([M, 'Taking is one thing. Saying nothing is the part I mind.'], 8); });
   if (how.short) parts.push(async () => { await S.step([M, 'When I leave you with my bakery, I need to know it’ll be done. Not half done. Not barely begun.', 'stern'], 10); await S.step([R, 'Yes, Mistress Pennock—'], 4); });
@@ -1271,10 +1274,10 @@ const pennockBakeryRed = how => async S => {
   for (let i = 0; i < parts.length; i++) {
     if (i === 0) await parts[i]();
     else if (i === 1) { await S.gesture('skirt'); await S.wait(0.4); S.set({ strength: 1.55 + n * 0.1, pace: 1.5 }); await parts[i](); }
-    else { await S.gesture('drawers'); await S.wait(0.5); await S.say(R, 'Mistress Pennock—', 'wince'); S.set({ strength: 1.75, pace: 1.6 }); await parts[i](); }
+    else { if (S.lap.st.drawers !== 'down') { await S.gesture('drawers'); await S.wait(0.5); await S.say(R, 'Mistress Pennock—', 'wince'); } S.set({ strength: 1.75, pace: 1.6 }); await parts[i](); }
   }
   if (parts.length === 1) { await S.gesture('skirt'); await S.wait(0.4); S.set({ strength: 1.6, pace: 1.5 }); await S.step([M, 'You’re quick when you want to be. I’ve seen it. So next time you’ll want to.'], 10); await S.step([R, 'Ow— I will—'], 4); }
-  else if (parts.length === 2) { await S.gesture('drawers'); await S.wait(0.5); await S.say(R, 'Mistress Pennock—', 'wince'); await S.say(M, 'Both of them, Rose. So you remember both.', 'stern'); S.set({ strength: 1.75, pace: 1.6 }); await S.smacks(10); }
+  else if (parts.length === 2) { if (S.lap.st.drawers !== 'down') { await S.gesture('drawers'); await S.wait(0.5); await S.say(R, 'Mistress Pennock—', 'wince'); } await S.say(M, 'Both of them, Rose. So you remember both.', 'stern'); S.set({ strength: 1.75, pace: 1.6 }); await S.smacks(10); }
   else { await S.smacks(8); S.set({ implement: 'bakersPaddle', strength: 1.6, pace: 1 }); await S.say(M, 'And six with the paddle, for the three of them together.', 'stern'); await S.smacks(6); }
   await S.say(M, 'There. That’s all of it. Up you get, love.', 'calm');
   await S.wait(1.0);
