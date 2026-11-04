@@ -377,7 +377,7 @@ function attach(P, w) {
   // ── For a scene: someone fetched out (at a spot, if they're not about), walked where it wants them (by the ways about), and let go again;
   // or kept in for the rest of the day.
   function summon(key, spot, o) {
-    let f = figs[key]; if (!f) { f = spawn(key, { stand: spot }, false, o); }
+    let f = figs[key]; if (!f) { f = spawn(key, { stand: spot }, !!(o && o.arriving), o); }      // (o.arriving: out of their own door, not stood at the spot already)
     f.scene = {}; f.held = true; f.motion.auto = null; f.path = null; if (f.sat) { untake(f); f.motion.stand(); }
     return f;
   }

@@ -42,10 +42,18 @@ const smithSees = w => st(w, 'tom.smith') === 'offered' && !stateOf(w).agreed;
 async function caught(P, w, kind) {
   const S = root.Story, V = P.villagers, m = P.motion; if (!V || !(agreed(w) || smithSees(w))) return false;
   const first = !agreed(w);      // (not asked beforehand: he says what he'll do, and she chooses)
-  const smith = V.here('smith') || V.summon('smith', 'anvil'), tom = V.here('tom');
+  // (his voice first, from wherever he is: "Thomas!"; the two of them turned to it, stock still, watching him come over to them)
+  const smith = V.here('smith') || V.summon('smith', 'anvil', { arriving: true }), tom = V.here('tom');
   V.hold && V.hold(smith); if (tom) V.hold(tom);
-  const near = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 16, 0, Math.cos(m.yaw) * 16)), 3.2);
-  await Promise.race([V.walkTo('smith', near, yawTo(near, m.pos)), P.wait(8)]);
+  smith.motion.auto = null;
+  const head = () => smith.motion.pos.clone().setY(24), watch = P.tick(() => { const at = smith.motion.pos; m.faceYaw = yawTo(m.pos, at); if (tom) { tom.motion.faceYaw = yawTo(tom.motion.pos, at); tom.motion.lookAt(head()); } });
+  m.lookAt(head);
+  await P.converse([{ who: 'smith', face: 'stern', listen: { red: 'wince', tom: 'wince' }, text: 'Thomas!' }], { shot: false, keepCamera: true });
+  const mid = tom ? m.pos.clone().add(tom.motion.pos).multiplyScalar(0.5) : m.pos.clone(), from = smith.motion.pos.clone().sub(mid).setY(0);
+  const dir = from.lengthSq() > 1 ? from.clone().normalize() : new V3(0, 0, 1), near = P.collide(mid.clone().setY(0).addScaledVector(dir, 14), 3.2);
+  if (from.length() > 60) { const at = P.collide(mid.clone().setY(0).addScaledVector(dir, 50), 3.2); smith.motion.warp(at, yawTo(at, mid)); smith.rig.root.position.copy(at); }      // (from further off: come up the way from the forge, the last of it seen)
+  await Promise.race([V.walkTo('smith', near, yawTo(near, mid)), P.wait(25)]);
+  watch(); m.lookAt(null); if (tom) tom.motion.lookAt(null);
   smith.motion.face(yawTo(smith.motion.pos, m.pos)); await m.face(yawTo(m.pos, smith.motion.pos));
   if (first) { let told = false; await P.converse(S.smithSees(kind, { tell: () => { told = true; }, leave: () => {} }), { shot: ['red', 'smith'] });
     if (!told) { w.save.flag('smith-told', w.cal.day); V.letGo('smith'); if (tom) V.letGo('tom', true); w.refresh(); return true; }      // (off home, the two of them, and her mother told)
