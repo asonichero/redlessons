@@ -309,9 +309,10 @@ function attach(P, w) {
   }
   async function tomStops(f) {
     const near = () => P.sitting ? f.motion.face(yawTo(f.motion.pos, P.motion.pos)) : meet(f, 13);      // (sat, she stays sat: he stands over her)
-    hold(f); change(s => { s.tom = { day: cal.day, done: true, tries: 0 }; });
+    hold(f);
+    const settled = () => change(s => { s.tom = { day: cal.day, done: true, tries: 0 }; });      // (his word for the day had out, the dare taken or turned down: only then does he leave her be; cut short, he'll come again)
     // (his idea about the pies, when he has it: js/pie.js plays it out)
-    if (root.Pie && root.Pie.ready(w)) { try { if (P.sitting) await P.getUp(); await near(); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
+    if (root.Pie && root.Pie.ready(w)) { try { if (P.sitting) await P.getUp(); await near(); change(s => { s.met.tom = true; s.talked.tom = cal.day; }); await root.Pie.dare(P, w, f); settled(); } finally { if (figs.tom && !figs.tom.scene) release(f); } return; }
     const v = vs(), fairWeek = !!(root.Fair && ['last', 'week'].includes(root.Fair.phase(w))), smithWaits = !!(root.InHand && (root.InHand.agreed(w) || root.InHand.smithSees(w))), dare = (!fairWeek || smithWaits) && hash(cal.day, 10) < 0.5, kind = !dare ? 'chat' : v.dares % 2 === 0 ? 'bell' : 'knock';
     let spent = 0, chat = false;
     // (fair week: on the bellows dawn to dusk, he's said so: no dares, but he'll still come and tell her his stories. Unless she's asked his
@@ -326,7 +327,7 @@ function attach(P, w) {
     };
     try {
       await near();
-      await P.converse(S.tomStops(ctx), { shot: ['red', 'tom'] }); if (chat && !!(P.talk && P.talk.fresh)) rep.trusts('tom', 0.5);
+      await P.converse(S.tomStops(ctx), { shot: ['red', 'tom'] }); settled(); if (chat && !!(P.talk && P.talk.fresh)) rep.trusts('tom', 0.5);
       change(s => { s.met.tom = true; s.talked.tom = cal.day; });
       if (w.q.stateOf && w.q.stateOf('tom.meet') === 'offered') w.complete('tom.meet');
       if (ctx.busy && spent >= 20 && P.talk) P.talk.muse(S.tomCost(spent), { face: 'wince' });
