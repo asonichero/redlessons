@@ -169,7 +169,7 @@ function create(view, ui) {
     ];
     const s = F ? F.stateOf(w) : {}, met = F ? F.gatesMet(w) : false;
     rows.push({ label: 'Gates met', done: met, note: met ? (s.day ? '' : 'the days are set the next morning') : '' });
-    if (s.day) { rows.push({ label: 'Planting finishes', done: d >= s.planted, note: names(s.planted) }); rows.push({ label: 'Fitting', done: !!s.fitted, note: names(F.fitDay(w)) + ' at four' }); rows.push({ label: 'The fair', done: d > s.day, note: names(s.day) + (d < s.day ? ' (' + (s.day - d) + ' days)' : '') }); }
+    if (s.day) { rows.push({ label: 'Planting finishes', done: d >= s.planted, note: names(s.planted) }); rows.push({ label: 'Fitting', key: 'fitted', done: !!s.fitted, note: names(F.fitDay(w)) + ' at four' }); rows.push({ label: 'The fair', done: d > s.day, note: names(s.day) + (d < s.day ? ' (' + (s.day - d) + ' days)' : '') }); }
     return { day: d, phase: F ? F.phase(w) : null, rows };
   }
   // (debug, the rest of it: everyone's trust, every step of the story and the save's flags, each to be changed from the HUD's "!")
@@ -186,6 +186,7 @@ function create(view, ui) {
     if (o.trust) rep.trusts(o.trust, o.by);
     if (o.stat) rep.add(o.stat, o.by, 'debug');      // (and the week's tally with it)
     if (o.quest) { if (o.done) q.complete(o.quest); else { const [li, si] = o.quest.split('.'); save.change(s => { if (s.quests[li]) delete s.quests[li][si]; }, { quest: o.quest }); } }
+    if (o.fair === 'fitted' && root.Fair) save.change(s => { const f = root.Fair.stateOf(w); f.fitted = o.on ? root.Fair.fitDay(w) : 0; if (!o.on) f.late = false; }, { fair: true });      // (the fitting undone: it comes again, from a quarter to four that day)
     if (o.flag) save.change(s => { s.flags = s.flags || {}; if (o.on) s.flags[o.flag] = cal.day; else delete s.flags[o.flag]; }, { flag: o.flag });
     // (unbroken: the evening's to be had again, tonight: the promise for today, the clock back to six if it's gone half past (or the next
     // check would only break it again), and its step undone)

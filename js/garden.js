@@ -263,15 +263,17 @@ function attach(P, w) {
   async function water(r) {
     const p = pathBeside(r.id, m.pos.x), west = Math.abs(m.pos.x - RX0) < Math.abs(m.pos.x - RX1), a = new V3(west ? RX0 + 1 : RX1 - 1, 0, p.z), b = new V3(west ? RX1 - 1 : RX0 + 1, 0, p.z);
     await m.goTo(a, yawTo(a, b)); const side = (r.z - p.z) * (west ? 1 : -1) < 0 ? 'L' : 'R';
-    m.reach(side, () => new V3(m.pos.x, 4, r.z)); m.lookAt(new V3(b.x, 2, r.z));
-    await m.goTo(b, yawTo(a, b), { speed: 0.4 }); await m.release(side); m.lookAt(null);
+    const dx = Math.sign(b.x - a.x); m.carryHand = side;      // (the can changed over to the hand on the flowers' side, held out over them at her hip's height)
+    m.reach(side, () => new V3(m.pos.x + dx * 2, 7.5, p.z + (r.z - p.z) * 0.55)); m.lookAt(new V3(b.x, 2, r.z));
+    await m.goTo(b, yawTo(a, b), { speed: 0.4 }); await m.release(side); m.carryHand = null; m.lookAt(null);
     change(w, g => { g.watered[r.id] = true; g.water -= 1; }); G.water(r.id, true); if (w.capacity) w.capacity.add(3, 'the flower rows'); spend(6); await finished();      // (the simple rows: they settle her)
   }
   // Hoeing the onions: from one end of the path beside them to the other, slowly, the blade drawn through the soil between the two lines.
   async function hoeRow(r) {
     const p = pathBeside(r.id, m.pos.x), west = Math.abs(m.pos.x - RX0) < Math.abs(m.pos.x - RX1), a = new V3(west ? RX0 + 1 : RX1 - 1, 0, p.z), b = new V3(west ? RX1 - 1 : RX0 + 1, 0, p.z);
     await m.goTo(a, yawTo(a, b)); m.lookAt(new V3(b.x, 1, r.z));
-    m.stroke = true; await m.goTo(b, yawTo(a, b), { speed: 0.3 }); m.stroke = false; m.lookAt(null);      // (stroke: the blade drawn back and forth as she goes)
+    const dx = Math.sign(b.x - a.x); m.poleAt = () => new V3(m.pos.x + dx * 3, 0.4, r.z);      // (the blade between the two lines, a little ahead of her)
+    m.stroke = true; await m.goTo(b, yawTo(a, b), { speed: 0.3 }); m.stroke = false; m.poleAt = null; m.lookAt(null);      // (stroke: the blade drawn back and forth as she goes)
     change(w, g => { g.jobs[r.id] = true; }); spend(10); await finished();
   }
   async function pull(wd, p) {

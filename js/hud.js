@@ -266,7 +266,7 @@ function create(opts) {
   $('hHelp').addEventListener('click', e => { e.stopPropagation(); showSheet(); });
   // (debug: the way to the fair, its gates and days; everyone's trust; every step of the story, done or not; the save's flags. opts.debug() →
   // { fair: { day, phase, rows: [{ label, done, note }] }, trust: [{ who, name, value }], quests: [{ id, name, steps: [{ ref, title, done }] }],
-  // flags: [{ key, value }] }; opts.debugSet({ trust, by } | { quest, done } | { flag, on }). The game's held while it's open, as when paused.)
+  // flags: [{ key, value }] }; opts.debugSet({ trust, by } | { quest, done } | { flag, on } | { fair, on }). The game's held while it's open, as when paused.)
   const dbgEl = screen('hDebugCard', '<h2>Debug</h2><div class="tabs"><button data-t="fair">Fair</button><button data-t="trust">Trust</button><button data-t="story">Story</button><button data-t="flags">Flags</button></div>' +
     '<div class="rows"></div><button class="primary" data-k="close">Close</button>');
   const esc_ = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -283,7 +283,7 @@ function create(opts) {
     const clockRow = () => { const m = g.minute != null ? g.minute : 0, hh = String(Math.floor(m / 60)).padStart(2, '0'), mm = String(m % 60).padStart(2, '0');
       return '<div class="row dt dclock"><b>Day <input type="number" min="1" data-dday value="' + f.day + '"></b><span><input type="time" data-dtime value="' + hh + ':' + mm + '"><button data-k="settime">Set</button></span></div>'
         + '<div class="row dt dclock"><b>Go to</b><span><select data-dgo><option value="">(stay here)</option>' + PLACES.map(([a, e, l]) => '<option value="' + a + '|' + e + '">' + l + '</option>').join('') + '</select></span></div>'; };
-    if (dbgTab === 'fair') rows.innerHTML = clockRow() + '<div class="row"><small>Day ' + f.day + (f.phase ? ' · ' + esc_(f.phase) : '') + '</small></div>' + (f.rows || []).map(r => '<div class="row' + (r.done ? ' ok' : '') + '"><b>' + (r.done ? '✓ ' : '○ ') + esc_(r.label) + '</b>' + (r.note ? '<small>' + esc_(r.note) + '</small>' : '') + '</div>').join('');
+    if (dbgTab === 'fair') rows.innerHTML = clockRow() + '<div class="row"><small>Day ' + f.day + (f.phase ? ' · ' + esc_(f.phase) : '') + '</small></div>' + (f.rows || []).map(r => '<div class="row' + (r.done ? ' ok' : '') + '"><b>' + (r.key ? '<label class="dq"><input type="checkbox" data-fk="' + esc_(r.key) + '"' + (r.done ? ' checked' : '') + '> ' + esc_(r.label) + '</label>' : (r.done ? '✓ ' : '○ ') + esc_(r.label)) + '</b>' + (r.note ? '<small>' + esc_(r.note) + '</small>' : '') + '</div>').join('');
     else if (dbgTab === 'trust') rows.innerHTML = (g.stats || []).map(t => '<div class="row dt"><b>Red: ' + t.stat + '</b><span><button data-st="' + t.stat + '" data-by="-0.5">−</button><i>' + t.value + '</i><button data-st="' + t.stat + '" data-by="0.5">+</button></span></div>').join('') + (g.week != null ? '<div class="row"><small>This week’s tally: ' + g.week + ' (a reckoning at 7)</small></div>' : '') + (g.trust || []).map(t => '<div class="row dt"><b>' + esc_(t.name) + '</b><span><button data-tr="' + t.who + '" data-by="-1">−</button><i>' + t.value + '</i><button data-tr="' + t.who + '" data-by="1">+</button></span></div>').join('');
     else if (dbgTab === 'story') rows.innerHTML = (g.quests || []).map(l => '<div class="row"><small>' + esc_(l.name) + '</small>' + l.steps.map(st => '<label class="dq' + (st.done ? ' ok' : '') + '"><input type="checkbox" data-q="' + st.ref + '"' + (st.done ? ' checked' : '') + '> ' + esc_(st.title) + (st.optional ? ' <em>(optional)</em>' : '') + '</label>').join('') + '</div>').join('');
     else { for (const x of g.flags || []) dbgFlags.add(x.key); const on = {}; for (const x of g.flags || []) on[x.key] = x.value;
@@ -300,7 +300,7 @@ function create(opts) {
     if (d.tr && opts.debugSet) { opts.debugSet({ trust: d.tr, by: +d.by }); drawDebug(); }
     if (d.st && opts.debugSet) { opts.debugSet({ stat: d.st, by: +d.by }); drawDebug(); } });
   dbgEl.addEventListener('change', e => { const t = e.target, d = t.dataset || {}; if (!opts.debugSet) return;
-    if (d.q) opts.debugSet({ quest: d.q, done: t.checked }); else if (d.fl) opts.debugSet({ flag: d.fl, on: t.checked }); else return; drawDebug(); });      // (the day and time boxes wait for Set: redrawn now, the Set button would go from under the click)
+    if (d.q) opts.debugSet({ quest: d.q, done: t.checked }); else if (d.fk) opts.debugSet({ fair: d.fk, on: t.checked }); else if (d.fl) opts.debugSet({ flag: d.fl, on: t.checked }); else return; drawDebug(); });      // (the day and time boxes wait for Set: redrawn now, the Set button would go from under the click)
   // (how she's holding up, said in words for a moment, tapped or clicked)
   let capT = 0; $('hCap').addEventListener('click', e => { e.stopPropagation(); const say = $('hCapSay'); say.textContent = $('hCap').title; say.classList.add('on'); clearTimeout(capT); capT = setTimeout(() => say.classList.remove('on'), 2200); });
 

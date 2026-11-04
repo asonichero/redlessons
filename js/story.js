@@ -554,11 +554,11 @@ const bessFrock = () => [
   { who: 'bess', face: 'calm', listen: { red: 'smile' }, text: 'She let the hem down, after, and nobody knew but us. I wore it two more summers.' },
 ];
 const fittingCall = late => late ? [
-  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Four o’clock, I said. I’ve sat here with it in my lap for the best part of an hour.' },
+  { who: 'mother', face: 'stern', listen: { red: 'shy' }, text: 'Four o’clock, I said. I’ve sat here waiting with it in my lap.' },
   { who: 'red', face: 'shy', text: 'I’m sorry, Mama. I lost the time.' },
   { who: 'mother', face: 'calm', listen: { red: 'shy' }, text: 'Well, you’re here. Come on, then. Arms up.' },
 ] : [
-  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'There you are, and on the hour. Come here, then. Arms up, and mind the pins.' },
+  { who: 'mother', face: 'smile', listen: { red: 'smile' }, text: 'There you are, and in good time. Come here, then. Arms up, and mind the pins.' },
 ];
 const fitting = late => [
   { who: 'red', face: 'smile', thought: true, text: 'It’s blue. Forget-me-not blue, and soft, and it smells of the cupboard she kept the cloth in.' },

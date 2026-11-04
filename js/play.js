@@ -156,6 +156,7 @@ function create(view, opts) {
   // A place on the floor to stand to reach p, `off` in front of it along n (its way into the room), and the way to face.
   const standFor = (p, n, off) => { const s = flat(p).addScaledVector(n, off); return { at: collide(s, R), yaw: Math.atan2(-n.x, -n.z) }; };
   const surfaceFree = (s, at, rad) => !W.items.some(it => it !== m.carry && !it.peg && Math.abs(it.obj.position.y - s.y) < 0.5 && flat(it.obj.position).distanceTo(flat(at)) < (it.radius + rad + 0.4));
+  const TAKE = 16;      // (how near a thing to take up must be: close by it, as at the bakery)
   function options() {
     const out = [], me = flat(m.pos), f = fwd();
     const add = (o, p, reach) => { const d = flat(p).distanceTo(me); if (d > (reach || 24 * sc + 8)) return; const ahead = flat(p).sub(me).normalize().dot(f); o.score = d - ahead * 6; out.push(o); };      // (reach: a wider one, for a task she's sent to: offered as she comes toward it)
@@ -172,7 +173,7 @@ function create(view, opts) {
       if (look.outfit === 'No cloak' && h.redHung) add({ label: 'Put on your cloak', run: () => hangCloak(false) }, h.peg); }
     // (things to take: with her hands full, she'll have to put down what she has first; and she says so)
     for (const it of W.items) if (!it.away && !it.fixed && it !== m.carry && !(opts.canTake && !opts.canTake(it))) {      // (canTake: the story's say on what's hers to pick up today)
-      const p = it.obj.position.clone().add(it.grip), into = !!(opts.stowable && opts.stowable(it)); add({ label: into ? 'Put ' + it.name + ' in your basket' : 'Take ' + it.name, run: m.carry && !into ? () => handsFull() : () => take(it), full: !!m.carry && !into, pick: true }, p); }      // (pick: taking up and putting down are Q's; E is for doing)      // (into: what goes in her basket, the pot, the loaf; tools want her hands empty)
+      const p = it.obj.position.clone().add(it.grip), into = !!(opts.stowable && opts.stowable(it)); add({ label: into ? 'Put ' + it.name + ' in your basket' : 'Take ' + it.name, run: m.carry && !into ? () => handsFull() : () => take(it), full: !!m.carry && !into, pick: true }, p, TAKE); }      // (pick: taking up and putting down are Q's; E is for doing)      // (into: what goes in her basket, the pot, the loaf; tools want her hands empty)
     if (!m.carry || m.carry.kind === 'basket') { for (const s of W.seats) if (!s.noSit) add({ label: 'Sit on ' + s.name, run: () => sitOn(s) }, s.at); }      // (her basket on her arm as she sits: she has it out of doors always)
     else if (!m.carry.keep) {      // (keep: kept in her hands, nothing offered to put it down: the bluebells, till her mother has them. Anything else: Q puts it down, where she stands)
       const it = m.carry;

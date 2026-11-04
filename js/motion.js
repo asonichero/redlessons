@@ -370,9 +370,11 @@ function create(rig, opts) {
       // her left shoulder; her left hand high on it, her right lower down, as it's held to work; working (m.stroke), drawn back and forth)
       if (m.carryStyle === 'pole' && m.carry && m.carry.obj) {
         m.strokeT = (m.strokeT || 0) + dt; const st_ = m.stroke ? Math.sin(m.strokeT * 5) * 2.4 : 0;
+        // (m.poleAt: a function giving where the blade's to work (the onions' row, beside her path), drawn toward her and away there)
+        const flatTo = (a, b) => { const d = new V3(b.x - a.x, 0, b.z - a.z); return d.lengthSq() > 1e-6 ? d.normalize() : d; };
         // (raking (m.rakeAt, a point to rake from: the oven's mouth): the handle level from her hip, the blade in at it, drawn out and thrust in)
         const rk = m.rakeAt, pull = rk ? 0.5 + 0.5 * Math.sin(m.strokeT * 3) : 0, back = rk ? rk.clone().sub(r.root.localToWorld(new V3(0, rk.y, 0))).setY(0).normalize() : null;
-        const foot = rk ? rk.clone().addScaledVector(back, -pull * 7) : local(-1.6, 0.4, 12 + st_), top = rk ? local(0.8, hy + 3.5, -2) : local(2.4, hy + 11, 2.6), dir = top.clone().sub(foot);
+        const ha = m.poleAt && m.poleAt(), toHer = ha ? flatTo(ha, m.pos) : null, foot = rk ? rk.clone().addScaledVector(back, -pull * 7) : ha ? ha.clone().addScaledVector(toHer, st_ * 0.8) : local(-1.6, 0.4, 12 + st_), top = rk ? local(0.8, hy + 3.5, -2) : local(2.4, hy + 11, 2.6), dir = top.clone().sub(foot);
         const at = h => rk ? foot.clone().addScaledVector(dir, h > hy + 3 ? 0.9 : 0.6) : foot.clone().addScaledVector(dir, clamp((h - foot.y) / (dir.y || 1), 0, 1));      // (raking: the hands along the handle, near its end)
         const fw = new V3(Math.sin(m.yaw), 0, Math.cos(m.yaw)), y = dir.clone().normalize(), z = fw.clone().addScaledVector(y, -fw.dot(y)).normalize(), x = y.clone().cross(z);
         const it = m.carry; it.obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); it.obj.position.copy(foot);
@@ -380,7 +382,7 @@ function create(rig, opts) {
         for (const [s, sd, h] of [['L', 1, hy + 5.6], ['R', -1, hy + 1.6]]) { const base = qa(s); armIK(r, s, at(wy(h)), pole(sd, true)); blendArm(s, base, m.carryW * (1 - sitW * 0.3)); }
       } else
       for (const [s, sd] of [['L', 1], ['R', -1]]) {
-        if (m.carryStyle === 'hang' && s === 'L') continue;
+        if (m.carryStyle === 'hang' && s !== (m.carryHand || 'R')) continue;      // (m.carryHand: the hand it hangs from, the right unless she's changed it over)
         const base = qa(s), W = m.carryStyle === 'hang' ? local(sd * 3.4, hy + 1.6, 1.6) : local(sd * 1.5, hy + 4.6 - crouch * 2, 4.4);
         armIK(r, s, W, pole(sd, true)); blendArm(s, base, m.carryW * (1 - sitW * 0.3));
       }
@@ -510,7 +512,7 @@ function create(rig, opts) {
       const w = (1 - ease(m.sitW)) * (1 - ease(m.lieW)); if (w > 0 && Math.abs(m.gy) > 0.001) { rig.root.position.y += m.gy * w; rig.root.updateMatrixWorld(true); } }
     // Carried things follow the hand (or both hands), upright.
     if (m.carry && m.carryStyle !== 'pole') {      // (a pole's placed with her hands, above)
-      const r = rig, g = m.carryStyle === 'hang' ? r.handR.localToWorld(new V3(0, -0.9, 0)) : r.handR.localToWorld(new V3(0, -0.9, 0)).lerp(r.handL.localToWorld(new V3(0, -0.9, 0)), 0.5);
+      const r = rig, g = m.carryStyle === 'hang' ? (m.carryHand === 'L' ? r.handL : r.handR).localToWorld(new V3(0, -0.9, 0)) : r.handR.localToWorld(new V3(0, -0.9, 0)).lerp(r.handL.localToWorld(new V3(0, -0.9, 0)), 0.5);
       const it = m.carry; it.obj.quaternion.copy(yawQ(m.yaw + (it.spin || 0))); it.obj.position.copy(g).sub(it.grip.clone().applyQuaternion(it.obj.quaternion));
     }
     m.cbs = m.cbs.filter(c => { if (c.test()) { c.res(); return false; } return true; });

@@ -17,7 +17,7 @@
 'use strict';
 const THREE = root.THREE, V3 = THREE && THREE.Vector3;
 const H = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + (m || 0); };
-const SIXTH = 6, FIT = H('16:00'), LATE = 30, ENDS = H('22:00');
+const SIXTH = 6, FIT = H('16:00'), LATE = 15, EARLY = 15, ENDS = H('22:00');
 const MORNING = [H('08:00'), H('12:30')], AFTERNOON = [H('13:30'), H('17:30')];
 const weekday = d => ((Math.max(1, d) - 1) % 7) + 1;
 const stateOf = w => w.save.state.fair || (w.save.state.fair = { planted: 0, day: 0, fitted: 0, late: false, spoil: {} });
@@ -65,11 +65,10 @@ function breakfast(w) {
   return null;
 }
 // ── The fitting: from four on the Fifth day, with Red home and her mother at her needlework: arms up, and into it, and the hem pinned.
-const fittingDue = w => phase(w) === 'week' && w.cal.day === fitDay(w) && w.cal.minute >= FIT && stateOf(w).fitted !== w.cal.day;
+const fittingDue = w => phase(w) === 'week' && w.cal.day === fitDay(w) && w.cal.minute >= FIT - EARLY && stateOf(w).fitted !== w.cal.day;
 async function fitting(P, w) {
   const S = root.Story, m = P.motion, mm = P.npcMotion, late = w.cal.minute > FIT + LATE, V = V3;
-  change(w, x => { x.fitted = w.cal.day; x.late = late; });
-  if (late) w.rep.add('wilful', 0.5, 'late home for the fitting, after being told four');
+  if (P.sitting) await P.getUp();      // (up off her seat first: she can't come over to her mother sat down)
   if (mm && mm.seat && root.Maren) root.Maren.unsit(mm);
   await P.wait(0.4); await P.approach();
   await P.converse(S.fittingCall(late), { shot: ['red', 'mother'] });
@@ -86,6 +85,8 @@ async function fitting(P, w) {
     await mm.reach(k % 2 ? 'R' : 'L', P.motion.pos.clone().addScaledVector(f, 2.6).setY(3.5)); await P.wait(0.7); await mm.release(k % 2 ? 'R' : 'L'); } })();
   await P.converse(S.fitting(late), { shot: ['red', 'mother'] });
   on = false; await pins;
+  change(w, x => { x.fitted = w.cal.day; x.late = late; });      // (done only once it's done: cut short, it comes again)
+  if (late) w.rep.add('wilful', 0.5, 'late home for the fitting, after being told four');
   await w.fade(true);
   if (P.setGown) P.setGown(null);
   w.cal.advance(30);
@@ -99,7 +100,7 @@ function spoil(w, kind, n) { change(w, x => { x.spoil = x.spoil || {}; x.spoil[k
 // (Bess's story of her frock: once Red's been fitted, before the fair, or at it (with the fairing): not yet told)
 const frockDue = w => { const s = stateOf(w), fl = w.save.state.flags || {}; return !fl['bess-frock'] && !!s.fitted && (phase(w) === 'week' || phase(w) === 'fair'); };
 function objective(w) {
-  if (phase(w) === 'week' && w.cal.day === fitDay(w) && stateOf(w).fitted !== w.cal.day) return w.cal.minute < FIT ? 'Home by four, for Mama to fit the dress.' : 'Home: Mama’s waiting to fit the dress.';
+  if (phase(w) === 'week' && w.cal.day === fitDay(w) && stateOf(w).fitted !== w.cal.day) return w.cal.minute < FIT - EARLY ? 'Home by four, for Mama to fit the dress.' : 'Home: Mama’s waiting to fit the dress.';
   return null;
 }
 
