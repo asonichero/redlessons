@@ -84,7 +84,7 @@ function knead(P, at) {
     const key = e => { if (['KeyE', 'Space', 'Enter'].includes(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); tap(); } };
     addEventListener('keydown', key, true); const off = listen(cv, { pointerdown: tap });
     let last = performance.now();
-    const step = () => { if (done) return; const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+    const step = () => { if (done) return; const now = performance.now(), dt = Math.min(0.25, (now - last) / 1000); last = now; t += dt;
       const next = (k + 1) * GAP, left = next - t, r = 64 + Math.max(0, left) * 150; ring.style.width = ring.style.height = r + 'px';
       if (t > next + WIN) { if (pressed !== k) { mark.className = 'mark miss'; setTimeout(() => { mark.className = 'mark'; }, 220); } k++; }
       sq = Math.max(0, sq - dt * 4); place(sq); dough.scale.set(1 + sq * 0.12, 1 - sq * 0.2, 1 + sq * 0.12);

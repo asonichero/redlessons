@@ -26,7 +26,7 @@ const SHIFTS = {
     { id: 'boards', what: 'the boards', label: 'Scrub down the boards', place: 'table', mins: 25, kind: 'shape' },
     { id: 'ash', what: 'the oven', label: 'Rake the ash out of the oven', place: 'oven', mins: 20, kind: 'oven', tool: 'peel' },      // (tool: the paddle in her hands to do it)
     { id: 'sift', what: 'tomorrow’s flour', label: 'Sift tomorrow’s flour', place: 'table', mins: 25, kind: 'shape' },
-    { id: 'sponge', what: 'the sponge', label: 'Set the sponge for the morning', place: 'trough', mins: 30, kind: 'knead' },
+    { id: 'sponge', what: 'the sponge', label: 'Set the sponge for the morning', place: 'table', mins: 30, kind: 'knead' },
     { id: 'sweep', what: 'the floor', label: 'Sweep out', place: 'floor', mins: 30, kind: 'sweep', by: 'hand' },      // (by hand: done when the floor's clean (js/mess.js), not by a press)
   ] },
   // (the inn: Mistress Abney out of the room either way, so it's Bess's, from her chair. Carrier's day, given at breakfast: Abney away to Ashby
