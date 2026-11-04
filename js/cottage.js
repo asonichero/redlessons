@@ -456,7 +456,7 @@ function build(scene, opts) {
       solid(s, new THREE.CylinderGeometry(3.6, 3.6, 1.4, 18), oak, 0, SH - 0.7, 0, { ink: 0.1 });
       for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; pole(s, new V3(Math.cos(a) * 2.2, SH - 1.2, Math.sin(a) * 2.2), new V3(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4), 0.5, oak); }
       solid(s, new THREE.TorusGeometry(legR(RH), 0.32, 6, 24), oak, 0, RH, 0, { rot: [Math.PI / 2, 0, 0], ink: 0.06 });      // the foot ring
-      world.seats.push({ name: 'the stool', rung: RH, rungR: legR(RH), at: pc.P(0, SH, 0), facing: pc.ry, kind: 'stool', obj: s, top: SH });      // (obj, top: for standing her on it, js/fair.js's fitting) world.obstacles.push({ x: s.position.x, z: s.position.z, r: 3.8 });
+      world.seats.push({ name: 'the stool', rung: RH, rungR: legR(RH), at: pc.P(0, SH, 0), facing: pc.ry, kind: 'stool', obj: s, top: SH }); world.obstacles.push({ x: s.position.x, z: s.position.z, r: 3.8 });      // (obj, top: for standing her on it, js/fair.js's fitting)
     };
     stool('stoolA', 0.3 + Math.PI / 2); stool('stoolB', 1.1 + Math.PI / 2);      // (their legs at an angle: as they always stood)
   }
