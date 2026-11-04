@@ -638,7 +638,7 @@ function build(scene, opts) {
     return { at: p, yaw: Math.atan2(q.x - p.x, q.z - p.z), look: q.clone().setY(20) }; };
   const wellAt = new V3(GREEN.x + FX * 46, 0, GREEN.z + 30);
   world.spots = {
-    garden: { at: V(-336, -397), yaw: Math.PI / 2, look: new V3(-300, 1, -414) },      // (just in at the gate of Maren's garden, the rows before her)
+    garden: { at: V(-336, -386), yaw: Math.PI / 2, look: new V3(-300, 1, -403) },      // (just in at the gate of Maren's garden, the rows before her)
     well: { at: wellAt.clone().add(V(0, 12)), yaw: Math.PI, look: wellAt.clone().setY(8) },
     bakery: before(bakery, 'front', 14, 13), inn: before(inn, 'front', -6, 13), dunns: before(dunns, 'front', -16), forge: before(forge, 'front', 0, 20),
     pinfold: { at: V(492, -26), yaw: Math.PI, look: new V3(492, 6, -58) },

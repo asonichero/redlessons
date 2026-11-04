@@ -23,19 +23,19 @@ function hash(day, k) { let h = (day * 374761393 + k * 668265263) | 0; h = Math.
 // from its own side: nearest the house (its back wall the garden's north side, the hoe leant against it), the onions and the cabbages; then the pretty maids and the cockle shells; then the
 // silver bells and the beans, each in a thin bed of its own, a path between each two; a headland down either side; the water butt in the
 // north-east corner, the can at its foot.
-const X0 = -344, X1 = -248, Z0 = -493, Z1 = -373, RX0 = -331, RX1 = -261;      // (Z1: the cottage's back wall, the garden's north side: no fence there)
+const X0 = -344, X1 = -248, Z0 = -482, Z1 = -373, RX0 = -331, RX1 = -261;      // (Z1: the cottage's back wall, the garden's north side: no fence there)
 const ROWS = [
-  { id: 'onions', kind: 'veg', name: 'the onions', z: -414, stand: -406, job: 'Hoe between the onions' },      // (stand: worked only from this side)
-  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -420, stand: -426.5, job: 'Pick the caterpillars off the cabbages' },
-  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -437, stand: -431 },
-  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -443, stand: -449 },
-  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -460 },
-  { id: 'beans', kind: 'veg', name: 'the beans', z: -477, job: 'Tie the beans up their poles' },
+  { id: 'onions', kind: 'veg', name: 'the onions', z: -403, stand: -395, job: 'Hoe between the onions' },      // (stand: worked only from this side)
+  { id: 'cabbages', kind: 'veg', name: 'the cabbages', z: -409, stand: -415.5, job: 'Pick the caterpillars off the cabbages' },
+  { id: 'maids', kind: 'flowers', name: 'the pretty maids', z: -426, stand: -420 },
+  { id: 'cockles', kind: 'flowers', name: 'the cockle shells', z: -432, stand: -438 },
+  { id: 'bells', kind: 'flowers', name: 'the silver bells', z: -449 },
+  { id: 'beans', kind: 'veg', name: 'the beans', z: -466, job: 'Tie the beans up their poles' },
 ];
-const PATHS = [-397, -428.5, -451.5, -468.5, -485.5],      // (paths between the beds wide enough to walk without brushing them; the one by the house wide, up to its wall)
+const PATHS = [-386, -417.5, -440.5, -457.5, -474.5],      // (paths between the beds wide enough to walk without brushing them; the one by the house wide, up to its wall)
       HEAD = [-338.5, -253.5];
-const BUTT = V3 ? new V3(-253, 0, -389) : null, CAN = V3 ? new V3(-260, 0, -390) : null;
-const HOE = { x: -326, z: -376.6, top: -373.4 }, GATE = { x: X0, z: -397 }, HOE_STAND = V3 ? new V3(-326, 0, -382.5) : null;      // (the hoe, leaning on the cottage's back wall: its blade on the ground a step out, its handle's end against the wall)      // (the potting bench along the fence by the house: the trowel on it, room for a basket; the gate, from the path by the cottage)      // (no THREE under node's tests: the plan and the state only)
+const BUTT = V3 ? new V3(-253, 0, -380) : null, CAN = V3 ? new V3(-260, 0, -381) : null;
+const HOE = { x: -326, z: -376.6, top: -373.4 }, GATE = { x: X0, z: -386 }, HOE_STAND = V3 ? new V3(-326, 0, -382.5) : null;      // (the hoe, leaning on the cottage's back wall: its blade on the ground a step out, its handle's end against the wall)      // (the potting bench along the fence by the house: the trowel on it, room for a basket; the gate, from the path by the cottage)      // (no THREE under node's tests: the plan and the state only)
 const PER_ROW = 16, STEP = 4.3, fx = i => RX0 + 2 + i * STEP;
 // (how many trodden: a slip (a flower or three), careless (a stretch of them), or wanton (most of a bed, or more: not an accident, a want of care)
 const degree = n => n <= 3 ? 'slip' : n < 20 ? 'careless' : 'wanton';
