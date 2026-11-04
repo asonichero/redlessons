@@ -285,7 +285,7 @@ function attach(P, w) {
     away = false; if (rig && rig.root) rig.root.visible = true;
     if (mm && !(ID === 'inn' && w.fade)) { const at = short && spots.stair ? spots.stair.at : inAt(); mm.warp(at, Math.PI); const to = P.collide(m.pos.clone().setY(0).add(new V3(Math.sin(m.yaw) * 12, 0, Math.cos(m.yaw) * 12)), 3.2); await Promise.race([mm.goTo(to, Math.atan2(m.pos.x - to.x, m.pos.z - to.z)), P.wait(6)]); mm.face(Math.atan2(m.pos.x - mm.pos.x, m.pos.z - mm.pos.z)); await m.face(Math.atan2(mm.pos.x - m.pos.x, mm.pos.z - m.pos.z)); }
     change(w, x => { x.id = null; x.backAt = w.cal.minute; x.lastShift = ID; });      // (when she was back: Mistress Pennock home half an hour after, js/villagers.js)
-    if (ID === 'bakery') { await verdict(s, k, n, leftOf(s).map(t => t.what || t.label.toLowerCase())); return; }      // (the bakery: her look round, and the verdict on what she finds)
+    if (ID === 'bakery') { await verdict(s, k, n, left); return; }      // (left: worked out above, before the shift's put by)      // (the bakery: her look round, and the verdict on what she finds)
     if (s.mode === 'picked') {      // (the bakery's head start: more than half of it, her thanks; less, no harm done)
       const good = k * 2 > n;
       await P.converse(good ? lines.pickedGood || [] : lines.pickedSome || [], { shot: ['red', sh.boss] });
