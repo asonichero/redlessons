@@ -87,6 +87,45 @@ The cottage, Hulda's cabin and the path through the wood exist. The village is t
 
 Each area needs a dusk and a night state for the curfew and for the danger in the wood.
 
+## The bakery shift, reworked (agreed design, not yet built)
+
+Today the bakery is seven jobs in one cluster, each a press of E that jumps the clock, nothing that can go wrong, and time to spare. The aim is the hen level's way (asonichero/consequence, js/level.js): stakes come from how she works, and Mistress Pennock judges the state the bakery is left in. Everything stays in the existing room; nothing new is built outside it.
+
+**Mess you can see, and real sweeping.**
+- Flour already lies in patches on the floor when she comes in. Raking out the oven drops ash in front of it; sifting dusts the floor round the table.
+- Walking through flour or ash leaves white or grey footprints across clean floor (as Jack's mud does).
+- So she can sweep as she goes, keeping the prints down, or wait until the ash and sifting are done and sweep it all at once.
+- The broom is taken up and swept by hand: held, it clears whatever's under its head as she moves. Footprints count as mess too. No pail, no sweeping to a point: swept is gone.
+- The inn's sweep becomes manual as well, with no dirt drawn: Bess's "get the corners, that's where Mistress Abney looks", so the corners are what's checked. (Muddy prints from the carriers could come later.)
+
+**Tools: the broom and the baker's paddle.** Each taken from its place, used, and put back. The paddle rakes the ash out of the oven. Left lying about counts against her.
+
+**Sifting.** The sieve sits on the work surface over a lower flour bin. She brings a flour sack from the stack in the corner to the bin (heavy: slow, as the pot is), pours it, then taps the sieve to sift it through.
+
+**Small first-person tasks**, for closeness to the work:
+- **Scrubbing the boards:** the work surface seen close, dried dough on it, a scraper in her hand; click or touch each piece to scrape it off. Then the scraper's a cloth, and she wipes until she's covered the whole surface.
+- **Setting the sponge:** the dough on the surface, her hands kneading, rhythm prompts on screen. Out of rhythm, it doesn't rise well (found the next morning).
+- The trough task goes, and so do the racks (see below).
+
+**Buns.** A tray of buns by the hatch. Taking one is offered, and Red argues both sides before the choice (she's earned it; they're counted). A bun eaten restores energy: from her hand, or clicked on in her basket, and she reminds herself she has one when she's flagging. Mistress Pennock's thanks at the end, when it's earned, is a bun, and this time it's actually in her basket.
+
+**No reason to leave once she's in.** Tom at the window with a story, Agnes with gossip: distractions that take her time, never temptations out of the door.
+
+**Done early:** waiting by the oven is offered, with a line that says so ("I'll sit by the oven till she's back"), and fades to Mistress Pennock's return; she can choose not to yet.
+
+**Mistress Pennock's walk round** on her return: the floor (flour, ash, prints), the boards, the sifting, the sponge, the broom and paddle put back, the sack. Then "How did it go, Rose?": honest or glossed. A gloss she sees through costs more than the fault. The outcome is graded:
+- thanks and a bun;
+- a mild word;
+- a word to Maren that evening;
+- once she knows about Little Red, a correction, heavier for a gloss.
+
+**The room itself, true to the hour.** At the end of a morning's baking and selling the racks are sparse (full and varied only in fair week); no loaves by the hatch, the buns there instead. The racks are colour, not a task.
+
+**Questions still open:**
+- The head start (taken on mid-shift while she's out selling): which jobs, now the trough and racks are gone? Perhaps the boards and the sweep.
+- Does Mistress Pennock count the buns (a taken one noticed), or is a bun hers to take?
+- Controls for sweeping on a touch screen: hold the action button while walking?
+
 ## Milestones
 
 Act 1 playable end to end comes first, because it needs almost every system. Acts 2 and 3 are then mostly content.
