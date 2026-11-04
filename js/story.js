@@ -2069,7 +2069,7 @@ const bunsAsk = (n, ctx) => [
 const ovenWait = ctx => [
   { who: 'red', face: 'smile', thought: true, text: 'That’s the list. Everything done, and no sound of her yet.' },
   { choose: [
-    { text: 'Sit by the oven till she’s back.', face: 'smile', then: [{ run: ctx.wait }] },
+    { text: ctx.sat ? 'Wait here by the oven till she’s back.' : 'Sit on the bench by the oven till she’s back.', face: 'smile', then: [{ run: ctx.wait }] },
     { text: 'Not yet: I’ll look it all over first.', face: 'calm', then: [] },
   ] },
 ];

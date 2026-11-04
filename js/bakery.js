@@ -15,7 +15,7 @@ const DOOR = -22, DOOR_H = 38, HATCH = 18;      // (along the front wall, as x: 
 // oven, the counter and the door are the walls'.
 const PIECES = { table: 'The kneading table', racks: 'The racks of loaves', sacks: 'The flour sacks', bench: 'The bench by the counter' };
 const ROOM = KIT.roomLayout('red-lessons:room:bakery', {
-  table: { x: -18.5, z: -22.5, ry: 0 }, racks: { x: -42, z: 2, ry: 0 }, sacks: { x: 38, z: 22.5, ry: 0 }, bench: { x: 18, z: 25.5, ry: 0 },
+  table: { x: -21, z: -24, ry: 0 }, racks: { x: -42, z: 19, ry: 0 }, sacks: { x: 38, z: 22.5, ry: 0 }, bench: { x: 41, z: -13.5, ry: Math.PI / 2 },      // (the bench by the oven, to sit and wait)
 });
 
 function build(scene) {
@@ -68,9 +68,9 @@ function build(scene) {
     const dr = box(g, 9, 9, 0.8, cx - 12, 13, z + 9, iron); dr.rotation.y = -1.2;
     const light = new THREE.PointLight(srgb('#ff9a4a'), 1.1, 110, 1.4); light.position.set(cx, 12, z + 16); root_.add(light); glow.light = light;
     // (the peel, leaning by it: Mistress Pennock's paddle)
-    world.peel = [pole(g, new V3(cx + 20, 0.5, z + 8), new V3(cx + 21, 30, z + 6.5), 0.45, toonMap(tx.oak))];
-    world.peel.push(solid(g, new THREE.BoxGeometry(6, 0.6, 7.5).translate(0, 0, 0), toonMap(tx.oak), cx + 20.1, 3, z + 8.5, { rot: [Math.PI / 2 - 0.05, 0, 0.04], ink: 0.06 }));
-    world.obstacles.push({ x0: cx - 18, x1: cx + 24, z0: Z0, z1: Z0 + 10 });
+    world.peel = [pole(g, new V3(cx - 21, 0.5, z + 8), new V3(cx - 22, 30, z + 6.5), 0.45, toonMap(tx.oak))];      // (on the oven's left, the bench on its right)
+    world.peel.push(solid(g, new THREE.BoxGeometry(6, 0.6, 7.5).translate(0, 0, 0), toonMap(tx.oak), cx - 21.1, 3, z + 8.5, { rot: [Math.PI / 2 - 0.05, 0, 0.04], ink: 0.06 }));
+    world.obstacles.push({ x0: cx - 24, x1: cx + 18, z0: Z0, z1: Z0 + 10 });
   }
   // ── The furniture, each piece about its own middle, set where the layout says; with the wall it's nearest (hidden with it), or the floor.
   const F = KIT.furnish(ROOM.layout(), PIECES), pieces = F.pieces, piece = F.piece, wall = KIT.nearWall(W, floorG, X0, X1, Z0, Z1);
@@ -148,7 +148,7 @@ function build(scene) {
   // (at a piece: x, z, the reach's height, in its own frame, and the way she faces in it; so they go with it wherever it's put)
   const at = (id, x, z, yaw, lx, ly, lz) => { const pc = pieces[id], p = pc.P(x, 0, z), l = pc.P(lx, ly, lz); return { at: new V3(p.x, 0, p.z), yaw: yaw + pc.ry, look: l }; };
   world.work = {
-    trough: at('table', 5, 10.5, Math.PI, 5, 16, 0), table: at('table', 0, 10.5, Math.PI, 0, 16, 0), peel: spot(36, -15, Math.PI, 38.5, 14, -24),
+    trough: at('table', 5, 10.5, Math.PI, 5, 16, 0), table: at('table', 0, 10.5, Math.PI, 0, 16, 0), peel: spot(-3, -15, Math.PI, -3.5, 14, -24),
     oven: spot(18, -15, Math.PI, 18, 11, -25), floor: spot(0, 6, 0, 0, 0.5, 12), racks: at('racks', 8, 0, -Math.PI / 2, 0, 16, 0), counter: spot(18, 26, 0, 18, 14, 35),
     broom: world.work_broom, bin: at('table', -17, 9.5, Math.PI, -17, 10, 0), sacks: at('sacks', -13, -9, Math.PI / 2, -2, 6, -6),      // (bin: the flour bin at the table's end; sacks: before the stack, a sack taken up)
   };

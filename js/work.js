@@ -98,6 +98,7 @@ function attach(P, w) {
   const gone = () => { away = true; if (rig && rig.root) rig.root.visible = false; if (mm) mm.warp(new V3(0, 0, -900), 0); };
   const inAt = () => { const e = W.entries && W.entries.door; return e ? new V3(e.at[0], 0, e.at[1]) : new V3(-22, 0, 26); };
   const lines = (S.WORK && S.WORK[ID]) || {};
+  const RCH = ID === 'bakery' ? 16 : 45;      // (how far off a thing to do is offered: the bakery's close together, so only from by it)
   // ── The floor (js/mess.js): at the bakery the flour as she finds it, the ash and dust she makes, the prints she walks about; at the inn, the
   // corners, where Mistress Abney looks. Swept by hand, the broom held and the act held down. (start: how much there was, to weigh what's left)
   const innCorners = () => { const b = W.bounds; if (!b) return []; const k = 8; return [[b.x0 + k, b.z0 + k], [b.x1 - k, b.z0 + k], [b.x0 + k, b.z1 - k], [b.x1 - k, b.z1 - k]].map(([x, z]) => P.collide(new V3(x, 0, z), 3)); };
@@ -118,29 +119,28 @@ function attach(P, w) {
   const open = () => { const s = cur(); return s ? leftOf(s).filter(t => t.kind !== 'service' && (!t.after || doneOf(s).includes(t.after))) : []; };
   function actions() {
     const s = cur(); if (!s || P.busy) return [];
-    if (carrying) return carrying.id === 'tea' && spots.bess ? [{ label: 'Give Bess her tea', at: spots.bess.look.clone(), reach: 45, run: () => giveTea() }] : [];
+    if (carrying) return carrying.id === 'tea' && spots.bess ? [{ label: 'Give Bess her tea', at: spots.bess.look.clone(), reach: RCH, run: () => giveTea() }] : [];
     const where = t => { const top = W.tableTops && W.tableTops[t.id]; return top ? new V3((top.x0 + top.x1) / 2, top.y, (top.z0 + top.z1) / 2) : (byBroom(t) ? spots.broom : spots[t.place] || spots.floor).look.clone(); };      // (a table: offered from any side of it)
     const tools = toolOffers(); if (tools) return tools;
-    return open().filter(t => !t.by && !t.tool && !(ID === 'bakery' && t.id === 'sift')).map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: where(t), reach: 45, run: () => m.carry ? P.handsFull() : doTask(t) })).concat(starts());
+    return open().filter(t => !t.by && !t.tool && !(ID === 'bakery' && t.id === 'sift')).map(t => ({ label: byBroom(t) ? 'Take up the broom' : t.label, at: where(t), reach: RCH, run: () => m.carry ? P.handsFull() : doTask(t) })).concat(starts());
   }
   // (in her hands: the broom (swept with, the act held; or put back where it leans), the paddle (the oven raked out with it; put back), a sack
   // of flour (poured into the bin))
   const holding = n => !!(m.carry && m.carry.name === n), near = (p, d) => !!p && Math.hypot(m.pos.x - p.x, m.pos.z - p.z) < (d || 14);
   function toolOffers() {
-    if (holding('the broom')) return [{ label: 'Sweep', at: m.pos.clone().setY(3), reach: 45, run: async () => {} }].concat(W.work.broom && near(W.work.broom.at, 12) ? [{ label: 'Put the broom back', pick: true, at: W.work.broom.look.clone(), reach: 45, run: () => broom.put() }] : []);      // (Sweep: E held down, js/mess.js; putting it back, Q's)
-    if (holding('the peel')) { const t = open().find(x => x.tool === 'peel'), out = []; if (t && spots.oven) out.push({ label: t.label, at: spots.oven.look.clone(), reach: 45, run: () => rake(t) }); if (W.work.peel) out.push({ label: 'Put the paddle back', pick: true, at: W.work.peel.look.clone(), reach: 45, run: () => peel.put() }); return out; }
-    if (holding('a sack of flour')) return spots.bin ? [{ label: 'Pour the flour into the bin', at: spots.bin.look.clone(), reach: 45, run: () => pour() }] : [];
+    if (holding('the broom')) return [{ label: 'Sweep', at: m.pos.clone().setY(3), reach: RCH, run: async () => {} }].concat(W.work.broom && near(W.work.broom.at, 12) ? [{ label: 'Put the broom back', pick: true, at: W.work.broom.look.clone(), reach: RCH, run: () => broom.put() }] : []);      // (Sweep: E held down, js/mess.js; putting it back, Q's)
+    if (holding('the peel')) { const t = open().find(x => x.tool === 'peel'), out = []; if (t && spots.oven) out.push({ label: t.label, at: spots.oven.look.clone(), reach: RCH, run: () => rake(t) }); if (W.work.peel) out.push({ label: 'Put the paddle back', pick: true, at: W.work.peel.look.clone(), reach: RCH, run: () => peel.put() }); return out; }
+    if (holding('a sack of flour')) return spots.bin ? [{ label: 'Pour the flour into the bin', at: spots.bin.look.clone(), reach: RCH, run: () => pour() }] : [];
     return null;
   }
   // (taken up: the broom, any time; the paddle, while the oven's to rake; a sack, while the flour's to sift, and the sifting once it's in the bin)
   function starts() {
     const out = [], s = cur(); if (!s) return out; const left = id => open().some(x => x.id === id);
-    if (W.work.broom && tasksOf(s).some(x => x.by === 'hand')) out.push({ label: 'Take up the broom', pick: true, at: W.work.broom.look.clone(), reach: 45, run: () => m.carry ? P.handsFull() : broom.take() });
-    if (W.work.peel && left('ash') && ID === 'bakery') out.push({ label: 'Take up the paddle', pick: true, at: W.work.peel.look.clone(), reach: 45, run: () => m.carry ? P.handsFull() : peel.take() });
-    if (ID === 'bakery' && spots.counter && !s.back) out.push({ label: 'Look at the buns', at: spots.counter.look.clone(), reach: 45, run: () => m.carry ? P.handsFull() : buns() });
-    if (ID === 'bakery' && spots.oven && !leftOf(s).length && !s.back) out.push({ label: 'Sit by the oven and wait', at: spots.oven.look.clone(), reach: 45, run: () => ovenWait() });
-    if (ID === 'bakery' && left('sift') && spots.bin) { if (s.poured) out.push({ label: 'Sift the flour', at: spots.bin.look.clone(), reach: 45, run: () => m.carry ? P.handsFull() : sift() });
-      else if (spots.sacks) out.push({ label: 'Take a sack of flour', pick: true, at: spots.sacks.look.clone(), reach: 45, run: () => m.carry ? P.handsFull() : takeSack() }); }
+    if (W.work.broom && tasksOf(s).some(x => x.by === 'hand')) out.push({ label: 'Take up the broom', pick: true, at: W.work.broom.look.clone(), reach: RCH, run: () => m.carry ? P.handsFull() : broom.take() });
+    if (W.work.peel && left('ash') && ID === 'bakery') out.push({ label: 'Take up the paddle', pick: true, at: W.work.peel.look.clone(), reach: RCH, run: () => m.carry ? P.handsFull() : peel.take() });
+    if (ID === 'bakery' && spots.counter && !s.back) out.push({ label: 'Look at the buns', at: spots.counter.look.clone(), reach: RCH, run: () => m.carry ? P.handsFull() : buns() });
+    if (ID === 'bakery' && left('sift') && spots.bin) { if (s.poured) out.push({ label: 'Sift the flour', at: spots.bin.look.clone(), reach: RCH, run: () => m.carry ? P.handsFull() : sift() });
+      else if (spots.sacks) out.push({ label: 'Take a sack of flour', pick: true, at: spots.sacks.look.clone(), reach: RCH, run: () => m.carry ? P.handsFull() : takeSack() }); }
     return out;
   }
   // (the oven raked out, the paddle in her hands: the ash, in front of the oven's mouth, where she'll walk through it if she isn't careful)
@@ -187,6 +187,10 @@ function attach(P, w) {
     if (w.cal.minute >= s.until) due = true;      // (her hour come)
     if (due && !P.busy) { due = false; allDone = false; P.act(back); }
   });
+  // (the bakery, all of it done: sat on the bench by the oven, she's asked whether to wait there for Mistress Pennock; once each time she sits)
+  let benchAsked = false;
+  P.tick(() => { if (ID !== 'bakery') return; const s = cur(), sat = P.sitting && P.sitting.name === 'the bench'; if (!sat) { benchAsked = false; return; }
+    if (benchAsked || !s || s.back || leftOf(s).length || P.busy || (talk && talk.playing)) return; benchAsked = true; P.act(ovenWait); });
   P.tick(() => { if (offerDue && !P.busy && !(talk && talk.playing) && cur() && !cur().back) { offerDue = false; P.act(sitWithBess); } });
 
   function markDone(id) {
@@ -361,8 +365,8 @@ function attach(P, w) {
     if (!took) return; const sp = spots.counter; if (sp) { await place(sp.at, sp.yaw); await reachAt(sp.look, 'R', 0.3); }
     change(w, x => { x.bun = (x.bun || 0) + 1; }); if (w.capacity) w.capacity.add(12, 'a bun'); if (talk) talk.muse('Still warm. Oh, that’s better.', { face: 'smile' }); }
   // (all done: the oven, sat by, and the time let go till she's back; or not yet)
-  async function ovenWait() { let yes = false; await P.converse(S.ovenWait({ wait: () => { yes = true; } }), { shot: false, keepCamera: true }); if (!yes) return;
-    const o = spots.oven; if (o && !P.sitting) { const d = new V3(o.at.x - o.look.x, 0, o.at.z - o.look.z); if (d.lengthSq() < 1) d.set(0, 0, 1); const at = P.collide(o.at.clone().setY(0).addScaledVector(d.normalize(), 4), 3.2); await arrive(at, Math.atan2(o.look.x - at.x, o.look.z - at.z)); }
+  async function ovenWait() { let yes = false; await P.converse(S.ovenWait({ sat: !!P.sitting, wait: () => { yes = true; } }), { shot: false, keepCamera: true }); if (!yes) return;
+    if (!P.sitting) { const seat = (W.seats || []).find(x => x.name === 'the bench'); if (seat) await P.sitOn(seat); }      // (on the bench by the oven)
     const s = cur(); if (!s) return; await w.fade(true); w.cal.advance(Math.max(0, s.until - w.cal.minute)); await w.fade(false); }
   async function finish(up) {
     if (w.chores && w.chores.shiftDone) w.chores.shiftDone(sh.errand);
