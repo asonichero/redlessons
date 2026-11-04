@@ -17,7 +17,7 @@ function create(view, opts) {
   st.setLight(opts.light || 0);
   let look = (root.Looks && Looks.load ? Looks.load() : {}).red;
   let gown = opts.gown || null;      // (what she's wearing under the cloak, when it's not her everyday: { kind: 'fair', spoil: { earth, soot, wet, tear } }, js/fair.js)
-  const dressed = l => gown ? Object.assign({}, l, { gown: gown.kind, spoil: gown.spoil || {} }) : l;
+  const dressed = l => gown ? Object.assign({}, l, { gown: gown.kind, spoil: gown.spoil || {}, outfit: 'No cloak' }) : l;      // (the fair dress: no cloak over it)
   let rig = Toon.make('red', dressed(look)); st.scene.add(rig.root); st.cast(rig);
   const sc = rig.scaleW, R = 3.2 * sc, start = opts.start || { at: [4, 2], yaw: Math.PI };
   rig.root.position.set(start.at[0], 0, start.at[1]); rig.root.rotation.y = start.yaw;

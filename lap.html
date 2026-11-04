@@ -159,10 +159,10 @@
       const top = s => () => { const h = rig.headGroup.getWorldPosition(new V()); return h.add(new V(0, 1.9 * sc, 0)).addScaledVector(sd(), (s === 'L' ? 1 : -1) * 0.9 * sc).addScaledVector(fw(), -0.35 * sc); };
       m.reach('L', top('L')); m.reach('R', top('R')); }
     else {      // (hands together: behind the back, supervising; in front, waiting)
-      const k = present.as === 'supervising' ? -2.0 : 2.2, hands = s => () => m.pos.clone().add(new V(0, 10.6 * sc, 0)).addScaledVector(fw(), k * sc).addScaledVector(sd(), (s === 'L' ? 1 : -1) * 0.35 * sc);
+      const k = present.as === 'supervising' ? -(window.__hk || 3.4) : (window.__hk || 3.4), up = window.__hy != null ? window.__hy : 2.0, hands = s => () => rig.hips.getWorldPosition(new V()).setX(m.pos.x).setZ(m.pos.z).add(new V(0, up * sc, 0)).addScaledVector(fw(), k * sc).addScaledVector(sd(), (s === 'L' ? 1 : -1) * 0.5 * sc);      // (clasped at the waist, clear of the clothes: above the skirt's flare, out from the belt)
       m.reach('L', hands('L')); m.reach('R', hands('R')); }
     const off = lap.addTick(dt => { m.update(dt, null); if (present.as !== 'after') m.lookAt(lap.stage.localToWorld(new V(0, 12, 2))); rig.tick(dt); });
-    fig = { rig, off };
+    fig = { rig, off, m }; window.__present = fig;      // (for a look in from outside: tests)
   }
   // The corrector for a figure (js/correctors.js), if they are one; their own implement, if so; and who they're taking in hand, as a subject.
   const correctorOf = id => { for (const k in C.CORRECTORS) if (C.CORRECTORS[k].rig === id) return C.corrector(k); return null; };

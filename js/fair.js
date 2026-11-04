@@ -76,19 +76,23 @@ async function fitting(P, w) {
   await w.fade(true);
   if (P.sitting && root.Maren) { root.Maren.unsit(m); P.sitting = null; }
   const red = P.collide(new V(4, 0, 4), 3.4), mam = P.collide(new V(4, 0, 12), 3.4), yaw = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+  // (a stool brought out into the middle of the room, and Red stood up on it: the hem up where her mother can get at it)
+  const W = P.world, stool = W.seats.find(s => s.name === 'the stool' && s.obj), was = stool && { pos: stool.obj.position.clone(), ground: W.ground }, top = stool ? stool.top : 0;
+  if (stool) { stool.obj.position.set(red.x, stool.obj.position.y, red.z); const g0 = was.ground; W.ground = p => Math.hypot(p.x - red.x, p.z - red.z) < 3 ? top : g0 ? g0(p) || 0 : 0; }
   m.warp(red, yaw(red, mam)); if (mm) mm.warp(mam, yaw(mam, red));
   if (P.setGown) P.setGown({ kind: 'fair', spoil: {} });
   for (let i = 0; i < 20; i++) P.frame(1 / 60); P.stage.camera.updateMatrixWorld();
   await P.wait(0.3); await w.fade(false);
   // (her hands at the hem, a pin at a time, going round)
   let on = true; const pins = (async () => { let k = 0; while (on && mm) { const a = (k++ % 6) / 6 * Math.PI - Math.PI / 2, f = new V(Math.sin(P.motion.yaw + a), 0, Math.cos(P.motion.yaw + a));
-    await mm.reach(k % 2 ? 'R' : 'L', P.motion.pos.clone().addScaledVector(f, 2.6).setY(3.5)); await P.wait(0.7); await mm.release(k % 2 ? 'R' : 'L'); } })();
+    await mm.reach(k % 2 ? 'R' : 'L', P.motion.pos.clone().addScaledVector(f, 2.6).setY(top + 3.5)); await P.wait(0.7); await mm.release(k % 2 ? 'R' : 'L'); } })();
   await P.converse(S.fitting(late), { shot: ['red', 'mother'] });
   on = false; await pins;
   change(w, x => { x.fitted = w.cal.day; x.late = late; });      // (done only once it's done: cut short, it comes again)
   if (late) w.rep.add('wilful', 0.5, 'late home for the fitting, after being told four');
   await w.fade(true);
   if (P.setGown) P.setGown(null);
+  if (stool) { W.ground = was.ground; stool.obj.position.copy(was.pos); const off = P.collide(red.clone().add(new V(0, 0, 5)), 3.4); P.motion.warp(off, P.motion.yaw); P.rig.root.position.copy(off); }      // (down off it, and the stool put back by the table)
   w.cal.advance(30);
   await P.wait(0.3); await w.fade(false);
   w.refresh();
