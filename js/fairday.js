@@ -287,8 +287,11 @@ function wake(P, w) {
   w.save.change(x => { if (x.chores) x.chores.bag = null; });      // (nor set by to be taken up again as she stands (js/chores.js's takeUp): it's on its peg, and stays there)      // (her basket on its peg, her hands empty; her mother's gone from the peg beside it: she's out with it)
   if (P.setGown) P.setGown({ kind: 'undressed' }); if (P.setDress) P.setDress({ skirt: 'off' });
   const bed = W.seats.find(s => s.kind === 'bed'); if (bed) P.seatNow(bed);
-  const ch = W.seats.find(s => s.kind === 'chair'), back = ch ? ch.at.clone().add(new V3(-Math.sin(ch.facing) * 2.6, 6.4, -Math.cos(ch.facing) * 2.6)) : new V3(-20, 15, -28);
-  const dress = folded(T); dress.position.copy(back); dress.rotation.y = ch ? ch.facing + Math.PI / 2 : 0; sc.add(dress);
+  // (her mother's chair, by the hearth, as it is when she sits at her needlework; the dress over the top rail of its back; not to sit on, with it there)
+  if (W.moveChair) W.moveChair('hearth');
+  const ch = W.seats.find(s => s.kind === 'chair'), f = ch ? new V3(Math.sin(ch.facing), 0, Math.cos(ch.facing)) : new V3(0, 0, 1);
+  const back = ch ? ch.at.clone().setY(0).addScaledVector(f, -1.8 - 2.75).setY(ch.at.y + 10.7 + 0.35) : new V3(-20, 15, -28);      // (js/toon.js's makeChair: the back's top rail, 2.75 behind the chair's middle, 10.7 over the seat)
+  const dress = folded(T); dress.position.copy(back); dress.rotation.y = ch ? ch.facing : 0; sc.add(dress); if (ch) ch.noSit = true;
   const pails = [new V3(-50, 0, 21), new V3(-45.5, 0, 19.5)].map(p => { const b = bucket(T); b.position.copy(p); sc.add(b); W.obstacles.push({ x: p.x, z: p.z, r: 2.4 }); return b; });
   w.fairMorningSet = { dress, pails, seen: {} };
 }
@@ -329,7 +332,7 @@ async function dressed(P, w) {
   await w.fade(true);
   if (held) { mm.drop(); held.obj.position.copy(held.home.pos); held.obj.rotation.set(0, held.home.rot, 0); held.obj.visible = false; }      // (set by: she'll take it with her to the stall, so not on its peg today)
   rehang(P);
-  P.stage.scene.remove(set.dress);
+  P.stage.scene.remove(set.dress); { const ch = W.seats.find(s => s.kind === 'chair'); if (ch) ch.noSit = false; }
   if (P.setDress) P.setDress({ skirt: 'down' }); if (P.setGown) P.setGown(root.Fair.gown(w));
   const Q = P.motion, red = P.collide(new V3(2, 0, 6), 3.4), yaw = Math.PI * 0.75, f = new V3(Math.sin(yaw), 0, Math.cos(yaw)), mam = red.clone().addScaledVector(f, -5);
   Q.warp(red, yaw); P.rig.root.position.copy(red); if (mm) mm.warp(mam, yaw);
