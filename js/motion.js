@@ -276,7 +276,7 @@ function create(rig, opts) {
       // (on her right side over the covers, facing into the room, a little curled: as she lies at bedtime, js/bed.js)
       const head = m.bed.head, feet = m.bed.feet, along = head.clone().sub(feet).setY(0).normalize(), front = m.bed.front ? m.bed.front.clone() : new V3().crossVectors(UP, along).normalize(), X = new V3().crossVectors(along, front);
       const lieQ = new Q().setFromRotationMatrix(_m.makeBasis(X, along, front)), headH = (D.hipY + D.torsoY + D.neckY + D.headY + D.headC + 2.1 * (D.headScale - 1)) * sc;
-      const liePos = head.clone().addScaledVector(along, -headH).addScaledVector(front, 1.4 * sc).addScaledVector(X, -3.3 * sc).setY(Math.max(head.y, feet.y) + 0.7);      // (the hip 3.3 up off the quilt, the figure's left being up: X points up the root's side)
+      const liePos = head.clone().addScaledVector(along, -headH - 3.2 * sc).addScaledVector(front, 1.4 * sc).addScaledVector(X, -3.3 * sc).setY(Math.max(head.y, feet.y) + 0.7);      // (her head down on the bolster, not over its end)      // (the hip 3.3 up off the quilt, the figure's left being up: X points up the root's side)
       rootPos.lerp(liePos, lieW); rootQ.slerp(lieQ, lieW);
     }
     r.root.position.copy(rootPos); r.root.quaternion.copy(rootQ);
@@ -361,8 +361,10 @@ function create(rig, opts) {
       r.neck.rotation.x = lerp(r.neck.rotation.x, 0.18, lieW); r.neck.rotation.y *= 1 - lieW; r.head.rotation.set(r.head.rotation.x * (1 - lieW), r.head.rotation.y * (1 - lieW), r.head.rotation.z * (1 - lieW));
       r.root.updateMatrixWorld(true);
       const along = m.bed.head.clone().sub(m.bed.feet).setY(0).normalize(), front = m.bed.front ? m.bed.front.clone() : new V3().crossVectors(UP, along).normalize(), chest = r.torso.localToWorld(new V3(0, 5.2, 3.2));
-      for (const [s, da, du] of [['L', 1.2, 1.2], ['R', 2.4, -1.6]]) { const base = [r['arm' + s].quaternion.clone(), r['elbow' + s].quaternion.clone()];
-        armIK(r, s, chest.clone().addScaledVector(along, da * sc).addScaledVector(UP, du * sc), front.clone().addScaledVector(along, s === 'L' ? -0.5 : -0.6));
+      const side = new V3().crossVectors(along, front);      // (her left side: up, lying on her right)
+      for (const [s, da, du] of [['L', 0.6, 0.6], ['R', 2.4, -1.6]]) { const base = [r['arm' + s].quaternion.clone(), r['elbow' + s].quaternion.clone()];
+        const pole = s === 'L' ? along.clone().negate().addScaledVector(front, 0.3).addScaledVector(side, -0.6) : front.clone().addScaledVector(along, -0.6).addScaledVector(side, -0.4);      // (the upper arm's elbow down at her waist, resting along her side; the lower one's on the bed before her)
+        armIK(r, s, chest.clone().addScaledVector(along, da * sc).addScaledVector(UP, du * sc), pole);
         const a = r['arm' + s].quaternion, e = r['elbow' + s].quaternion, ia = a.clone(), ie = e.clone(); a.copy(base[0]).slerp(ia, lieW); e.copy(base[1]).slerp(ie, lieW); }
     }
     r.root.updateMatrixWorld(true);
@@ -510,7 +512,8 @@ function create(rig, opts) {
     let low = 0; for (const s of ['L', 'R']) { const h = m.hands[s]; if (h.target && h.want) { const p = typeof h.target === 'function' ? h.target() : h.target; low = Math.max(low, clamp((10.5 * sc - p.y) / (7.5 * sc), 0, 1)); } }
     m.crouch = approach(m.crouch, low * Math.max(m.hands.L.want, m.hands.R.want), 3.5, dt);
     if (m.seat) m.yaw = lerp(m.sitFrom.yaw, m.sitFrom.yaw + angDiff(m.sitFrom.yaw, m.seat.facing), ease(Math.min(1, m.sitW * 1.6)));
-    if (rig.setSeated) rig.setSeated(Math.max(m.sitW, m.lieW));      // (lying, too, the skirt laid over her legs as when she sits)
+    if (rig.setSeated) rig.setSeated(Math.max(m.sitW, m.lieW));
+    rig.hairHeld = m.lieW > 0.5;      // (lying, her hair lies where it falls, not swung about: as at bedtime, js/bed.js)      // (lying, too, the skirt laid over her legs as when she sits)
     locomote(dt, input);
     stepFeet(dt);
     pose(dt);
