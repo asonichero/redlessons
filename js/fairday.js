@@ -274,10 +274,16 @@ function folded(T) {
   m(new THREE.BoxGeometry(2.6, 0.5, 2.3), T.mat('#fbf8f2'), -1.2, 0.5, 0, 0.03);      // (the collar, folded on top)
   return g;
 }
+// (her basket back on its peg, if she has it: the cottage's own, put back where it hangs)
+function rehang(P) {
+  const c = P.motion.carry; if (!c) return; P.motion.drop();
+  if (c.peg) { c.obj.position.copy(c.peg.at).sub(c.grip); c.obj.rotation.set(0, 0, 0); c.peg.item = c; c.away = false; if (!P.world.items.includes(c)) P.world.items.push(c); }
+  else P.stage.scene.remove(c.obj);
+}
 // Set the room for it, as it's built (world.js's begin): Red on her bed in her shift; the dress and the buckets; her mother out.
 function wake(P, w) {
   const T = root.Toon, W = P.world, sc = P.stage.scene; w.fairMaren = 'out';
-  { const c = P.motion.carry; if (c) { P.motion.drop(); c.obj.position.set(-34, 0, -6); c.obj.rotation.set(0, 0.4, 0); if (!W.items.includes(c)) W.items.push(c); } }      // (her hands empty: whatever she brought in last night set down by her bed)
+  rehang(P); if (W.marenBasket) W.marenBasket.visible = false;      // (her basket on its peg, her hands empty; her mother's gone from the peg beside it: she's out with it)
   if (P.setGown) P.setGown({ kind: 'undressed' }); if (P.setDress) P.setDress({ skirt: 'off' });
   const bed = W.seats.find(s => s.kind === 'bed'); if (bed) P.seatNow(bed);
   const ch = W.seats.find(s => s.kind === 'chair'), back = ch ? ch.at.clone().add(new V3(-Math.sin(ch.facing) * 2.6, 6.4, -Math.cos(ch.facing) * 2.6)) : new V3(-20, 15, -28);
@@ -314,13 +320,14 @@ async function dressed(P, w) {
   const S = root.Story, W = P.world, m = P.motion, set = w.fairMorningSet;
   w.fairMaren = 'in'; await P.wait(0.2);
   const mm = P.npcMotion; for (let k = 0; k < 60 && (!mm || P.npcMoving || P.npcAway); k++) await P.wait(0.1);      // (in by the door, and over to where she stands)
-  const it = W.items.find(x => x.kind === 'basket'); let held = null;
-  if (mm && it) { const o = it.obj.clone(); P.stage.scene.add(o); held = { obj: o, name: 'her basket', grip: it.grip.clone(), radius: it.radius, hangs: true }; mm.hold(held, 'hang'); }
+  const mb = W.marenBasket; let held = null;      // (her own basket, the one gone from the peg)
+  if (mm && mb) { mb.visible = true; held = { obj: mb, name: 'her basket', grip: new V3(0, 6.5, 0), radius: 3.4, hangs: true, home: { pos: mb.position.clone(), rot: mb.rotation.y } }; mm.hold(held, 'hang'); }
   if (P.sitting) await P.getUp(); await P.approach();
   await P.converse(S.fairMorning('in'), { shot: ['red', 'mother'] });
   // (into the dress, under a fade: stood in the middle of the room, her mother behind her at the buttons)
   await w.fade(true);
-  if (held) { mm.drop(); P.stage.scene.remove(held.obj); }
+  if (held) { mm.drop(); held.obj.position.copy(held.home.pos); held.obj.rotation.set(0, held.home.rot, 0); held.obj.visible = false; }      // (set by: she'll take it with her to the stall, so not on its peg today)
+  rehang(P);
   P.stage.scene.remove(set.dress);
   if (P.setDress) P.setDress({ skirt: 'down' }); if (P.setGown) P.setGown(root.Fair.gown(w));
   const Q = P.motion, red = P.collide(new V3(2, 0, 6), 3.4), yaw = Math.PI * 0.75, f = new V3(Math.sin(yaw), 0, Math.cos(yaw)), mam = red.clone().addScaledVector(f, -5);

@@ -399,7 +399,7 @@ function build(scene, opts) {
         solid(it, bowl, bk, 0, 0, 0, { ink: 0.1 }).material.side = THREE.DoubleSide;
         solid(it, new THREE.TorusGeometry(3.1, 0.25, 6, 16, Math.PI), bk, 0, 3.4, 0, { ink: 0.06 });
         const item = { obj: it, name: 'your basket', kind: 'basket', fill: { y: 3.2, r: 3.0 }, grip: new V3(0, 6.5, 0), hangs: true, radius: 3.4, panel: g, contents: [] };
-        peg.item = item; item.peg = peg; it.position.copy(peg.at).sub(item.grip); it.rotation.y = pc.ry; root_.add(it); if (hers) world.items.push(item); else item.kind = 'decor'; pc.items.push({ obj: it, at: peg.at.clone().sub(item.grip).applyMatrix4(new THREE.Matrix4().copy(pc.g.matrix).invert()), ry: 0 });
+        peg.item = item; item.peg = peg; it.position.copy(peg.at).sub(item.grip); it.rotation.y = pc.ry; root_.add(it); if (hers) world.items.push(item); else { item.kind = 'decor'; world.marenBasket = it; } pc.items.push({ obj: it, at: peg.at.clone().sub(item.grip).applyMatrix4(new THREE.Matrix4().copy(pc.g.matrix).invert()), ry: 0 });
       } else {
         // A bunch hung head down: stems tied at the top, opening out below into leaves (or flower heads).
         const r = rnd(31 + i), n = 7;
