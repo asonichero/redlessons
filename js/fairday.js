@@ -253,6 +253,7 @@ function station(w, key, min) {
 // by the door. She may look at both, and wash at the dresser (not go out: not like that); and once she has, her mother comes in with a basket,
 // and she's dressed (buttoned up the back), turned round, admired; and the two of them have a quiet word. Then the plan, and breakfast; and
 // out of the door, a bucket in her hands, her mother gone on ahead to her stall.
+const ARRIVE = H('06:30');      // (her mother in from the garden, done with the flowers)
 const morningDue = w => !!(root.Fair && root.Fair.isFair(w)) && (w.save.state.flags || {})['fair-morning'] !== w.cal.day;
 // (a bucket of cut flowers: a wooden pail, stems and blooms standing out of it)
 function bucket(T) {
@@ -298,36 +299,52 @@ function wake(P, w) {
 async function morning(P, w) {
   const S = root.Story, W = P.world, m = P.motion, set = w.fairMorningSet; if (!set) return;
   await P.wait(0.6); await P.converse(S.fairMorning('wake'), { shot: false, keepCamera: true });
-  const done = () => set.seen.dress && set.seen.flowers && set.seen.wash;
   const thought = async k => { await P.converse(S.fairMorning(k), { shot: false, keepCamera: true }); };
   const acts = [
     { label: 'Look at the dress', get at() { return set.dress.position.clone(); }, when: () => !P.busy, run: async () => {
       if (P.sitting) await P.getUp(); const at = set.dress.position.clone(), to = P.collide(at.clone().setY(0).add(new V3(0, 0, 8)), 3.2); await m.goTo(to, Math.atan2(at.x - to.x, at.z - to.z));
-      m.lookAt(at); await m.reach('R', at.clone().add(new V3(0, 0.4, 1))); await P.wait(0.8); await thought('dress'); await m.release('R'); m.lookAt(null); set.seen.dress = true; await after(); } },
+      m.lookAt(at); await m.reach('R', at.clone().add(new V3(0, 0.4, 1))); await P.wait(0.8); await thought('dress'); await m.release('R'); m.lookAt(null); set.seen.dress = true; w.cal.advance(3); } },
     { label: 'Look at the flowers', get at() { return set.pails[0].position.clone().setY(4); }, when: () => !P.busy, run: async () => {
       if (P.sitting) await P.getUp(); const at = set.pails[0].position.clone().lerp(set.pails[1].position, 0.5), to = P.collide(at.clone().add(new V3(7, 0, 4)), 3.2); await m.goTo(to, Math.atan2(at.x - to.x, at.z - to.z));
-      m.lookAt(at.clone().setY(4)); await thought('flowers'); m.lookAt(null); set.seen.flowers = true; await after(); } },
+      m.lookAt(at.clone().setY(4)); await thought('flowers'); m.lookAt(null); set.seen.flowers = true; w.cal.advance(3); } },
     { label: 'Wash at the dresser', get at() { return W.basin ? W.basin.at.clone() : m.pos.clone(); }, when: () => !P.busy && !!W.basin, run: async () => {
       const B = W.basin; if (P.sitting) await P.getUp(); await m.goTo(P.collide(B.stand.clone().setY(0), 3.2), B.facing);
       for (let k = 0; k < 3; k++) { m.reach('L', B.at.clone().add(new V3(0, -0.6 + k * 0.2, 0))); await m.reach('R', B.at.clone().add(new V3(0.6, -0.4, 0))); await P.wait(0.4); m.release('L'); await m.release('R'); }
-      await thought('wash'); set.seen.wash = true; await after(); } },
+      await thought('wash'); set.seen.wash = true; w.cal.advance(5); } },
   ];
-  W.actions = (W.actions || []).concat(acts.map(a => Object.assign(a, { when: (wh => () => wh() && !a.gone)(a.when) })));
+  // (nothing else of the day's to do in the cottage meanwhile: no loaf into a basket, no basket off its peg, no cloak on over her shift, and a wash only the once)
+  W.hold = o => /loaf|basket|cloak/i.test(o.label) || (o.label === 'Wash at the dresser' && set.seen.wash);
+  W.actions = (W.actions || []).concat(acts.map(a => Object.assign(a, { when: (wh => () => wh() && !a.gone && !(a.label === 'Wash at the dresser' && set.seen.wash))(a.when) })));
   set.acts = acts; set.guard = () => { const t = S.fairMorning('door')[0]; if (P.talk && t) P.talk.muse(t.text, { face: t.face }); return Promise.resolve(); };      // (the door: not out in her shift; a passing thought, as when she forgets her basket, the camera left where it is)
   w.refresh();
-  async function after() { if (!done()) return;
-    for (const x of acts) x.gone = true; set.guard = null; await dressed(P, w); }
+  // (the time till her mother's in, hers to pass: sat on a stool, or back on her bed once she's up, or lying down again, each a longer thought,
+  // once, and the clock on with it; at half past six, in her mother comes, whatever she's at)
+  const think = (k, mins) => P.act(async () => { set.said[k] = true; await thought(k); w.cal.advance(mins); });
+  set.said = {}; let wasUp = false;
+  set.watch = P.tick(() => {
+    if (!P.sitting) wasUp = true;
+    if (P.busy || (P.talk && P.talk.playing)) return;
+    if (w.cal.minute >= ARRIVE) { set.watch(); for (const x of acts) x.gone = true; set.guard = null; W.hold = null;
+      const how = { washed: !!set.seen.wash, abed: !!P.lying }; P.act(() => dressed(P, w, how)); return; }
+    const st = P.sitting && P.sitting.kind;
+    if (P.lying && !set.said.lie) think('lie', 10);
+    else if (st === 'stool' && !set.said.stool) think('stool', 8);
+    else if (st === 'bed' && wasUp && !P.lying && !set.said.bed) think('bed', 8);
+  });
 }
 const morningObjective = w => w.fairMorningSet && w.fairMorningSet.acts && !w.fairMorningSet.acts[0].gone ? 'Up, and ready for the fair: wash, and wait for Mama.' : null;
 // (her mother in, with her basket; and the dress)
-async function dressed(P, w) {
+async function dressed(P, w, how) {
+  how = how || { washed: true, abed: false };
   const S = root.Story, W = P.world, m = P.motion, set = w.fairMorningSet;
   w.fairMaren = 'in'; await P.wait(0.2);
   const mm = P.npcMotion; for (let k = 0; k < 60 && (!mm || P.npcMoving || P.npcAway); k++) await P.wait(0.1);      // (in by the door, and over to where she stands)
   const mb = W.marenBasket; let held = null;      // (her own basket, the one gone from the peg)
   if (mm && mb) { mb.visible = true; held = { obj: mb, name: 'her basket', grip: new V3(0, 6.5, 0), radius: 3.4, hangs: true, home: { pos: mb.position.clone(), rot: mb.rotation.y } }; mm.hold(held, 'hang'); }
-  if (P.sitting) await P.getUp(); await P.approach();
-  await P.converse(S.fairMorning('in'), { shot: ['red', 'mother'] });
+  if (P.sitting || P.lying) {      // (sat or lying: her mother comes over to her, and she gets up after)
+    if (mm) { const to = P.collide(P.motion.pos.clone().add(new V3(Math.sin(P.motion.yaw) * 12, 0, Math.cos(P.motion.yaw) * 12)), 3.4); await Promise.race([mm.goTo(to, yawTo(to, P.motion.pos)), P.wait(6)]); mm.auto = null; mm.face(yawTo(mm.pos, P.motion.pos)); }
+    await P.converse(S.fairMorning(how.abed ? 'inAbed' : 'in', how), { shot: ['red', 'mother'] }); await P.getUp(); }
+  else { await P.approach(); await P.converse(S.fairMorning(how.abed ? 'inAbed' : 'in', how), { shot: ['red', 'mother'] }); }      // (what she finds: up or still abed, washed or not; fondly, whichever)
   // (into the dress, under a fade: stood in the middle of the room, her mother behind her at the buttons)
   await w.fade(true);
   if (held) { mm.drop(); held.obj.position.copy(held.home.pos); held.obj.rotation.set(0, held.home.rot, 0); held.obj.visible = false; }      // (set by: she'll take it with her to the stall, so not on its peg today)

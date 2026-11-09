@@ -1730,7 +1730,8 @@ const FAIR_TALK = {
 const fairTalk = (key, ctx) => FAIR_TALK[key] || [];
 // Fair morning, in the cottage (js/fairday.js): her thoughts sat on the bed, before dawn; the dress; the flowers; washing; the door, in her
 // shift. Then her mother in, the dress buttoned, turned round, the spin, the cheek; the plan; and the flowers given at the stall.
-const fairMorning = k => {
+const fairMorning = (k, how) => {
+  const h = how || {};
   const r = (face, text) => ({ who: 'red', face, thought: true, text }), R = (face, text) => ({ who: 'red', face, text }), M = (face, text, red) => ({ who: 'mother', face, listen: { red: red || 'smile' }, text });
   return ({
     wake: [r('smile', 'Still dark. I’ve been awake for ages, lying here listening for the first bird.'), r('smile', 'The fair. It’s today. It’s really, truly today.'),
@@ -1739,8 +1740,20 @@ const fairMorning = k => {
     flowers: [r('smile', 'Sweet williams, pinks, the white daisies from the end of the bed. Two whole buckets of them, all wet and smelling of the garden.'), r('calm', 'One of those will be mine to carry, I expect. In the dress. Carefully.')],
     wash: [r('wince', 'Cold! Well. I’m awake now, if I wasn’t before.')],
     door: [r('shy', 'I can’t go out like this! In my shift, on fair day, with half the village up already? Mama would die.')],
-    in: [M('smile', 'Up already? And there was I thinking I’d have to drag you out by your heels. Look at you, in your shift, with your face all scrubbed.', 'shy'),
+    in: [h.washed ? M('smile', 'Up already? And there was I thinking I’d have to drag you out by your heels. Look at you, in your shift, with your face all scrubbed.', 'shy')
+        : M('smile', 'Up already, and not a drop of water on you, I’ll be bound. Fair day, and sleep still in your eyes. Basin, quick, and then the dress.', 'shy'),
       M('calm', 'Come here, then. Into it, and stand still while I do you up.')],
+    inAbed: [M('stern', 'Still abed? On fair day? I’ve cut two buckets of flowers while you’ve lain there like a lady. Up, up, slugabed.', 'shy'), R('shy', 'I was up, Mama! Before you, even. I only lay down again.'),
+      h.washed ? M('smile', 'Well, you’ve washed, at least. Come here, then, and stand still while I do you up.') : M('smile', 'Up before me, and not washed yet. Basin, quick, and then come here and stand still while I do you up.')],
+    stool: [r('calm', 'Mama’s stool, and mine across from it. We’ll not sit at the table for dinner today: bread in our hands at the stall, and the whole green for a room.'),
+      r('smile', 'I wonder if Peter will be there all day, or only for the dancing. He goes red when he has to talk to anyone. I expect I will too.'),
+      r('calm', 'Mama said I’m my own once the flowers are set out. My own, all day, at the fair. I hardly know what I’ll do with myself.')],
+    bed: [r('calm', 'Little Red. A month ago I’d have laughed at anyone who said I’d be sitting here in my shift like a little girl, waiting for my mother to dress me.'),
+      r('smile', 'It’s easier, somehow. Being told. Knowing where the line is, and that someone’s holding the other end of it.'),
+      r('shy', 'I don’t think I’d say that out loud. Not to anyone. Not even Mama.')],
+    lie: [r('calm', 'Just for a moment. The quilt’s still warm where I was.'), r('smile', 'I can hear the first carts on the street, and somebody laughing, and a dog. The whole village up early, all for one day.'),
+      r('calm', 'Last year I didn’t go. I stayed in with the shutters closed and told Mama I had a headache. I didn’t. I just couldn’t bear all of them looking at me.'),
+      r('smile', 'This year they can look all they like. I’ve a blue dress, and a mother who sat up hemming it.')],
     buttons: [M('calm', 'Stand still. Twelve buttons, and every one of them a fight. Breathe in.', 'shy'), R('shy', 'I am breathing in.'), M('smile', 'There. Last one. Now turn round and let me look at you.')],
     look: [M('smile', 'Oh, Rose.', 'smile')],
     spin: [R('smile', 'Mama! It goes all the way out when I turn!'),

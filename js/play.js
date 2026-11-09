@@ -17,7 +17,7 @@ function create(view, opts) {
   st.setLight(opts.light || 0);
   let look = (root.Looks && Looks.load ? Looks.load() : {}).red;
   let gown = opts.gown || null;      // (what she's wearing under the cloak, when it's not her everyday: { kind: 'fair', spoil: { earth, soot, wet, tear } }, js/fair.js)
-  const dressed = l => gown ? Object.assign({}, l, gown.kind === 'undressed' ? { bodice: false } : { gown: gown.kind, spoil: gown.spoil || {} }, { outfit: 'No cloak' }) : l;      // (the fair dress: no cloak over it; 'undressed': in her chemise, the bodice off, as the character editor shows it)
+  const dressed = l => gown ? Object.assign({}, l, gown.kind === 'undressed' ? { bodice: false, feet: 'slippers' } : { gown: gown.kind, spoil: gown.spoil || {} }, { outfit: 'No cloak' }) : l;      // (the fair dress: no cloak over it; 'undressed': in her chemise, the bodice off, as the character editor shows it)
   let rig = Toon.make('red', dressed(look)); st.scene.add(rig.root); st.cast(rig);
   const sc = rig.scaleW, R = 3.2 * sc, start = opts.start || { at: [4, 2], yaw: Math.PI };
   rig.root.position.set(start.at[0], 0, start.at[1]); rig.root.rotation.y = start.yaw;
@@ -180,7 +180,7 @@ function create(view, opts) {
       if (it.hangs) for (const pg of W.pegs) if (!pg.item) add({ label: 'Hang ' + it.name + ' up', run: () => putOn({ peg: pg }) }, pg.at);
       if (W.chest && W.chest.open > 0.9) add({ label: 'Put ' + it.name + ' in the chest', run: () => putOn({ inChest: true }) }, W.chest.front);
     }
-    return out.sort((a, b) => a.score - b.score);
+    return (W.hold ? out.filter(o => !W.hold(o)) : out).sort((a, b) => a.score - b.score);      // (W.hold: a scene's say on what's not to be done while it lasts)
   }
   // (her mother out, at the farm: walked to the door and gone, and back in by it, to her place. door: where inside the door to go to, or come from)
   let npcAway = false, npcMoving = null;
@@ -433,7 +433,7 @@ function create(view, opts) {
   function seatNow(seat, who) { const mo = who === 'npc' ? mm : m; mo.warp(flat(seat.at), seat.facing); mo.sit(seat); mo.sitW = 1; if (who !== 'npc') sitting = seat; }
   // Gone: the stage stopped and its canvas taken away, the conversation box with it.
   function dispose() { st.stop(); if (talk) talk.destroy(); }
-  return { get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, setGown, get gown() { return gown; }, input, use, frame, tick, world: W, options: () => offer, get offer() { return actOffer(); }, get alt() { return busy() ? null : altOf(true); }, get altAny() { return busy() ? null : altOf(false); },      // (altAny: whatever Q would do now, put-downs included: the touch button's)
+  return { get npcAway() { return npcAway; }, get npcMoving() { return !!npcMoving; }, npcGo, set tiredness(v) { tired.level = v; }, get camHeld() { return camHeld; }, set camHeld(v) { camHeld = !!v; }, get follows() { return !opts.camFree; }, get camZoom() { return Math.round(camZ); }, set camZoom(v) { camZ = ((Math.round(v) % 3) + 3) % 3; }, FOLLOW_NAMES: ['Near', 'Medium', 'Far'], stage: st, mother: mom, npc: mom, get npcMotion() { return mm; }, talk, talkToMother, approach, converse, dispose, wait, collide, castOf, seatNow, get sitting() { return sitting; }, get lying() { return lying; }, set sitting(v) { sitting = v; }, get rig() { return rig; }, get motion() { return m; }, get outfit() { return look.outfit; }, setDress, setOutfit, setGown, get gown() { return gown; }, input, use, frame, tick, world: W, options: () => offer, get offer() { return actOffer(); }, get alt() { return busy() ? null : altOf(true); }, get altAny() { return busy() ? null : altOf(false); },      // (altAny: whatever Q would do now, put-downs included: the touch button's)
     handsFull, putDown, knock, get busy() { return busy(); }, get noRun() { return !!opts.noRun; }, act, take, putOn, sitOn, lieDown, getUp, useDoor, useChest, exitBy, addFigure, removeFigure, figure: key => figs[key] || null, get figures() { return figs; } };
 }
 

@@ -349,7 +349,7 @@ function palette(id, look) {
     const cloak = l.cloak || '#a01828';
     Object.assign(P, { cloak, cloakDk: shade(cloak, -0.35), lining: '#e9d9b8', blouse: '#f6eedf', bodice: '#3b2b30', lace: '#efe2c0', skirt: cloak, skirtDk: shade(cloak, -0.3),      // (her skirt the red of her cloak)
      
-      hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
+      hem: '#f6eedf', boots: '#7a4a2a', bootsDk: '#58331c', slippers: '#8a3a44', drawers: '#f8f3e8', drawersDk: '#e2d8c4' });
     // (the fair dress her mother made, in one of two cuts (look.gown): 'fair', like her mother's own fine one, to the ankle: forget-me-not blue
     // from collar to hem, the bodice a subtler shade of it, laced in cream, a white frilled collar and a deep blue sash; or 'fairYoung', a girl's frock: blue all through, sleeves and all, a white frilled
     // collar, and a pale pink sash at the waist. And what the day's put on it: earth and a wet hem darken it from the bottom, soot greys it, a
@@ -574,7 +574,7 @@ function make(id, look, opts) {
   // (a profile cut between two heights, its ends where the cut falls)
   const cutPr = (pr, y0, y1) => { const at = y => { for (let i = 1; i < pr.length; i++) if (y <= pr[i][1]) { const [r0, a] = pr[i - 1], [r1, b] = pr[i]; return [lerp(r0, r1, (y - a) / ((b - a) || 1)), y]; } return pr[pr.length - 1]; };
     return [at(y0)].concat(pr.filter(([, y]) => y > y0 && y < y1), [at(y1)]); };
-  const CHEMISE = !MAN && look.bodice === false;      // (in her chemise, the bodice off: the same body, fuller over the hips as the bodice was, down to the drawers' top: nothing of her showing between)
+  const CHEMISE = !MAN && look.bodice === false, FEET = look.feet || S.feet;      // (look.feet: her slippers, indoors first thing, in place of her boots)      // (in her chemise, the bodice off: the same body, fuller over the hips as the bodice was, down to the drawers' top: nothing of her showing between)
   const TORSO_W = wide(dense(CHEMISE ? [[0, 0.3], [3.5, 0.4], [3.48, 0.95], [3.35, 1.25], [3.11, 1.6], [2.69, 2.9], [2.5, 3.8], [2.6, 4.9], [2.85, 6.2], [3.0, 7.4], [2.92, 8.4], [2.3, 9.2], [1.2, 9.7], [0, 9.85]] : TORSO, 44), trunkW), SASH = P.sash && !BODICE ? [2.45, 3.85] : null;      // (the fair dress: its sash painted round the waist, the same surface in its colour)
   if (SASH) for (const [y0, y1, col] of [[TORSO_W[0][1], SASH[0], top], [SASH[0], SASH[1], P.sash], [SASH[1], TORSO_W[TORSO_W.length - 1][1], top]]) skinnedOn(rig.hips, tucked(bust(lathe(cutPr(TORSO_W, y0, y1), 0.68 * TD, 32))), col, torsoW, {});
   else skinnedOn(rig.hips, tucked(bust(lathe(TORSO_W, 0.68 * TD, 32))), top, torsoW, BODICE ? { cover: p => [cc('bodice'), ss(5.75, 5.45, p.y), 'bodice'] } : VEST ? { cover: p => [cc('vest'), ss(8.6, 8.2, p.y) * ss(vestFrom - 0.2, vestFrom + 0.2, p.y), 'bodice'] } : {});   // the waist, ribs, bust and shoulders (the bodice's colour where it's under the bodice)
@@ -651,12 +651,12 @@ function make(id, look, opts) {
     // One leg from the hip to the ankle, bending through the knee; for her, the boot's shaft and its turned-down top ride on it.
     const Lk = D.thigh, La = D.thigh + D.shin, LG = K.legGirth, FS = K.footSize, sh = f => -Lk - f * D.shin;      // (points down the shin as a share of its length)
     skinnedOn(thigh, lathe(wide(dense([[0, 1.0], [1.25, 0.7], [1.72, -0.4], [1.66, -Lk * 0.34], [1.45, -Lk * 0.68], [1.15, -Lk + 0.6], [1.08, -Lk - 0.2], [1.13, sh(0.17)], [1.15, sh(0.37)], [0.9, sh(0.66)], [0.62, -La + 0.8], [0.54, -La + 0.1], [0.5, -La - 0.2], [0, -La - 0.5]], 60), LG), 1, 28), P.skin, legW(s), { tint: true, inkAt: q => 1 - ss(0.1, 0.8, -q.x * sx / (1.6 * LG)) * ss(-Lk * 0.8, -Lk * 0.45, q.y) });
-    if (S.feet === 'boots') {
+    if (FEET === 'boots') {
       clipSrc('boots', skinnedOn(thigh, lathe(wide([[0.84, sh(0.51)], [1.0, sh(0.56)], [0.8, sh(0.8)], [0.72, -La - 0.2], [0, -La - 0.4]], LG), 1, 18), P.boots, legW(s)));
       clipSrc('boots', skinnedOn(thigh, lathe(wide([[0.88, sh(0.507)], [1.04, sh(0.536)], [1.0, sh(0.586)]], LG), 1, 18), P.bootsDk, legW(s), { ink: 0.04 }));
       clipSrc('boots', piece(flatFoot(ell(0.78 * FS, 0.62, 1.55 * FS), 0.5), P.boots, ankle, 0, -0.22, 0.62 * FS));
       clipSrc('boots', piece(flatFoot(ell(0.82 * FS, 0.2, 1.62 * FS), 0.12), P.bootsDk, ankle, 0, -0.62, 0.62 * FS, { ink: 0.04 }));      // (the sole)
-    } else if (S.feet === 'slippers') {      // (carpet slippers: a felt sole, and a soft upper over the foot)
+    } else if (FEET === 'slippers') {      // (carpet slippers: a felt sole, and a soft upper over the foot)
       piece(flatFoot(ell(0.74 * FS, 0.56, 1.5 * FS), 0.45), P.slippers, ankle, 0, -0.3, 0.62 * FS);
       piece(flatFoot(ell(0.8 * FS, 0.16, 1.58 * FS), 0.1), '#3a2a24', ankle, 0, -0.66, 0.62 * FS, { ink: 0.03 });
     } else {
@@ -1169,7 +1169,7 @@ function make(id, look, opts) {
   function coverAt(t, p, now) {
     const down = dress.skirt === 'down', drawersOn = !down && dress.drawers !== 'down', y = p.y;
     if (t.bone === rig.thighL || t.bone === rig.thighR) {
-      if (S.feet === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w, 'boots']; }
+      if (FEET === 'boots') { const w = ss(bootTop - 0.2, bootTop - 0.6, y); if (w > 0) return [cc('boots'), w, 'boots']; }
       if (down) return TROUSERS ? [cc('trousers'), 1, 'skirt'] : inSkirt(p, now) ? skirtOver(p) : null;
       if (drawersOn) return [cc('drawers'), ss(-2.8, -2.3, y), 'drawers'];
       return null;
