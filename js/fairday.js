@@ -28,8 +28,8 @@ const DANCE = new V3(-10, 0, 30);
 const SC = 1.8;      // (a stall's size: its counter at a grown woman's waist, its awning well over a man's head; a figure stands 31 tall)
 const KIT = root.Cottage && root.Cottage.kit;
 const ROOM = KIT ? KIT.roomLayout('red-lessons:room:fair', {
-  flowers: { x: -72, z: ROW_Z, ry: 0 }, remedies: { x: -36, z: ROW_Z, ry: 0 }, ginger: { x: 0, z: ROW_Z, ry: 0 }, ribbons: { x: 36, z: ROW_Z, ry: 0 }, ale: { x: 80, z: ROW_Z - 2, ry: 0 },
-  pole: { x: 24, z: 22, ry: 0 }, crate: { x: -30, z: 26, ry: 0 }, pen: { x: 112, z: 66, ry: -Math.PI / 2 },
+  flowers: { x: -156.5, z: -3.5, ry: 1.309 }, remedies: { x: -146.5, z: 71, ry: 2.0944 }, ginger: { x: 109, z: -51, ry: 5.4978 }, ribbons: { x: -109.5, z: -66.5, ry: 0.5236 },
+  ale: { x: 40, z: -80.5, ry: -0.2618 }, pole: { x: -15, z: 7.5, ry: 0 }, crate: { x: -70, z: 10, ry: 0 }, pen: { x: 166.5, z: 71.5, ry: -2.0944 },      // (round the green, each facing in to it)
 }) : { LAYOUT: {}, layout: () => ({}), saveLayout() {}, resetLayout() {} };
 const PIECES = { flowers: 'Mama’s flower stall', remedies: 'Grandmother’s remedies stall', ginger: 'The gingerbread stall', ribbons: 'The ribbon stall', ale: 'The ale stall', pole: 'The bunting pole', crate: 'The Miller’s crate', pen: 'Bo’s pen and sheep' };
 const local = (l, x, z) => new V3(l.x + Math.cos(l.ry) * x + Math.sin(l.ry) * z, 0, l.z - Math.sin(l.ry) * x + Math.cos(l.ry) * z);      // (a point of a piece, in the world: x along it, z out to its front)
@@ -87,19 +87,21 @@ function build(T, L) {
     const back = local(l, 0, -7.5 * SC), front = local(l, 0, 10 * SC), mid = local(l, 0, 0).setY(9 * SC);
     spots['stall_' + s.id] = { at: back, yaw: yawTo(back, mid), look: mid.clone() };      // (behind it, its keeper)
     spots['before_' + s.id] = { at: front, yaw: yawTo(front, mid), look: mid.clone() }; }      // (before it, a customer)
-  const awning = (id, sx) => local(L[id], sx * 7.6 * SC, 3.6 * SC).setY(15.2 * SC);
-  for (let i = 0; i < STALLS.length - 1; i++) g.add(bunting(T, awning(STALLS[i].id, 1), awning(STALLS[i + 1].id, -1), 6));
-  { const pl = new THREE.Group(), m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 30, 8), T.mat('#6a4a30')); m.position.y = 15; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.05), T.INKM[0])); pl.add(m); put('pole', pl);
-    const top = new V3(L.pole.x, 29, L.pole.z); g.add(bunting(T, new V3(60, 24, 16), top, 12)); g.add(bunting(T, awning('ribbons', 1).lerp(awning('ale', -1), 0.5), top, 12)); obstacles.push({ x: L.pole.x, z: L.pole.z, r: 1.5 }); }
+  // (the bunting: from the top of a tall pole in the middle of it all out to each stall's awning, as the spokes of a wheel; and to the lime tree)
+  const awning = id => local(L[id], 0, 3.6 * SC).setY(15.2 * SC);
+  { const pl = new THREE.Group(), m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 44, 8), T.mat('#6a4a30')); m.position.y = 22; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.05), T.INKM[0])); pl.add(m); put('pole', pl);
+    const top = new V3(L.pole.x, 43, L.pole.z); g.add(bunting(T, new V3(60, 30, 16), top)); for (const st of STALLS) g.add(bunting(T, awning(st.id), top)); obstacles.push({ x: L.pole.x, z: L.pole.z, r: 1.5 }); }
   { const c = new THREE.Group(), m = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); m.position.y = 1.5; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.06), T.INKM[0])); c.add(m); put('crate', c); obstacles.push({ x: L.crate.x, z: L.crate.z, r: 3.5 }); }
   { put('pen', pen(T)); const l = L.pen; for (const [x0, z0, x1, z1] of [[-22, -15, 22, -15], [-22, -15, -22, 15], [22, -15, 22, 15], [-22, 15, 22, 15]]) for (let k = 0; k <= 5; k++) { const c = local(l, x0 + (x1 - x0) * k / 5, z0 + (z1 - z0) * k / 5); obstacles.push({ x: c.x, z: c.z, r: 2.2 }); } }
   return { group: g, pieces, obstacles, spots };
 }
-// Bunting: strung between the stalls' awnings, and across the dancing ground.
+// Bunting: a line strung from one point to another, its flags hanging along it as it sags.
 function bunting(T, from, to, n) {
+  const len = from.distanceTo(to); n = n || Math.max(4, Math.round(len / 6)); const sag = 1.5 + len * 0.05;      // (a flag every six or so; the longer the line, the deeper it hangs)
   const g = new THREE.Group(), cols = ['#d84040', '#e8c040', '#4060c0', '#f4eee2', '#40a060'];
-  const line = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, from.distanceTo(to), 4), T.mat('#5a4a3a')); line.position.copy(from).lerp(to, 0.5); line.quaternion.setFromUnitVectors(new V3(0, 1, 0), to.clone().sub(from).normalize()); g.add(line);
-  for (let k = 1; k < n; k++) { const p = from.clone().lerp(to, k / n); p.y -= Math.sin(Math.PI * k / n) * 2.5; const f = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2, 3), T.mat(cols[k % cols.length])); f.rotation.x = Math.PI; f.position.copy(p).add(new V3(0, -1, 0)); g.add(f); }
+  const at = k => { const p = from.clone().lerp(to, k / n); p.y -= Math.sin(Math.PI * k / n) * sag; return p; }, cord = T.mat('#5a4a3a');
+  for (let k = 0; k < n; k++) { const a = at(k), b = at(k + 1), seg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, a.distanceTo(b), 4), cord); seg.position.copy(a).lerp(b, 0.5); seg.quaternion.setFromUnitVectors(new V3(0, 1, 0), b.clone().sub(a).normalize()); g.add(seg); }      // (the cord, hanging as it's strung)
+  for (let k = 1; k < n; k++) { const p = at(k); const f = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2, 3), T.mat(cols[k % cols.length])); f.rotation.x = Math.PI; f.position.copy(p).add(new V3(0, -1, 0)); g.add(f); }
   return g;
 }
 
