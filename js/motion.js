@@ -360,7 +360,7 @@ function create(rig, opts) {
     // Lying: curled a little on her side, her head down on the pillow and her hands drawn up together before her chest (js/bed.js's pose).
     if (lieW > 0) {
       r.torso.rotation.x = lerp(r.torso.rotation.x, 0.16, lieW); r.torso.rotation.y *= 1 - lieW; r.torso.rotation.z *= 1 - lieW;
-      r.neck.rotation.x = lerp(r.neck.rotation.x, 0.18, lieW); r.neck.rotation.y *= 1 - lieW; r.neck.rotation.z = lerp(r.neck.rotation.z, LIE.neckZ, lieW);      // (her head tipped up onto the bolster, not sunk into it) r.head.rotation.set(r.head.rotation.x * (1 - lieW), r.head.rotation.y * (1 - lieW), r.head.rotation.z * (1 - lieW));
+      r.neck.rotation.x = lerp(r.neck.rotation.x, 0.18, lieW); r.neck.rotation.y *= 1 - lieW; r.neck.rotation.z = lerp(r.neck.rotation.z, LIE.neckZ, lieW); r.head.rotation.set(r.head.rotation.x * (1 - lieW), r.head.rotation.y * (1 - lieW), r.head.rotation.z * (1 - lieW));      // (her head tipped up onto the bolster, not sunk into it)
       r.root.updateMatrixWorld(true);
       const along = m.bed.head.clone().sub(m.bed.feet).setY(0).normalize(), front = m.bed.front ? m.bed.front.clone() : new V3().crossVectors(UP, along).normalize(), chest = r.torso.localToWorld(new V3(0, 5.2, 3.2));
       const side = new V3().crossVectors(along, front);      // (her left side: up, lying on her right)
