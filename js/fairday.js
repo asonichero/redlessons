@@ -269,7 +269,7 @@ function bucket(T) {
 const bucketItem = T => ({ obj: bucket(T), name: 'the flowers', kind: 'flowers', grip: new V3(0, 3.6, 0), hangs: true, radius: 2.2, keep: true });
 // (the dress, folded over a chair's back: blue, its white collar showing)
 function folded(T) {
-  const g = new THREE.Group(), blue = T.mat('#6f90c4'), m = (geo, mat, x, y, z, ink) => { const k = new THREE.Mesh(geo, mat); k.position.set(x, y, z); k.castShadow = true; if (ink) k.add(new THREE.Mesh(T.hullGeo(geo, ink), T.INKM[0])); g.add(k); return k; };
+  const g = new THREE.Group(), blue = T.mat('#4f7ee0'), m = (geo, mat, x, y, z, ink) => { const k = new THREE.Mesh(geo, mat); k.position.set(x, y, z); k.castShadow = true; if (ink) k.add(new THREE.Mesh(T.hullGeo(geo, ink), T.INKM[0])); g.add(k); return k; };
   m(new THREE.BoxGeometry(5.6, 0.7, 2.2), blue, 0, 0, 0, 0.04);      // (over the top rail)
   for (const s of [-1, 1]) m(new THREE.BoxGeometry(5.4, 5.5, 0.5), blue, 0, -2.6, s * 1.1, 0.04).rotation.x = s * 0.08;      // (hanging down either side)
   m(new THREE.BoxGeometry(2.6, 0.5, 2.3), T.mat('#fbf8f2'), -1.2, 0.5, 0, 0.03);      // (the collar, folded on top)
@@ -302,8 +302,12 @@ async function morning(P, w) {
   const thought = async k => { await P.converse(S.fairMorning(k), { shot: false, keepCamera: true }); };
   const acts = [
     { label: 'Look at the dress', get at() { return set.dress.position.clone(); }, when: () => !P.busy, run: async () => {
-      if (P.sitting) await P.getUp(); const at = set.dress.position.clone(), to = P.collide(at.clone().setY(0).add(new V3(0, 0, 8)), 3.2); await m.goTo(to, Math.atan2(at.x - to.x, at.z - to.z));
-      m.lookAt(at); await m.reach('R', at.clone().add(new V3(0, 0.4, 1))); await P.wait(0.8); await thought('dress'); await m.release('R'); m.lookAt(null); set.seen.dress = true; w.cal.advance(3); } },
+      if (P.sitting) await P.getUp();
+      // (stood behind the chair, facing the dress over its back: her hand to the cloth on her side of the rail)
+      const at = set.dress.position.clone(), ch = W.seats.find(x => x.kind === 'chair'), f = ch ? new V3(Math.sin(ch.facing), 0, Math.cos(ch.facing)) : new V3(0, 0, 1);
+      const to = P.collide(at.clone().setY(0).addScaledVector(f, -7.5), 3.2), face = Math.atan2(at.x - to.x, at.z - to.z);
+      await Promise.race([m.goTo(to, face), P.wait(5)]); if (m.auto) { m.auto = null; } await m.face(face);
+      m.lookAt(at); await m.reach('R', at.clone().addScaledVector(f, -1.3).add(new V3(0, -0.6, 0))); await P.wait(0.8); await thought('dress'); await m.release('R'); m.lookAt(null); set.seen.dress = true; w.cal.advance(3); } },
     { label: 'Look at the flowers', get at() { return set.pails[0].position.clone().setY(4); }, when: () => !P.busy, run: async () => {
       if (P.sitting) await P.getUp(); const at = set.pails[0].position.clone().lerp(set.pails[1].position, 0.5), to = P.collide(at.clone().add(new V3(7, 0, 4)), 3.2); await m.goTo(to, Math.atan2(at.x - to.x, at.z - to.z));
       m.lookAt(at.clone().setY(4)); await thought('flowers'); m.lookAt(null); set.seen.flowers = true; w.cal.advance(3); } },
