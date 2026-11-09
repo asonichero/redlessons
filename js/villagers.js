@@ -155,7 +155,7 @@ function attach(P, w) {
     else { const list = want.round ? W.round : W.wander, p = list[Math.floor(Math.random() * list.length)]; m.warp(p, Math.random() * 6.28); f.wait = clock + 2 + Math.random() * 4; if (want.round) f.ri = list.indexOf(p); }
     f.rig.root.position.copy(m.pos); f.rig.root.rotation.y = m.yaw;
   }
-  const standYaw = (key, s) => OUT[key] ? s.yaw + Math.PI : s.yaw;
+  const standYaw = (key, s) => OUT[key] && !s.fair ? s.yaw + Math.PI : s.yaw;      // (s.fair: a place at the fair, faced as it says)
   function gone(f) { untake(f); if (f.lantern) P.stage.scene.remove(f.lantern.obj); P.removeFigure(f.key); delete figs[f.key]; }
   // (benches: a place on one taken while they sit, so she isn't offered it)
   const taken = new Map();

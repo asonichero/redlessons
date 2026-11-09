@@ -25,7 +25,7 @@ const ROW_Z = -42, GREEN = { x: 0, z: 22 };
 const DANCE = new V3(-10, 0, 30);
 // The fair's things where they stand (the room editor moves them: rooms.html's "The village, fair day"; kept in the browser, as a room's are):
 // each stall (x, z, and ry: its turn, its front to the south at 0), the pole the bunting's strung to, the Miller's crate, and Bo's pen.
-const SC = 1.8;      // (a stall's size: its counter at a grown woman's waist, its awning well over a man's head; a figure stands 31 tall)
+const SC = 2;      // (a stall's size: its counter at a grown woman's waist, the low edge of its awning clear over a man's head; a figure stands 31 tall)
 const KIT = root.Cottage && root.Cottage.kit;
 const ROOM = KIT ? KIT.roomLayout('red-lessons:room:fair', {
   flowers: { x: -156.5, z: -3.5, ry: 1.309 }, remedies: { x: -146.5, z: 71, ry: 2.0944 }, ginger: { x: 109, z: -51, ry: 5.4978 }, ribbons: { x: -109.5, z: -66.5, ry: 0.5236 },
@@ -44,6 +44,7 @@ const EXTRA = [
   { key: 'boFather', rig: 'boFather', name: 'Young Master Halloran', voice: 'smith', tint: '#4e4232', bg: '#e4dccc', by: ['pen', 18, 27], faceTo: 'pen' },
   { key: 'bo', rig: 'bo', name: 'Bo', voice: 'bo', tint: '#8a5a6a', bg: '#f2e4ea', by: ['pen', 7, 22], face: DANCE },      // (by her pen's gate, showing the flock)
   { key: 'boMother', rig: 'boMother', name: 'Mistress Halloran', voice: 'pennock', tint: '#8a5a6a', bg: '#f0e2e8', by: ['pen', -22, 30], face: DANCE },
+  { key: 'fowler', rig: 'fowler', name: 'Master Fowler', voice: 'baker', tint: '#5a4a34', bg: '#e8e2d2', by: ['ale', -22, 20], faceTo: 'ale' },      // (Peter's grandfather, in from the meadow for once: by the ale, as long as his legs hold)
   { key: 'carrierNed', rig: 'carrierNed', name: 'Ned', voice: 'smith', tint: '#5a4a34', bg: '#e8e0d0', by: ['ale', 8, 20], faceTo: 'ale' },
   { key: 'carrierAmos', rig: 'carrierAmos', name: 'Old Amos', voice: 'baker', tint: '#5a5040', bg: '#e6e2d6', by: ['ale', 16, 22], faceTo: 'ale' },
   { key: 'carrierKit', rig: 'carrierKit', name: 'Kit', voice: 'georgie', tint: '#4a4a52', bg: '#e0e0e6', at: new V3(20, 0, 36), face: DANCE },
@@ -51,14 +52,29 @@ const EXTRA = [
 // (the stalls stand: fair day, its Lay day, and till First Day's morning)
 const standing = w => { const ph = root.Fair && root.Fair.phase(w); return ph === 'fair' || (ph === 'after' && !(w.cal.weekday === 1 && w.cal.minute >= H('10:00'))); };
 
-// A stall: a trestle with its cloth, an awning on four poles striped in its colour, and its goods in rows.
-function stall(T, s) {
+// ── The week before: the fair put up on the green a piece at a time, by Master Thatcher and his men, from where it's kept all year in the
+// Wheatsheaf's barn: the pole first (five days to go), then the stalls' bare frames (three), then their cloths and awnings and the bunting
+// (the day before). Little Red sees it come, and wonders at it. → { up (0 the pole, 1 frames, 2 dressed), key } | null
+function putUp(w) {
+  const st = root.Fair.stateOf(w); if (root.Fair.phase(w) !== 'week' || !st.day) return null;
+  const left = st.day - w.cal.day; if (left > 5) return null;
+  return left <= 1 ? { up: 2, key: 'dressed' } : left <= 3 ? { up: 1, key: 'frames' } : { up: 0, key: 'pole' };
+}
+// (the first time she sees each, a thought)
+function building(P, w, pre) {
+  const flag = 'fair-up-' + pre.key; if ((w.save.state.flags || {})[flag]) return;
+  let t = 0; const off = P.tick(dt => { if (P.busy || (P.talk && P.talk.playing) || (t += dt) < 2.5) return; off(); w.save.flag(flag, w.cal.day); if (P.talk && root.Story.fairGoingUp) P.talk.muse(root.Story.fairGoingUp(pre.key), { face: 'smile' }); });
+}
+// A stall: a trestle with its cloth, an awning on four poles striped in its colour, and its goods in rows. Its front, where they buy, is the
+// awning's high side; behind, its low side, where they serve from. up: how far it's put up, the week before (1 the frame, 2 dressed, 3 the day).
+function stall(T, s, up) {
+  if (up == null) up = 3;
   const g = new THREE.Group(), mesh = (geo, col, x, y, z, ink) => { const m = new THREE.Mesh(geo, T.mat(col)); m.position.set(x, y, z); m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(geo, ink || 0.06), T.INKM[0])); g.add(m); return m; };
-  mesh(new THREE.BoxGeometry(16, 0.8, 7), '#8a6a48', 0, 7.6, 0); mesh(new THREE.BoxGeometry(16.4, 3.5, 0.2), s.cloth, 0, 5.6, 3.6, 0.03);
+  mesh(new THREE.BoxGeometry(16, 0.8, 7), '#8a6a48', 0, 7.6, 0); if (up >= 2) mesh(new THREE.BoxGeometry(16.4, 3.5, 0.2), s.cloth, 0, 5.6, 3.6, 0.03);
   for (const x of [-7, 7]) for (const z of [-3, 3]) mesh(new THREE.CylinderGeometry(0.3, 0.3, 7.4, 6), '#6a4a30', x, 3.7, z, 0.04);
-  for (const x of [-7.6, 7.6]) for (const z of [-3.6, 3.6]) mesh(new THREE.CylinderGeometry(0.25, 0.25, 15, 6), '#6a4a30', x, 7.5, z, 0.04);
-  for (let k = 0; k < 6; k++) mesh(new THREE.BoxGeometry(16.8 / 6, 0.25, 8.6), k % 2 ? '#f4eee2' : s.cloth, -8.4 + 16.8 / 12 + k * 16.8 / 6, 15.1, 0, 0.02).rotation.x = -0.12;
-  s.goods.forEach((c, i) => { for (let k = 0; k < 3; k++) mesh(s.id === 'ale' ? new THREE.CylinderGeometry(1.6, 1.6, 3, 10) : new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.7, 1.2), c, -5.5 + i * 3.6 + (k - 1) * 0.6, s.id === 'ale' ? 9.5 : 8.5, -1.5 + k * 1.4, 0.04); });
+  for (const x of [-7.6, 7.6]) for (const z of [-3.6, 3.6]) mesh(new THREE.CylinderGeometry(0.25, 0.25, 18.6, 6), '#6a4a30', x, 9.3, z, 0.04);
+  if (up >= 2) for (let k = 0; k < 6; k++) mesh(new THREE.BoxGeometry(16.8 / 6, 0.25, 8.6), k % 2 ? '#f4eee2' : s.cloth, -8.4 + 16.8 / 12 + k * 16.8 / 6, 18.7, 0, 0.02).rotation.x = -0.12;
+  if (up >= 3) s.goods.forEach((c, i) => { for (let k = 0; k < 3; k++) mesh(s.id === 'ale' ? new THREE.CylinderGeometry(1.6, 1.6, 3, 10) : new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.7, 1.2), c, -5.5 + i * 3.6 + (k - 1) * 0.6, s.id === 'ale' ? 9.5 : 8.5, -1.5 + k * 1.4, 0.04); });
   g.scale.setScalar(SC); return g;
 }
 // Bo's pen: hurdles round a square of the green, a gate in its front, and a few of the flock in it, washed for showing.
@@ -79,20 +95,25 @@ function pen(T) {
 }
 // The fair's things, as its layout has them (L: ROOM.layout()): the stalls, the bunting between them and to the pole, the crate, the pen. →
 // { group, pieces (each with g, for the room editor), obstacles, spots }
-function build(T, L) {
+function build(T, L, up) {
+  if (up == null) up = 3;
   const g = new THREE.Group(), pieces = {}, obstacles = [], spots = {};
   const put = (id, obj) => { const l = L[id]; obj.position.set(l.x, obj.position.y, l.z); obj.rotation.y = l.ry; obj.userData.piece = id; g.add(obj); pieces[id] = { g: obj, items: [], spin: 0 }; return obj; };
-  for (const s of STALLS) { const l = L[s.id]; put(s.id, stall(T, s));
+  for (const s of STALLS) { if (up < 1) break; const l = L[s.id]; put(s.id, stall(T, s, up));
     for (const x of [-9, 0, 9]) { const c = local(l, x * SC / 1.8, 0); obstacles.push({ x: c.x, z: c.z, r: 7 }); }
     const back = local(l, 0, -7.5 * SC), front = local(l, 0, 10 * SC), mid = local(l, 0, 0).setY(9 * SC);
     spots['stall_' + s.id] = { at: back, yaw: yawTo(back, mid), look: mid.clone() };      // (behind it, its keeper)
-    spots['before_' + s.id] = { at: front, yaw: yawTo(front, mid), look: mid.clone() }; }      // (before it, a customer)
+    spots['before_' + s.id] = { at: front, yaw: yawTo(front, mid), look: mid.clone() };      // (before it, a customer)
+    const side = local(l, 15 * SC, 9 * SC), pour = local(l, -5 * SC, 6.5 * SC);
+    spots['beside_' + s.id] = { at: side, yaw: yawTo(side, local(l, 15 * SC, 30 * SC)), look: mid.clone(), fair: true };      // (off to one side of its front, out of the way of those buying: crying its wares)
+    spots['pour_' + s.id] = { at: pour, yaw: yawTo(pour, local(l, -5 * SC, 0)), look: mid.clone(), fair: true }; }      // (on the buying side, at its end: where the ale's poured, from the casks on it)
+  for (const k in spots) if (k.startsWith('stall_')) spots[k].fair = true;      // (fair: stood as the spot says, not turned out to the street as at their doors)
   // (the bunting: from the top of a tall pole in the middle of it all out to each stall's awning, as the spokes of a wheel; and to the lime tree)
-  const awning = id => local(L[id], 0, 3.6 * SC).setY(15.2 * SC);
+  const awning = id => local(L[id], 0, 3.6 * SC).setY(19 * SC);
   { const pl = new THREE.Group(), m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 44, 8), T.mat('#6a4a30')); m.position.y = 22; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.05), T.INKM[0])); pl.add(m); put('pole', pl);
-    const top = new V3(L.pole.x, 43, L.pole.z); g.add(bunting(T, new V3(60, 30, 16), top)); for (const st of STALLS) g.add(bunting(T, awning(st.id), top)); obstacles.push({ x: L.pole.x, z: L.pole.z, r: 1.5 }); }
-  { const c = new THREE.Group(), m = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); m.position.y = 1.5; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.06), T.INKM[0])); c.add(m); put('crate', c); obstacles.push({ x: L.crate.x, z: L.crate.z, r: 3.5 }); }
-  { put('pen', pen(T)); const l = L.pen; for (const [x0, z0, x1, z1] of [[-22, -15, 22, -15], [-22, -15, -22, 15], [22, -15, 22, 15], [-22, 15, 22, 15]]) for (let k = 0; k <= 5; k++) { const c = local(l, x0 + (x1 - x0) * k / 5, z0 + (z1 - z0) * k / 5); obstacles.push({ x: c.x, z: c.z, r: 2.2 }); } }
+    const top = new V3(L.pole.x, 43, L.pole.z); if (up >= 2) { g.add(bunting(T, new V3(60, 30, 16), top)); for (const st of STALLS) g.add(bunting(T, awning(st.id), top)); } obstacles.push({ x: L.pole.x, z: L.pole.z, r: 1.5 }); }
+  if (up >= 3) { const c = new THREE.Group(), m = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); m.position.y = 1.5; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.06), T.INKM[0])); c.add(m); put('crate', c); obstacles.push({ x: L.crate.x, z: L.crate.z, r: 3.5 }); }
+  if (up >= 3) { put('pen', pen(T)); const l = L.pen; for (const [x0, z0, x1, z1] of [[-22, -15, 22, -15], [-22, -15, -22, 15], [22, -15, 22, 15], [-22, 15, 22, 15]]) for (let k = 0; k <= 5; k++) { const c = local(l, x0 + (x1 - x0) * k / 5, z0 + (z1 - z0) * k / 5); obstacles.push({ x: c.x, z: c.z, r: 2.2 }); } }
   return { group: g, pieces, obstacles, spots };
 }
 // Bunting: a line strung from one point to another, its flags hanging along it as it sags.
@@ -106,11 +127,14 @@ function bunting(T, from, to, n) {
 }
 
 function attach(P, w) {
-  if (!root.Fair || !standing(w)) return null;
+  if (!root.Fair) return null;
+  const pre = putUp(w); if (!standing(w) && !pre) return null;
   const T = root.Toon, W = P.world, S = root.Story, on = root.Fair.isFair(w) && w.cal.minute >= OPEN && w.cal.minute < ENDS;
   const g = new THREE.Group(); P.stage.scene.add(g);
   W.spots = W.spots || {}; W.obstacles = W.obstacles || [];
-  const L = ROOM.layout(), F = build(T, L); g.add(F.group); W.obstacles.push(...F.obstacles); Object.assign(W.spots, F.spots);
+  const L = ROOM.layout(), F = build(T, L, pre ? pre.up : 3); g.add(F.group);
+  W.obstacles.push(...F.obstacles); Object.assign(W.spots, F.spots);
+  if (pre) { building(P, w, pre); return { actions: () => [] }; }      // (the week before: only what's up so far; the fair's people not there yet)
   W.spots.dance = { at: DANCE.clone(), yaw: 0, look: DANCE.clone().setY(10) };
   W.spots.danceEdge = { at: DANCE.clone().add(new V3(18, 0, 10)), yaw: yawTo(DANCE.clone().add(new V3(18, 0, 10)), DANCE), look: DANCE.clone().setY(10) };
   W.spots.danceEdge2 = { at: DANCE.clone().add(new V3(-16, 0, 14)), yaw: yawTo(DANCE.clone().add(new V3(-16, 0, 14)), DANCE), look: DANCE.clone().setY(10) };
@@ -152,8 +176,8 @@ function station(w, key, min) {
   const late = min >= H('19:00');
   switch (key) {
     case 'pennock': return { stand: 'stall_ginger' };
-    case 'baker': return min < H('15:00') ? { stand: 'before_ginger' } : { wander: true };
-    case 'abney': return { stand: 'stall_ale' };
+    case 'baker': return min < H('15:00') ? { stand: 'beside_ginger' } : { wander: true };
+    case 'abney': return { stand: 'pour_ale' };
     case 'smith': return { stand: 'aleSide' };
     case 'bess': return null;      // (near her time: in at the Wheatsheaf, as she always is: a fairing brought to her)
     case 'agnes': return late ? { stand: 'danceEdge' } : { wander: true };
