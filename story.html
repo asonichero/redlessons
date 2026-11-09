@@ -35,7 +35,7 @@
   #title nav button.primary { background: #7a2228; border-color: #c9a84c; } #title nav button.primary:hover { background: #8e2a30; }
   #title nav button[hidden] { display: none; }
   #title nav button small { display: block; font-size: 12.5px; color: #d8bfa8; font-style: italic; margin-top: 2px; }
-  #title .else { position: absolute; left: max(28px, 8vw); bottom: 22px; font-size: 13px; color: #b8a8a0; } #title .else a { margin-right: 14px; }
+  #title .else { position: absolute; left: max(28px, 8vw); bottom: 22px; font-size: 13px; color: #b8a8a0; } #title .else a { margin-right: 14px; } #title #ver { opacity: 0.7; }
   #title .scenes { display: none; flex-direction: column; gap: 8px; margin-left: 18px; } #title .scenes.on { display: flex; }
   #title .scenes button { min-width: 200px; font-size: 16px; padding: 9px 16px; }
 </style>
@@ -47,7 +47,7 @@
   <nav><button id="cont" class="primary" hidden>Continue</button><button id="begin" class="primary">Begin</button>
     <button id="pick">Choose a scene</button><div class="scenes"><button data-at="cabin">Grandmother’s cabin</button><button data-at="wood">The wood</button><button data-at="home">Home</button><button data-at="village">The village, the next morning</button></div>
     <button id="sets">Settings</button></nav>
-  <div class="else"><a href="lap.html">Correction test</a><a href="rooms.html">Room editor</a><a href="editor.html">Character editor</a></div></div>
+  <div class="else"><a href="lap.html">Correction test</a><a href="rooms.html">Room editor</a><a href="editor.html">Character editor</a><span id="ver"></span></div></div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
 <script src="js/toon.js"></script>
@@ -82,6 +82,10 @@
 <script src="js/innshift.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/mocap.js"></script>
+<script>/* (the build's version: the name of the cache it's being served from (sw.js's VERSION), so it's the one running, not the newest on the
+   server; with no cache yet, sw.js's own) */ (async () => { const el = document.getElementById('ver'), show = v => { if (v) el.textContent = v; }, pick = t => { const m = String(t).match(/v(\d+)/); return m ? 'v' + m[1] : null; };
+  try { const ks = (window.caches ? await caches.keys() : []).filter(k => /^little-red-v\d+/.test(k)).sort((a, b) => +b.match(/\d+/)[0] - +a.match(/\d+/)[0]); if (ks.length && navigator.serviceWorker && navigator.serviceWorker.controller) return show(pick(ks[0])); } catch (e) { /* no caches */ }
+  try { show(pick((await (await fetch('sw.js')).text()).match(/VERSION = '[^']*'/))); } catch (e) { /* offline */ } })();</script>
 <script src="js/motion.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/talk.js"></script>
