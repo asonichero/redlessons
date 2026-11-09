@@ -307,7 +307,8 @@ function build(scene, opts) {
 
   // ── The bed nook (back left): a raised platform boxed in at the foot, posts and a canopy rail, a curtain tied back; on it a straw mattress in
   // ticking, a heavy woollen blanket hanging over the side, a patchwork quilt turned down, and a bolster.
-  { const pc = piece('bed', wall), g = pc.g, bx = 0, bz = 0, BW = 40, BD = 23, BH = 9;      // (size of the platform, about its middle: long enough for her mother to lie in)
+  { const pc = piece('bed', floorG), g = pc.g,      // (the floor's, not its wall's: still there, someone lying in it, when the camera's cut the wall away)
+    bx = 0, bz = 0, BW = 40, BD = 23, BH = 9;      // (size of the platform, about its middle: long enough for her mother to lie in)
     box(g, BW, 1.6, BD, bx, BH - 0.8, bz, oak);                                                                        // the platform's boards
     box(g, BW, BH - 1.6, 1.6, bx, (BH - 1.6) / 2, bz + BD / 2 - 0.8, oak);                                             // its front, boxed in
     box(g, 1.6, BH - 1.6, BD, bx + BW / 2 - 0.8, (BH - 1.6) / 2, bz, oak);
@@ -328,7 +329,7 @@ function build(scene, opts) {
     solid(g, slab(BW - 11, 1.2, BD + 0.5, 1, 0.5), quilt, bx + 3.5, BH + 6.1, bz + 0.6, { ink: 0.1 });
     solid(g, slab(5, 1.6, BD - 1, 1, 0.7), quilt, bx - BW / 2 + 9, BH + 6.6, bz + 0.6, { ink: 0.1, rot: [0, 0, 0.2] });   // (turned down)
     solid(g, T.ell(2.2, 1.8, BD / 2 - 2.5, 16, 10), T.mat('#efe6d0'), bx - BW / 2 + 4, BH + 6.4, bz - 0.5, { ink: 0.1 });   // the bolster
-    world.seats.push({ name: 'the bed', at: pc.P(bx - 2, BH + 5.6, bz + BD / 2 - 3), facing: pc.ry, kind: 'bed', head: pc.P(bx - BW / 2 + 4, BH + 6.2, bz - 0.5), feet: pc.P(bx + BW / 2 - 4, BH + 6, bz - 0.5) });
+    world.seats.push({ name: 'the bed', at: pc.P(bx - 2, BH + 5.6, bz + BD / 2 - 3), facing: pc.ry, kind: 'bed', head: pc.P(bx - BW / 2 + 4, BH + 6.2, bz - 0.5), feet: pc.P(bx + BW / 2 - 4, BH + 6, bz - 0.5), front: pc.P(0, 0, 1).sub(pc.P(0, 0, 0)).setY(0).normalize() });      // (front: toward the room, the side the quilt hangs down)
     world.obstacles.push(pc.area(-BW / 2 - 0.5, BW / 2, -12, BD / 2));      // (back to the wall behind it, as it stands by default)
   }
 

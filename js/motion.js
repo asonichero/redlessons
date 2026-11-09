@@ -273,9 +273,10 @@ function create(rig, opts) {
     let rootPos = m.pos.clone(), rootQ = yawQ(m.yaw);
     if (m.seat && m.sitFrom) { const sp = m.seat.at.clone().setY(0); rootPos.lerpVectors(m.sitFrom.pos, sp, sitW); m.pos.copy(rootPos); }
     if (m.bed && lieW > 0) {
-      const head = m.bed.head, feet = m.bed.feet, along = head.clone().sub(feet).setY(0).normalize(), Z = UP.clone(), X = new V3().crossVectors(along, Z);
-      const lieQ = new Q().setFromRotationMatrix(_m.makeBasis(X, along, Z)), headH = (D.hipY + D.torsoY + D.neckY + D.headY + D.headC + 2.1 * (D.headScale - 1)) * sc;
-      const liePos = head.clone().addScaledVector(along, -headH).setY(head.y + 1.6 * sc);
+      // (on her right side over the covers, facing into the room, a little curled: as she lies at bedtime, js/bed.js)
+      const head = m.bed.head, feet = m.bed.feet, along = head.clone().sub(feet).setY(0).normalize(), front = m.bed.front ? m.bed.front.clone() : new V3().crossVectors(UP, along).normalize(), X = new V3().crossVectors(along, front);
+      const lieQ = new Q().setFromRotationMatrix(_m.makeBasis(X, along, front)), headH = (D.hipY + D.torsoY + D.neckY + D.headY + D.headC + 2.1 * (D.headScale - 1)) * sc;
+      const liePos = head.clone().addScaledVector(along, -headH).addScaledVector(front, 1.4 * sc).addScaledVector(X, -3.3 * sc).setY(Math.max(head.y, feet.y) + 0.7);      // (the hip 3.3 up off the quilt, the figure's left being up: X points up the root's side)
       rootPos.lerp(liePos, lieW); rootQ.slerp(lieQ, lieW);
     }
     r.root.position.copy(rootPos); r.root.quaternion.copy(rootQ);
@@ -354,8 +355,16 @@ function create(rig, opts) {
       const sh = r['arm' + s], base = sh.userData.rest || (sh.userData.rest = sh.position.clone());
       sh.position.set(base.x, base.y + 0.12 * Math.abs(A.a) * mv, base.z - 0.32 * A.a * mv);
     }
-    // Lying: arms at her sides, legs straight, head back on the pillow.
-    if (lieW > 0) for (const [s, sd] of [['L', 1], ['R', -1]]) { const a = r['arm' + s]; a.rotation.x *= 1 - lieW; a.rotation.z = lerp(a.rotation.z, sd * 0.2, lieW); r['elbow' + s].rotation.x = lerp(r['elbow' + s].rotation.x, -0.15, lieW); }
+    // Lying: curled a little on her side, her head down on the pillow and her hands drawn up together before her chest (js/bed.js's pose).
+    if (lieW > 0) {
+      r.torso.rotation.x = lerp(r.torso.rotation.x, 0.16, lieW); r.torso.rotation.y *= 1 - lieW; r.torso.rotation.z *= 1 - lieW;
+      r.neck.rotation.x = lerp(r.neck.rotation.x, 0.18, lieW); r.neck.rotation.y *= 1 - lieW; r.head.rotation.set(r.head.rotation.x * (1 - lieW), r.head.rotation.y * (1 - lieW), r.head.rotation.z * (1 - lieW));
+      r.root.updateMatrixWorld(true);
+      const along = m.bed.head.clone().sub(m.bed.feet).setY(0).normalize(), front = m.bed.front ? m.bed.front.clone() : new V3().crossVectors(UP, along).normalize(), chest = r.torso.localToWorld(new V3(0, 5.2, 3.2));
+      for (const [s, da, du] of [['L', 1.2, 1.2], ['R', 2.4, -1.6]]) { const base = [r['arm' + s].quaternion.clone(), r['elbow' + s].quaternion.clone()];
+        armIK(r, s, chest.clone().addScaledVector(along, da * sc).addScaledVector(UP, du * sc), front.clone().addScaledVector(along, s === 'L' ? -0.5 : -0.6));
+        const a = r['arm' + s].quaternion, e = r['elbow' + s].quaternion, ia = a.clone(), ie = e.clone(); a.copy(base[0]).slerp(ia, lieW); e.copy(base[1]).slerp(ie, lieW); }
+    }
     r.root.updateMatrixWorld(true);
 
     // ── Hands: carrying, reaching (each blended over the swinging arm by its weight).
@@ -437,9 +446,9 @@ function create(rig, opts) {
       if (lieW < 0.999) {
         const before = [r['thigh' + s].quaternion.clone(), r['knee' + s].quaternion.clone(), r['ankle' + s].quaternion.clone()];
         legIK(r, s, A, fwd.clone().addScaledVector(UP, 0.25 + sitW * 0.5).addScaledVector(side, sd * 0.12), footQ);
-        if (lieW > 0) { r['thigh' + s].quaternion.slerp(new Q().setFromEuler(new THREE.Euler(0, 0, sd * 0.04)), lieW); r['knee' + s].quaternion.slerp(new Q().setFromEuler(new THREE.Euler(0.06, 0, 0)), lieW); r['ankle' + s].quaternion.slerp(new Q().setFromEuler(new THREE.Euler(0.5, 0, 0)), lieW); }
+        if (lieW > 0) { r['thigh' + s].quaternion.slerp(new Q().setFromEuler(new THREE.Euler(-1.0 + (s === 'L' ? -0.12 : 0), 0, sd * 0.05)), lieW); r['knee' + s].quaternion.slerp(new Q().setFromEuler(new THREE.Euler(1.35, 0, 0)), lieW); r['ankle' + s].quaternion.slerp(new Q().setFromEuler(new THREE.Euler(0.45, 0, 0)), lieW); }      // (the knees drawn up)
         void before;
-      } else { r['thigh' + s].rotation.set(0, 0, sd * 0.04); r['knee' + s].rotation.set(0.06, 0, 0); r['ankle' + s].rotation.set(0.5, 0, 0); }
+      } else { r['thigh' + s].rotation.set(-1.0 + (s === 'L' ? -0.12 : 0), 0, sd * 0.05); r['knee' + s].rotation.set(1.35, 0, 0); r['ankle' + s].rotation.set(0.45, 0, 0); }
     }
     r.root.updateMatrixWorld(true);
   }
