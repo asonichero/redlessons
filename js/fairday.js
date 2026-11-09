@@ -29,9 +29,10 @@ const SC = 2;      // (a stall's size: its counter at a grown woman's waist, the
 const KIT = root.Cottage && root.Cottage.kit;
 const ROOM = KIT ? KIT.roomLayout('red-lessons:room:fair', {
   flowers: { x: -156.5, z: -3.5, ry: 1.309 }, remedies: { x: -146.5, z: 71, ry: 2.0944 }, ginger: { x: 109, z: -51, ry: 5.4978 }, ribbons: { x: -109.5, z: -66.5, ry: 0.5236 },
-  ale: { x: 40, z: -80.5, ry: -0.2618 }, pole: { x: -15, z: 7.5, ry: 0 }, crate: { x: -70, z: 10, ry: 0 }, pen: { x: 166.5, z: 71.5, ry: -2.0944 },      // (round the green, each facing in to it)
+  ale: { x: 40, z: -80.5, ry: -0.2618 }, pole: { x: -15, z: 7.5, ry: 0 }, crate: { x: -70, z: 10, ry: 0 }, pen: { x: 166.5, z: 71.5, ry: -2.0944 },
+  cart: { x: -55, z: -40, ry: 0.5 },      // (the carriers' cart of trinkets from Ashby: wheeled out of the inn yard by Old Amos in the late morning)      // (round the green, each facing in to it)
 }) : { LAYOUT: {}, layout: () => ({}), saveLayout() {}, resetLayout() {} };
-const PIECES = { flowers: 'Mama’s flower stall', remedies: 'Grandmother’s remedies stall', ginger: 'The gingerbread stall', ribbons: 'The ribbon stall', ale: 'The ale stall', pole: 'The bunting pole', crate: 'The Miller’s crate', pen: 'Bo’s pen and sheep' };
+const PIECES = { flowers: 'Mama’s flower stall', remedies: 'Grandmother’s remedies stall', ginger: 'The gingerbread stall', ribbons: 'The ribbon stall', ale: 'The ale stall', pole: 'The bunting pole', crate: 'The Miller’s crate', pen: 'Bo’s pen and sheep', cart: 'The trinket cart' };
 const local = (l, x, z) => new V3(l.x + Math.cos(l.ry) * x + Math.sin(l.ry) * z, 0, l.z - Math.sin(l.ry) * x + Math.cos(l.ry) * z);      // (a point of a piece, in the world: x along it, z out to its front)
 // The fair's own people (not about the village of a day): who, their figure, where they stand, which way they face, their voice.
 const EXTRA = [
@@ -77,6 +78,52 @@ function stall(T, s, up) {
   if (up >= 3) s.goods.forEach((c, i) => { for (let k = 0; k < 3; k++) mesh(s.id === 'ale' ? new THREE.CylinderGeometry(1.6, 1.6, 3, 10) : new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.7, 1.2), c, -5.5 + i * 3.6 + (k - 1) * 0.6, s.id === 'ale' ? 9.5 : 8.5, -1.5 + k * 1.4, 0.04); });
   g.scale.setScalar(SC); return g;
 }
+// The carriers' handcart, its bed a display of trinkets from Ashby under a little striped awning: two big wheels at its sides, its handles out
+// behind (where Old Amos stands to sell), two props in front to keep it level. Its front (+z) is where they buy. The lucky charm on its own
+// stand in the middle, gilt on a red cord (Ned's eye on it, for Agnes; Red's to buy first, if she's quick); round it, the rest: brooches, combs,
+// a pewter thimble, a painted box, ribbons on cards, a little glass bottle. (c.charm: the charm, to take off when it's sold)
+const CART_AT = { amos: [0, -14] };
+function cart(T) {
+  const g = new THREE.Group(), wood = T.mat('#7a5a3a'), dark = T.mat('#4a3424'), iron = T.mat('#3a3634');
+  const mesh = (geo, m, x, y, z, ink, par) => { const k = new THREE.Mesh(geo, typeof m === 'string' ? T.mat(m) : m); k.position.set(x, y, z); k.castShadow = true; if (ink !== 0) k.add(new THREE.Mesh(T.hullGeo(geo, ink || 0.04), T.INKM[0])); (par || g).add(k); return k; };
+  mesh(new THREE.BoxGeometry(18, 1.2, 10), wood, 0, 12, 0, 0.06);      // (the bed)
+  for (const sz of [-1, 1]) mesh(new THREE.BoxGeometry(18, 2.2, 0.6), dark, 0, 13.4, sz * 5, 0.03);      // (its sides, a low rail)
+  for (const sx of [-1, 1]) { const wl = new THREE.Group(); wl.position.set(sx * 10.2, 6.2, 0); g.add(wl);
+    mesh(new THREE.TorusGeometry(5.6, 0.45, 6, 20), iron, 0, 0, 0, 0.03, wl).rotation.y = Math.PI / 2;
+    for (let k = 0; k < 8; k++) mesh(new THREE.BoxGeometry(0.4, 10.8, 0.5), wood, 0, 0, 0, 0.02, wl).rotation.x = k * Math.PI / 8;
+    mesh(new THREE.CylinderGeometry(1, 1, 1.4, 10).rotateZ(Math.PI / 2), dark, 0, 0, 0, 0.03, wl); }
+  mesh(new THREE.CylinderGeometry(0.5, 0.5, 21, 6).rotateZ(Math.PI / 2), iron, 0, 6.2, 0, 0.02);      // (the axle)
+  for (const sx of [-1, 1]) { mesh(new THREE.CylinderGeometry(0.45, 0.45, 12, 6), dark, sx * 7, 6, 4.4, 0.03); mesh(new THREE.CylinderGeometry(0.55, 0.45, 14, 6).rotateX(Math.PI / 2 - 0.08), wood, sx * 6.5, 12.6, -11.5, 0.03); }      // (the props in front; the handles behind)
+  // (the display: a board tilted to the buyer, a cloth on it, and the trinkets in rows)
+  const board = new THREE.Group(); board.position.set(0, 13.6, 0.5); board.rotation.x = 0.35; g.add(board);
+  mesh(new THREE.BoxGeometry(16, 0.5, 8.4), wood, 0, 0, 0, 0.04, board); mesh(new THREE.BoxGeometry(15.4, 0.12, 7.8), '#3a4a6a', 0, 0.3, 0, 0, board);
+  const r = (k => () => { k = (k * 16807) % 2147483647; return k / 2147483647; })(57), cols = ['#d8b860', '#c0c4c8', '#d84050', '#4a70c0', '#6aa060', '#e8d8b0', '#a87850'];
+  for (let i = 0; i < 9; i++) { const x = -6.2 + (i % 5) * 3.1 + (i >= 5 ? 1.55 : 0), z = i < 5 ? 1.9 : -1.9, c = cols[i % cols.length];
+    if (Math.abs(x) < 1 && z > 0) continue;      // (the middle of the front row: the charm's)
+    const kind = i % 4, geo = kind === 0 ? new THREE.TorusGeometry(0.7, 0.22, 6, 12).rotateX(Math.PI / 2) : kind === 1 ? new THREE.BoxGeometry(1.6, 0.8, 1.1) : kind === 2 ? new THREE.CylinderGeometry(0.5, 0.6, 1.4, 8) : new THREE.BoxGeometry(1.2, 0.2, 1.8);
+    mesh(geo, c, x, 0.55 + (kind === 2 ? 0.4 : 0), z, 0.02, board).rotation.y = r() * 0.6 - 0.3; }
+  const charm = new THREE.Group(); charm.position.set(0, 0.4, 1.9); board.add(charm);
+  mesh(new THREE.BoxGeometry(1.8, 1.4, 1.8), '#5a3a2a', 0, 0.7, 0, 0.03, charm); mesh(new THREE.TorusGeometry(0.75, 0.18, 6, 14), '#e8c048', 0, 2.2, 0, 0.02, charm);
+  mesh(new THREE.TorusGeometry(1.1, 0.06, 4, 16).rotateX(Math.PI / 2), '#c02030', 0, 1.5, 0, 0, charm);      // (the charm on its stand: a gilt ring on a red cord)
+  // (the awning: two poles from the handles' end of the bed, a striped cloth slanting forward over it)
+  for (const sx of [-1, 1]) mesh(new THREE.CylinderGeometry(0.3, 0.3, 26, 6), dark, sx * 8.4, 25, -4.6, 0.03);
+  for (let k = 0; k < 5; k++) mesh(new THREE.BoxGeometry(17.6 / 5, 0.25, 12), k % 2 ? '#f0e6d2' : '#7a8a5a', -8.8 + 17.6 / 10 + k * 17.6 / 5, 36.5, 0.5, 0.02).rotation.x = 0.16;
+  g.userData.charm = charm; return g;
+}
+// ── The cart comes: at eleven Old Amos goes over to the inn yard, where it stood the night, and wheels it out across the green to its place,
+// pushing from the handles; then stands behind it to sell. Come later, she finds it there already.
+const CART_IN = H('11:00');
+function cartComes(P, w, g, am, F, W) {
+  const back = F.spots.cartBack, home = { pos: g.position.clone(), ry: g.rotation.y }, inn = W.spots.inn, place = () => { g.position.copy(home.pos); g.rotation.y = home.ry; g.visible = true; W.obstacles.push(F.obstacles.cart); };
+  if (w.cal.minute >= CART_IN + 10) { place(); am.warp(back.at, back.yaw); return; }
+  g.visible = false; let step = 0;
+  const off = P.tick(() => {
+    if (step === 0 && w.cal.minute >= CART_IN) { step = 1; am.goTo(inn.at.clone(), null).then(() => { step = 2; }); }      // (over to the inn yard for it)
+    if (step === 2) { step = 3; g.visible = true; am.goTo(back.at.clone(), back.yaw, { speed: 0.6 }).then(() => { step = 4; }); }      // (and out with it, at a steady push)
+    if (step === 3) { const f = new V3(Math.sin(am.yaw), 0, Math.cos(am.yaw)); g.position.set(am.pos.x, 0, am.pos.z).addScaledVector(f, -CART_AT.amos[1]); g.rotation.y = am.yaw; }      // (the cart before him, its handles in his hands)
+    if (step === 4) { off(); place(); am.face(back.yaw); }
+  });
+}
 // Bo's pen: hurdles round a square of the green, a gate in its front, and a few of the flock in it, washed for showing.
 function pen(T) {
   const g = new THREE.Group(), wood = T.mat('#8a6a42'), wool = T.mat('#f2ece0'), face = T.mat('#2e2a28'), W2 = 22, D2 = 15;
@@ -113,6 +160,7 @@ function build(T, L, up) {
   { const pl = new THREE.Group(), m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 44, 8), T.mat('#6a4a30')); m.position.y = 22; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.05), T.INKM[0])); pl.add(m); put('pole', pl);
     const top = new V3(L.pole.x, 43, L.pole.z); if (up >= 2) { g.add(bunting(T, new V3(60, 30, 16), top)); for (const st of STALLS) g.add(bunting(T, awning(st.id), top)); } obstacles.push({ x: L.pole.x, z: L.pole.z, r: 1.5 }); }
   if (up >= 3) { const c = new THREE.Group(), m = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); m.position.y = 1.5; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.06), T.INKM[0])); c.add(m); put('crate', c); obstacles.push({ x: L.crate.x, z: L.crate.z, r: 3.5 }); }
+  if (up >= 3) { put('cart', cart(T)); const c = local(L.cart, 0, 0); obstacles.cart = { x: c.x, z: c.z, r: 11 }; const b = local(L.cart, ...CART_AT.amos); spots.cartBack = { at: b, yaw: yawTo(b, c), look: c.clone().setY(16), fair: true }; }      // (kept out of the list till it's wheeled into its place)
   if (up >= 3) { put('pen', pen(T)); const l = L.pen; for (const [x0, z0, x1, z1] of [[-22, -15, 22, -15], [-22, -15, -22, 15], [22, -15, 22, 15], [-22, 15, 22, 15]]) for (let k = 0; k <= 5; k++) { const c = local(l, x0 + (x1 - x0) * k / 5, z0 + (z1 - z0) * k / 5); obstacles.push({ x: c.x, z: c.z, r: 2.2 }); } }
   return { group: g, pieces, obstacles, spots };
 }
@@ -151,6 +199,7 @@ function attach(P, w) {
     P.tick(dt => { motion.update(dt, null); rig.tick(dt); });
     if (!s) W.obstacles.push({ x: at.x, z: at.z, r: 3 });
   }
+  { const C = F.pieces.cart, A = figs.carrierAmos; if (C && A) cartComes(P, w, C.g, A.motion, F, W); }      // (the trinket cart, from late morning)
   // (the Miller's bow arm, sawing, while the fair's on)
   { const f = figs.miller; if (f) { let t = 0; f.motion.reach('L', () => f.rig.root.position.clone().add(new V3(Math.sin(f.motion.yaw) * 3 - Math.cos(f.motion.yaw) * 2, 15, Math.cos(f.motion.yaw) * 3 + Math.sin(f.motion.yaw) * 2)));
     f.motion.reach('R', () => { const s = Math.sin(t * 4) * 2.2, fw = new V3(Math.sin(f.motion.yaw), 0, Math.cos(f.motion.yaw)), sd = new V3(fw.z, 0, -fw.x); return f.rig.root.position.clone().addScaledVector(fw, 4).addScaledVector(sd, -1 + s).setY(14); });
