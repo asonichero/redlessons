@@ -446,7 +446,8 @@ function create(view, ui) {
 
   // ── Starting.
   async function newGame() { save.reset(); await go('cabin', 'chapter'); }
-  async function resume() { const a = save.state.area && AREAS[save.state.area] ? save.state.area : 'home'; if (a === 'glade') return go('wood', 'log'); await go(a, 'saved'); }      // (the glade's only a scene's: back on the path by the fallen tree)
+  async function resume() { if (root.FairDay && root.FairDay.morningDue(w)) return begin();      // (fair day's morning not yet through: from its start, on her bed)
+    const a = save.state.area && AREAS[save.state.area] ? save.state.area : 'home'; if (a === 'glade') return go('wood', 'log'); await go(a, 'saved'); }      // (the glade's only a scene's: back on the path by the fallen tree)
   // (a new game from a later point of chapter one: what came before it counted as done)
   async function startAt(where) {
     save.reset();

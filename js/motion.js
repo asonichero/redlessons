@@ -510,7 +510,7 @@ function create(rig, opts) {
     let low = 0; for (const s of ['L', 'R']) { const h = m.hands[s]; if (h.target && h.want) { const p = typeof h.target === 'function' ? h.target() : h.target; low = Math.max(low, clamp((10.5 * sc - p.y) / (7.5 * sc), 0, 1)); } }
     m.crouch = approach(m.crouch, low * Math.max(m.hands.L.want, m.hands.R.want), 3.5, dt);
     if (m.seat) m.yaw = lerp(m.sitFrom.yaw, m.sitFrom.yaw + angDiff(m.sitFrom.yaw, m.seat.facing), ease(Math.min(1, m.sitW * 1.6)));
-    if (rig.setSeated) rig.setSeated(m.sitW * (1 - m.lieW));
+    if (rig.setSeated) rig.setSeated(Math.max(m.sitW, m.lieW));      // (lying, too, the skirt laid over her legs as when she sits)
     locomote(dt, input);
     stepFeet(dt);
     pose(dt);
