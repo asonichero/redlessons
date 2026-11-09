@@ -313,7 +313,7 @@ function create(view, ui) {
       o.talk = () => { pending = q.offered({ where: 'home', who: 'maren' }).find(s => s.ref === 'maren.chores') ? 'maren.chores' : null; return pending === 'maren.chores' ? root.Story.chores() : chores && chores.on() && cal.minute < 18 * 60 ? chores.marenTalk(P) : root.Story.marenIdle(cal.part); };      // (in the day: what she's brought, the errand, the garden: js/chores.js)
       o.after = async kind => { if (kind === 'talk' && pending === 'maren.chores') { save.flag('curfew-agreed'); w.complete('maren.chores'); } pending = null; };
       o.actions = () => sleepAction().concat(chores ? chores.actions(P, 'home') : [], root.Evening ? root.Evening.actions(P, w) : []);
-      o.doorGuard = () => chores && chores.forgot(P) ? chores.remind(P) : root.Evening && root.Evening.curfewNudge(w) ? root.Evening.nudge(P, w) : null;      // (going to open the door for the eggs with no basket: her mother calls her back, and it stays shut; after nine, with supper to come, the curfew)
+      o.doorGuard = () => root.FairDay && root.FairDay.guard(w) ? root.FairDay.guard(w) : chores && chores.forgot(P) ? chores.remind(P) : root.Evening && root.Evening.curfewNudge(w) ? root.Evening.nudge(P, w) : null;      // (going to open the door for the eggs with no basket: her mother calls her back, and it stays shut; after nine, with supper to come, the curfew)
     } else if (A.talk) o.talk = A.talk;
     // (the village: the day's chores, and its people, about their days: js/villagers.js)
     // (the Wheatsheaf's door: in, of the evening she's promised to sit with Bess, from half past five till it's too late)
@@ -412,7 +412,12 @@ function create(view, ui) {
   async function morning(text) { await fade(true, text || ''); if (capacity && (cal.minute >= 22 * 60 || cal.minute < 5 * 60)) capacity.late(); cal.sleep(); keepDay(); await begin(); }      // (to bed past ten: tomorrow starts lower)
   // (the day opens at breakfast: the two of them at the table, across it from each other, and her mother's word for the day; then up, under a
   // fade, and the day's begun)
-  async function begin() { cal.advance(30); w.breakfasted = true; const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered', sit = (chores && chores.on()) || first;
+  async function begin() {
+    // (fair day: its own morning, from before dawn, in the cottage: js/fairday.js)
+    if (root.FairDay && root.FairDay.morningDue(w)) { save.change(s => { s.minute = 5 * 60 + 30; }, { time: true }); w.breakfasted = true;
+      await go('home', 'bed', { ready: P_ => root.FairDay.wake(P_, w) }); const P_ = P; if (!P_) return;
+      const go_ = () => { if (P !== P_) return; if (P_.busy) { setTimeout(go_, 120); return; } P_.act(() => root.FairDay.morning(P_, w)); }; go_(); return; }
+    cal.advance(30); w.breakfasted = true; const first = !(chores && chores.on()) && q.stateOf('maren.chores') === 'offered', sit = (chores && chores.on()) || first;
     let table = null; await go('home', 'bed', { ready: P_ => { if (sit && root.Maren) table = root.Maren.atTable(P_, w, { plates: true }); } }); const P_ = P; if (!P_) return;
     const start = fn => { if (P !== P_) return; if (P_.busy) { setTimeout(() => start(fn), 120); return; } P_.act(fn); };      // (after the night's own action has let go: from bed, it's still running)
     if (sit) start(async () => { if (first) await P_.talkToMother({ seated: true }); if (chores && chores.on()) await chores.breakfast(P_, { seated: true });      // (the first morning: the chores agreed, and then the day's errand asked straight after: the eggs)

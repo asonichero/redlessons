@@ -47,7 +47,7 @@ const sessionToday = w => { const x = sessions(w).find(([d]) => d === w.cal.day)
 // Her mother's whereabouts, this week: home (the planting done), at her needlework for the session; at her stall on fair day. Else null (her
 // usual day: js/maren.js).
 function marenAt(w) {
-  const ph = phase(w), m = w.cal.minute; if (ph === 'fair') return m >= H('07:30') && m < ENDS ? 'fair' : 'home';
+  const ph = phase(w), m = w.cal.minute; if (ph === 'fair') return w.fairMaren === 'out' ? 'fair' : w.fairMaren === 'in' ? 'home' : m >= H('07:30') && m < ENDS ? 'fair' : 'home';      // (fairMaren: the fair's morning, js/fairday.js: out at the flowers, then in)
   if (ph !== 'week') return null;
   const part = sessionToday(w), [a, b] = part === 'morning' ? MORNING : AFTERNOON;
   return part && m >= a && m < b ? 'needle' : 'home';

@@ -200,6 +200,11 @@ function attach(P, w) {
     if (!s) W.obstacles.push({ x: at.x, z: at.z, r: 3 });
   }
   { const C = F.pieces.cart, A = figs.carrierAmos; if (C && A) cartComes(P, w, C.g, A.motion, F, W); }      // (the trinket cart, from late morning)
+  // (come out of the cottage with the flowers: her mother some way along already, on her way to her stall)
+  if (w.fairWalk && figs.mother) { w.fairWalk = false; const f = figs.mother, home = W.entries && W.entries.home, st = W.spots.stall_flowers;
+    if (home && st) { const from = new V3(home.at[0], 0, home.at[1]), at = P.collide(from.clone().lerp(st.at, 0.35), 3); f.motion.warp(at, yawTo(at, st.at)); f.rig.root.position.copy(at);
+      const b = bucketItem(T); P.stage.scene.add(b.obj); f.motion.hold(b, 'hang');      // (the other bucket, in her hand; set down by the trestle as she gets there)
+      f.motion.goTo(st.at.clone(), yawTo(st.at, W.spots.before_flowers.at)).then(() => { f.motion.drop(); b.obj.position.copy(local(L.flowers, -6 * SC, -4 * SC)); b.obj.rotation.set(0, 0, 0); }); } }
   // (the Miller's bow arm, sawing, while the fair's on)
   { const f = figs.miller; if (f) { let t = 0; f.motion.reach('L', () => f.rig.root.position.clone().add(new V3(Math.sin(f.motion.yaw) * 3 - Math.cos(f.motion.yaw) * 2, 15, Math.cos(f.motion.yaw) * 3 + Math.sin(f.motion.yaw) * 2)));
     f.motion.reach('R', () => { const s = Math.sin(t * 4) * 2.2, fw = new V3(Math.sin(f.motion.yaw), 0, Math.cos(f.motion.yaw)), sd = new V3(fw.z, 0, -fw.x); return f.rig.root.position.clone().addScaledVector(fw, 4).addScaledVector(sd, -1 + s).setY(14); });
@@ -209,7 +214,12 @@ function attach(P, w) {
   function actions() {
     if (P.busy || talking.busy) return [];
     const out = [];
-    for (const k in figs) { const f = figs[k]; out.push({ label: 'Talk to ' + (k === 'mother' ? 'Mama' : f.D.name), at: f.motion.pos.clone().setY(16), run: async () => { talking.busy = true;
+    const fl = P.motion.carry && P.motion.carry.kind === 'flowers', mo = figs.mother;
+    if (fl && mo) out.push({ label: 'Give Mama the flowers', at: mo.motion.pos.clone().setY(16), run: async () => { talking.busy = true;      // (the bucket she carried down, set by the trestle; the flowers errand seen to with it)
+      try { const m = P.motion; await m.face(yawTo(m.pos, mo.motion.pos)); mo.motion.face(yawTo(mo.motion.pos, m.pos)); await P.converse(S.fairMorning('given'), { shot: ['red', 'mother'] });
+        const it = m.drop(); if (it) { const at = local(L.flowers, -9 * SC, -4 * SC); it.obj.position.copy(at); it.obj.rotation.set(0, 0, 0); }
+        fchange(w, s => { s.asked.flowers = true; s.done.flowers = true; }); w.refresh(); } finally { talking.busy = false; } } });
+    for (const k in figs) { if (k === 'mother' && fl) continue; const f = figs[k]; out.push({ label: 'Talk to ' + (k === 'mother' ? 'Mama' : f.D.name), at: f.motion.pos.clone().setY(16), run: async () => { talking.busy = true;
       try { const m = P.motion; await m.face(yawTo(m.pos, f.motion.pos)); f.motion.face(yawTo(f.motion.pos, m.pos)); if (!(await talk(P, w, k))) await P.converse(S.fairTalk(k, { day: w.cal.day, minute: w.cal.minute }), { shot: ['red', k] }); f.motion.face(yawTo(f.motion.pos, f.D.face || new V3(f.motion.pos.x, 0, ROW_Z + 20))); }
       finally { talking.busy = false; } } }); }
     return out;
@@ -238,6 +248,109 @@ function station(w, key, min) {
   }
 }
 
+// ── Fair morning, in the cottage: before dawn, Little Red up and sat on her bed in her chemise and drawers, too excited to sleep; her mother out
+// already, cutting the stall's flowers. The dress, finished in the night, folded over the back of her mother's chair; two buckets of blooms
+// by the door. She may look at both, and wash at the dresser (not go out: not like that); and once she has, her mother comes in with a basket,
+// and she's dressed (buttoned up the back), turned round, admired; and the two of them have a quiet word. Then the plan, and breakfast; and
+// out of the door, a bucket in her hands, her mother gone on ahead to her stall.
+const morningDue = w => !!(root.Fair && root.Fair.isFair(w)) && (w.save.state.flags || {})['fair-morning'] !== w.cal.day;
+// (a bucket of cut flowers: a wooden pail, stems and blooms standing out of it)
+function bucket(T) {
+  const g = new THREE.Group(), wood = T.mat('#8a6a42'), stem = T.mat('#4e7a36'), cols = ['#f0a0b8', '#fbf6ec', '#e05a6a', '#f4d060', '#c8a0e0'];
+  const m = (geo, mat, x, y, z, ink) => { const k = new THREE.Mesh(geo, mat); k.position.set(x, y, z); k.castShadow = true; if (ink) k.add(new THREE.Mesh(T.hullGeo(geo, ink), T.INKM[0])); g.add(k); return k; };
+  m(new THREE.CylinderGeometry(1.9, 1.5, 3.6, 12, 1, true), wood, 0, 1.8, 0, 0.05).material.side = THREE.DoubleSide; m(new THREE.CircleGeometry(1.5, 12).rotateX(-Math.PI / 2), wood, 0, 0.1, 0);
+  m(new THREE.TorusGeometry(1.95, 0.12, 4, 14).rotateX(Math.PI / 2), T.mat('#3a3634'), 0, 2.9, 0);
+  for (let k = 0; k < 11; k++) { const a = k * 2.4, r = 0.4 + (k % 3) * 0.45, x = Math.cos(a) * r, z = Math.sin(a) * r, h = 4.6 + (k % 4) * 0.7;
+    const st = m(new THREE.CylinderGeometry(0.08, 0.08, h - 1, 4), stem, x * 1.2, (h + 1) / 2, z * 1.2); st.rotation.set(z * 0.18, 0, -x * 0.18);
+    m(new THREE.SphereGeometry(0.55 + (k % 2) * 0.15, 7, 5), T.mat(cols[k % cols.length]), x * 1.5, h + 0.3, z * 1.5, 0.03); }
+  return g;
+}
+const bucketItem = T => ({ obj: bucket(T), name: 'the flowers', kind: 'flowers', grip: new V3(0, 3.6, 0), hangs: true, radius: 2.2, keep: true });
+// (the dress, folded over a chair's back: blue, its white collar showing)
+function folded(T) {
+  const g = new THREE.Group(), blue = T.mat('#6f90c4'), m = (geo, mat, x, y, z, ink) => { const k = new THREE.Mesh(geo, mat); k.position.set(x, y, z); k.castShadow = true; if (ink) k.add(new THREE.Mesh(T.hullGeo(geo, ink), T.INKM[0])); g.add(k); return k; };
+  m(new THREE.BoxGeometry(5.6, 0.7, 2.2), blue, 0, 0, 0, 0.04);      // (over the top rail)
+  for (const s of [-1, 1]) m(new THREE.BoxGeometry(5.4, 5.5, 0.5), blue, 0, -2.6, s * 1.1, 0.04).rotation.x = s * 0.08;      // (hanging down either side)
+  m(new THREE.BoxGeometry(2.6, 0.5, 2.3), T.mat('#fbf8f2'), -1.2, 0.5, 0, 0.03);      // (the collar, folded on top)
+  return g;
+}
+// Set the room for it, as it's built (world.js's begin): Red on her bed in her shift; the dress and the buckets; her mother out.
+function wake(P, w) {
+  const T = root.Toon, W = P.world, sc = P.stage.scene; w.fairMaren = 'out';
+  { const c = P.motion.carry; if (c) { P.motion.drop(); c.obj.position.set(-34, 0, -6); c.obj.rotation.set(0, 0.4, 0); if (!W.items.includes(c)) W.items.push(c); } }      // (her hands empty: whatever she brought in last night set down by her bed)
+  if (P.setGown) P.setGown({ kind: 'undressed' }); if (P.setDress) P.setDress({ skirt: 'off' });
+  const bed = W.seats.find(s => s.kind === 'bed'); if (bed) P.seatNow(bed);
+  const ch = W.seats.find(s => s.kind === 'chair'), back = ch ? ch.at.clone().add(new V3(-Math.sin(ch.facing) * 2.6, 6.4, -Math.cos(ch.facing) * 2.6)) : new V3(-20, 15, -28);
+  const dress = folded(T); dress.position.copy(back); dress.rotation.y = ch ? ch.facing + Math.PI / 2 : 0; sc.add(dress);
+  const pails = [new V3(-50, 0, 21), new V3(-45.5, 0, 19.5)].map(p => { const b = bucket(T); b.position.copy(p); sc.add(b); W.obstacles.push({ x: p.x, z: p.z, r: 2.4 }); return b; });
+  w.fairMorningSet = { dress, pails, seen: {} };
+}
+async function morning(P, w) {
+  const S = root.Story, W = P.world, m = P.motion, set = w.fairMorningSet; if (!set) return;
+  await P.wait(0.6); await P.converse(S.fairMorning('wake'), { shot: false, keepCamera: true });
+  const done = () => set.seen.dress && set.seen.flowers && set.seen.wash;
+  const thought = async k => { await P.converse(S.fairMorning(k), { shot: false, keepCamera: true }); };
+  const acts = [
+    { label: 'Look at the dress', get at() { return set.dress.position.clone(); }, when: () => !P.busy, run: async () => {
+      if (P.sitting) await P.getUp(); const at = set.dress.position.clone(), to = P.collide(at.clone().setY(0).add(new V3(0, 0, 8)), 3.2); await m.goTo(to, Math.atan2(at.x - to.x, at.z - to.z));
+      m.lookAt(at); await m.reach('R', at.clone().add(new V3(0, 0.4, 1))); await P.wait(0.8); await thought('dress'); await m.release('R'); m.lookAt(null); set.seen.dress = true; await after(); } },
+    { label: 'Look at the flowers', get at() { return set.pails[0].position.clone().setY(4); }, when: () => !P.busy, run: async () => {
+      if (P.sitting) await P.getUp(); const at = set.pails[0].position.clone().lerp(set.pails[1].position, 0.5), to = P.collide(at.clone().add(new V3(7, 0, 4)), 3.2); await m.goTo(to, Math.atan2(at.x - to.x, at.z - to.z));
+      m.lookAt(at.clone().setY(4)); await thought('flowers'); m.lookAt(null); set.seen.flowers = true; await after(); } },
+    { label: 'Wash at the dresser', get at() { return W.basin ? W.basin.at.clone() : m.pos.clone(); }, when: () => !P.busy && !!W.basin, run: async () => {
+      const B = W.basin; if (P.sitting) await P.getUp(); await m.goTo(P.collide(B.stand.clone().setY(0), 3.2), B.facing);
+      for (let k = 0; k < 3; k++) { m.reach('L', B.at.clone().add(new V3(0, -0.6 + k * 0.2, 0))); await m.reach('R', B.at.clone().add(new V3(0.6, -0.4, 0))); await P.wait(0.4); m.release('L'); await m.release('R'); }
+      await thought('wash'); set.seen.wash = true; await after(); } },
+  ];
+  W.actions = (W.actions || []).concat(acts.map(a => Object.assign(a, { when: (wh => () => wh() && !a.gone)(a.when) })));
+  set.acts = acts; set.guard = () => thought('door');      // (the door: not out in her shift)
+  w.refresh();
+  async function after() { if (!done()) return;
+    for (const x of acts) x.gone = true; set.guard = null; await dressed(P, w); }
+}
+const morningObjective = w => w.fairMorningSet && w.fairMorningSet.acts && !w.fairMorningSet.acts[0].gone ? 'Up, and ready for the fair: wash, and wait for Mama.' : null;
+// (her mother in, with her basket; and the dress)
+async function dressed(P, w) {
+  const S = root.Story, W = P.world, m = P.motion, set = w.fairMorningSet;
+  w.fairMaren = 'in'; await P.wait(0.2);
+  const mm = P.npcMotion; for (let k = 0; k < 60 && (!mm || P.npcMoving || P.npcAway); k++) await P.wait(0.1);      // (in by the door, and over to where she stands)
+  const it = W.items.find(x => x.kind === 'basket'); let held = null;
+  if (mm && it) { const o = it.obj.clone(); P.stage.scene.add(o); held = { obj: o, name: 'her basket', grip: it.grip.clone(), radius: it.radius, hangs: true }; mm.hold(held, 'hang'); }
+  if (P.sitting) await P.getUp(); await P.approach();
+  await P.converse(S.fairMorning('in'), { shot: ['red', 'mother'] });
+  // (into the dress, under a fade: stood in the middle of the room, her mother behind her at the buttons)
+  await w.fade(true);
+  if (held) { mm.drop(); P.stage.scene.remove(held.obj); }
+  P.stage.scene.remove(set.dress);
+  if (P.setDress) P.setDress({ skirt: 'down' }); if (P.setGown) P.setGown(root.Fair.gown(w));
+  const Q = P.motion, red = P.collide(new V3(2, 0, 6), 3.4), yaw = Math.PI * 0.75, f = new V3(Math.sin(yaw), 0, Math.cos(yaw)), mam = red.clone().addScaledVector(f, -5);
+  Q.warp(red, yaw); P.rig.root.position.copy(red); if (mm) mm.warp(mam, yaw);
+  for (let i = 0; i < 20; i++) P.frame(1 / 60);
+  await P.wait(0.3); await w.fade(false);
+  let on = true; const btn = (async () => { let k = 0; while (on && mm) { const up = P.rig.root.localToWorld(new V3(0, 19 + (k % 6) * 0.9, -1.4)); await mm.reach(k % 2 ? 'R' : 'L', up); await P.wait(0.5); await mm.release(k % 2 ? 'R' : 'L'); k++; } })();
+  await P.converse(S.fairMorning('buttons'), { shot: false, keepCamera: true });
+  on = false; await btn;
+  // (turned round to face her; and a spin, before she can help it)
+  await Q.face(yaw + Math.PI); if (mm) mm.face(yawTo(mm.pos, Q.pos));
+  await P.converse(S.fairMorning('look'), { shot: ['red', 'mother'] });
+  for (const k of [1, 2, 3]) await Q.face(yaw + Math.PI + k * Math.PI * 2 / 3 * 1.0);
+  await Q.face(yaw + Math.PI);
+  await P.converse(S.fairMorning('spin'), { shot: ['red', 'mother'] });
+  // (her hand to her cheek)
+  if (mm) { await mm.reach('R', () => P.rig.headGroup.getWorldPosition(new V3()).add(new V3(Math.sin(Q.yaw) * 1.2, 0.2, Math.cos(Q.yaw) * 1.2))); }
+  await P.converse(S.fairMorning('cheek'), { shot: ['red', 'mother'] });
+  if (mm) await mm.release('R');
+  if (P.rig.setExpr) P.rig.setExpr('smile'); await P.wait(1.6);      // (a quiet moment, smiling at each other)
+  await P.converse(S.fairMorning('plan'), { shot: ['red', 'mother'] });
+  // (breakfast; then out of her door, a bucket in her hands, her mother gone on ahead)
+  await w.fade(true);
+  for (const b of set.pails) P.stage.scene.remove(b);
+  w.save.flag('fair-morning', w.cal.day); w.fairMorningSet = null; w.fairMaren = null;
+  w.save.change(s => { s.minute = Math.max(s.minute, H('07:30')); }, { time: true });
+  w.fairWalk = true;      // (her mother on her way to the stall as Red comes out: js/fairday.js's attach)
+  await w.go('village', 'home');
+  const P2 = w.P; if (P2 && P2.motion) { const b = bucketItem(root.Toon); P2.stage.scene.add(b.obj); P2.motion.hold(b, 'hang'); }
+}
 // ── The day's errands: asked by someone, fetched from somewhere (into her basket), and given to whoever asked. Her mother's and Grandmother's
 // come as the day goes on, and aren't hers to refuse; the traders' favours she may turn down (each wants something of her, and some a risky
 // way to it). { id, who (asks, and is given it), from (the minute it's asked from, at the soonest), item (in her basket), area (where it's
@@ -389,7 +502,9 @@ function kissWatch(P, w) {
 // What's hers to do today, for the objectives.
 function objectives(w) {
   if (!root.Fair || !root.Fair.isFair(w)) return [];
+  { const mo = morningObjective(w); if (mo) return [mo]; }      // (the morning, in the cottage: nothing else yet)
   const st = fstate(w), out = [], WHO = { mother: 'Mama', gran: 'Grandmother', smith: 'Master Ferrier', bo: 'Bo', thatcherWife: 'Mistress Thatcher' };
+  if (w.P && w.P.motion && w.P.motion.carry && w.P.motion.carry.kind === 'flowers') out.push('Carry the flowers to Mama’s stall.');
   for (const e of ERR) { if (!st.asked[e.id] || st.no[e.id] || st.done[e.id]) continue;
     out.push(e.id === 'ewe' ? 'Bo’s ewe, in Mama’s cabbages: lead it back to the pens.' : e.id === 'fairing' ? 'Take Bess her fairing, at the Wheatsheaf.' : st.have[e.id] ? 'Give ' + WHO[e.who] + ' ' + e.item + '.' : e.label + (e.area === 'home' ? ', at home.' : e.area === 'forge' ? ', in the forge.' : e.area === 'wood' ? ', in the meadow by the wood.' : '.')); }
   return out;
@@ -401,7 +516,7 @@ const editor = Object.assign({ PIECES, build(scene) {
   const out = { group: v.group, pieces: F.pieces, light: t => v.light(t), world: v.world, update() {}, tick() {},
     relayout(L) { v.group.remove(F.group); F = build(T, L); v.group.add(F.group); out.pieces = F.pieces; } };      // (moved: built again where it now stands, its bunting strung to it)
   return out; } }, ROOM);
-const api = { dressCtx, dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, OPEN, ENDS, editor };
+const api = { morningDue, wake, morning, morningObjective, guard: w => w.fairMorningSet && w.fairMorningSet.guard ? w.fairMorningSet.guard() : null, bucketItem, dressCtx, dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, OPEN, ENDS, editor };
 root.FairDay = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

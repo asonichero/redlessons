@@ -526,6 +526,7 @@ function create(w) {
   // What's hers to do now: everything at once (objectives: the evening's matters, the errand, the garden), and the first of them (objective).
   function objectives() {
     if (!on()) return [];
+    { const fm = root.FairDay && root.FairDay.morningObjective(w); if (fm) return [fm]; }      // (fair morning, in the cottage: only that)
     const out = [], e = errand(), c = st();
     if (root.FairDay) out.push(...root.FairDay.objectives(w));      // (fair day: the day's errands)
     for (const M of [root.Fair, root.Evening, root.Pie, root.AbneyPromise, root.Peter]) { const t = M && M.objective(w); if (t) out.push(t); }

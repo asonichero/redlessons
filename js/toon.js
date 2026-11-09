@@ -354,6 +354,7 @@ function palette(id, look) {
     // from collar to hem, the bodice a subtler shade of it, laced in cream, a white frilled collar and a deep blue sash; or 'fairYoung', a girl's frock: blue all through, sleeves and all, a white frilled
     // collar, and a pale pink sash at the waist. And what the day's put on it: earth and a wet hem darken it from the bottom, soot greys it, a
     // tear shows the petticoat's white at the hem)
+    if (l.gown === 'undressed') Object.assign(P, { bodice: P.blouse, lace: P.blouse });      // (in her chemise and drawers: no bodice over the chemise, its lacing gone with it)
     if (l.gown === 'fair' || l.gown === 'fairYoung') { const sp = l.spoil || {}, dirt = Math.min(1, (sp.earth || 0) + (sp.wet || 0) * 0.6), soot = Math.min(1, sp.soot || 0), young = l.gown === 'fairYoung';
       const mix = (a, b, t) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), c = k => Math.round(((x >> k) & 255) * (1 - t) + ((y >> k) & 255) * t); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
       const BLUE = '#6f90c4', sk = mix(BLUE, '#6a6a70', soot * 0.6), skd = mix(shade(BLUE, -0.22), '#5a4a32', dirt * 0.8);
