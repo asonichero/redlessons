@@ -283,7 +283,8 @@ function rehang(P) {
 // Set the room for it, as it's built (world.js's begin): Red on her bed in her shift; the dress and the buckets; her mother out.
 function wake(P, w) {
   const T = root.Toon, W = P.world, sc = P.stage.scene; w.fairMaren = 'out';
-  rehang(P); if (W.marenBasket) W.marenBasket.visible = false;      // (her basket on its peg, her hands empty; her mother's gone from the peg beside it: she's out with it)
+  rehang(P); if (W.marenBasket) W.marenBasket.visible = false;
+  w.save.change(x => { if (x.chores) x.chores.bag = null; });      // (nor set by to be taken up again as she stands (js/chores.js's takeUp): it's on its peg, and stays there)      // (her basket on its peg, her hands empty; her mother's gone from the peg beside it: she's out with it)
   if (P.setGown) P.setGown({ kind: 'undressed' }); if (P.setDress) P.setDress({ skirt: 'off' });
   const bed = W.seats.find(s => s.kind === 'bed'); if (bed) P.seatNow(bed);
   const ch = W.seats.find(s => s.kind === 'chair'), back = ch ? ch.at.clone().add(new V3(-Math.sin(ch.facing) * 2.6, 6.4, -Math.cos(ch.facing) * 2.6)) : new V3(-20, 15, -28);
@@ -309,7 +310,7 @@ async function morning(P, w) {
       await thought('wash'); set.seen.wash = true; await after(); } },
   ];
   W.actions = (W.actions || []).concat(acts.map(a => Object.assign(a, { when: (wh => () => wh() && !a.gone)(a.when) })));
-  set.acts = acts; set.guard = () => thought('door');      // (the door: not out in her shift)
+  set.acts = acts; set.guard = () => { const t = S.fairMorning('door')[0]; if (P.talk && t) P.talk.muse(t.text, { face: t.face }); return Promise.resolve(); };      // (the door: not out in her shift; a passing thought, as when she forgets her basket, the camera left where it is)
   w.refresh();
   async function after() { if (!done()) return;
     for (const x of acts) x.gone = true; set.guard = null; await dressed(P, w); }
