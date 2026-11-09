@@ -62,7 +62,7 @@ const CSS = `
 #hMenu { right: 12px; top: 10px; width: 52px; height: 52px; display: flex !important; } #hMenu svg { width: 26px; height: 26px; stroke-width: 2.4; }
 #hCam { right: 12px; top: 70px; width: 52px; height: 52px; display: flex !important; } #hCam svg { width: 27px; height: 27px; }
 #hHelp { right: 12px; bottom: 12px; width: 46px; height: 46px; } #hHelp svg { width: 24px; height: 24px; }
-#hud #hDebug { right: 64px; bottom: 12px; width: 46px; height: 46px; display: flex; font: bold 22px Georgia, serif; color: #f3e4b0; } body.talking #hDebug, body.correcting #hDebug { opacity: 0; pointer-events: none; }
+#hud #hDebug { right: 72px; top: 13px; width: 46px; height: 46px; display: flex; font: bold 22px Georgia, serif; color: #f3e4b0; } body.talking #hDebug, body.correcting #hDebug { opacity: 0; pointer-events: none; }
 #hDebugCard .hCard { width: min(440px, 94vw); } #hDebugCard .hCard .row.dt { display: flex; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; margin: 2px 0; } #hDebugCard .row.dt span { display: flex; align-items: center; gap: 8px; } #hDebugCard .row.dt button { width: 30px; margin: 0; padding: 2px 0; text-align: center; } #hDebugCard .row.dt i { min-width: 34px; text-align: center; font-style: normal; } #hDebugCard .dq { display: block; font-size: 13px; color: #d8c8b8; } #hDebugCard .dq.ok { color: #9fd08a; } #hDebugCard .dq em { color: #a89888; font-size: 11px; } #hDebugCard .dclock input { width: 64px; margin-left: 6px; font: 14px Georgia, serif; background: #2a1e20; color: #f3ead8; border: 1px solid #5a4446; border-radius: 6px; padding: 3px 5px; } #hDebugCard .dclock input[type=time] { width: 96px; } #hDebugCard .dclock select { font: 14px Georgia, serif; background: #2a1e20; color: #f3ead8; border: 1px solid #5a4446; border-radius: 6px; padding: 3px 5px; max-width: 230px; } #hDebugCard .row.dt.dclock button { width: auto; padding: 3px 10px; } #hDebugCard .rows { font: 15px/1.5 Georgia, serif; color: #f3ead8; margin: 8px 0; } #hDebugCard .row b { font-weight: normal; } #hDebugCard .row.ok b { color: #9fd08a; } #hDebugCard .row small { display: block; color: #c9b8a8; font-style: italic; margin: 0 0 4px 1.4em; }
 #hStick { position: absolute; left: 22px; bottom: 26px; width: 130px; height: 130px; border-radius: 50%; background: rgba(30,20,22,0.45); border: 2px solid rgba(230,196,106,0.55);
   touch-action: none; display: none; pointer-events: auto; }
@@ -124,7 +124,7 @@ body.talking #hCam { opacity: .35; pointer-events: none; }
 body.touchmode .talk.muse { bottom: auto; top: 56px; }
 @media (max-height: 440px) {
   #hAct { right: 18px; bottom: 18px; width: 68px; height: 68px; } #hAlt { right: 98px; bottom: 26px; width: 56px; height: 56px; }
-  #hStick { width: 112px; height: 112px; left: 16px; bottom: 18px; } #hMenu, #hCam { width: 46px; height: 46px; } #hCam { top: 62px; } #hud.touch #hPrompt { bottom: 100px; }
+  #hStick { width: 112px; height: 112px; left: 16px; bottom: 18px; } #hMenu, #hCam { width: 46px; height: 46px; } #hCam { top: 62px; } #hud #hDebug { right: 64px; top: 10px; } #hud.touch #hPrompt { bottom: 100px; }
 }
 /* ── The menus ── */
 .hScreen { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: rgba(8,5,6,0.72); font: 15px/1.55 Georgia, 'Times New Roman', serif; color: #f3ead8; }
@@ -368,8 +368,8 @@ function create(opts) {
     requestAnimationFrame(tick);
     const p = P(), o = p && p.offer;
     btn('hAct', o ? { icon: iconFor(o.label), label: verb(o.label), title: o.label, enabled: true } : { icon: 'act', label: 'Do', enabled: false });
-    const a = p && p.alt;      // (what Q does: the offer's other thing, or put down what's in her hands)
-    btn('hAlt', a ? { icon: a.down ? 'down' : 'lie', label: verb(a.label), title: a.label, enabled: true } : { icon: 'lie', label: 'Lie down', enabled: false });
+    const a = p && p.alt, aT = p && (touch ? p.altAny : p.alt);      // (what Q does: the offer's other thing, or put down what's in her hands; on a touch screen its button always there for it, with no Q key to press)
+    btn('hAlt', aT ? { icon: aT.down ? 'down' : 'lie', label: verb(aT.label), title: aT.label, enabled: true } : { icon: 'lie', label: 'Lie down', enabled: false });
     const chip = (o ? o.label : '') + '|' + (a ? a.label : '');
     if (chip !== lastChip) {
       lastChip = chip; prompt.innerHTML = '';
