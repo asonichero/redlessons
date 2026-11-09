@@ -192,6 +192,24 @@ function create(view, ui) {
     // check would only break it again), and its step undone)
     if (o.flag === 'abney-promise-broken' && !o.on) { save.change(s => { if (s.promise) Object.assign(s.promise, { broken: false, told: false, kept: false, sitting: false, day: s.day }); if (s.minute > 18 * 60 + 30 || s.minute < 17 * 60 + 30) s.minute = 18 * 60; delete (s.flags || {})['abney-promise-broken'];
       if (s.quests && s.quests.abney) delete s.quests.abney.promise; }, { promise: true, time: true }); }
+    // (fair-ready: tomorrow's the fair, everything it asks for met (the inn's evening worked, a herb brought, Bo met, the chores agreed), the
+    // dress fitted today; and whatever happens at it, or after, cleared (the day's own errands and morning, the kiss, Agnes's quest, Bess's
+    // frock); then the night passed, straight to fair day's morning)
+    if (o.fairReady) {
+      for (const r of ['hulda.cloak', 'maren.walk', 'maren.homecoming', 'maren.chores', 'abney.work']) if (!q.done(r)) q.complete(r);
+      const D = cal.day, night = root.Evening ? root.Evening.night(cal) : D;
+      save.change(s => {
+        s.herbs = s.herbs || { n: 0, asked: null, have: false, day: 0 }; if ((s.herbs.n || 0) < 1) s.herbs.n = 1;
+        s.flags = s.flags || {}; if (!s.flags['bo-met']) s.flags['bo-met'] = D; if (!s.flags['fair-told']) s.flags['fair-told'] = D - 6;
+        for (const k of Object.keys(s.flags)) if (/^(fair-morning|fair-kiss|fair-kiss-heard|bess-frock|fair-up-)/.test(k)) delete s.flags[k];
+        s.fair = { planted: D - 6, day: D + 1, fitted: D, late: false, spoil: {} }; s.fairday = null;
+        s.agnes = { terms: null, settled: null }; if (s.quests) delete s.quests.agnes;
+        const ev = s.evening || (s.evening = { done: 0, corrected: [], catches: 0, walking: 0 }); ev.done = night; ev.abed = night; ev.ate = night; ev.wash = 0;
+        s.minute = 21 * 60;
+      }, { time: true, fair: true });
+      for (const k of ['fairMaren', 'fairMorningSet', 'fairWalk']) w[k] = null;
+      refresh(); morning(); return;      // (and the night passed: fair day's morning, from the start)
+    }
     if (o.go && AREAS[o.go[0]]) go(o.go[0], o.go[1]);      // (somewhere else: a place, and the way in)
     if (o.day != null || o.minute != null) save.change(s => { if (o.day != null) s.day = Math.max(1, Math.round(o.day)); if (o.minute != null) s.minute = Math.max(0, Math.min(24 * 60 - 1, Math.round(o.minute))); }, { time: true });      // (the day and the time, written over)
     refresh();
