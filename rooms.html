@@ -33,7 +33,7 @@
   <h1>Room editor</h1>
   <div class="sub">The rooms, empty, to arrange. Click a piece to choose it, then drag it across the floor; arrows nudge it (Shift for five), Q and E turn it. Drag anywhere else to orbit; the wheel zooms. Changes are kept in this browser and used by <a href="story.html">the game</a>; the hearths, the doors, the windows, the bakery's oven and counter, the forge's hearth stay where they are. <a href="editor.html">Character editor</a> · <a href="lap.html">Correction test</a></div>
   <h3>Room</h3>
-  <select id="room"><option value="cottage">The cottage (home)</option><option value="cabin">Grandmother’s cabin</option><option value="bakery">The bakery</option><option value="inn">The inn (the Wheatsheaf)</option><option value="forge">The forge</option><option value="glade">The wood (the fallen tree’s glade)</option></select>
+  <select id="room"><option value="cottage">The cottage (home)</option><option value="cabin">Grandmother’s cabin</option><option value="bakery">The bakery</option><option value="inn">The inn (the Wheatsheaf)</option><option value="forge">The forge</option><option value="glade">The wood (the fallen tree’s glade)</option><option value="fair">The village, fair day</option></select>
   <h3>View</h3>
   <div class="btns" id="views"></div>
   <div class="btns" style="margin-top:6px"><button id="scale">Rose, for scale</button><button id="roof">Show the roof and beams</button></div>
@@ -67,6 +67,8 @@
 <script src="js/inn.js"></script>
 <script src="js/forge.js"></script>
 <script src="js/wood.js"></script>
+<script src="js/village.js"></script>
+<script src="js/fairday.js"></script>
 <script src="js/corrlayout.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/pain.js"></script>
@@ -85,9 +87,11 @@ const ROOMS = {
   inn: { M: Inn, views: { above: [[0, 230, 4], [0, 0, 3]], door: [[4, 38, 38], [0, 6, -10]], counter: [[0, 38, -36], [0, 6, 10]], left: [[-70, 38, 4], [12, 6, 2]], right: [[70, 38, 4], [-12, 6, 2]] } },
   // (the glade: no furniture of its own, only its correction layout; its views round the fallen tree, set once it's built)
   glade: { glade: true, M: { build: s => Wood.build(s, { glade: true }), layout: () => ({}), LAYOUT: {}, PIECES: {}, saveLayout() {}, resetLayout() {} }, views: { above: null, path: null, beyond: null, along: null } },
+  // (the village on fair day: its stalls, the bunting pole, the Miller's crate and Bo's pen, to be moved about the green)
+  fair: { M: FairDay.editor, views: { above: [[10, 330, 20], [10, 0, 10]], stalls: [[0, 70, 90], [0, 10, -40]], pen: [[80, 60, 120], [110, 6, 60]], dance: [[-60, 60, 90], [-10, 6, 26]] } },
   cabin: { M: Cabin, views: { above: [[0, 150, 4], [0, 0, 3]], door: [[-10, 32, 35], [0, 6, -4]], hearth: [[-42, 34, 4], [8, 6, 2]], oak: [[34, 36, -26], [-6, 6, 8]], bed: [[42, 34, 34], [-4, 6, 0]] } },
 };
-const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', window: 'From the window side', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right', path: 'From the path', beyond: 'From beyond the tree', along: 'Along the tree' };
+const VIEWNAMES = { above: 'Above', door: 'From the door', hearth: 'From the hearth side', oak: 'From the oak', bed: 'From the bed side', pegs: 'From the peg rail', stalls: 'Along the stalls', pen: 'At Bo’s pen', dance: 'Over the dancing', window: 'From the window side', oven: 'From the oven', counter: 'From the counter', left: 'From the left', right: 'From the right', path: 'From the path', beyond: 'From beyond the tree', along: 'Along the tree' };
 const st = Stage.create($('view'), { room: false });
 st.controls.maxDistance = 320;
 let R = null, set = null, L = null, sel = null, figure = null;
@@ -112,7 +116,7 @@ function place(id) {
   const pc = set.pieces[id], at = L[id]; pc.g.position.set(at.x, 0, at.z); pc.g.rotation.y = at.ry + (pc.spin || 0); pc.g.updateMatrix(); pc.g.updateMatrixWorld(true);
   delete pc.g.userData.box;      // (the cottage's: the box it's hidden inside, worked out again where it is now)
   for (const it of pc.items) { it.obj.position.copy(it.at).applyMatrix4(pc.g.matrix); it.obj.rotation.y = it.ry + at.ry; }
-  R.M.saveLayout(L); flash(); out(); fields(); marks();
+  R.M.saveLayout(L); if (set.relayout) { set.relayout(L); select(id); } flash(); out(); fields(); marks();
 }
 const moved = id => { if (corr) return id === 'giver' ? !!C && !CLD().fixed && (Math.abs(C.giver.x - CLD().giver.x) > 1e-6 || Math.abs(C.giver.z - CLD().giver.z) > 1e-6 || Math.abs(C.giver.ry - (CLD().giver.yaw || 0)) > 1e-6) : id !== 'giver';
   const a = L[id], b = R.M.LAYOUT[id]; return Math.abs(a.x - b.x) > 1e-6 || Math.abs(a.z - b.z) > 1e-6 || Math.abs(a.ry - b.ry) > 1e-6; };

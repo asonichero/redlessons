@@ -15,27 +15,37 @@ const OPEN = H('07:30'), ENDS = H('22:00');
 const yawTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
 // (the stalls: along the north of the green, their fronts to the south; x, and what's on them)
 const STALLS = [
-  { id: 'flowers', x: -34, who: 'mother', cloth: '#d8a0b0', goods: ['#e8e0f0', '#f0a0a8', '#f4f0e8', '#c8d8f0'], name: 'Mama’s flowers' },
-  { id: 'remedies', x: -12, who: 'gran', cloth: '#a8b890', goods: ['#6a8a4a', '#b8a060', '#8a6a9a', '#e0d8c0'], name: 'Grandmother’s remedies' },
-  { id: 'ginger', x: 12, who: 'pennock', cloth: '#e0c090', goods: ['#b8743a', '#c98a4a', '#a8642e', '#d89a50'], name: 'the gingerbread' },
-  { id: 'ribbons', x: 36, who: 'thatcherWife', cloth: '#a0b8d8', goods: ['#d84040', '#4060c0', '#e8c040', '#40a060'], name: 'ribbons and fairings' },
-  { id: 'ale', x: 60, who: 'abney', cloth: '#c8a878', goods: ['#7a5232', '#7a5232'], name: 'the ale' },
+  { id: 'flowers', who: 'mother', cloth: '#d8a0b0', goods: ['#e8e0f0', '#f0a0a8', '#f4f0e8', '#c8d8f0'], name: 'Mama’s flowers' },
+  { id: 'remedies', who: 'gran', cloth: '#a8b890', goods: ['#6a8a4a', '#b8a060', '#8a6a9a', '#e0d8c0'], name: 'Grandmother’s remedies' },
+  { id: 'ginger', who: 'pennock', cloth: '#e0c090', goods: ['#b8743a', '#c98a4a', '#a8642e', '#d89a50'], name: 'the gingerbread' },
+  { id: 'ribbons', who: 'thatcherWife', cloth: '#a0b8d8', goods: ['#d84040', '#4060c0', '#e8c040', '#40a060'], name: 'ribbons and fairings' },
+  { id: 'ale', who: 'abney', cloth: '#c8a878', goods: ['#7a5232', '#7a5232'], name: 'the ale' },
 ];
 const ROW_Z = -42, GREEN = { x: 0, z: 22 };
-const DANCE = new V3(-10, 0, 30), FIDDLE = new V3(-30, 0, 26);
+const DANCE = new V3(-10, 0, 30);
+// The fair's things where they stand (the room editor moves them: rooms.html's "The village, fair day"; kept in the browser, as a room's are):
+// each stall (x, z, and ry: its turn, its front to the south at 0), the pole the bunting's strung to, the Miller's crate, and Bo's pen.
+const SC = 1.8;      // (a stall's size: its counter at a grown woman's waist, its awning well over a man's head; a figure stands 31 tall)
+const KIT = root.Cottage && root.Cottage.kit;
+const ROOM = KIT ? KIT.roomLayout('red-lessons:room:fair', {
+  flowers: { x: -72, z: ROW_Z, ry: 0 }, remedies: { x: -36, z: ROW_Z, ry: 0 }, ginger: { x: 0, z: ROW_Z, ry: 0 }, ribbons: { x: 36, z: ROW_Z, ry: 0 }, ale: { x: 80, z: ROW_Z - 2, ry: 0 },
+  pole: { x: 24, z: 22, ry: 0 }, crate: { x: -30, z: 26, ry: 0 }, pen: { x: 112, z: 66, ry: -Math.PI / 2 },
+}) : { LAYOUT: {}, layout: () => ({}), saveLayout() {}, resetLayout() {} };
+const PIECES = { flowers: 'Mama’s flower stall', remedies: 'Grandmother’s remedies stall', ginger: 'The gingerbread stall', ribbons: 'The ribbon stall', ale: 'The ale stall', pole: 'The bunting pole', crate: 'The Miller’s crate', pen: 'Bo’s pen and sheep' };
+const local = (l, x, z) => new V3(l.x + Math.cos(l.ry) * x + Math.sin(l.ry) * z, 0, l.z - Math.sin(l.ry) * x + Math.cos(l.ry) * z);      // (a point of a piece, in the world: x along it, z out to its front)
 // The fair's own people (not about the village of a day): who, their figure, where they stand, which way they face, their voice.
 const EXTRA = [
   { key: 'mother', rig: 'gerda', name: 'Mother', voice: 'gerda', tint: '#6a3a4a', bg: '#e6d8e6', stall: 'flowers' },
   { key: 'gran', rig: 'gran', name: 'Grandmother', voice: 'gran', tint: '#5a6a3a', bg: '#e4e8d6', stall: 'remedies' },
   { key: 'thatcherWife', rig: 'thatcherWife', name: 'Mistress Thatcher', voice: 'pennock', tint: '#6a8a4a', bg: '#e8eedc', stall: 'ribbons' },
-  { key: 'miller', rig: 'miller', name: 'The Miller', voice: 'baker', tint: '#7a7468', bg: '#eeeae2', at: FIDDLE, face: DANCE },
+  { key: 'miller', rig: 'miller', name: 'The Miller', voice: 'baker', tint: '#7a7468', bg: '#eeeae2', by: ['crate', 0, 4.5], face: DANCE },      // (by: beside a piece of the fair's: its x, and out to its front)
   { key: 'thatcher', rig: 'thatcher', name: 'Master Thatcher', voice: 'smith', tint: '#5a4a34', bg: '#e6e0d0', at: new V3(84, 0, 34), face: new V3(60, 0, 40) },
-  { key: 'halloran', rig: 'halloran', name: 'Master Halloran', voice: 'baker', tint: '#5a4a38', bg: '#e8e0cc', at: new V3(96, 0, 46), face: new V3(70, 0, 40) },
-  { key: 'boFather', rig: 'boFather', name: 'Young Master Halloran', voice: 'smith', tint: '#4e4232', bg: '#e4dccc', at: new V3(104, 0, 38), face: new V3(80, 0, 40) },
-  { key: 'bo', rig: 'bo', name: 'Bo', voice: 'bo', tint: '#8a5a6a', bg: '#f2e4ea', at: new V3(90, 0, 40), face: new V3(60, 0, 30) },
-  { key: 'boMother', rig: 'boMother', name: 'Mistress Halloran', voice: 'pennock', tint: '#8a5a6a', bg: '#f0e2e8', at: new V3(100, 0, 54), face: new V3(80, 0, 40) },
-  { key: 'carrierNed', rig: 'carrierNed', name: 'Ned', voice: 'smith', tint: '#5a4a34', bg: '#e8e0d0', at: new V3(66, 0, -22), face: new V3(60, 0, -42) },
-  { key: 'carrierAmos', rig: 'carrierAmos', name: 'Old Amos', voice: 'baker', tint: '#5a5040', bg: '#e6e2d6', at: new V3(74, 0, -20), face: new V3(60, 0, -42) },
+  { key: 'halloran', rig: 'halloran', name: 'Master Halloran', voice: 'baker', tint: '#5a4a38', bg: '#e8e0cc', by: ['pen', -12, 26], face: DANCE },
+  { key: 'boFather', rig: 'boFather', name: 'Young Master Halloran', voice: 'smith', tint: '#4e4232', bg: '#e4dccc', by: ['pen', 18, 27], faceTo: 'pen' },
+  { key: 'bo', rig: 'bo', name: 'Bo', voice: 'bo', tint: '#8a5a6a', bg: '#f2e4ea', by: ['pen', 7, 22], face: DANCE },      // (by her pen's gate, showing the flock)
+  { key: 'boMother', rig: 'boMother', name: 'Mistress Halloran', voice: 'pennock', tint: '#8a5a6a', bg: '#f0e2e8', by: ['pen', -22, 30], face: DANCE },
+  { key: 'carrierNed', rig: 'carrierNed', name: 'Ned', voice: 'smith', tint: '#5a4a34', bg: '#e8e0d0', by: ['ale', 8, 20], faceTo: 'ale' },
+  { key: 'carrierAmos', rig: 'carrierAmos', name: 'Old Amos', voice: 'baker', tint: '#5a5040', bg: '#e6e2d6', by: ['ale', 16, 22], faceTo: 'ale' },
   { key: 'carrierKit', rig: 'carrierKit', name: 'Kit', voice: 'georgie', tint: '#4a4a52', bg: '#e0e0e6', at: new V3(20, 0, 36), face: DANCE },
 ];
 // (the stalls stand: fair day, its Lay day, and till First Day's morning)
@@ -49,7 +59,41 @@ function stall(T, s) {
   for (const x of [-7.6, 7.6]) for (const z of [-3.6, 3.6]) mesh(new THREE.CylinderGeometry(0.25, 0.25, 15, 6), '#6a4a30', x, 7.5, z, 0.04);
   for (let k = 0; k < 6; k++) mesh(new THREE.BoxGeometry(16.8 / 6, 0.25, 8.6), k % 2 ? '#f4eee2' : s.cloth, -8.4 + 16.8 / 12 + k * 16.8 / 6, 15.1, 0, 0.02).rotation.x = -0.12;
   s.goods.forEach((c, i) => { for (let k = 0; k < 3; k++) mesh(s.id === 'ale' ? new THREE.CylinderGeometry(1.6, 1.6, 3, 10) : new THREE.SphereGeometry(1, 8, 6).scale(1.2, 0.7, 1.2), c, -5.5 + i * 3.6 + (k - 1) * 0.6, s.id === 'ale' ? 9.5 : 8.5, -1.5 + k * 1.4, 0.04); });
-  g.position.set(s.x, 0, ROW_Z); return g;
+  g.scale.setScalar(SC); return g;
+}
+// Bo's pen: hurdles round a square of the green, a gate in its front, and a few of the flock in it, washed for showing.
+function pen(T) {
+  const g = new THREE.Group(), wood = T.mat('#8a6a42'), wool = T.mat('#f2ece0'), face = T.mat('#2e2a28'), W2 = 22, D2 = 15;
+  const mesh = (geo, m, x, y, z, ink, par) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.castShadow = true; k.add(new THREE.Mesh(T.hullGeo(geo, ink || 0.04), T.INKM[0])); (par || g).add(k); return k; };
+  const hurdle = (x0, z0, x1, z1) => { const L = Math.hypot(x1 - x0, z1 - z0), h = new THREE.Group(); h.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); h.rotation.y = -Math.atan2(z1 - z0, x1 - x0); g.add(h);
+    for (const y of [2.2, 4.4, 6.6]) mesh(new THREE.BoxGeometry(L, 0.6, 0.5), wood, 0, y, 0, 0.03, h);
+    for (let k = 0; k <= Math.round(L / 6); k++) mesh(new THREE.BoxGeometry(0.7, 8, 0.7), wood, -L / 2 + k * L / Math.round(L / 6), 4, 0, 0.03, h); };
+  hurdle(-W2, -D2, W2, -D2); hurdle(-W2, -D2, -W2, D2); hurdle(W2, -D2, W2, D2); hurdle(-W2, D2, 2, D2); hurdle(12, D2, W2, D2);      // (the gap in the front: its gate, swung in)
+  const r = (k => () => { k = (k * 16807) % 2147483647; return k / 2147483647; })(91);
+  for (const [x, z, a, lying] of [[-13, -6, 0.6, false], [-3, 6, 2.4, true], [12, -7, 4.2, false], [0, -8, 1.4, false], [14, 7, 5.4, true]]) {
+    const sh = new THREE.Group(); sh.position.set(x, 0, z); sh.rotation.y = a + r() * 0.3; g.add(sh); const y = lying ? 2.4 : 4.6;
+    mesh(T.ell(3.2, 2.6, 4.4, 12, 8), wool, 0, y, 0, 0.07, sh); mesh(T.ell(1.1, 1.4, 1.7, 8, 6), face, 0, y + 1.2, 4.4, 0.05, sh);
+    for (const sx of [-1, 1]) mesh(T.ell(0.9, 0.35, 0.5, 6, 4), face, sx * 1.4, y + 2.2, 3.8, 0.03, sh);
+    if (!lying) for (const [lx, lz] of [[-1.6, 2.4], [1.6, 2.4], [-1.6, -2.4], [1.6, -2.4]]) mesh(new THREE.CylinderGeometry(0.45, 0.4, 3.4, 6), face, lx, 1.7, lz, 0.03, sh); }
+  return g;
+}
+// The fair's things, as its layout has them (L: ROOM.layout()): the stalls, the bunting between them and to the pole, the crate, the pen. →
+// { group, pieces (each with g, for the room editor), obstacles, spots }
+function build(T, L) {
+  const g = new THREE.Group(), pieces = {}, obstacles = [], spots = {};
+  const put = (id, obj) => { const l = L[id]; obj.position.set(l.x, obj.position.y, l.z); obj.rotation.y = l.ry; obj.userData.piece = id; g.add(obj); pieces[id] = { g: obj, items: [], spin: 0 }; return obj; };
+  for (const s of STALLS) { const l = L[s.id]; put(s.id, stall(T, s));
+    for (const x of [-9, 0, 9]) { const c = local(l, x * SC / 1.8, 0); obstacles.push({ x: c.x, z: c.z, r: 7 }); }
+    const back = local(l, 0, -7.5 * SC), front = local(l, 0, 10 * SC), mid = local(l, 0, 0).setY(9 * SC);
+    spots['stall_' + s.id] = { at: back, yaw: yawTo(back, mid), look: mid.clone() };      // (behind it, its keeper)
+    spots['before_' + s.id] = { at: front, yaw: yawTo(front, mid), look: mid.clone() }; }      // (before it, a customer)
+  const awning = (id, sx) => local(L[id], sx * 7.6 * SC, 3.6 * SC).setY(15.2 * SC);
+  for (let i = 0; i < STALLS.length - 1; i++) g.add(bunting(T, awning(STALLS[i].id, 1), awning(STALLS[i + 1].id, -1), 6));
+  { const pl = new THREE.Group(), m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 30, 8), T.mat('#6a4a30')); m.position.y = 15; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.05), T.INKM[0])); pl.add(m); put('pole', pl);
+    const top = new V3(L.pole.x, 29, L.pole.z); g.add(bunting(T, new V3(60, 24, 16), top, 12)); g.add(bunting(T, awning('ribbons', 1).lerp(awning('ale', -1), 0.5), top, 12)); obstacles.push({ x: L.pole.x, z: L.pole.z, r: 1.5 }); }
+  { const c = new THREE.Group(), m = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); m.position.y = 1.5; m.castShadow = true; m.add(new THREE.Mesh(T.hullGeo(m.geometry, 0.06), T.INKM[0])); c.add(m); put('crate', c); obstacles.push({ x: L.crate.x, z: L.crate.z, r: 3.5 }); }
+  { put('pen', pen(T)); const l = L.pen; for (const [x0, z0, x1, z1] of [[-22, -15, 22, -15], [-22, -15, -22, 15], [22, -15, 22, 15], [-22, 15, 22, 15]]) for (let k = 0; k <= 5; k++) { const c = local(l, x0 + (x1 - x0) * k / 5, z0 + (z1 - z0) * k / 5); obstacles.push({ x: c.x, z: c.z, r: 2.2 }); } }
+  return { group: g, pieces, obstacles, spots };
 }
 // Bunting: strung between the stalls' awnings, and across the dancing ground.
 function bunting(T, from, to, n) {
@@ -64,23 +108,16 @@ function attach(P, w) {
   const T = root.Toon, W = P.world, S = root.Story, on = root.Fair.isFair(w) && w.cal.minute >= OPEN && w.cal.minute < ENDS;
   const g = new THREE.Group(); P.stage.scene.add(g);
   W.spots = W.spots || {}; W.obstacles = W.obstacles || [];
-  for (const s of STALLS) { g.add(stall(T, s)); W.obstacles.push({ x0: s.x - 8.5, x1: s.x + 8.5, z0: ROW_Z - 4.5, z1: ROW_Z + 4.5 });
-    W.spots['stall_' + s.id] = { at: new V3(s.x, 0, ROW_Z - 7), yaw: 0, look: new V3(s.x, 9, ROW_Z) };      // (behind it, its keeper)
-    W.spots['before_' + s.id] = { at: new V3(s.x, 0, ROW_Z + 10), yaw: Math.PI, look: new V3(s.x, 9, ROW_Z) }; }      // (before it, a customer)
-  for (let i = 0; i < STALLS.length - 1; i++) g.add(bunting(T, new V3(STALLS[i].x + 7.6, 15.2, ROW_Z + 3.6), new V3(STALLS[i + 1].x - 7.6, 15.2, ROW_Z + 3.6), 5));
-  // (the dancing ground: bunting across it from the lime tree to a pole, and the fiddler's crate)
-  { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 22, 8), T.mat('#6a4a30')); pole.position.set(DANCE.x + 34, 11, DANCE.z - 8); pole.add(new THREE.Mesh(T.hullGeo(pole.geometry, 0.05), T.INKM[0])); g.add(pole);
-    g.add(bunting(T, new V3(60, 20, 16), new V3(DANCE.x + 34, 21, DANCE.z - 8), 12)); W.obstacles.push({ x: DANCE.x + 34, z: DANCE.z - 8, r: 1.5 });
-    const crate = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 5), T.mat('#8a6a48')); crate.position.set(FIDDLE.x, 1.5, FIDDLE.z); crate.add(new THREE.Mesh(T.hullGeo(crate.geometry, 0.06), T.INKM[0])); g.add(crate); }
+  const L = ROOM.layout(), F = build(T, L); g.add(F.group); W.obstacles.push(...F.obstacles); Object.assign(W.spots, F.spots);
   W.spots.dance = { at: DANCE.clone(), yaw: 0, look: DANCE.clone().setY(10) };
   W.spots.danceEdge = { at: DANCE.clone().add(new V3(18, 0, 10)), yaw: yawTo(DANCE.clone().add(new V3(18, 0, 10)), DANCE), look: DANCE.clone().setY(10) };
   W.spots.danceEdge2 = { at: DANCE.clone().add(new V3(-16, 0, 14)), yaw: yawTo(DANCE.clone().add(new V3(-16, 0, 14)), DANCE), look: DANCE.clone().setY(10) };
-  W.spots.aleSide = { at: new V3(70, 0, -26), yaw: Math.PI, look: new V3(60, 9, ROW_Z) };
+  { const at = local(L.ale, 12 * SC, 12 * SC), mid = local(L.ale, 0, 0).setY(16); W.spots.aleSide = { at, yaw: yawTo(at, mid), look: mid }; }      // (by the ale, out to one side of it: Master Ferrier with his pot)
   if (!on) return { actions: () => [] };
   // ── The fair's own people, at their places.
   const looks = root.Looks && root.Looks.load ? root.Looks.load() : {}, figs = {};
   for (const D of EXTRA) {
-    const s = D.stall && STALLS.find(x => x.id === D.stall), at = s ? W.spots['stall_' + s.id].at.clone() : D.at.clone(), face = s ? new V3(s.x, 0, ROW_Z + 20) : D.face;
+    const s = D.stall && STALLS.find(x => x.id === D.stall), at = s ? W.spots['stall_' + s.id].at.clone() : D.by ? local(L[D.by[0]], D.by[1], D.by[2]) : D.at.clone(), face = s ? W.spots['before_' + s.id].at.clone() : D.faceTo ? local(L[D.faceTo], 0, 0) : D.face;
     const look = D.rig === 'gerda' ? Object.assign({}, looks.gerda, { outfit: 'Fine' }) : (looks[D.rig] || {});      // (her mother in her good dress, for the fair)
     const rig = T.make(D.rig, look), motion = root.Motion.create(rig, { collide: (p, r) => P.collide(p, r, D.key) });
     motion.warp(at, yawTo(at, face)); rig.root.position.copy(at); rig.root.rotation.y = motion.yaw;
@@ -283,7 +320,13 @@ function objectives(w) {
   return out;
 }
 
-const api = { dressCtx, dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, FIDDLE, OPEN, ENDS };
+// (for the room editor: the village as on fair day, its fair things the pieces to move)
+const editor = Object.assign({ PIECES, build(scene) {
+  const T = root.Toon, v = root.Village.build(scene); let F = build(T, ROOM.layout()); v.group.add(F.group);
+  const out = { group: v.group, pieces: F.pieces, light: t => v.light(t), world: v.world, update() {}, tick() {},
+    relayout(L) { v.group.remove(F.group); F = build(T, L); v.group.add(F.group); out.pieces = F.pieces; } };      // (moved: built again where it now stands, its bunting strung to it)
+  return out; } }, ROOM);
+const api = { dressCtx, dance, kiss, attach, station, talk, area, ewe, objectives, ERR, STALLS, DANCE, OPEN, ENDS, editor };
 root.FairDay = api;
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
