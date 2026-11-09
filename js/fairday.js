@@ -369,7 +369,10 @@ async function dressed(P, w, how) {
   await Q.face(yaw + Math.PI);
   await P.converse(S.fairMorning('spin'), { shot: ['red', 'mother'] });
   // (her hand to her cheek)
-  if (mm) { await mm.reach('R', () => P.rig.headGroup.getWorldPosition(new V3()).add(new V3(Math.sin(Q.yaw) * 1.2, 0.2, Math.cos(Q.yaw) * 1.2))); }
+  // (her palm against the outside of Red's cheek, her left: beside the face, a little forward and down, not in it)
+  const CHEEK = { side: 3.2, fwd: 2.0, down: -1.4 }, sc_ = P.rig.scaleW || 1;
+  const cheek = () => { const y = Q.yaw, f = new V3(Math.sin(y), 0, Math.cos(y)), l = new V3(Math.cos(y), 0, -Math.sin(y)); return P.rig.headGroup.getWorldPosition(new V3()).addScaledVector(l, CHEEK.side * sc_).addScaledVector(f, CHEEK.fwd * sc_).add(new V3(0, CHEEK.down * sc_, 0)); };
+  if (mm) await mm.reach('R', cheek);
   await P.converse(S.fairMorning('cheek'), { shot: ['red', 'mother'] });
   if (mm) await mm.release('R');
   if (P.rig.setExpr) P.rig.setExpr('smile'); await P.wait(1.6);      // (a quiet moment, smiling at each other)
